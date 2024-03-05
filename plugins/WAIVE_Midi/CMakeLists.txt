@@ -1,5 +1,5 @@
 dpf_add_plugin(
-  WAIVE_MIDI
+  WAIVE_Midi
   TARGETS 
       # jack
       lv2
@@ -7,15 +7,16 @@ dpf_add_plugin(
       vst2
       clap
   FILES_DSP
-      WAIVE_MIDI.cpp
+      WAIVEMidi.cpp
   FILES_UI
-      WAIVE_MIDIUI.cpp
+      WAIVEMidiUI.cpp
+      ../../common/src/Slider.cpp
+      ../../common/src/VSlider.cpp
 )
 
 target_include_directories(
-  WAIVE_MIDI 
+  WAIVE_Midi
   PUBLIC 
     .
-    widgets
-    models
+    ../../common/
 )
