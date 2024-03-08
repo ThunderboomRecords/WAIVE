@@ -6,6 +6,11 @@
 #include "DistrhoPlugin.hpp"
 #include "WAIVEMidiParams.h"
 
+#include <torch/script.h>
+#include "score_decoder.cpp"
+#include "groove_decoder.cpp"
+#include "full_decoder.cpp"
+
 START_NAMESPACE_DISTRHO
 
 class WAIVEMidi : public Plugin
@@ -65,6 +70,8 @@ protected:
 
 private:
     float fThreshold;
+
+    torch::jit::script::Module score_decoder, groove_decoder, full_decoder;
 };
 
 

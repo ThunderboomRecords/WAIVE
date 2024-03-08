@@ -1,7 +1,7 @@
 dpf_add_plugin(
   WAIVE_Midi
   TARGETS 
-      # jack
+      jack
       lv2
       vst3
       vst2
@@ -10,6 +10,7 @@ dpf_add_plugin(
       WAIVEMidi.cpp
   FILES_UI
       WAIVEMidiUI.cpp
+      ../../common/src/HBox.cpp
       ../../common/src/Slider.cpp
       ../../common/src/VSlider.cpp
 )
@@ -18,5 +19,6 @@ target_include_directories(
   WAIVE_Midi
   PUBLIC 
     .
-    ../../common/
+    models
+    ../../common
 )

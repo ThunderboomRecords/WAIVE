@@ -1,11 +1,11 @@
 #ifndef WAIVE_MIDIUI_HPP
 #define WAIVE_MIDIUI_HPP
 
-#include "DistrhoPluginInfo.h"
 #include "DistrhoUI.hpp"
 #include "NanoVG.hpp"
 #include "Window.hpp"
 
+#include "HBox.hpp"
 #include "VSlider.hpp"
 #include "WAIVEMidi.hpp"
 
@@ -35,6 +35,7 @@ protected:
 private:
     WAIVEMidi *plugin;
     VSlider *fThreshold;
+    HBox *hbox_controls;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVEMidiUI);
 };

@@ -4,10 +4,54 @@
 
 START_NAMESPACE_DISTRHO
 
+using namespace torch::indexing;
+
 WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
                          fThreshold(0.7)
 {
 
+    std::stringstream model_stream;
+    std::cout << "loading models...";
+    try 
+    {
+        model_stream.write((char *) score_decoder_v0_1_pt, score_decoder_v0_1_pt_len);
+        score_decoder = torch::jit::load(model_stream);
+
+        model_stream.str("");
+        model_stream.write((char *) groove_decoder_v0_1_pt, groove_decoder_v0_1_pt_len);
+        groove_decoder = torch::jit::load(model_stream);
+
+        model_stream.str("");
+        model_stream.write((char *) full_groove_model_v0_1_pt, full_groove_model_v0_1_pt_len);
+        full_decoder = torch::jit::load(model_stream);
+
+        std::cout << " done\n";
+    }
+    catch (const c10::Error& e) 
+    {
+        std::cerr << " error loading the model\n";
+        return;
+    }
+
+
+    // test score model:
+    std::vector<torch::jit::IValue> score_z;
+    score_z.push_back(torch::randn({64}));
+    at::Tensor output = score_decoder.forward(score_z).toTensor();
+    std::cout << "score_decoder output: \n" << output.index({Slice(0, 8)}) << std::endl << std::endl;
+
+    // test groove model:
+    std::vector<torch::jit::IValue> groove_z;
+    groove_z.push_back(torch::randn({32}));
+    output = groove_decoder.forward(groove_z).toTensor();
+    std::cout << "groove_decoder output: \n" << output.index({Slice(0, 8)}) << std::endl;
+
+    // test full model:
+    std::vector<torch::jit::IValue> full_z;
+    full_z.push_back(torch::randn({96}));
+    output = full_decoder.forward(full_z).toTensor();
+
+    std::cout << "full_decoder output: \n" << output.index({Slice(0, 8)}) << std::endl;
 }
 
 void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
