@@ -8,23 +8,26 @@
 AI x Archive music tools
 </p>
 
-A plugin suite that combines music, sound and MIDI generation with European cultural archives.
+A plugin suite that combines music, sound and MIDI generation with European cultural archives. 
+Aims to be an offline, modular version of [WAIVE-studio](https://www.waive.studio/) that can be integrated into your DAW.
 Built with [DPF](https://github.com/DISTRHO/DPF) and [PyTorch](https://pytorch.org/).
 
-> :construction: Currently _very_ early development. See [al165/DPF_Tests](https://github.com/al165/DPF_Tests) for working a test version called "AITests" :construction:
+> :construction: Currently _very_ early development! :construction:
+
+See [al165/DPF_Tests](https://github.com/al165/DPF_Tests) for a proof-of-concept test version called "AITests". 
 
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
 
-```
+```bash
 $ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git
 ```
 
 #### Linux
 Requires cmake
 
-```
+```bash
 $ mkdir build
 $ cd build
 
