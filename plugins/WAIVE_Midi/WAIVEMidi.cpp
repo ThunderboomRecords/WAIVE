@@ -16,14 +16,17 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
     {
         model_stream.write((char *) score_decoder_v0_1_pt, score_decoder_v0_1_pt_len);
         score_decoder = torch::jit::load(model_stream);
+        score_decoder.eval();
 
         model_stream.str("");
         model_stream.write((char *) groove_decoder_v0_1_pt, groove_decoder_v0_1_pt_len);
         groove_decoder = torch::jit::load(model_stream);
+        groove_decoder.eval();
 
         model_stream.str("");
         model_stream.write((char *) full_groove_model_v0_1_pt, full_groove_model_v0_1_pt_len);
         full_decoder = torch::jit::load(model_stream);
+        full_decoder.eval();
 
         std::cout << " done\n";
     }
@@ -48,7 +51,9 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
     // test full model:
     std::vector<torch::jit::IValue> full_z;
-    full_z.push_back(torch::randn({96}));
+    torch::Tensor z = torch::cat({score_z.at(0).toTensor(), groove_z.at(0).toTensor()}, 0);
+
+    full_z.push_back(z);
     output = full_decoder.forward(full_z).toTensor();
 
     std::cout << "full_decoder output: \n" << output.index({Slice(0, 8)}) << std::endl;
