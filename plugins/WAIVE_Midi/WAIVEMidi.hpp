@@ -7,9 +7,9 @@
 #include "WAIVEMidiParams.h"
 
 #include <torch/script.h>
-#include "score_decoder.cpp"
-#include "groove_decoder.cpp"
-#include "full_decoder.cpp"
+#include "score_decoder.h"
+#include "groove_decoder.h"
+#include "full_groove_model.h"
 
 START_NAMESPACE_DISTRHO
 
@@ -71,7 +71,7 @@ protected:
 private:
     float fThreshold;
 
-    torch::jit::script::Module score_decoder, groove_decoder, full_decoder;
+    torch::jit::script::Module score_decoder_model, groove_decoder_model, full_model;
 };
 
 
