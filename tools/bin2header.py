@@ -21,12 +21,18 @@ def bin2header(data, var_name='var'):
 
 
 def fn2VarName(fn: str) -> str:
-    bn = os.path.basename(fn)
+    # basename without extension
+    bn = os.path.splitext(os.path.basename(fn))[0]
+    
+    # remove leading or trailing spaces
+    bn = bn.strip()
+
+    # replace all non alphanumeric with underscore
+    bn = re.sub(r'[^a-zA-Z0-9]', '_', bn)
+
+    # prepends underscore if first character is not digit
     if bn[0].isnumeric():
         bn = "_" + bn
-
-    bn = bn.replace(".", "_")
-    bn = bn.replace(" ", "_")
 
     return bn
 

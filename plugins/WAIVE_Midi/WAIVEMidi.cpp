@@ -40,23 +40,23 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
     // test score model:
     std::vector<torch::jit::IValue> score_z;
     score_z.push_back(torch::randn({64}));
-    at::Tensor output = score_decoder_model.forward(score_z).toTensor();
-    std::cout << "score_decoder output: \n" << output.index({Slice(0, 8)}) << std::endl << std::endl;
+    score = score_decoder_model.forward(score_z).toTensor();
+    std::cout << "score_decoder output: \n" << score.index({Slice(0, 8)}) << std::endl << std::endl;
 
     // test groove model:
     std::vector<torch::jit::IValue> groove_z;
     groove_z.push_back(torch::randn({32}));
-    output = groove_decoder_model.forward(groove_z).toTensor();
-    std::cout << "groove_decoder output: \n" << output.index({Slice(0, 8)}) << std::endl;
+    groove = groove_decoder_model.forward(groove_z).toTensor();
+    std::cout << "groove_decoder output: \n" << groove.index({Slice(0, 8)}) << std::endl;
 
     // test full model:
     std::vector<torch::jit::IValue> full_z;
     torch::Tensor z = torch::cat({score_z.at(0).toTensor(), groove_z.at(0).toTensor()}, 0);
 
     full_z.push_back(z);
-    output = full_model.forward(full_z).toTensor();
+    pattern = full_model.forward(full_z).toTensor();
 
-    std::cout << "full_decoder output: \n" << output.index({Slice(0, 8)}) << std::endl;
+    std::cout << "full_decoder output: \n" << pattern.index({Slice(0, 8)}) << std::endl;
 }
 
 void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)

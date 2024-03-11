@@ -11,8 +11,10 @@ dpf_add_plugin(
   FILES_UI
       WAIVEMidiUI.cpp
       ../../common/src/HBox.cpp
+      ../../common/src/VBox.cpp
       ../../common/src/Slider.cpp
       ../../common/src/VSlider.cpp
+      ../../common/src/SimpleButton.cpp
 )
 
 target_include_directories(

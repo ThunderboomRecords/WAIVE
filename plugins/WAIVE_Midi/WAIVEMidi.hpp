@@ -72,6 +72,8 @@ private:
     float fThreshold;
 
     torch::jit::script::Module score_decoder_model, groove_decoder_model, full_model;
+
+    at::Tensor score, groove, pattern;
 };
 
 
