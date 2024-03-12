@@ -1,6 +1,9 @@
 /*
-  generated with bin2header.py 
+ Generated from 99_Model_Exporter.ipynb 
+
+ MODEL_VERSION=0.1 
 */
+
 const unsigned int score_encoder_len = 155826;
 const unsigned char score_encoder[] = {
     0x50, 0x4b, 0x03, 0x04, 0x00, 0x00, 0x08, 0x08, 0x00, 0x00, 0x00, 0x00,

@@ -10,6 +10,7 @@
 #include "score_decoder.h"
 #include "groove_decoder.h"
 #include "full_groove_model.h"
+#include "latent_distributions.h"
 
 START_NAMESPACE_DISTRHO
 
@@ -68,14 +69,22 @@ protected:
     void run(const float **, float **, uint32_t numFrames, const MidiEvent *midiEvents, uint32_t midiEventCount) override;
     void sampleRateChanged(double newSampleRate) override;
 
+    void generateGroove();
+    void generateScore();
+    void generateFullPattern();
+
 private:
     float fThreshold;
 
     torch::jit::script::Module score_decoder_model, groove_decoder_model, full_model;
 
-    at::Tensor score, groove, pattern;
+    torch::Tensor pattern;
+    torch::Tensor score_z, groove_z;
+
+    torch::Tensor score_m, score_s, groove_m, groove_s; 
 
     float fGroove[48][3];
+    float fScore[16][9];
 
     friend class WAIVEMidiUI;
 };
