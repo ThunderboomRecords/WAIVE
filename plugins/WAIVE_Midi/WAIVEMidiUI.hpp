@@ -7,6 +7,7 @@
 
 #include "HBox.hpp"
 #include "VSlider.hpp"
+#include "GrooveGraph.hpp"
 #include "WAIVEMidi.hpp"
 
 
@@ -36,6 +37,7 @@ private:
     WAIVEMidi *plugin;
     VSlider *fThreshold;
     HBox *hbox_controls;
+    GrooveGraph *groove_graph;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVEMidiUI);
 };

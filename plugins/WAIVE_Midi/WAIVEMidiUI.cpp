@@ -19,11 +19,16 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     fThreshold->background_color = Color(255, 255, 255);
     fThreshold->marker_color = Color(0, 0, 0);
 
+    groove_graph = new GrooveGraph(hbox_controls);
+    groove_graph->setSize(Size<uint>(250, 50));
+    groove_graph->fGroove = &plugin->fGroove;
+
     hbox_controls->setAbsolutePos(10, 10);
     hbox_controls->setWidth(UI_W - 10);
     hbox_controls->padding = 10;
     hbox_controls->justify_content = HBox::Justify_Content::left;
     hbox_controls->addWidget(fThreshold);
+    hbox_controls->addWidget(groove_graph);
     hbox_controls->positionWidgets();
 
     setGeometryConstraints(UI_W, UI_H, true, true);

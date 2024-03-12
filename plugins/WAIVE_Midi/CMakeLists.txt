@@ -14,6 +14,7 @@ dpf_add_plugin(
       ../../common/src/VBox.cpp
       ../../common/src/Slider.cpp
       ../../common/src/VSlider.cpp
+      ../../common/src/GrooveGraph.cpp
       ../../common/src/SimpleButton.cpp
 )
 

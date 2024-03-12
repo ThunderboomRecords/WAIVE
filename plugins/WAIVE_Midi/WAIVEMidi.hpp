@@ -74,6 +74,10 @@ private:
     torch::jit::script::Module score_decoder_model, groove_decoder_model, full_model;
 
     at::Tensor score, groove, pattern;
+
+    float fGroove[48][3];
+
+    friend class WAIVEMidiUI;
 };
 
 
