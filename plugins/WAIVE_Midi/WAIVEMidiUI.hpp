@@ -6,8 +6,11 @@
 #include "Window.hpp"
 
 #include "HBox.hpp"
+#include "VBox.hpp"
 #include "VSlider.hpp"
+#include "ScoreGrid.hpp"
 #include "GrooveGraph.hpp"
+
 #include "WAIVEMidi.hpp"
 
 
@@ -15,7 +18,7 @@ START_NAMESPACE_DISTRHO
 
 
 const unsigned int UI_W = 800;
-const unsigned int UI_H = 280;
+const unsigned int UI_H = 380;
 
 
 class WAIVEMidiUI : public UI,
@@ -37,6 +40,8 @@ private:
     WAIVEMidi *plugin;
     VSlider *fThreshold;
     HBox *hbox_controls;
+    VBox *vbox_container;
+    ScoreGrid *score_grid;
     GrooveGraph *groove_graph;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVEMidiUI);

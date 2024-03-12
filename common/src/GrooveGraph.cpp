@@ -19,8 +19,6 @@ void GrooveGraph::onNanoDisplay()
 
     const float gridWidth = width/16.0f;
 
-    printf("GrooveGraph::onNanoDisplay()\n");
-
     beginPath();
     fillColor(Color(40, 40, 40));
     rect(0, 0, width, height);
@@ -47,8 +45,6 @@ void GrooveGraph::onNanoDisplay()
             if((*fGroove)[idx][0] < 0.3f) {
                 break;
             }
-
-            // printf("%d %.2f\n", idx, (*fGroove)[idx][0]);
 
             float velocity = (*fGroove)[idx][1];
             float offset = (*fGroove)[idx][2];
