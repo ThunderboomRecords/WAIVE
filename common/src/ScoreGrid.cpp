@@ -10,7 +10,16 @@ ScoreGrid::ScoreGrid(Widget *parent) noexcept
 }
 
 bool ScoreGrid::onMouse(const MouseEvent &ev){ return false; }
-bool ScoreGrid::onMotion(const MotionEvent &ev){ return false; }
+bool ScoreGrid::onMotion(const MotionEvent &ev){ 
+    Window &window = getWindow();
+    if(contains(ev.pos)){
+        window.setCursor(kMouseCursorHand);
+        return true;
+    } else {
+        window.setCursor(kMouseCursorArrow);
+    }
+    return false; 
+}
 
 void ScoreGrid::onNanoDisplay()
 {

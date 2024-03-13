@@ -67,6 +67,14 @@ bool VSlider::onMotion(const MotionEvent &ev)
     
     if(!dragging_) return false;
 
+    Window &window = getWindow();
+    if(contains(ev.pos)){
+        window.setCursor(kMouseCursorHand);
+    } else {
+        window.setCursor(kMouseCursorArrow);
+        return false; 
+    }
+
     const float height = getHeight();
 
     float y_ = 1.0 - std::clamp(ev.pos.getY() / (double)height, 0.0, 1.0);
@@ -76,7 +84,7 @@ bool VSlider::onMotion(const MotionEvent &ev)
 
     repaint();
 
-    return false;
+    return true;
 }
 
 bool VSlider::onScroll(const ScrollEvent &ev)
