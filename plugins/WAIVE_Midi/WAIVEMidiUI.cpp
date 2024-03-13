@@ -32,10 +32,9 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     vbox_container->setAbsolutePos(40, 50);
     vbox_container->setSize(Size<uint>(350, 320));
     vbox_container->padding = 10;
-    vbox_container->justify_content = VBox::Justify_Content::center;
+    vbox_container->justify_content = VBox::Justify_Content::space_between;
     vbox_container->addWidget(score_grid);
     vbox_container->addWidget(groove_graph);
-    vbox_container->positionWidgets();
 
     drum_pattern = new DrumPattern(hbox_controls);
     drum_pattern->setSize(Size<uint>(350, 320));
@@ -50,6 +49,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     hbox_controls->addWidget(drum_pattern);
     hbox_controls->positionWidgets();
 
+    vbox_container->positionWidgets();
     setGeometryConstraints(UI_W, UI_H, true, true);
 }
 

@@ -6,7 +6,7 @@ START_NAMESPACE_DISTRHO
 VBox::VBox(Widget *widget) noexcept
     : NanoSubWidget(widget),
       align_items(Align_Items::middle),
-      justify_content(Justify_Content::space_evenly),
+      justify_content(Justify_Content::space_between),
       padding(0)
 {
     setHeight(widget->getHeight());
@@ -70,7 +70,9 @@ void VBox::positionWidgets()
     const uint box_x = getAbsoluteX();
     const uint box_y = getAbsoluteY();
 
-    printf("%d %d %d %d\n", width, height, box_x, box_y);
+    printf("VBox::positionWidgets()\n  width = %d height = %d  box_x = %d box_y = %d\n", width, height, box_x, box_y);
+
+    if(items_.size() == 0) return;
 
     switch (justify_content)
     {
@@ -107,7 +109,7 @@ void VBox::positionWidgets()
             const uint wh = it->widget->getHeight();
             startY += wh;
             startY += padding;
-            it->width = wh;
+            it->height = wh;
         }
 
         break;
@@ -160,6 +162,39 @@ void VBox::positionWidgets()
             it->height = item_height;
             step += item_height;
         }
+    }
+    case Justify_Content::space_between:
+    {
+        uint number_of_items = items_.size();
+        uint combined_widget_height = 0;
+        for (auto it = items_.begin(); it != items_.end(); it++)
+        {
+            combined_widget_height += it->widget->getHeight();
+        };
+
+        int space_left = height - combined_widget_height;
+        int space_between = 0;
+        if(number_of_items <= 1) 
+        {
+            space_between = space_left;
+        }
+        else 
+        {
+            space_between = space_left / (number_of_items - 1);
+        }
+        if(space_between < 0) space_between = 0;
+
+        int startY = box_y;
+        for (auto it = items_.begin(); it != items_.end(); it++)
+        {
+            it->widget->setAbsoluteY(startY);
+            it->widget->setAbsoluteX(box_x);
+            it->y = startY;
+            const uint wh = it->widget->getHeight();
+            startY += wh + space_between;
+            it->height = wh;
+        }
+        break;
     }
     default:
         break;

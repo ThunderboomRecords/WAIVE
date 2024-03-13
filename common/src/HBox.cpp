@@ -6,7 +6,7 @@ START_NAMESPACE_DISTRHO
 HBox::HBox(Widget *widget) noexcept
     : NanoSubWidget(widget),
       align_items(Align_Items::middle),
-      justify_content(Justify_Content::space_evenly),
+      justify_content(Justify_Content::space_between),
       padding(0)
 {
     setWidth(widget->getWidth());
@@ -70,7 +70,9 @@ void HBox::positionWidgets()
     const uint box_x = getAbsoluteX();
     const uint box_y = getAbsoluteY();
 
-    printf("%d %d %d %d\n", width, height, box_x, box_y);
+    printf("HBox::positionWidgets()\n  width = %d height = %d  box_x = %d box_y = %d\n", width, height, box_x, box_y);
+
+    if(items_.size() == 0) return;
 
     switch (justify_content)
     {
@@ -160,6 +162,39 @@ void HBox::positionWidgets()
             it->width = item_width;
             step += item_width;
         }
+    }
+    case Justify_Content::space_between:
+    {
+        uint number_of_items = items_.size();
+        uint combined_widget_width = 0;
+        for (auto it = items_.begin(); it != items_.end(); it++)
+        {
+            combined_widget_width += it->widget->getWidth();
+        };
+
+        int space_left = width - combined_widget_width;
+        int space_between = 0;
+        if(number_of_items <= 1) 
+        {
+            space_between = space_left;
+        }
+        else 
+        {
+            space_between = space_left / (number_of_items - 1);
+        }
+        if(space_between < 0) space_between = 0;
+
+        int startX = box_x;
+        for (auto it = items_.begin(); it != items_.end(); it++)
+        {
+            it->widget->setAbsoluteX(startX);
+            it->widget->setAbsoluteY(box_y);
+            it->x = startX;
+            const uint ww = it->widget->getWidth();
+            startX += ww + space_between;
+            it->width = ww;
+        }
+        break;
     }
     default:
         break;

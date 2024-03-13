@@ -26,7 +26,8 @@ public:
         left,
         right,
         center,
-        space_evenly
+        space_evenly,
+        space_between
     };
 
     Align_Items align_items;
