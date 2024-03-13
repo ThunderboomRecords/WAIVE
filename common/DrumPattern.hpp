@@ -1,5 +1,5 @@
-#ifndef GROOVEGRAPH_HPP_INCLUDED
-#define GROOVEGRAPH_HPP_INCLUDED
+#ifndef DRUMPATTERN_HPP_INCLUDED
+#define DRUMPATTERN_HPP_INCLUDED
 
 #include "Window.hpp"
 #include "Widget.hpp"
@@ -9,10 +9,10 @@
 START_NAMESPACE_DISTRHO
 
 
-class GrooveGraph : public NanoSubWidget
+class DrumPattern : public NanoSubWidget
 {
 public:
-    explicit GrooveGraph(Widget *widget) noexcept;
+    explicit DrumPattern(Widget *widget) noexcept;
 
 protected:
     void onNanoDisplay() override;
@@ -20,13 +20,16 @@ protected:
     bool onMotion(const MotionEvent &) override;
 
 private:
+    const int max_events[9] = {3, 7, 3, 3, 3, 4, 3, 2, 2};
+    int s_map[9];
 
-    float (*fGroove)[48][3];
+    float (*fDrumPattern)[16][30][3];
     
-    DISTRHO_LEAK_DETECTOR(GrooveGraph);
+    DISTRHO_LEAK_DETECTOR(DrumPattern);
 
     friend class WAIVEMidiUI;
 };
+
 
 
 END_NAMESPACE_DISTRHO

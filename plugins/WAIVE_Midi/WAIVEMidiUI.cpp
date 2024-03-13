@@ -19,7 +19,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     fThreshold->background_color = Color(255, 255, 255);
     fThreshold->marker_color = Color(0, 0, 0);
 
-    vbox_container = new VBox(this);
+    vbox_container = new VBox(hbox_controls);
 
     score_grid = new ScoreGrid(vbox_container);
     score_grid->setSize(Size<uint>(350, 250));
@@ -32,17 +32,22 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     vbox_container->setAbsolutePos(40, 50);
     vbox_container->setSize(Size<uint>(350, 320));
     vbox_container->padding = 10;
-    vbox_container->justify_content = VBox::Justify_Content::top;
+    vbox_container->justify_content = VBox::Justify_Content::center;
     vbox_container->addWidget(score_grid);
     vbox_container->addWidget(groove_graph);
     vbox_container->positionWidgets();
 
+    drum_pattern = new DrumPattern(hbox_controls);
+    drum_pattern->setSize(Size<uint>(350, 320));
+    drum_pattern->fDrumPattern = &plugin->fDrumPattern;
 
     hbox_controls->setAbsolutePos(10, 10);
     hbox_controls->setWidth(UI_W - 10);
     hbox_controls->padding = 10;
     hbox_controls->justify_content = HBox::Justify_Content::left;
     hbox_controls->addWidget(fThreshold);
+    hbox_controls->addWidget(vbox_container);
+    hbox_controls->addWidget(drum_pattern);
     hbox_controls->positionWidgets();
 
     setGeometryConstraints(UI_W, UI_H, true, true);

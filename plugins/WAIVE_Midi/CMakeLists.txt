@@ -16,6 +16,7 @@ dpf_add_plugin(
       ../../common/src/VSlider.cpp
       ../../common/src/ScoreGrid.cpp
       ../../common/src/GrooveGraph.cpp
+      ../../common/src/DrumPattern.cpp
       ../../common/src/SimpleButton.cpp
 )
 

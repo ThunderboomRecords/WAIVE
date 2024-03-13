@@ -10,6 +10,7 @@
 #include "VSlider.hpp"
 #include "ScoreGrid.hpp"
 #include "GrooveGraph.hpp"
+#include "DrumPattern.hpp"
 
 #include "WAIVEMidi.hpp"
 
@@ -43,6 +44,7 @@ private:
     VBox *vbox_container;
     ScoreGrid *score_grid;
     GrooveGraph *groove_graph;
+    DrumPattern *drum_pattern;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVEMidiUI);
 };

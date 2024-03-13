@@ -239,7 +239,11 @@ void HBox::positionWidgets()
 
 void HBox::onNanoDisplay()
 {
-
+    beginPath();
+    strokeColor(255, 0, 0);
+    rect(0, 0, getWidth(), getHeight());
+    stroke();
+    closePath();
 }
 
 END_NAMESPACE_DISTRHO

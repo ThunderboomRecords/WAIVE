@@ -78,13 +78,15 @@ private:
 
     torch::jit::script::Module score_decoder_model, groove_decoder_model, full_model;
 
-    torch::Tensor pattern;
+    // Latent projections:
     torch::Tensor score_z, groove_z;
 
+    // Latent distributions:
     torch::Tensor score_m, score_s, groove_m, groove_s; 
 
     float fGroove[48][3];
     float fScore[16][9];
+    float fDrumPattern[16][30][3];
 
     friend class WAIVEMidiUI;
 };
