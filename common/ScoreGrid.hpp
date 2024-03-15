@@ -1,7 +1,7 @@
 #ifndef SCOREGRID_HPP_INCLUDED
 #define SCOREGRID_HPP_INCLUDED
 
-
+#include "DistrhoUI.hpp"
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
@@ -23,6 +23,8 @@ protected:
     bool onMotion(const MotionEvent &) override;
 
 private:
+
+    UI *ui;
 
     float (*fScore)[16][9];
     int selected_16th, selected_ins;

@@ -14,6 +14,19 @@ ScoreGrid::ScoreGrid(Widget *parent) noexcept
 bool ScoreGrid::onMouse(const MouseEvent &ev){
     if(!contains(ev.pos) || !ev.press) return false;
 
+    if(selected_16th != -1 && selected_ins != -1){
+
+        if((*fScore)[selected_16th][selected_ins] < 0.5){
+            (*fScore)[selected_16th][selected_ins] = 1.0f;
+        } else {
+            (*fScore)[selected_16th][selected_ins] = 0.0f;
+        }
+
+        repaint();
+
+        ui->setState("score", "new");        
+    }
+
     return true;
 }
 

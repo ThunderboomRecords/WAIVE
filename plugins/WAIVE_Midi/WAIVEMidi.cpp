@@ -16,6 +16,11 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
         model_stream.write((char *) score_decoder, score_decoder_len);
         score_decoder_model = torch::jit::load(model_stream);
         score_decoder_model.eval();
+        
+        model_stream.str("");
+        model_stream.write((char *) score_encoder, score_encoder_len);
+        score_encoder_model = torch::jit::load(model_stream);
+        score_encoder_model.eval();
 
         model_stream.str("");
         model_stream.write((char *) groove_decoder, groove_decoder_len);
@@ -93,7 +98,13 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
     }
 }
 
-void WAIVEMidi::setState(const char *key, const char *value){}
+void WAIVEMidi::setState(const char *key, const char *value){
+    printf("WAIVEMidi::setState\n");
+    printf("  %s: %s\n", key, value);
+    if(std::strcmp(key, "score") == 0){
+        encodeScore();
+    }
+}
 
 String WAIVEMidi::getState(const char *key) const
 {
@@ -123,6 +134,23 @@ void WAIVEMidi::run(
 
 void WAIVEMidi::sampleRateChanged(double newSampleRate) {}
 
+void WAIVEMidi::encodeScore()
+{
+    std::vector<torch::jit::IValue> input;
+    torch::Tensor score_t = torch::zeros({16, 9});
+
+    for(int i=0; i<16; i++){
+        for(int j=0; j<9; j++){
+            score_t.index_put_({i, j}, fScore[i][j]);
+        }
+    }
+    input.push_back(score_t.reshape({144}));
+
+    score_z = score_encoder_model.forward(input).toTensor();
+
+    generateFullPattern();
+}
+
 void WAIVEMidi::generateScore()
 {
     std::vector<torch::jit::IValue> input;
@@ -132,7 +160,6 @@ void WAIVEMidi::generateScore()
 
     input.push_back(s_z);
     torch::Tensor score = score_decoder_model.forward(input).toTensor().reshape({16, 9});
-    // std::cout << "score_decoder output: \n" << score.index({Slice(0, 8)}) << std::endl;
 
     auto score_a = score.accessor<float, 2>();
     for(int i=0; i<16; i++){
@@ -151,7 +178,6 @@ void WAIVEMidi::generateGroove()
 
     input.push_back(g_z);
     torch::Tensor groove = groove_decoder_model.forward(input).toTensor().reshape({48, 3});
-    // std::cout << "groove_decoder output: \n" << groove.index({Slice(0, 8)}) << std::endl;
 
     auto groove_a = groove.accessor<float, 2>();
     for(int i=0; i<48; i++){

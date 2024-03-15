@@ -7,6 +7,7 @@
 #include "WAIVEMidiParams.h"
 
 #include <torch/script.h>
+#include "score_encoder.h"
 #include "score_decoder.h"
 #include "groove_decoder.h"
 #include "full_groove_model.h"
@@ -70,13 +71,18 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
 
     void generateGroove();
+    void encodeScore();
     void generateScore();
     void generateFullPattern();
 
 private:
     float fThreshold;
 
-    torch::jit::script::Module score_decoder_model, groove_decoder_model, full_model;
+    torch::jit::script::Module 
+        score_decoder_model, 
+        score_encoder_model, 
+        groove_decoder_model, 
+        full_model;
 
     // Latent projections:
     torch::Tensor score_z, groove_z;

@@ -24,6 +24,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     score_grid = new ScoreGrid(this);
     score_grid->setSize(Size<uint>(350, 250));
     score_grid->fScore = &plugin->fScore;
+    score_grid->ui = this;
 
     groove_graph = new GrooveGraph(this);
     groove_graph->setSize(Size<uint>(350, 50));
