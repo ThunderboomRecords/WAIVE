@@ -25,6 +25,7 @@ protected:
 private:
 
     float (*fScore)[16][9];
+    int selected_16th, selected_ins;
     
     DISTRHO_LEAK_DETECTOR(ScoreGrid);
 

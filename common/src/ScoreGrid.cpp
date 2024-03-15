@@ -4,19 +4,51 @@ START_NAMESPACE_DISTRHO
 
 
 ScoreGrid::ScoreGrid(Widget *parent) noexcept
-    : NanoSubWidget(parent)
+    : NanoSubWidget(parent),
+      selected_16th(-1),
+      selected_ins(-1)
 {
 
 }
 
-bool ScoreGrid::onMouse(const MouseEvent &ev){ return false; }
+bool ScoreGrid::onMouse(const MouseEvent &ev){
+    if(!contains(ev.pos) || !ev.press) return false;
+
+    return true;
+}
+
 bool ScoreGrid::onMotion(const MotionEvent &ev){ 
     Window &window = getWindow();
+
     if(contains(ev.pos)){
         window.setCursor(kMouseCursorHand);
+
+        const float width = getWidth();
+        const float height = getHeight();
+
+        int i = (int) std::floor(16.0f * ev.pos.getX() / width);
+        int j = 8 - (int) std::floor(9.0f * ev.pos.getY() / height);
+
+        i = std::min(std::max(i, 0), 15);
+        j = std::min(std::max(j, 0), 8);
+
+        if(selected_16th != i || selected_ins != j){
+            selected_16th = i;
+            selected_ins = j;
+
+            repaint();
+        }
+
         return true;
     } else {
         window.setCursor(kMouseCursorArrow);
+
+        if(selected_16th != -1 || selected_ins != -1){
+            selected_16th = -1;
+            selected_ins = -1;
+
+            repaint();
+        }
     }
     return false; 
 }
@@ -86,6 +118,18 @@ void ScoreGrid::onNanoDisplay()
             stroke();
             closePath();
         }
+    }
+
+    if(selected_16th >= 0 && selected_ins >= 0){
+        float x = selected_16th*gridWidth;
+        float y = (8 - selected_ins)*gridHeight;
+
+        beginPath();
+        strokeColor(255, 255, 255);
+        strokeWidth(3);
+        rect(x, y, gridWidth, gridHeight);
+        stroke();
+        closePath();
     }
 
 }

@@ -21,22 +21,21 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
 
     vbox_container = new VBox(hbox_controls);
 
-    score_grid = new ScoreGrid(vbox_container);
+    score_grid = new ScoreGrid(this);
     score_grid->setSize(Size<uint>(350, 250));
     score_grid->fScore = &plugin->fScore;
 
-    groove_graph = new GrooveGraph(vbox_container);
+    groove_graph = new GrooveGraph(this);
     groove_graph->setSize(Size<uint>(350, 50));
     groove_graph->fGroove = &plugin->fGroove;
 
-    vbox_container->setAbsolutePos(40, 50);
     vbox_container->setSize(Size<uint>(350, 320));
     vbox_container->padding = 10;
     vbox_container->justify_content = VBox::Justify_Content::space_between;
     vbox_container->addWidget(score_grid);
     vbox_container->addWidget(groove_graph);
 
-    drum_pattern = new DrumPattern(hbox_controls);
+    drum_pattern = new DrumPattern(this);
     drum_pattern->setSize(Size<uint>(350, 320));
     drum_pattern->fDrumPattern = &plugin->fDrumPattern;
 
