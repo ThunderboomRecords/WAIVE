@@ -6,10 +6,13 @@ START_NAMESPACE_DISTRHO
 using namespace torch::indexing;
 
 WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
-                         fThreshold(0.7),
+                         fThreshold(0.7f),
                          fSixteenth(0),
-                         ticks_per_beat(1920)
+                         ticks_per_beat(1920),
+                         loopTick(0.0)
 {
+
+    sampleRate = getSampleRate();
 
     s_map[0] = 0;
     for(int i=1; i<9; i++)
@@ -55,11 +58,14 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
     groove_m = torch::from_blob(groove_means, {32});
     groove_s = torch::from_blob(groove_stds, {32});
 
+    notesPointer = notes.begin();
+    std::cout << "triggered empty: " << triggered.empty() << std::endl;
+    
     // generate 
     generateScore();
     generateGroove();
     generateFullPattern();
-    
+
 }
 
 void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
@@ -106,7 +112,8 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
     }
 }
 
-void WAIVEMidi::setState(const char *key, const char *value){
+void WAIVEMidi::setState(const char *key, const char *value)
+{
     printf("WAIVEMidi::setState\n");
     printf("  %s: %s\n", key, value);
     if(std::strcmp(key, "score") == 0){
@@ -146,11 +153,20 @@ void WAIVEMidi::run(
     }
 
     static bool wasPlaying = false;
-    static int loopTick = 0;
+
+    if(wasPlaying && !timePos.playing)
+    {
+        notesPointer = notes.begin();
+        loopTick = 0.0;
+        // send notes off for all notes left on
+    }
 
     wasPlaying = timePos.playing;
 
-    if(!timePos.playing) return;
+    if(!timePos.playing) 
+    {
+        return;
+    }
 
     if(!timePos.bbt.valid)
     {
@@ -161,21 +177,61 @@ void WAIVEMidi::run(
     float tick = timePos.bbt.tick;
     float beat = timePos.bbt.beat - 1.0f;
     float tpb = timePos.bbt.ticksPerBeat;
+    double ticksPerLoop = tpb * 4.0;
+    double samplesPerBeat = (60.0f * sampleRate) / timePos.bbt.beatsPerMinute;
+    double samplesPerTick = samplesPerBeat / tpb;
+    double ticksPerSample =  tpb / samplesPerBeat;
 
     if(ticks_per_beat != tpb) {
         ticks_per_beat = tpb;
         computeNotes();
     }
 
+    MidiEvent me;
+    me.size = 3;
+
     for(uint32_t i=0; i < numFrames; i++)
     {
-        loopTick++;
-        if(loopTick >= tpb*4) loopTick = 0;
+        me.frame = i;
 
-        // find any midi events at t = loopTick
-        // and send
+        while(notesPointer != notes.end() && (double)(*notesPointer).tick <= loopTick)
+        {
+            // printf("loopTick %.2f: tick=%d noteOn=%d %d\n", loopTick, (*notesPointer).tick, (*notesPointer).noteOn, (*notesPointer).midiNote);
+            me.data[1] = (*notesPointer).midiNote;
 
-        // frames =/= ticks! need to convert... 
+            if((*notesPointer).noteOn)
+            {
+                if(triggered.count((*notesPointer).midiNote))
+                {
+                    // note still on, send noteOff!
+                    me.data[0] = 0x80;
+                    me.data[2] = 0;
+                    writeMidiEvent(me);
+                }
+
+                me.data[0] = 0x90;
+                me.data[2] = (*notesPointer).velocity;
+                triggered.insert((*notesPointer).midiNote);
+            } else {
+                me.data[0] = 0x80;
+                me.data[2] = 0;
+                triggered.erase((*notesPointer).midiNote);
+            }
+
+            writeMidiEvent(me);
+
+
+            notesPointer++;
+        }
+
+        loopTick += ticksPerSample;
+        if(loopTick >= ticksPerLoop)
+        {
+            loopTick = 0.0;
+            notesPointer = notes.begin();
+        }
+
+        std::cout << std::flush;
     }
 }
 
@@ -289,6 +345,12 @@ void WAIVEMidi::computeNotes()
 {
     int tp16th = ticks_per_beat / 4;
 
+    int nextTick = -1;
+    if(notesPointer != notes.end())
+    {
+        nextTick = (*notesPointer).tick;
+    }
+
     std::cout << "WAIVEMidi::computeNotes()\n  tp16th: " << tp16th << std::endl;
 
     notes.clear();
@@ -371,11 +433,27 @@ void WAIVEMidi::computeNotes()
     }
 
     std::sort(notes.begin(), notes.end(), compareNotes);
+    notesPointer = notes.begin();
+
+    for(; notesPointer != notes.end(); ++notesPointer)
+    {
+        // std::cout << (*notesPointer).midiNote << " ";
+        printf("%d ", (*notesPointer).midiNote);
+    }
+    std::cout << std::endl;
+
+    // advance pointer to reach time when computeNotes was called
+    notesPointer = notes.begin();
+    while(notesPointer != notes.end() && (*notesPointer).tick <= nextTick)
+    {
+        notesPointer++;
+    }
 
 }
 
 void WAIVEMidi::sampleRateChanged(double newSampleRate)
 {
+    std::cout << "sampleRateChanged: " << newSampleRate << std::endl;
     sampleRate = newSampleRate;
 }
 

@@ -99,14 +99,15 @@ private:
     float fScore[16][9];
     float fDrumPattern[16][30][3];
 
-    int triggered[9] = {0};
-
-    // const int midi_map[9] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
     const int max_events[9] = {3, 7, 3, 3, 3, 4, 3, 2, 2};
     int s_map[9];
     int ticks_per_beat;
 
     std::vector<Note> notes;
+    std::vector<Note>::iterator notesPointer;
+    std::set<uint8_t> triggered;
+
+    double loopTick;
 
     friend class WAIVEMidiUI;
 };
