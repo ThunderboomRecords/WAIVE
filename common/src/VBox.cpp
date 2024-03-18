@@ -272,13 +272,6 @@ void VBox::positionWidgets()
     }
 }
 
-void VBox::onNanoDisplay()
-{
-    beginPath();
-    strokeColor(255, 0, 0);
-    rect(0, 0, getWidth(), getHeight());
-    stroke();
-    closePath();
-}
+void VBox::onNanoDisplay(){ }
 
 END_NAMESPACE_DISTRHO

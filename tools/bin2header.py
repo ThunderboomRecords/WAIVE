@@ -1,6 +1,7 @@
 # adapted from https://github.com/user-none/Bin-Headers (MIT License)
 
 import os
+import re
 import sys
 import argparse
 

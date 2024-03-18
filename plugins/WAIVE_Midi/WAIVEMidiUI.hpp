@@ -12,6 +12,8 @@
 #include "GrooveGraph.hpp"
 #include "DrumPattern.hpp"
 
+#include "fonts.h"
+
 #include "WAIVEMidi.hpp"
 
 
@@ -47,6 +49,8 @@ private:
     ScoreGrid *score_grid;
     GrooveGraph *groove_graph;
     DrumPattern *drum_pattern;
+
+    FontId logo_font;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVEMidiUI);
 };

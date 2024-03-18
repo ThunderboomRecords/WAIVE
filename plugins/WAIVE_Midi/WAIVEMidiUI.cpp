@@ -7,6 +7,8 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
 {
     plugin = static_cast<WAIVEMidi *>(getPluginInstancePointer());
 
+    logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
+
     hbox_controls = new HBox(this);
 
     fThreshold = new VSlider(hbox_controls);
@@ -41,7 +43,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     drum_pattern->setSize(Size<uint>(350, 250));
     drum_pattern->fDrumPattern = &plugin->fDrumPattern;
 
-    hbox_controls->setAbsolutePos(10, 10);
+    hbox_controls->setAbsolutePos(10, 40);
     hbox_controls->setWidth(UI_W - 10);
     hbox_controls->padding = 10;
     hbox_controls->justify_content = HBox::Justify_Content::left;
@@ -87,6 +89,14 @@ void WAIVEMidiUI::onNanoDisplay()
     fillColor(Color(240, 240, 240));
     rect(0.0f, 0.0f, width, height);
     fill();
+    closePath();
+
+    beginPath();
+    fillColor(Color(40, 40, 40));
+    fontSize(32);
+    textAlign(Align::ALIGN_RIGHT | Align::ALIGN_TOP);
+    fontFaceId(logo_font);
+    text(width-10, 7, "waive", nullptr);
     closePath();
 
 }

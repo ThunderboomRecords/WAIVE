@@ -180,7 +180,7 @@ void WAIVEMidi::run(
 
     wasPlaying = timePos.playing;
 
-    if(!timePos.bbt.valid) 
+    if(!timePos.bbt.valid || !timePos.playing) 
     {
         return;
     }

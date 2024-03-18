@@ -10,6 +10,7 @@ dpf_add_plugin(
       WAIVEMidi.cpp
   FILES_UI
       WAIVEMidiUI.cpp
+      ../../common/fonts.h
       ../../common/src/HBox.cpp
       ../../common/src/VBox.cpp
       ../../common/src/Slider.cpp
