@@ -20,7 +20,7 @@
 START_NAMESPACE_DISTRHO
 
 
-const unsigned int UI_W = 800;
+const unsigned int UI_W = 840;
 const unsigned int UI_H = 380;
 
 

@@ -5,7 +5,6 @@
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
-#include <iostream>
 
 #include "WAIVEMidi.hpp"
 
@@ -23,8 +22,8 @@ protected:
     bool onMotion(const MotionEvent &) override;
 
 private:
-
     UI *ui;
+    FontId label_font;
 
     float (*fScore)[16][9];
     int selected_16th, selected_ins;

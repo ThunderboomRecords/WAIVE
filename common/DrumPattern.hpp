@@ -4,7 +4,6 @@
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
-#include <iostream>
 
 START_NAMESPACE_DISTRHO
 

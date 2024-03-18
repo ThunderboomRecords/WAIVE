@@ -43,7 +43,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     drum_pattern->setSize(Size<uint>(350, 250));
     drum_pattern->fDrumPattern = &plugin->fDrumPattern;
 
-    hbox_controls->setAbsolutePos(10, 40);
+    hbox_controls->setAbsolutePos(100, 40);
     hbox_controls->setWidth(UI_W - 10);
     hbox_controls->padding = 10;
     hbox_controls->justify_content = HBox::Justify_Content::left;
@@ -96,7 +96,33 @@ void WAIVEMidiUI::onNanoDisplay()
     fontSize(32);
     textAlign(Align::ALIGN_RIGHT | Align::ALIGN_TOP);
     fontFaceId(logo_font);
-    text(width-10, 7, "waive", nullptr);
+    text(width-10, 4, "waive", nullptr);
+    closePath();
+
+    beginPath();
+    fillColor(Color(60, 60, 60));
+    fontSize(16);
+    textAlign(Align::ALIGN_LEFT | Align::ALIGN_BOTTOM);
+    fontFaceId(logo_font);
+    text(score_grid->getAbsoluteX(), score_grid->getAbsoluteY(), "score:", nullptr);
+    text(groove_graph->getAbsoluteX(), groove_graph->getAbsoluteY(), "groove:", nullptr);
+    text(drum_pattern->getAbsoluteX(), drum_pattern->getAbsoluteY(), "result:", nullptr);
+    closePath();
+
+    int row_height = score_grid->getHeight() / 9;
+    beginPath();
+    fillColor(Color(60, 60, 60));
+    fontSize(14);
+    textAlign(Align::ALIGN_RIGHT | Align::ALIGN_CENTER);
+    fontFaceId(logo_font);
+    int x, y;
+    x = score_grid->getAbsoluteX() - 2;
+    y = score_grid->getAbsoluteY() + score_grid->getHeight() - row_height/2;
+    for(int i = 0; i < 9; i++)
+    {
+        text(x, y, labels[i], nullptr);
+        y -= row_height; 
+    }
     closePath();
 
 }

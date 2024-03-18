@@ -83,34 +83,25 @@ void ScoreGrid::onNanoDisplay()
     beginPath();
     fillColor(60, 60, 60);
     rect(4*gridWidth, 0, 4*gridWidth, height);
-    fill();
-    closePath();
-
-    beginPath();
-    fillColor(60, 60, 60);
     rect(12*gridWidth, 0, 4*gridWidth, height);
     fill();
     closePath();
 
+    beginPath();
+    strokeColor(80, 80, 80);
     for(int i = 1; i < 16; i++)
     {
-        beginPath();
-        strokeColor(80, 80, 80);
         moveTo(i*gridWidth, 0);
         lineTo(i*gridWidth, height);
-        stroke();
-        closePath();
     }
-
+    
     for(int i = 1; i < 9; i++)
     {
-        beginPath();
-        strokeColor(80, 80, 80);
         moveTo(0, i*gridHeight);
         lineTo(width, i*gridHeight);
-        stroke();
-        closePath();
     }
+    stroke();
+    closePath();
 
     for(int i = 0; i < 16; i++)
     {
@@ -132,6 +123,43 @@ void ScoreGrid::onNanoDisplay()
             closePath();
         }
     }
+
+    // round off corners
+    float r = 8.0f;
+    fillColor(240, 240, 240);
+    strokeColor(255, 0, 0);
+
+    // top left
+    beginPath();
+    moveTo(-1, -1);
+    lineTo(-1, r);
+    arcTo(-1, -1, r, -1, r);
+    closePath();
+    fill();
+
+    // top right
+    beginPath();
+    moveTo(width+1, -1);
+    lineTo(width+1, r);
+    arcTo(width+1, -1, width - r, -1, r);
+    closePath();
+    fill();
+
+    // bottom left
+    beginPath();
+    moveTo(-1, height+1);
+    lineTo(-1, height-r);
+    arcTo(-1, height+1, r, height+1, r);
+    closePath();
+    fill();
+
+    // bottom right
+    beginPath();
+    moveTo(width+1, height+1);
+    lineTo(width+1, height-r);
+    arcTo(width+1, height+1, width-r, height+1, r);
+    closePath();
+    fill();
 
     if(selected_16th >= 0 && selected_ins >= 0){
         float x = selected_16th*gridWidth;

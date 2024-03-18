@@ -89,6 +89,43 @@ void GrooveGraph::onNanoDisplay()
 
     }
 
+    // round off corners
+    float r = 8.0f;
+    fillColor(240, 240, 240);
+    strokeColor(255, 0, 0);
+
+    // top left
+    beginPath();
+    moveTo(-1, -1);
+    lineTo(-1, r);
+    arcTo(-1, -1, r, -1, r);
+    closePath();
+    fill();
+
+    // top right
+    beginPath();
+    moveTo(width+1, -1);
+    lineTo(width+1, r);
+    arcTo(width+1, -1, width - r, -1, r);
+    closePath();
+    fill();
+
+    // bottom left
+    beginPath();
+    moveTo(-1, height+1);
+    lineTo(-1, height-r);
+    arcTo(-1, height+1, r, height+1, r);
+    closePath();
+    fill();
+
+    // bottom right
+    beginPath();
+    moveTo(width+1, height+1);
+    lineTo(width+1, height-r);
+    arcTo(width+1, height+1, width-r, height+1, r);
+    closePath();
+    fill();
+
 }
 
 END_NAMESPACE_DISTRHO
