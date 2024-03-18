@@ -12,6 +12,11 @@ START_NAMESPACE_DISTRHO
 class GrooveGraph : public NanoSubWidget
 {
 public:
+    class Callback {
+        public:
+            virtual ~Callback() {};
+            virtual void grooveClicked(GrooveGraph *graph) = 0;
+    };  
     explicit GrooveGraph(Widget *widget) noexcept;
 
 protected:
@@ -20,7 +25,7 @@ protected:
     bool onMotion(const MotionEvent &) override;
 
 private:
-
+    Callback *callback;
     float (*fGroove)[48][3];
     
     DISTRHO_LEAK_DETECTOR(GrooveGraph);

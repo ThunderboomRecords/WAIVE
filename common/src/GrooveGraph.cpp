@@ -9,8 +9,33 @@ GrooveGraph::GrooveGraph(Widget *parent) noexcept
     
 }
 
-bool GrooveGraph::onMouse(const MouseEvent &ev){ return false; }
-bool GrooveGraph::onMotion(const MotionEvent &ev){ return false; }
+bool GrooveGraph::onMouse(const MouseEvent &ev){ 
+
+    if(!ev.press) { return false; }
+    if(!contains(ev.pos)) { return false; }
+
+    if(callback != nullptr)
+    {
+        callback->grooveClicked(this);
+        return true;
+    }
+
+    return false; 
+}
+bool GrooveGraph::onMotion(const MotionEvent &ev){ 
+
+    Window &window = getWindow();
+
+    if(contains(ev.pos)){
+        window.setCursor(kMouseCursorHand);
+
+        return true;
+    } else {
+        // window.setCursor(kMouseCursorArrow);
+    }
+    
+    return false; 
+}
 
 void GrooveGraph::onNanoDisplay()
 {

@@ -23,7 +23,8 @@ const unsigned int UI_H = 380;
 
 
 class WAIVEMidiUI : public UI,
-                    public Slider::Callback
+                    public Slider::Callback,
+                    public GrooveGraph::Callback
 {
 public:
     WAIVEMidiUI();
@@ -36,6 +37,7 @@ protected:
     void sliderDragStarted(Slider *slider) override;
     void sliderDragFinished(Slider *slider, float value) override;
     void sliderValueChanged(Slider *slider, float value) override;
+    void grooveClicked(GrooveGraph *graph) override;
 
 private:
     WAIVEMidi *plugin;

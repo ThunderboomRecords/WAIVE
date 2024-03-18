@@ -10,14 +10,14 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     hbox_controls = new HBox(this);
 
     fThreshold = new VSlider(hbox_controls);
-    fThreshold->setId(kThreshold);
-    fThreshold->setSize(Size<uint>(20, 160));
-    fThreshold->setCallback(this);
-    fThreshold->gauge_width = 12.0f;
-    fThreshold->max = 1.0f;
-    fThreshold->foreground_color = Color(51, 51, 51);
-    fThreshold->background_color = Color(255, 255, 255);
-    fThreshold->marker_color = Color(0, 0, 0);
+    // fThreshold->setId(kThreshold);
+    // fThreshold->setSize(Size<uint>(20, 160));
+    // fThreshold->setCallback(this);
+    // fThreshold->gauge_width = 12.0f;
+    // fThreshold->max = 1.0f;
+    // fThreshold->foreground_color = Color(51, 51, 51);
+    // fThreshold->background_color = Color(255, 255, 255);
+    // fThreshold->marker_color = Color(0, 0, 0);
 
     vbox_container = new VBox(hbox_controls);
 
@@ -29,6 +29,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     groove_graph = new GrooveGraph(this);
     groove_graph->setSize(Size<uint>(350, 50));
     groove_graph->fGroove = &plugin->fGroove;
+    groove_graph->callback = this;
 
     vbox_container->setSize(Size<uint>(350, 320));
     vbox_container->padding = 10;
@@ -37,14 +38,15 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     vbox_container->addWidget(groove_graph);
 
     drum_pattern = new DrumPattern(this);
-    drum_pattern->setSize(Size<uint>(350, 320));
+    drum_pattern->setSize(Size<uint>(350, 250));
     drum_pattern->fDrumPattern = &plugin->fDrumPattern;
 
     hbox_controls->setAbsolutePos(10, 10);
     hbox_controls->setWidth(UI_W - 10);
     hbox_controls->padding = 10;
     hbox_controls->justify_content = HBox::Justify_Content::left;
-    hbox_controls->addWidget(fThreshold);
+    hbox_controls->align_items = HBox::Align_Items::top;
+    // hbox_controls->addWidget(fThreshold);
     hbox_controls->addWidget(vbox_container);
     hbox_controls->addWidget(drum_pattern);
     hbox_controls->positionWidgets();
@@ -98,6 +100,13 @@ void WAIVEMidiUI::sliderValueChanged(Slider *slider, float value)
     if(slider == fThreshold){
         setParameterValue(kThreshold, value);
     }
+}
+
+void WAIVEMidiUI::grooveClicked(GrooveGraph *graph)
+{
+    plugin->generateGroove();
+    plugin->generateFullPattern();
+    repaint();
 }
 
 END_NAMESPACE_DISTRHO
