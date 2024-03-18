@@ -69,6 +69,7 @@ protected:
     // void activate() override;
     void run(const float **, float **, uint32_t numFrames, const MidiEvent *midiEvents, uint32_t midiEventCount) override;
     void sampleRateChanged(double newSampleRate) override;
+    void allNotesOff(uint32_t frame);
 
     void generateGroove();
     void encodeScore();
@@ -79,7 +80,6 @@ protected:
 
 private:
     float fThreshold;
-    int fSixteenth;
 
     double sampleRate;
 

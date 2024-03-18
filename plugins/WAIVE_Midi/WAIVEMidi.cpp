@@ -7,7 +7,6 @@ using namespace torch::indexing;
 
 WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
                          fThreshold(0.7f),
-                         fSixteenth(0),
                          ticks_per_beat(1920),
                          loopTick(0.0)
 {
@@ -47,7 +46,7 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
     }
     catch (const c10::Error& e) 
     {
-        std::cerr << " error loading the model\n";
+        std::cerr << " error loading models\n";
         return;
     }
 
@@ -65,7 +64,6 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
     generateScore();
     generateGroove();
     generateFullPattern();
-
 }
 
 void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
@@ -136,6 +134,25 @@ void WAIVEMidi::initState(unsigned int index, String &stateKey, String &defaultS
     }
 }
 
+void WAIVEMidi::allNotesOff(uint32_t frame)
+{
+    std::set<uint8_t>::iterator it;
+    
+    MidiEvent me;
+    me.size = 3;    
+    me.frame = frame;
+    me.data[0] = 0x80;
+    me.data[2] = 0;
+
+    for(it = triggered.begin(); it != triggered.end(); it++)
+    {
+        me.data[1] = *it;
+        writeMidiEvent(me);
+    }
+
+    triggered.clear();
+}
+
 void WAIVEMidi::run(
     const float **,              // incoming audio
     float **,                    // outgoing audio
@@ -158,19 +175,13 @@ void WAIVEMidi::run(
     {
         notesPointer = notes.begin();
         loopTick = 0.0;
-        // send notes off for all notes left on
+        allNotesOff(0);
     }
 
     wasPlaying = timePos.playing;
 
-    if(!timePos.playing) 
+    if(!timePos.bbt.valid) 
     {
-        return;
-    }
-
-    if(!timePos.bbt.valid)
-    {
-        fSixteenth = 0;
         return;
     }
 
@@ -193,17 +204,15 @@ void WAIVEMidi::run(
     for(uint32_t i=0; i < numFrames; i++)
     {
         me.frame = i;
-
         while(notesPointer != notes.end() && (double)(*notesPointer).tick <= loopTick)
         {
-            // printf("loopTick %.2f: tick=%d noteOn=%d %d\n", loopTick, (*notesPointer).tick, (*notesPointer).noteOn, (*notesPointer).midiNote);
             me.data[1] = (*notesPointer).midiNote;
 
             if((*notesPointer).noteOn)
             {
                 if(triggered.count((*notesPointer).midiNote))
                 {
-                    // note still on, send noteOff!
+                    // note still on, send noteOff first
                     me.data[0] = 0x80;
                     me.data[2] = 0;
                     writeMidiEvent(me);
@@ -219,8 +228,6 @@ void WAIVEMidi::run(
             }
 
             writeMidiEvent(me);
-
-
             notesPointer++;
         }
 
@@ -229,9 +236,8 @@ void WAIVEMidi::run(
         {
             loopTick = 0.0;
             notesPointer = notes.begin();
+            allNotesOff(i);
         }
-
-        std::cout << std::flush;
     }
 }
 
@@ -293,11 +299,6 @@ void WAIVEMidi::generateFullPattern()
     std::vector<torch::jit::IValue> input;
     torch::Tensor z = torch::cat({score_z, groove_z}, 0);
     auto z_a = z.accessor<float, 1>();
-    std::cout << "full_z = [";
-    for(int i=0; i<96; i++){
-        std::cout << z_a[i] << ", ";
-    }
-    std::cout << "]\n";
 
     input.push_back(z);
     torch::Tensor pattern = full_model.forward(input).toTensor().reshape({16, 30, 3});
@@ -311,7 +312,6 @@ void WAIVEMidi::generateFullPattern()
         }
     }
     computeNotes();
-    // std::cout << "full_decoder output: \n" << pattern.index({Slice(0, 8)}) << std::endl;
 }
 
 /**
@@ -358,9 +358,7 @@ void WAIVEMidi::computeNotes()
     // Dim 0: Instrument
     // Dim 1: notes
     std::vector< std::vector<Note> > newNotes;
-
     newNotes.resize(9);
-
 
     for(int j=0; j<9; j++){
         // first collect all the noteOn events:
@@ -434,13 +432,6 @@ void WAIVEMidi::computeNotes()
 
     std::sort(notes.begin(), notes.end(), compareNotes);
     notesPointer = notes.begin();
-
-    for(; notesPointer != notes.end(); ++notesPointer)
-    {
-        // std::cout << (*notesPointer).midiNote << " ";
-        printf("%d ", (*notesPointer).midiNote);
-    }
-    std::cout << std::endl;
 
     // advance pointer to reach time when computeNotes was called
     notesPointer = notes.begin();
