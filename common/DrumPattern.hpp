@@ -4,6 +4,7 @@
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
+#include "Notes.hpp"
 
 START_NAMESPACE_DISTRHO
 
@@ -19,16 +20,13 @@ protected:
     bool onMotion(const MotionEvent &) override;
 
 private:
-    const int max_events[9] = {3, 7, 3, 3, 3, 4, 3, 2, 2};
-    int s_map[9];
-
-    float (*fDrumPattern)[16][30][3];
+    std::vector<Note> *notes;
+    std::map<uint8_t, int> midiToRow;
     
     DISTRHO_LEAK_DETECTOR(DrumPattern);
 
     friend class WAIVEMidiUI;
 };
-
 
 
 END_NAMESPACE_DISTRHO

@@ -5,6 +5,7 @@
 #include "DistrhoPluginInfo.h"
 #include "DistrhoPlugin.hpp"
 #include "WAIVEMidiParams.h"
+#include "Notes.hpp"
 
 #include <torch/script.h>
 #include "score_encoder.h"

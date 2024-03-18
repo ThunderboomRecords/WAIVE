@@ -115,8 +115,11 @@ void ScoreGrid::onNanoDisplay()
             float y = (8 - j)*gridHeight;
 
             beginPath();
-            strokeColor(200, 200, 200);
-            fillColor(0, 200, 50);
+            strokeColor(40, 40, 40);
+
+            float hue = (8 - j)/10.0f;
+
+            fillColor(Color::fromHSL(hue, 0.8f, 0.7f));
             rect(x, y, gridWidth, gridHeight);
             fill();
             stroke();

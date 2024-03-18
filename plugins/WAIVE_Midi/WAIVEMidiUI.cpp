@@ -41,7 +41,8 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
 
     drum_pattern = new DrumPattern(this);
     drum_pattern->setSize(Size<uint>(350, 250));
-    drum_pattern->fDrumPattern = &plugin->fDrumPattern;
+    // drum_pattern->fDrumPattern = &plugin->fDrumPattern;
+    drum_pattern->notes = &plugin->notes;
 
     hbox_controls->setAbsolutePos(100, 40);
     hbox_controls->setWidth(UI_W - 10);

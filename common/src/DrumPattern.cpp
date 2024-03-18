@@ -6,11 +6,11 @@ START_NAMESPACE_DISTRHO
 DrumPattern::DrumPattern(Widget *parent) noexcept
     : NanoSubWidget(parent)
 {
-    s_map[0] = 0;
-    for(int i=1; i<9; i++)
+    for(int i = 0; i < 9; i++)
     {
-        s_map[i] = s_map[i-1] + max_events[i-1];
+        midiToRow.insert({midiMap[i], i});
     }
+
 }
 
 bool DrumPattern::onMouse(const MouseEvent &ev){ return false; }
@@ -62,31 +62,49 @@ void DrumPattern::onNanoDisplay()
         closePath();
     }
 
-    for(int i = 0; i < 16; i++)
+    std::vector<Note>::iterator noteStart = notes->begin();
+    std::vector<Note>::iterator noteEnd = notes->begin();
+    float tpb = 1920.0f;
+    float beatWidth = width / 4.0f;
+
+    for(; noteStart != notes->end(); ++noteStart)
     {
-        for(int j = 0; j < 9; j++)
+        if((*noteStart).noteOn)
         {
-            for(int k = 0; k < max_events[j]; k++)
+            uint8_t currentNote = (*noteStart).midiNote;
+            noteEnd = noteStart;
+
+            for(; noteEnd != notes->end(); ++noteEnd)
             {
-                int index = s_map[j] + k;
-                if((*fDrumPattern)[i][index][0] < 0.3f) {
-                    continue;
+                if(!(*noteEnd).noteOn && (*noteEnd).midiNote == currentNote)
+                {
+                    // found noteOff, render rectangle
+                    int startTick = (*noteStart).tick;
+                    int endTick =  (*noteEnd).tick;
+                    int row = midiToRow[currentNote];
+
+                    float x = beatWidth * (startTick / tpb);
+                    float y = gridHeight * (8 - row);
+                    float h = gridHeight;
+                    float w = beatWidth * (endTick - startTick) / tpb;
+
+                    int velocity = (*noteStart).velocity;
+
+                    float hue = (8 - row)/10.0f;
+                    Color base = Color::fromHSL(hue, 0.8f, 0.1f);
+                    Color top = Color::fromHSL(hue, 0.8f, 0.8f);
+                    base.interpolate(top, velocity/255.0f);
+
+                    beginPath();
+                    strokeColor(40, 40, 40);
+                    fillColor(base);
+                    rect(x, y, w, h);
+                    fill();
+                    stroke();
+                    closePath();
+
+                    break;
                 }
-
-                float velocity = (*fDrumPattern)[i][index][1];
-                velocity = 0.5f * (velocity + 1.0f);
-                float offset = (*fDrumPattern)[i][index][2];
-
-                float x = (i+offset)*gridWidth;
-                float y = (8 - j)*gridHeight;
-
-                beginPath();
-                strokeColor(200, 200, 200);
-                fillColor(0, 200, 50, (int)(velocity*255.0f));
-                rect(x, y, gridWidth, gridHeight);
-                fill();
-                stroke();
-                closePath();
             }
         }
     }
