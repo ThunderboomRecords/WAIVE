@@ -1,11 +1,16 @@
 # WAIVE-Plugins
 
-<p align="center">
-    <img src="assets/logo.png">
-</p>
 
 <p align="center">    
 AI x Archive music tools
+</p>
+
+<p align="center">
+    <img 
+        src="assets/screenshot.png" 
+        style="border-radius: 4px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);"
+        width="500"
+    >
 </p>
 
 A plugin suite that combines music, sound and MIDI generation with European cultural archives. 
