@@ -17,10 +17,6 @@ A plugin suite that combines music, sound and MIDI generation with European cult
 Aims to be an offline, modular version of [WAIVE-studio](https://www.waive.studio/) that can be integrated into your DAW.
 Built with [DPF](https://github.com/DISTRHO/DPF) and [PyTorch](https://pytorch.org/).
 
-> :construction: Currently in _very_ early development stage! :construction:
-
-Also: see [al165/DPF_Tests](https://github.com/al165/DPF_Tests) for a proof-of-concept test version called "AITests". 
-
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
