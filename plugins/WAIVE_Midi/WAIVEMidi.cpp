@@ -8,7 +8,8 @@ using namespace torch::indexing;
 WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
                          fThreshold(0.7f),
                          ticks_per_beat(1920),
-                         loopTick(0.0)
+                         loopTick(0.0),
+                         progress(0.0f)
 {
 
     sampleRate = getSampleRate();
@@ -175,6 +176,7 @@ void WAIVEMidi::run(
     {
         notesPointer = notes.begin();
         loopTick = 0.0;
+        progress = 0.0f;
         allNotesOff(0);
     }
 
@@ -192,6 +194,8 @@ void WAIVEMidi::run(
     double samplesPerBeat = (60.0f * sampleRate) / timePos.bbt.beatsPerMinute;
     double samplesPerTick = samplesPerBeat / tpb;
     double ticksPerSample =  tpb / samplesPerBeat;
+
+    progress = loopTick / ticksPerLoop;
 
     if(ticks_per_beat != tpb) {
         ticks_per_beat = tpb;

@@ -41,7 +41,6 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
 
     drum_pattern = new DrumPattern(this);
     drum_pattern->setSize(Size<uint>(350, 250));
-    // drum_pattern->fDrumPattern = &plugin->fDrumPattern;
     drum_pattern->notes = &plugin->notes;
 
     hbox_controls->setAbsolutePos(100, 40);
@@ -49,12 +48,18 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H)
     hbox_controls->padding = 10;
     hbox_controls->justify_content = HBox::Justify_Content::left;
     hbox_controls->align_items = HBox::Align_Items::top;
-    // hbox_controls->addWidget(fThreshold);
     hbox_controls->addWidget(vbox_container);
     hbox_controls->addWidget(drum_pattern);
     hbox_controls->positionWidgets();
 
     vbox_container->positionWidgets();
+
+    drum_playhead = new Playhead(this);
+    drum_playhead->setAbsolutePos(drum_pattern->getAbsolutePos());
+    drum_playhead->setSize(drum_pattern->getSize());
+    drum_playhead->progress = &plugin->progress;
+    addIdleCallback(drum_playhead);
+
     setGeometryConstraints(UI_W, UI_H, true, true);
 }
 

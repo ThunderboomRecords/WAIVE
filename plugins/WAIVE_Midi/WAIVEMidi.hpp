@@ -108,6 +108,7 @@ private:
     std::vector<Note>::iterator notesPointer;
     std::set<uint8_t> triggered;
 
+    float progress;
     double loopTick;
 
     friend class WAIVEMidiUI;

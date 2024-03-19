@@ -2,7 +2,6 @@ dpf_add_plugin(
   WAIVE_Midi
   TARGETS 
       jack
-      lv2
       vst3
       vst2
       clap
@@ -15,6 +14,7 @@ dpf_add_plugin(
       ../../common/src/VBox.cpp
       ../../common/src/Slider.cpp
       ../../common/src/VSlider.cpp
+      ../../common/src/Playhead.cpp
       ../../common/src/ScoreGrid.cpp
       ../../common/src/GrooveGraph.cpp
       ../../common/src/DrumPattern.cpp
@@ -28,3 +28,5 @@ target_include_directories(
     models
     ../../common
 )
+
+target_link_libraries(WAIVE_Midi PUBLIC "${TORCH_LIBRARIES}")

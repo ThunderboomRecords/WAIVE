@@ -8,6 +8,7 @@
 #include "HBox.hpp"
 #include "VBox.hpp"
 #include "VSlider.hpp"
+#include "Playhead.hpp"
 #include "ScoreGrid.hpp"
 #include "GrooveGraph.hpp"
 #include "DrumPattern.hpp"
@@ -49,6 +50,8 @@ private:
     ScoreGrid *score_grid;
     GrooveGraph *groove_graph;
     DrumPattern *drum_pattern;
+
+    Playhead *drum_playhead;
 
     FontId logo_font;
 

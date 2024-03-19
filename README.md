@@ -19,7 +19,7 @@ Built with [DPF](https://github.com/DISTRHO/DPF) and [PyTorch](https://pytorch.o
 
 > :construction: Currently in _very_ early development stage! :construction:
 
-See [al165/DPF_Tests](https://github.com/al165/DPF_Tests) for a proof-of-concept test version called "AITests". 
+Also: see [al165/DPF_Tests](https://github.com/al165/DPF_Tests) for a proof-of-concept test version called "AITests". 
 
 
 ### Build Instructions
@@ -36,9 +36,7 @@ Requires cmake
 $ mkdir build
 $ cd build
 
-# if installed PyTorch with pip:
-$ cmake -DCMAKE_PREFIX_PATH=`python3 -c 'import torch;print(torch.utils.cmake_prefix_path)'` ..
-# or, if causing issues, download and extract libtorch from https://pytorch.org/get-started/locally/:
+# download and extract libtorch from https://pytorch.org/get-started/locally/:
 $ cmake -DCMAKE_PREFIX_PATH=/absolute/path/to/libtorch ..
 
 $ cmake --build . --config Release
