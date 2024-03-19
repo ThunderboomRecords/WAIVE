@@ -34,6 +34,11 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
         score_encoder_model.eval();
 
         model_stream.str("");
+        model_stream.write((char *) groove_encoder, groove_encoder_len);
+        groove_encoder_model = torch::jit::load(model_stream);
+        groove_encoder_model.eval();
+
+        model_stream.str("");
         model_stream.write((char *) groove_decoder, groove_decoder_len);
         groove_decoder_model = torch::jit::load(model_stream);
         groove_decoder_model.eval();
@@ -280,6 +285,38 @@ void WAIVEMidi::generateScore()
     }
 }
 
+void WAIVEMidi::encodeGroove()
+{
+    std::cout << "WAIVEMidi::encodeGroove()" << std::endl;
+    std::vector<torch::jit::IValue> input;
+    torch::Tensor groove_t = torch::zeros({48, 3});
+    auto groove_a = groove_t.accessor<float, 2>();
+
+    std::vector<GrooveEvent>::iterator grooveEvents = fGroove.begin();
+    for(; grooveEvents != fGroove.end(); grooveEvents++)
+    {
+        float velocity = 2.0f * ((*grooveEvents).velocity - 0.5f);
+        float position = (*grooveEvents).position;
+        int sixteenth = (int)std::clamp(std::round(position * 16.0f), 0.0f, 15.0f);
+        float offset = position * 16.0f - (float) sixteenth;
+
+        int index = sixteenth * 3;
+        int j = 0;
+        if(groove_a[index][0] == 0.0f) j = 0;
+        else if(groove_a[index + 1][0] == 0.0f) j = 1;
+        else j = 2;
+
+        groove_t.index_put_({index + j, 0}, 1.0); 
+        groove_t.index_put_({index + j, 1}, velocity); 
+        groove_t.index_put_({index + j, 2}, offset); 
+    }
+
+    input.push_back(groove_t.reshape({144}));
+    groove_z = groove_encoder_model.forward(input).toTensor();
+
+    generateFullPattern();
+}
+
 void WAIVEMidi::generateGroove()
 {
     std::vector<torch::jit::IValue> input;
@@ -291,11 +328,24 @@ void WAIVEMidi::generateGroove()
     torch::Tensor groove = groove_decoder_model.forward(input).toTensor().reshape({48, 3});
 
     auto groove_a = groove.accessor<float, 2>();
-    for(int i=0; i<48; i++){
+
+    fGroove.clear();
+    for(int i=0; i<16; i++){
         for(int j=0; j<3; j++){
-            fGroove[i][j] = groove_a[i][j];
+            int index = i*3 + j;
+            if(groove_a[index][0] < 0.3f) break;
+
+            float velocity = 0.5f * groove_a[index][1] + 0.5f;
+            float offset = groove_a[index][2];
+            float position = ((float) i + offset) / 16.0f;
+            position = std::clamp(position, 0.0f, 1.0f);
+
+            GrooveEvent g = {position, velocity};
+            fGroove.push_back(g);
         }
     }
+
+    std::sort(fGroove.begin(), fGroove.end(), compareGrooveEvents);
 }
 
 void WAIVEMidi::generateFullPattern()
@@ -318,32 +368,6 @@ void WAIVEMidi::generateFullPattern()
     computeNotes();
 }
 
-/**
-   For sorting Note structs by time, noteOn/Off, then by 
-   midiNote number
-*/
-bool compareNotes(Note n0, Note n1)
-{
-    if(n0.tick < n1.tick)
-    {
-        return true;
-    }
-    else if(n0.tick > n1.tick)
-    {
-        return false;
-    }
-    
-    if(!n0.noteOn && n1.noteOn)
-    {
-        return true;
-    }
-    else if(n0.noteOn && !n1.noteOn)
-    {
-        return false;
-    }
-
-    return n0.midiNote < n1.midiNote;
-}
 
 void WAIVEMidi::computeNotes()
 {

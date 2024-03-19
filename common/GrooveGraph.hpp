@@ -4,6 +4,7 @@
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
+#include "Notes.hpp"
 
 START_NAMESPACE_DISTRHO
 
@@ -22,10 +23,16 @@ protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
+    bool onScroll(const ScrollEvent &) override;
+
+    int nearestElementAtPos(float position);
 
 private:
     Callback *callback;
-    float (*fGroove)[48][3];
+    std::vector<GrooveEvent> *fGroove;
+
+    bool dragging;
+    Point<double> dragStart;
     
     DISTRHO_LEAK_DETECTOR(GrooveGraph);
 

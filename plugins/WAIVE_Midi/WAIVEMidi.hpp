@@ -10,6 +10,7 @@
 #include <torch/script.h>
 #include "score_encoder.h"
 #include "score_decoder.h"
+#include "groove_encoder.h"
 #include "groove_decoder.h"
 #include "full_groove_model.h"
 #include "latent_distributions.h"
@@ -72,6 +73,7 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
     void allNotesOff(uint32_t frame);
 
+    void encodeGroove();
     void generateGroove();
     void encodeScore();
     void generateScore();
@@ -86,7 +88,8 @@ private:
 
     torch::jit::script::Module 
         score_decoder_model, 
-        score_encoder_model, 
+        score_encoder_model,
+        groove_encoder_model,
         groove_decoder_model, 
         full_model;
 
@@ -96,7 +99,8 @@ private:
     // Latent distributions:
     torch::Tensor score_m, score_s, groove_m, groove_s; 
 
-    float fGroove[48][3];
+    // float fGroove[48][3];
+    std::vector<GrooveEvent> fGroove;
     float fScore[16][9];
     float fDrumPattern[16][30][3];
 

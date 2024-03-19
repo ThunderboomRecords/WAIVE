@@ -146,8 +146,7 @@ void WAIVEMidiUI::sliderValueChanged(Slider *slider, float value)
 
 void WAIVEMidiUI::grooveClicked(GrooveGraph *graph)
 {
-    plugin->generateGroove();
-    plugin->generateFullPattern();
+    plugin->encodeGroove();
     repaint();
 }
 

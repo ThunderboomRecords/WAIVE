@@ -4,15 +4,62 @@ START_NAMESPACE_DISTRHO
 
 
 GrooveGraph::GrooveGraph(Widget *parent) noexcept
-    : NanoSubWidget(parent)
+    : NanoSubWidget(parent),
+      dragging(false)
 {
     
 }
 
-bool GrooveGraph::onMouse(const MouseEvent &ev){ 
+bool GrooveGraph::onMouse(const MouseEvent &ev)
+{ 
+    if(!contains(ev.pos) && !dragging) { return false; }
 
-    if(!ev.press) { return false; }
-    if(!contains(ev.pos)) { return false; }
+    if(ev.press)
+    {
+        dragging = true;
+        dragStart = ev.pos;
+    }
+    else
+    {
+        dragging = false;
+    }
+
+    return false; 
+}
+
+bool GrooveGraph::onMotion(const MotionEvent &ev)
+{ 
+    Window &window = getWindow();
+
+    if(contains(ev.pos)){
+        window.setCursor(kMouseCursorHand);
+
+        if(dragging)
+        {
+            // get nearest point
+        }
+
+        return true;
+    }
+    
+    return false; 
+}
+
+bool GrooveGraph::onScroll(const ScrollEvent &ev)
+{
+    if(!contains(ev.pos)) return false;
+
+    float position = ev.pos.getX() / getWidth();
+    int nearestIndex = nearestElementAtPos(position);
+    if(nearestIndex < 0) return true;
+
+    float velocity = fGroove->at(nearestIndex).velocity;
+    float newVelocity = velocity + ev.delta.getY()*0.05;
+    newVelocity = std::clamp(newVelocity, 0.0f, 1.0f);
+
+    if(newVelocity == velocity) return true;
+
+    fGroove->at(nearestIndex).velocity = newVelocity;
 
     if(callback != nullptr)
     {
@@ -20,21 +67,26 @@ bool GrooveGraph::onMouse(const MouseEvent &ev){
         return true;
     }
 
-    return false; 
+    return true;
 }
-bool GrooveGraph::onMotion(const MotionEvent &ev){ 
 
-    Window &window = getWindow();
+int GrooveGraph::nearestElementAtPos(float position)
+{
+    int index = -1;
+    float bestDist = std::numeric_limits<float>::infinity();
 
-    if(contains(ev.pos)){
-        window.setCursor(kMouseCursorHand);
-
-        return true;
-    } else {
-        // window.setCursor(kMouseCursorArrow);
+    std::vector<GrooveEvent>::iterator grooveEvents = fGroove->begin();
+    for(; grooveEvents != fGroove->end(); grooveEvents++)
+    {
+        float dist = std::abs(position - (*grooveEvents).position);
+        if(dist < bestDist)
+        {
+            bestDist = dist;
+            index = grooveEvents - fGroove->begin();
+        }
     }
-    
-    return false; 
+
+    return index;
 }
 
 void GrooveGraph::onNanoDisplay()
@@ -47,6 +99,13 @@ void GrooveGraph::onNanoDisplay()
     beginPath();
     fillColor(Color(40, 40, 40));
     rect(0, 0, width, height);
+    closePath();
+    fill();
+
+    beginPath();
+    fillColor(60, 60, 60);
+    rect(4*gridWidth, 0, 4*gridWidth, height);
+    rect(12*gridWidth, 0, 4*gridWidth, height);
     fill();
     closePath();
 
@@ -60,33 +119,22 @@ void GrooveGraph::onNanoDisplay()
         closePath();
     }
 
-    // auto groove_a = groove->accessor<float, 2>();
 
-    for(int i = 0; i < 16; i++)
+    std::vector<GrooveEvent>::iterator grooveEvents = fGroove->begin();
+
+    for(; grooveEvents != fGroove->end(); grooveEvents++)
     {
-        for(int j = 0; j < 3; j++)
-        {
-            int idx = i*3 + j;
-            if((*fGroove)[idx][0] < 0.3f) {
-                break;
-            }
+        float velocity = (*grooveEvents).velocity;
+        float position = (*grooveEvents).position;
 
-            float velocity = (*fGroove)[idx][1];
-            float offset = (*fGroove)[idx][2];
-
-            float s = (velocity + 1) * height;
-
-            float x = (i + offset)*gridWidth;
-
-            beginPath();
-            strokeColor(0, 200, 50);
-            strokeWidth(3.0f);
-            moveTo(x, (height - s)/2);
-            lineTo(x, (height + s)/2);
-            stroke();
-            closePath();
-        }
-
+        float x = position * width;
+        beginPath();
+        strokeColor(Color(1.0f, 1.0f, 1.0f, velocity));
+        strokeWidth(3.0f);
+        moveTo(x, (height - velocity*height)/2.0f);
+        lineTo(x, (height + velocity*height)/2.0f);
+        closePath();
+        stroke();
     }
 
     // round off corners

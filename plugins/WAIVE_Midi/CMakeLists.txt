@@ -7,11 +7,13 @@ dpf_add_plugin(
       clap
   FILES_DSP
       WAIVEMidi.cpp
+      ../../common/src/Notes.cpp
   FILES_UI
       WAIVEMidiUI.cpp
       ../../common/fonts.h
       ../../common/src/HBox.cpp
       ../../common/src/VBox.cpp
+      ../../common/src/Notes.cpp
       ../../common/src/Slider.cpp
       ../../common/src/VSlider.cpp
       ../../common/src/Playhead.cpp
