@@ -1,7 +1,8 @@
 #ifndef NOTES_HPP
 #define NOTES_HPP
 
-#include <bits/stdc++.h> 
+#include <stdint.h>
+#include <map>
 
 struct GrooveEvent {
     float position;
