@@ -21,19 +21,35 @@ Built with [DPF](https://github.com/DISTRHO/DPF) and [PyTorch](https://pytorch.o
 ### Build Instructions
 To build WAIVE-Plugins from source.
 
-```bash
-$ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git
+
+#### Pre-requisite: build static libtorch libraries
+Requires cmake.
+- On macOS (with [homebrew](https://brew.sh/)): ```$ brew install cmake libomp python```
+
+Requires python packages ```pyyaml```, ```typing-extensions```:
+- on Linux: ```$ pip install pyyaml```
+- on macOS: ```$ brew install pyyaml python-typing-extensions```
+
+```shell
+$ git clone --recursive https://github.com/pytorch/pytorch.git
+$ mkdir libtorch-build
+$ cd libtorch-build/
+$ cmake -DBUILD_SHARED_LIBS:BOOL=OFF -DBUILD_PYTHON:BOOL=OFF \
+    -DCMAKE_BUILD_TYPE:STRING=Release -DUSE_CUDA:BOOL=OFF \
+    -DCMAKE_CXX_FLAGS:STRING=-fPIC \
+    -DCMAKE_INSTALL_PREFIX:PATH=../libtorch ../pytorch
+$ cmake --build . --target install -j8
 ```
 
-#### Linux
-Requires cmake
 
-```bash
+#### Linux/macOS
+```shell
+$ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git
+$ cd WAIVE/
 $ mkdir build
 $ cd build
 
-# download and extract libtorch from https://pytorch.org/get-started/locally/:
-$ cmake -DCMAKE_PREFIX_PATH=/absolute/path/to/libtorch ..
+$ cmake -DCMAKE_PREFIX_PATH=/absolute/path/to/static/libtorch ..
 
 $ cmake --build . --config Release
 ```
@@ -44,6 +60,20 @@ The plugins are found in ```build/bin``` folder. *TODO:* installation instructio
 
 *TODO*
 
-#### MacOS
+#### MacOS (not complete)
 
-*TODO*
+
+
+```bash
+$ mkdir build
+$ cd build
+
+# download and extract libtorch from https://pytorch.org/get-started/locally/
+# (download arm64 for M1/M2 chips)
+$ cmake -DCMAKE_PREFIX_PATH=/absolute/path/to/libtorch ..
+
+$ cmake --build . --config Release
+
+$ sudo cp /opt/homebrew/Cellar/libomp/10.1.2/lib/libomp.dylib /usr/local/lib
+```
+
