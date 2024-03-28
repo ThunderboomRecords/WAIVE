@@ -7,7 +7,13 @@ dpf_add_plugin(
       clap
   FILES_DSP
       WAIVEMidi.cpp
+      model_utils.cpp
       ../../common/src/Notes.cpp
+      ./models/score_decoder.onnx.c
+      ./models/score_encoder.onnx.c
+      ./models/groove_decoder.onnx.c
+      ./models/groove_encoder.onnx.c
+      ./models/full_groove_model.onnx.c
   FILES_UI
       WAIVEMidiUI.cpp
       ../../common/fonts.h
@@ -23,12 +29,22 @@ dpf_add_plugin(
       ../../common/src/SimpleButton.cpp
 )
 
+find_library(FOUNDATION Foundation)
+find_library(COREFOUNDATION CoreFoundation)
+
+target_link_libraries(
+    WAIVE_Midi 
+    PUBLIC 
+    ${PROJECT_SOURCE_DIR}/plugins/WAIVE_Midi/lib/libonnxruntime.a
+    ${CoreFoundation}
+    ${Foundation}
+)
+
 target_include_directories(
   WAIVE_Midi
   PUBLIC 
     .
-    models
+    ./models
+    ./include
     ../../common
 )
-
-target_link_libraries(WAIVE_Midi PUBLIC "${TORCH_LIBRARIES}")

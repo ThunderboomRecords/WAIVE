@@ -15,26 +15,25 @@ AI x Archive music tools
 
 A plugin suite that combines music, sound and MIDI generation with European cultural archives. 
 Aims to be an offline, modular version of [WAIVE-studio](https://www.waive.studio/) that can be integrated into your DAW.
-Built with [DPF](https://github.com/DISTRHO/DPF) and [PyTorch](https://pytorch.org/).
+Built with [DPF](https://github.com/DISTRHO/DPF) and [ONNX Runtime](https://github.com/microsoft/onnxruntime)
 
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
 
-```bash
+#### Pre-requisites
+Requires statically built onnxruntime for your platform. You can download pre-built libraries from [csukuangfj/onnxruntime-libs](https://huggingface.co/csukuangfj/onnxruntime-libs/tree/main), or build them yourself (such as with [ort-builder](https://github.com/olilarkin/ort-builder/tree/bfbd362c9660fce9600a43732e3f8b53d5fb243a))
+
+#### Linux/macOS
+```shell
 $ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git
-```
+$ cd WAIVE/
 
-#### Linux
-Requires cmake
+# copy lib/ and include/ from static built onnxruntime, then:
 
-```bash
 $ mkdir build
 $ cd build
-
-# download and extract libtorch from https://pytorch.org/get-started/locally/:
-$ cmake -DCMAKE_PREFIX_PATH=/absolute/path/to/libtorch ..
-
+$ cmake ..
 $ cmake --build . --config Release
 ```
 
@@ -44,6 +43,4 @@ The plugins are found in ```build/bin``` folder. *TODO:* installation instructio
 
 *TODO*
 
-#### MacOS
 
-*TODO*

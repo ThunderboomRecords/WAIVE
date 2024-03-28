@@ -16,3 +16,9 @@ CMakeCache.txt
 CMakeScripts
 
 .cache/
+
+include/
+lib/
+
+*.onnx
+*.ort

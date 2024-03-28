@@ -3,7 +3,6 @@
 
 START_NAMESPACE_DISTRHO
 
-using namespace torch::indexing;
 
 WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
                          fThreshold(0.7f),
@@ -20,52 +19,120 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
         s_map[i] = s_map[i-1] + max_events[i-1];
     }
 
-    std::stringstream model_stream;
+    seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::cout << seed << std::endl;
+
+    generator = std::default_random_engine(seed);
+    distribution = std::normal_distribution<float>(0.0f, 1.0f);
+
     std::cout << "loading models...";
     try 
     {
-        model_stream.write((char *) score_decoder, score_decoder_len);
-        score_decoder_model = torch::jit::load(model_stream);
-        score_decoder_model.eval();
+        auto info = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
+
+        sessionOptions.SetIntraOpNumThreads(1);
+        sessionOptions.SetInterOpNumThreads(1);
+
+        mScoreEncoder = std::make_unique<Ort::Session>(mEnv, (void*) score_encoder_onnx_start, score_encoder_onnx_size, sessionOptions);
+        mScoreDecoder = std::make_unique<Ort::Session>(mEnv, (void*) score_decoder_onnx_start, score_decoder_onnx_size, sessionOptions);
+
+        mGrooveEncoder = std::make_unique<Ort::Session>(mEnv, (void*) groove_encoder_onnx_start, groove_encoder_onnx_size, sessionOptions);
+        mGrooveDecoder = std::make_unique<Ort::Session>(mEnv, (void*) groove_decoder_onnx_start, groove_decoder_onnx_size, sessionOptions);
+
+        mFullDecoder = std::make_unique<Ort::Session>(mEnv, (void*) full_groove_model_onnx_start, full_groove_model_onnx_size, sessionOptions);
+
+        assert(mScoreEncoder);
+        assert(mScoreDecoder);
+
+        assert(mGrooveEncoder);
+        assert(mGrooveDecoder);
+
+        assert(mFullDecoder);
+
+        // SCORE Model
+        mScoreEncoderInputShape = GetInputShapes(mScoreEncoder);
+        mScoreDecoderInputShape = GetInputShapes(mScoreDecoder);
+        mScoreEncoderOutputShape = GetOutputShapes(mScoreEncoder);
+        mScoreDecoderOutputShape = GetOutputShapes(mScoreDecoder);
+
+        mScoreEncoderInputNames = GetInputNames(mScoreEncoder);
+        mScoreDecoderInputNames = GetInputNames(mScoreDecoder);
+        mScoreEncoderOutputNames = GetOutputNames(mScoreEncoder);
+        mScoreDecoderOutputNames = GetOutputNames(mScoreDecoder);
+
+        mScoreZ.resize(mScoreDecoderInputShape[0][0]);
+        mScoreInput.resize(mScoreEncoderInputShape[0][0]);
+        mScoreOutput.resize(mScoreDecoderOutputShape[0][0]);
+
+        std::fill(mScoreZ.begin(), mScoreZ.end(), 0.0f);
+        std::fill(mScoreInput.begin(), mScoreInput.end(), 0.0f);
+        std::fill(mScoreOutput.begin(), mScoreOutput.end(), 0.0f);
+
+        mScoreZTensor.push_back(Ort::Value::CreateTensor<float>(info, mScoreZ.data(), mScoreZ.size(), mScoreDecoderInputShape[0].data(), mScoreDecoderInputShape[0].size()));
+        mScoreInputTensor.push_back(Ort::Value::CreateTensor<float>(info, mScoreInput.data(), mScoreInput.size(), mScoreEncoderInputShape[0].data(), mScoreEncoderInputShape[0].size()));
+        mScoreOutputTensor.push_back(Ort::Value::CreateTensor<float>(info, mScoreOutput.data(), mScoreOutput.size(), mScoreDecoderOutputShape[0].data(), mScoreDecoderOutputShape[0].size()));
+
+        // GROOVE Model
+        mGrooveEncoderInputShape = GetInputShapes(mGrooveEncoder);
+        mGrooveDecoderInputShape = GetInputShapes(mGrooveDecoder);
+        mGrooveEncoderOutputShape = GetOutputShapes(mGrooveEncoder);
+        mGrooveDecoderOutputShape = GetOutputShapes(mGrooveDecoder);
+
+        mGrooveEncoderInputNames = GetInputNames(mGrooveEncoder);
+        mGrooveDecoderInputNames = GetInputNames(mGrooveDecoder);
+        mGrooveEncoderOutputNames = GetOutputNames(mGrooveEncoder);
+        mGrooveDecoderOutputNames = GetOutputNames(mGrooveDecoder);
+
+        mGrooveZ.resize(mGrooveDecoderInputShape[0][0]);
+        mGrooveInput.resize(mGrooveEncoderInputShape[0][0]);
+        mGrooveOutput.resize(mGrooveDecoderOutputShape[0][0]);
+
+        std::fill(mGrooveZ.begin(), mGrooveZ.end(), 0.0f);
+        std::fill(mGrooveInput.begin(), mGrooveInput.end(), 0.0f);
+        std::fill(mGrooveOutput.begin(), mGrooveOutput.end(), 0.0f);
+
+        mGrooveZTensor.push_back(Ort::Value::CreateTensor<float>(info, mGrooveZ.data(), mGrooveZ.size(), mGrooveDecoderInputShape[0].data(), mGrooveDecoderInputShape[0].size()));
+        mGrooveInputTensor.push_back(Ort::Value::CreateTensor<float>(info, mGrooveInput.data(), mGrooveInput.size(), mGrooveEncoderInputShape[0].data(), mGrooveEncoderInputShape[0].size()));
+        mGrooveOutputTensor.push_back(Ort::Value::CreateTensor<float>(info, mGrooveOutput.data(), mGrooveOutput.size(), mGrooveDecoderOutputShape[0].data(), mGrooveDecoderOutputShape[0].size()));
+
+
+        // FULL DECODER Model
+        mFullDecoderInputShape = GetInputShapes(mFullDecoder);
+        mFullDecoderOutputShape = GetOutputShapes(mFullDecoder);
+
+        mFullDecoderInputNames = GetInputNames(mFullDecoder);
+        mFullDecoderOutputNames = GetOutputNames(mFullDecoder);
+
+        mFullZ.resize(mFullDecoderInputShape[0][0]);
+        mFullOutput.resize(mFullDecoderOutputShape[0][0]);
         
-        model_stream.str("");
-        model_stream.write((char *) score_encoder, score_encoder_len);
-        score_encoder_model = torch::jit::load(model_stream);
-        score_encoder_model.eval();
+        std::fill(mFullZ.begin(), mFullZ.end(), 0.0f);
+        std::fill(mFullOutput.begin(), mFullOutput.end(), 0.0f);
 
-        model_stream.str("");
-        model_stream.write((char *) groove_encoder, groove_encoder_len);
-        groove_encoder_model = torch::jit::load(model_stream);
-        groove_encoder_model.eval();
+        mFullZTensor.push_back(Ort::Value::CreateTensor<float>(info, mFullZ.data(), mFullZ.size(), mFullDecoderInputShape[0].data(), mFullDecoderInputShape[0].size()));
+        mFullOutputTensor.push_back(Ort::Value::CreateTensor<float>(info, mFullOutput.data(), mFullOutput.size(), mFullDecoderOutputShape[0].data(), mFullDecoderOutputShape[0].size()));
 
-        model_stream.str("");
-        model_stream.write((char *) groove_decoder, groove_decoder_len);
-        groove_decoder_model = torch::jit::load(model_stream);
-        groove_decoder_model.eval();
-
-        model_stream.str("");
-        model_stream.write((char *) full_groove_model, full_groove_model_len);
-        full_model = torch::jit::load(model_stream);
-        full_model.eval();
 
         std::cout << " done\n";
+
+        PrintModelDetails("mScoreEncoder", mScoreEncoderInputNames, mScoreEncoderOutputNames, mScoreEncoderInputShape, mScoreEncoderOutputShape);
+        PrintModelDetails("mScoreDecoder", mScoreDecoderInputNames, mScoreDecoderOutputNames, mScoreDecoderInputShape, mScoreDecoderOutputShape);
+
+        PrintModelDetails("mGrooveEncoder", mGrooveEncoderInputNames, mGrooveEncoderOutputNames, mGrooveEncoderInputShape, mGrooveEncoderOutputShape);
+        PrintModelDetails("mGrooveDecoder", mGrooveDecoderInputNames, mGrooveDecoderOutputNames, mGrooveDecoderInputShape, mGrooveDecoderOutputShape);
+
+        PrintModelDetails("mFullDecoder", mFullDecoderInputNames, mFullDecoderOutputNames, mFullDecoderInputShape, mFullDecoderOutputShape);
+
+        std::cout << std::endl;
     }
-    catch (const c10::Error& e) 
+    catch (std::exception& e) 
     {
         std::cerr << " error loading models\n";
         return;
     }
 
-
-    // load distributions
-    score_m = torch::from_blob(score_means, {64});
-    score_s = torch::from_blob(score_stds, {64});
-    groove_m = torch::from_blob(groove_means, {32});
-    groove_s = torch::from_blob(groove_stds, {32});
-
     notesPointer = notes.begin();
-    std::cout << "triggered empty: " << triggered.empty() << std::endl;
-    
+
     // generate 
     generateScore();
     generateGroove();
@@ -252,46 +319,60 @@ void WAIVEMidi::run(
 
 void WAIVEMidi::encodeScore()
 {
-    std::vector<torch::jit::IValue> input;
-    torch::Tensor score_t = torch::zeros({16, 9});
-
     for(int i=0; i<16; i++){
         for(int j=0; j<9; j++){
-            score_t.index_put_({i, j}, fScore[i][j]);
+            mScoreInput[j + i*9] = fScore[i][j];
         }
     }
-    input.push_back(score_t.reshape({144}));
 
-    score_z = score_encoder_model.forward(input).toTensor();
+    const char* inputNamesCstrs[] = {mScoreEncoderInputNames[0].c_str()};
+    const char* outputNamesCstrs[] = {mScoreEncoderOutputNames[0].c_str()};
 
+    mScoreEncoder->Run(
+        mRunOptions, 
+        inputNamesCstrs, 
+        mScoreInputTensor.data(), 
+        mScoreInputTensor.size(), 
+        outputNamesCstrs, 
+        mScoreZTensor.data(), 
+        mScoreZTensor.size()
+    );
+    
     generateFullPattern();
 }
 
 void WAIVEMidi::generateScore()
 {
-    std::vector<torch::jit::IValue> input;
-    torch::Tensor s_z = torch::randn({64});
-    s_z = score_s * s_z + score_m;
-    score_z = s_z;
+    for(size_t i=0; i<mScoreZ.size(); i++){
+        float z = distribution(generator);
+        z = z * score_stds[i % 64] + score_means[i % 64];
+        mScoreZ[i] = z;
+    }
 
-    input.push_back(s_z);
-    torch::Tensor score = score_decoder_model.forward(input).toTensor().reshape({16, 9});
+    const char* inputNamesCstrs[] = {mScoreDecoderInputNames[0].c_str()};
+    const char* outputNamesCstrs[] = {mScoreDecoderOutputNames[0].c_str()};
 
-    auto score_a = score.accessor<float, 2>();
+    mScoreDecoder->Run(
+        mRunOptions, 
+        inputNamesCstrs, 
+        mScoreZTensor.data(), 
+        mScoreZTensor.size(), 
+        outputNamesCstrs, 
+        mScoreOutputTensor.data(), 
+        mScoreOutputTensor.size()
+    );
+
     for(int i=0; i<16; i++){
         for(int j=0; j<9; j++){
-            fScore[i][j] = score_a[i][j];
+            fScore[i][j] = mScoreOutput[j + i*9];
         }
     }
+
 }
 
 void WAIVEMidi::encodeGroove()
 {
-    std::cout << "WAIVEMidi::encodeGroove()" << std::endl;
-    std::vector<torch::jit::IValue> input;
-    torch::Tensor groove_t = torch::zeros({48, 3});
-    auto groove_a = groove_t.accessor<float, 2>();
-
+    std::fill(mGrooveInput.begin(), mGrooveInput.end(), 0.0f);
     std::vector<GrooveEvent>::iterator grooveEvents = fGroove.begin();
     for(; grooveEvents != fGroove.end(); grooveEvents++)
     {
@@ -300,43 +381,70 @@ void WAIVEMidi::encodeGroove()
         int sixteenth = (int)std::clamp(std::round(position * 16.0f), 0.0f, 15.0f);
         float offset = position * 16.0f - (float) sixteenth;
 
-        int index = sixteenth * 3;
+        int index = sixteenth * 3 * 3;
         int j = 0;
-        if(groove_a[index][0] == 0.0f) j = 0;
-        else if(groove_a[index + 1][0] == 0.0f) j = 1;
+        if(mGrooveInput[index] == 0.0f) j = 0;
+        else if(mGrooveInput[index + 3] == 0.0f) j = 1;
         else j = 2;
 
-        groove_t.index_put_({index + j, 0}, 1.0); 
-        groove_t.index_put_({index + j, 1}, velocity); 
-        groove_t.index_put_({index + j, 2}, offset); 
+        index += j*3;
+
+        mGrooveInput[index + 0] = 1.0f;
+        mGrooveInput[index + 1] = velocity;
+        mGrooveInput[index + 2] = offset;
     }
 
-    input.push_back(groove_t.reshape({144}));
-    groove_z = groove_encoder_model.forward(input).toTensor();
+    const char* inputNamesCstrs[] = {mGrooveEncoderInputNames[0].c_str()};
+    const char* outputNamesCstrs[] = {mGrooveEncoderOutputNames[0].c_str()};
+
+    mGrooveEncoder->Run(
+        mRunOptions, 
+        inputNamesCstrs, 
+        mGrooveInputTensor.data(), 
+        mGrooveInputTensor.size(),
+        outputNamesCstrs, 
+        mGrooveZTensor.data(), 
+        mGrooveZTensor.size()
+    );
 
     generateFullPattern();
 }
 
 void WAIVEMidi::generateGroove()
 {
-    std::vector<torch::jit::IValue> input;
-    torch::Tensor g_z = torch::randn({32});
-    g_z = groove_s * g_z + groove_m;
-    groove_z = g_z;
+    std::cout << "mGrooveZ: [";
+    for(size_t i=0; i<mGrooveZ.size(); i++){
+        float z = distribution(generator);
+        z = z * groove_stds[i % 32] + groove_means[i % 32];
+        mGrooveZ[i] = z;
+        printf("%.3f, ", mGrooveZ[i]);
+    }
+    std::cout << "]" << std::endl;
 
-    input.push_back(g_z);
-    torch::Tensor groove = groove_decoder_model.forward(input).toTensor().reshape({48, 3});
+    const char* inputNamesCstrs[] = {mGrooveDecoderInputNames[0].c_str()};
+    const char* outputNamesCstrs[] = {mGrooveDecoderOutputNames[0].c_str()};
 
-    auto groove_a = groove.accessor<float, 2>();
+    mGrooveDecoder->Run(
+        mRunOptions, 
+        inputNamesCstrs, 
+        mGrooveZTensor.data(), 
+        mGrooveZTensor.size(), 
+        outputNamesCstrs, 
+        mGrooveOutputTensor.data(), 
+        mGrooveOutputTensor.size()
+    );
 
     fGroove.clear();
+    // [i, j, k]  ->  [(i*3 + j) * 3 + k]
     for(int i=0; i<16; i++){
         for(int j=0; j<3; j++){
-            int index = i*3 + j;
-            if(groove_a[index][0] < 0.3f) break;
+            int k = i*3 + j;
+            int index = k*3;
 
-            float velocity = 0.5f * groove_a[index][1] + 0.5f;
-            float offset = groove_a[index][2];
+            if(mGrooveOutput[index] < 0.3f) break;
+
+            float velocity = 0.5f * mGrooveOutput[index+1] + 0.5f;
+            float offset = mGrooveOutput[index+2];
             float position = ((float) i + offset) / 16.0f;
             position = std::clamp(position, 0.0f, 1.0f);
 
@@ -350,21 +458,45 @@ void WAIVEMidi::generateGroove()
 
 void WAIVEMidi::generateFullPattern()
 {
-    std::vector<torch::jit::IValue> input;
-    torch::Tensor z = torch::cat({score_z, groove_z}, 0);
-    auto z_a = z.accessor<float, 1>();
+    
+    mFullZ.clear();
+    std::cout << "mFullZ = [";
+    for(const float z : mScoreZ)
+    {
+        mFullZ.push_back(z);
+        printf("%.2f, ", z);
+    }
+    for(const float z : mGrooveZ)
+    {
+        mFullZ.push_back(z);
+        printf("%.2f, ", z);
+    }
+    std::cout << "]" << std::endl;
 
-    input.push_back(z);
-    torch::Tensor pattern = full_model.forward(input).toTensor().reshape({16, 30, 3});
+    const char* inputNamesCstrs[] = {mFullDecoderInputNames[0].c_str()};
+    const char* outputNamesCstrs[] = {mFullDecoderOutputNames[0].c_str()};
 
-    auto pattern_a = pattern.accessor<float, 3>();
+    mFullDecoder->Run(
+        mRunOptions, 
+        inputNamesCstrs, 
+        mFullZTensor.data(), 
+        mFullZTensor.size(), 
+        outputNamesCstrs, 
+        mFullOutputTensor.data(), 
+        mFullOutputTensor.size()
+    );
+
     for(int i=0; i<16; i++){
         for(int j=0; j<30; j++){
             for(int k=0; k<3; k++){
-                fDrumPattern[i][j][k] = pattern_a[i][j][k];
+
+                int index = k + 3 * (j + 30 * i);
+
+                fDrumPattern[i][j][k] = mFullOutput[index];
             }
         }
     }
+
     computeNotes();
 }
 
