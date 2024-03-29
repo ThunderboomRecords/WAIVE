@@ -1,7 +1,9 @@
+set(CMAKE_CXX_STANDARD 17)
+
 dpf_add_plugin(
   WAIVE_Midi
   TARGETS 
-      jack
+    #   jack
       vst3
       vst2
       clap

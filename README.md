@@ -15,7 +15,7 @@ AI x Archive music tools
 
 A plugin suite that combines music, sound and MIDI generation with European cultural archives. 
 Aims to be an offline, modular version of [WAIVE-studio](https://www.waive.studio/) that can be integrated into your DAW.
-Built with [DPF](https://github.com/DISTRHO/DPF) and [ONNX Runtime](https://github.com/microsoft/onnxruntime). 
+Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX Runtime](https://github.com/microsoft/onnxruntime). 
 
 
 ### Build Instructions
@@ -25,8 +25,8 @@ To build WAIVE-Plugins from source.
 Requires statically built onnxruntime for your platform. You can download pre-built libraries from [csukuangfj/onnxruntime-libs](https://huggingface.co/csukuangfj/onnxruntime-libs/tree/main), or build them yourself (such as with [ort-builder](https://github.com/olilarkin/ort-builder/tree/bfbd362c9660fce9600a43732e3f8b53d5fb243a)).
 Tested with 1.17.1.
 
-Requires ```cmake```:
-- on Mac: ```brew install cmake```
+Requires cmake:
+- on Mac, with [homebrew](https://brew.sh/): ```$ brew install cmake```
 - on Linux: use your distributions package manager
 - Windows: *TODO*
 
@@ -44,7 +44,9 @@ $ cmake ..
 $ cmake --build . --config Release
 ```
 
-The plugins are found in ```build/bin``` folder. *TODO:* installation instructions.
+The plugins are found in ```build/bin``` folder. 
+
+*TODO:* installation instructions.
 
 #### Windows
 
