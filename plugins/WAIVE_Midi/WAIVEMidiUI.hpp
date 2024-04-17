@@ -41,8 +41,12 @@ protected:
     void sliderDragFinished(Slider *slider, float value) override;
     void sliderValueChanged(Slider *slider, float value) override;
     void grooveClicked(GrooveGraph *graph) override;
+    void uiScaleFactorChanged(const double scaleFactor) override;
 
 private:
+    float fScale;
+    double fScaleFactor;
+
     WAIVEMidi *plugin;
     VSlider *fThreshold;
     HBox *hbox_controls;

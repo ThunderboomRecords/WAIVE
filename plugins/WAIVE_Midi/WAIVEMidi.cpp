@@ -115,13 +115,13 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
         std::cout << " done\n";
 
-        PrintModelDetails("mScoreEncoder", mScoreEncoderInputNames, mScoreEncoderOutputNames, mScoreEncoderInputShape, mScoreEncoderOutputShape);
-        PrintModelDetails("mScoreDecoder", mScoreDecoderInputNames, mScoreDecoderOutputNames, mScoreDecoderInputShape, mScoreDecoderOutputShape);
+        //PrintModelDetails("mScoreEncoder", mScoreEncoderInputNames, mScoreEncoderOutputNames, mScoreEncoderInputShape, mScoreEncoderOutputShape);
+        //PrintModelDetails("mScoreDecoder", mScoreDecoderInputNames, mScoreDecoderOutputNames, mScoreDecoderInputShape, mScoreDecoderOutputShape);
 
-        PrintModelDetails("mGrooveEncoder", mGrooveEncoderInputNames, mGrooveEncoderOutputNames, mGrooveEncoderInputShape, mGrooveEncoderOutputShape);
-        PrintModelDetails("mGrooveDecoder", mGrooveDecoderInputNames, mGrooveDecoderOutputNames, mGrooveDecoderInputShape, mGrooveDecoderOutputShape);
+        //PrintModelDetails("mGrooveEncoder", mGrooveEncoderInputNames, mGrooveEncoderOutputNames, mGrooveEncoderInputShape, mGrooveEncoderOutputShape);
+        //PrintModelDetails("mGrooveDecoder", mGrooveDecoderInputNames, mGrooveDecoderOutputNames, mGrooveDecoderInputShape, mGrooveDecoderOutputShape);
 
-        PrintModelDetails("mFullDecoder", mFullDecoderInputNames, mFullDecoderOutputNames, mFullDecoderInputShape, mFullDecoderOutputShape);
+        //PrintModelDetails("mFullDecoder", mFullDecoderInputNames, mFullDecoderOutputNames, mFullDecoderInputShape, mFullDecoderOutputShape);
 
         std::cout << std::endl;
     }
@@ -412,14 +412,14 @@ void WAIVEMidi::encodeGroove()
 
 void WAIVEMidi::generateGroove()
 {
-    std::cout << "mGrooveZ: [";
+    //std::cout << "mGrooveZ: [";
     for(size_t i=0; i<mGrooveZ.size(); i++){
         float z = distribution(generator);
         z = z * groove_stds[i % 32] + groove_means[i % 32];
         mGrooveZ[i] = z;
-        printf("%.3f, ", mGrooveZ[i]);
+        //printf("%.3f, ", mGrooveZ[i]);
     }
-    std::cout << "]" << std::endl;
+    //std::cout << "]" << std::endl;
 
     const char* inputNamesCstrs[] = {mGrooveDecoderInputNames[0].c_str()};
     const char* outputNamesCstrs[] = {mGrooveDecoderOutputNames[0].c_str()};
@@ -460,18 +460,18 @@ void WAIVEMidi::generateFullPattern()
 {
     
     mFullZ.clear();
-    std::cout << "mFullZ = [";
+    //std::cout << "mFullZ = [";
     for(const float z : mScoreZ)
     {
         mFullZ.push_back(z);
-        printf("%.2f, ", z);
+        //printf("%.2f, ", z);
     }
     for(const float z : mGrooveZ)
     {
         mFullZ.push_back(z);
-        printf("%.2f, ", z);
+        //printf("%.2f, ", z);
     }
-    std::cout << "]" << std::endl;
+    //std::cout << "]" << std::endl;
 
     const char* inputNamesCstrs[] = {mFullDecoderInputNames[0].c_str()};
     const char* outputNamesCstrs[] = {mFullDecoderOutputNames[0].c_str()};
@@ -575,19 +575,19 @@ void WAIVEMidi::computeNotes()
         // then reorder again
         std::sort(newNotes[j].begin(), newNotes[j].end(), compareNotes);
 
-        std::cout << "Instrument " << j << std::endl;
+        //std::cout << "Instrument " << j << std::endl;
         for(int i=0; i<newNotes[j].size(); i++)
         {
             Note n = newNotes[j][i];
-            if(n.noteOn)
-                printf("  % 4d: %02d noteOn  velocity %d \n", n.tick, n.midiNote, n.velocity);
-            else
-                printf("  % 4d: %02d noteOff velocity %d \n", n.tick, n.midiNote, n.velocity);
+            //if(n.noteOn)
+            //    printf("  % 4d: %02d noteOn  velocity %d \n", n.tick, n.midiNote, n.velocity);
+            //else
+            //    printf("  % 4d: %02d noteOff velocity %d \n", n.tick, n.midiNote, n.velocity);
 
 
             notes.push_back(n);
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
     }
 
     std::sort(notes.begin(), notes.end(), compareNotes);
