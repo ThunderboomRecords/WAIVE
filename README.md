@@ -1,6 +1,5 @@
 # WAIVE-Plugins
 
-
 <p align="center">    
 AI x Archive music tools
 </p>
@@ -17,6 +16,22 @@ A plugin suite that combines music, sound and MIDI generation with European cult
 Aims to be an offline, modular version of [WAIVE-studio](https://www.waive.studio/) that can be integrated into your DAW.
 Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX Runtime](https://github.com/microsoft/onnxruntime). 
 
+### Installation
+1. Download and extract the zip archive containing the binaries for you system in the [Releases](https://github.com/ThunderboomRecords/WAIVE/releases) page, under the heading "Assets".
+    - Current supported platforms: MacOS (Apple silicon) and Linux x86_64.
+2. Choose which plugin format you prefer and place it in your plugins path of your DAW. 
+    - Current formats: VST2, VST3, CLAP, and a Standalone (JACK) app.
+    - Common (system-wide) plugin paths:
+      
+        |          |  VST2  |  VST3*  |  CLAP |
+        |----------|--------|---------|-------|
+        | macOS    | `Library/Audio/Plug-ins/VST3` | `Library/Audio/Plug-ins/VST3` | `Library/Audio/Plug-ins/CLAP` |
+        | Linux    |  `/usr/lib/vst` | `/usr/lib/vst3` |  `/usr/lib/clap`     |
+        | Windows  | `C:\Program Files\Common Files\VST2`  | `C:\Program Files\Common Files\VST3` | `C:\Program Files\Common Files\CLAP`  |
+      
+       \* for VST3, move the whole `WAIVE_Midi.vst/` folder here. 
+   
+4. In your DAW, rescan plugins if it does not automatically. 
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
@@ -44,7 +59,7 @@ $ cmake ..
 $ cmake --build . --config Release
 ```
 
-The plugins are found in ```build/bin``` folder. 
+The plugins are found in ```build/bin``` folder. Move your prefered format binary to your plugins folder (see [instructions](#installation) above).
 
 *TODO:* installation instructions.
 
