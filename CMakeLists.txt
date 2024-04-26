@@ -3,8 +3,8 @@ set(CXX_STANDARD 14)
 set(CXX_STANDARD_REQUIRED ON)
 
 project(
-    WAIVE_Midi
+    WAIVE_Sampler
 )
 
 add_subdirectory(dpf)
-add_subdirectory(plugins/WAIVE_Midi)
+add_subdirectory(plugins/WAIVE_Sampler)
