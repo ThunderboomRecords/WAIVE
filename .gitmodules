@@ -1,3 +1,6 @@
 [submodule "dpf"]
 	path = dpf
 	url = https://github.com/DISTRHO/DPF.git
+[submodule "external/LibrosaCpp"]
+	path = external/LibrosaCpp
+	url = https://github.com/ewan-xu/LibrosaCpp.git

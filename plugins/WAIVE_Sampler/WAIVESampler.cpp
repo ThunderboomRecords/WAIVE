@@ -57,7 +57,14 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
 }
 
 
-void WAIVESampler::setState(const char *key, const char *value){ }
+void WAIVESampler::setState(const char *key, const char *value)
+{
+    if(strcmp(key, "filename") == 0)
+    {
+        fFilepath = std::string(value);
+        loadSample(value);
+    }
+}
 
 
 String WAIVESampler::getState(const char *key) const
@@ -85,7 +92,72 @@ void WAIVESampler::run(
     uint32_t midiEventCount      // Number of MIDI events in block
 )
 {
+    for(uint32_t i = 0; i < numFrames; i++)
+    {
+        outputs[0][i] = 0.0f;
+        outputs[1][i] = 0.0f;
+    }
+}
 
+
+int WAIVESampler::loadSample(const char *fp)
+{
+    printf("loadSample %s\n", fp);
+
+    SndfileHandle fileHandle(fp);
+
+    int newSampleLength = fileHandle.frames() - 1;
+    
+    if(newSampleLength <= 0){
+        fFilepath = "--";
+        return 0;
+    }
+
+    fSampleLength = newSampleLength;
+    fWaveform.resize(0);
+    int channels = fileHandle.channels();
+    fWaveform.resize(fSampleLength * channels);
+    fileHandle.read(&fWaveform.at(0), fSampleLength * channels);
+
+    printf("sampleLength: %d channels: %d\n ", fSampleLength, channels);
+
+    analyseWaveform();
+
+    return 0;
+};
+
+
+void WAIVESampler::analyseWaveform()
+{
+
+    int n_fft = 1024;
+    int n_hop = 441;
+    std::string window = "hann";
+    bool center = false;
+    std::string pad_mode = "reflect";
+    float power = 2.f;
+    int n_mel = 64;
+    int fmin = 0;
+    int fmax = 22050;
+
+    std::vector<std::vector<float>> melspec = librosa::Feature::melspectrogram(
+        fWaveform, 
+        sampleRate, 
+        n_fft, 
+        n_hop, 
+        window, 
+        center, 
+        pad_mode, 
+        power,
+        n_mel, 
+        fmin, 
+        fmax
+    );
+
+    printf(" ** melspec:\n");
+    printf(" %.d rows, %d cols\n", melspec.size(), melspec[0].size());
+    printf(" value at (4, 5) = %.2f\n", melspec[4][5]);
+    std::cout << std::endl;
 }
 
 

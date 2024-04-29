@@ -8,7 +8,8 @@ Button::Button(Widget* parent)
       backgroundColor(32, 32, 32),
       labelColor(255, 255, 255),
       label("button"),
-      fontScale(1.0f)
+      fontScale(1.0f),
+      fHasFocus(false)
 {
 #ifdef DGL_NO_SHARED_RESOURCES
     createFontFromFile("sans", "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf");
@@ -65,8 +66,6 @@ void Button::onNanoDisplay()
     float tx = w / 2.0f ;
     float ty = h / 2.0f;
     textAlign(ALIGN_CENTER | ALIGN_MIDDLE);
-
-    fillColor(255, 255, 255, 255);
     text(tx, ty, label.c_str(), NULL);
     closePath();
 }
@@ -84,8 +83,22 @@ bool Button::onMouse(const MouseEvent& ev)
 
 bool Button::onMotion(const MotionEvent& ev)
 {
-    // return ButtonEventHandler::motionEvent(ev);
-    return true;
+    bool hover = contains(ev.pos);
+    if(hover)
+    {
+        if(!fHasFocus)
+        {
+            fHasFocus = true;
+            getWindow().setCursor(kMouseCursorHand);
+        }
+    } else {
+        if(fHasFocus)
+        {
+            fHasFocus = false;
+            getWindow().setCursor(kMouseCursorArrow);
+        }
+    }
+    return false;
 }
 
 void Button::setCallback(Callback *cb)

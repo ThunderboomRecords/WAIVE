@@ -50,6 +50,9 @@ Requires cmake:
 $ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git
 $ cd WAIVE/
 
+# fix LibrosaCpp:
+$ sed -i -e "s/sqrtf/sqrt/g" external/LibrosaCpp/librosa/librosa.h 
+
 # copy lib/ and include/ from static built onnxruntime into plugins/WAIVE_Midi,
 # then from project root:
 
@@ -68,3 +71,9 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 *TODO*
 
 
+### Licenses
+
+- [DPF](https://github.com/DISTRHO/DPF?tab=ISC-1-ov-file) ISC license
+- [ONNX Runtime](https://github.com/microsoft/onnxruntime) MIT
+- [LibrosaCpp](https://github.com/ewan-xu/LibrosaCpp/tree/main) Apache-2.0
+- [libsndfile](https://github.com/libsndfile/libsndfile?tab=LGPL-2.1-1-ov-file) LGPL-2.1 

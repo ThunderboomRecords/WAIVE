@@ -2,8 +2,9 @@
 #define SIMPLEBUTTON_HPP_INCLUDED
 
 #include "NanoVG.hpp"
-// #include "EventHandlers.hpp"
+#include "Window.hpp"
 
+#include <iostream>
 #include <string>
 
 START_NAMESPACE_DGL
@@ -38,6 +39,8 @@ private:
     Color labelColor;
     std::string label;
     float fontScale;
+
+    bool fHasFocus;
 
     DISTRHO_LEAK_DETECTOR(Button)
 

@@ -2,11 +2,15 @@
 #define WAIVE_SAMPLER_HPP
 
 #include <iostream>
+#include <vector>
+#include <string>
 
 #include "DistrhoPluginInfo.h"
 #include "DistrhoPlugin.hpp"
 #include "WAIVESamplerParams.h"
 
+#include <sndfile.hh>
+#include <librosa/librosa.h>
 
 START_NAMESPACE_DISTRHO
 
@@ -44,7 +48,7 @@ protected:
 
     uint32_t getVersion() const noexcept override
     {
-        return d_version(0, 2, 1);
+        return d_version(0, 3, 0);
     }
 
     int64_t getUniqueId() const noexcept override
@@ -66,11 +70,18 @@ protected:
     void run(const float **, float **outputs, uint32_t numFrames, const MidiEvent *midiEvents, uint32_t midiEventCount) override;
     void sampleRateChanged(double newSampleRate) override;
 
+    int loadSample(const char *fp);
+    void analyseWaveform();
 
 private:
     float sampleRate;
 
     float fVolume0;
+    std::string fFilepath;
+
+    std::vector<float> fWaveform;
+    int fSampleLength;
+    int fSamplePtr;
 
     friend class WAIVESamplerUI;
 

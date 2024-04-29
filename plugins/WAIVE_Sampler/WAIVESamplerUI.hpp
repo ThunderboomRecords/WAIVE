@@ -7,6 +7,7 @@
 
 #include "HBox.hpp"
 #include "VBox.hpp"
+#include "SimpleButton.hpp"
 
 #include "fonts.h"
 
@@ -20,7 +21,8 @@ const unsigned int UI_W = 840;
 const unsigned int UI_H = 380;
 
 
-class WAIVESamplerUI : public UI
+class WAIVESamplerUI : public UI,
+                       public Button::Callback
 {
 public:
     WAIVESamplerUI();
@@ -32,6 +34,8 @@ protected:
     void onNanoDisplay() override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
+    void buttonClicked(Button *button) override;
+
 private:
     float fScale;
     double fScaleFactor;
@@ -39,6 +43,11 @@ private:
     WAIVESampler *plugin;
 
     FontId logo_font;
+
+    Button *open_button;
+
+    DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
+
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 
 };
