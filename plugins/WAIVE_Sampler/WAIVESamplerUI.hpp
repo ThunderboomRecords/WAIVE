@@ -1,6 +1,8 @@
 #ifndef WAIVE_SAMPLER_UI_HPP
 #define WAIVE_SAMPLER_UI_HPP
 
+#include <queue>
+
 #include "DistrhoUI.hpp"
 #include "NanoVG.hpp"
 #include "Window.hpp"
@@ -8,10 +10,12 @@
 #include "HBox.hpp"
 #include "VBox.hpp"
 #include "SimpleButton.hpp"
+#include "Waveform.hpp"
 
 #include "fonts.h"
 
 #include "WAIVESampler.hpp"
+#include "WAIVESamplerParams.h"
 
 
 
@@ -22,7 +26,8 @@ const unsigned int UI_H = 380;
 
 
 class WAIVESamplerUI : public UI,
-                       public Button::Callback
+                       public Button::Callback,
+                       public IdleCallback
 {
 public:
     WAIVESamplerUI();
@@ -35,6 +40,7 @@ protected:
     void uiScaleFactorChanged(const double scaleFactor) override;
 
     void buttonClicked(Button *button) override;
+    void idleCallback() override;
 
 private:
     float fScale;
@@ -45,6 +51,7 @@ private:
     FontId logo_font;
 
     Button *open_button;
+    Waveform *waveform_display;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 

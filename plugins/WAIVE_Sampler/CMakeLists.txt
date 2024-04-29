@@ -19,6 +19,7 @@ dpf_add_plugin(
       ../../common/src/Slider.cpp
       ../../common/src/VSlider.cpp
       ../../common/src/Playhead.cpp
+      ../../common/src/Waveform.cpp
       ../../common/src/SimpleButton.cpp
 )
 
@@ -41,9 +42,6 @@ else()
 message(FATAL_ERROR "Sndfile library not found")
 endif()
 
-
-# add_subdirectory(../../external/LibrosaCpp)
-
     
 target_link_libraries(
     WAIVE_Sampler
@@ -58,7 +56,6 @@ target_include_directories(
   PUBLIC 
     .
     ../../common
-    # ../../external/Gist/src
     ../../external/LibrosaCpp
 )
 

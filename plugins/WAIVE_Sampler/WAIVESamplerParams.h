@@ -6,4 +6,9 @@ enum Parameters {
     kParameterCount
 };
 
+enum Updates {
+    kSampleLoading = 1000,
+    kSampleLoaded
+};
+
 #endif

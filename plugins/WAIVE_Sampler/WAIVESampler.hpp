@@ -4,12 +4,14 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <queue>
+
+#include <sndfile.hh>
 
 #include "DistrhoPluginInfo.h"
 #include "DistrhoPlugin.hpp"
 #include "WAIVESamplerParams.h"
 
-#include <sndfile.hh>
 #include <librosa/librosa.h>
 
 START_NAMESPACE_DISTRHO
@@ -78,10 +80,13 @@ private:
 
     float fVolume0;
     std::string fFilepath;
+    bool fSampleLoaded;
 
     std::vector<float> fWaveform;
     int fSampleLength;
     int fSamplePtr;
+
+    std::queue<int> updateQueue;
 
     friend class WAIVESamplerUI;
 

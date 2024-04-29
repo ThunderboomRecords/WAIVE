@@ -23,13 +23,13 @@ Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX 
     - Current formats: VST2, VST3, CLAP, and a Standalone (JACK) app.
     - Common (system-wide) plugin paths:
       
-        |          |  VST2  |  VST3*  |  CLAP |
-        |----------|--------|---------|-------|
-        | macOS    | `Library/Audio/Plug-ins/VST3` | `Library/Audio/Plug-ins/VST3` | `Library/Audio/Plug-ins/CLAP` |
-        | Linux    |  `/usr/lib/vst` | `/usr/lib/vst3` |  `/usr/lib/clap`     |
+        |          |  VST2                                 |  VST3*                               |  CLAP                                 |
+        |----------|---------------------------------------|--------------------------------------|---------------------------------------|
+        | macOS    | `Library/Audio/Plug-ins/VST3`         | `Library/Audio/Plug-ins/VST3`        | `Library/Audio/Plug-ins/CLAP`         |
+        | Linux    | `/usr/lib/vst`                        | `/usr/lib/vst3`                      |  `/usr/lib/clap`                      |
         | Windows  | `C:\Program Files\Common Files\VST2`  | `C:\Program Files\Common Files\VST3` | `C:\Program Files\Common Files\CLAP`  |
       
-       \* for VST3, move the whole `WAIVE_Midi.vst/` folder here. 
+       \* for VST3, move the whole `.vst` folders here. 
    
 4. In your DAW, rescan plugins if it does not automatically. 
 
@@ -77,3 +77,4 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 - [ONNX Runtime](https://github.com/microsoft/onnxruntime) MIT
 - [LibrosaCpp](https://github.com/ewan-xu/LibrosaCpp/tree/main) Apache-2.0
 - [libsndfile](https://github.com/libsndfile/libsndfile?tab=LGPL-2.1-1-ov-file) LGPL-2.1 
+- [VG5000 font](https://velvetyne.fr/fonts/vg5000/) SIL Open Font License, Version 1.1

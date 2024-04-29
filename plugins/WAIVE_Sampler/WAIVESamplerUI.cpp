@@ -21,6 +21,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     open_button->setAbsolutePos(10, 10);
     open_button->setCallback(this);
 
+    waveform_display = new Waveform(this);
+    waveform_display->setSize(UI_W - 20, 80);
+    waveform_display->setAbsolutePos(10, 70);
+
+    addIdleCallback(this);
 
     setGeometryConstraints(UI_W*fScaleFactor, UI_H*fScaleFactor, false, false);
 
@@ -50,9 +55,7 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
 {
     std::cout << "WAIVESamplerUI::stateChanged: " << key << " -> " << value << std::endl;
 
-    if(strcmp(key, "filename") == 0)
-    {
-    }
+    if(strcmp(key, "filename") == 0){ }
 
     repaint();
 }
@@ -94,6 +97,29 @@ void WAIVESamplerUI::onNanoDisplay()
 void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
 {
     fScaleFactor = scaleFactor;
+}
+
+
+void WAIVESamplerUI::idleCallback()
+{
+    std::queue<int> *updateQueue = &plugin->updateQueue;
+    for(; !updateQueue->empty(); updateQueue->pop())
+    {
+        int msg = updateQueue->front();
+        // std::cout << "msg: " << msg << std::endl;
+
+        switch(msg)
+        {
+            case kSampleLoading:
+                break;
+            case kSampleLoaded:
+                waveform_display->calculateWaveform(&plugin->fWaveform);
+                break;
+            default:
+                std::cout << "Unknown update: " << msg << std::endl;
+                break;
+        }
+    }
 }
 
 END_NAMESPACE_DISTRHO

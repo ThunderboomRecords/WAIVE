@@ -4,9 +4,11 @@ START_NAMESPACE_DISTRHO
 
 
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
-                               fVolume0(0.0f)
+                               fVolume0(0.0f),
+                               fSampleLoaded(false),
+                               sampleRate(getSampleRate())
 {
-    sampleRate = getSampleRate();
+
 }
 
 
@@ -104,24 +106,41 @@ int WAIVESampler::loadSample(const char *fp)
 {
     printf("loadSample %s\n", fp);
 
-    SndfileHandle fileHandle(fp);
+    updateQueue.push(kSampleLoading);
 
-    int newSampleLength = fileHandle.frames() - 1;
-    
-    if(newSampleLength <= 0){
-        fFilepath = "--";
+    SndfileHandle fileHandle(fp);
+    int sampleLength = fileHandle.frames() - 1;
+
+    if (sampleLength == -1)
+    {
+        printf("Error: Unable to open input file '%s'\n", fp);
         return 0;
     }
 
-    fSampleLength = newSampleLength;
-    fWaveform.resize(0);
-    int channels = fileHandle.channels();
-    fWaveform.resize(fSampleLength * channels);
-    fileHandle.read(&fWaveform.at(0), fSampleLength * channels);
+    fSampleLength = sampleLength;
+    int sampleChannels = fileHandle.channels();
 
-    printf("sampleLength: %d channels: %d\n ", fSampleLength, channels);
+    std::vector<float> sample;
+    sample.resize(sampleLength * sampleChannels);
+    fileHandle.read(&sample.at(0), sampleLength * sampleChannels);
 
-    analyseWaveform();
+    fWaveform.resize(fSampleLength);
+
+    if(sampleChannels > 1){
+        for (int i = 0; i < fSampleLength; i++) {
+            fWaveform[i] = (sample[i * sampleChannels] + sample[i * sampleChannels + 1]) * 0.5f;
+        }
+    } else {
+        for (int i = 0; i < fSampleLength; i++) {
+            fWaveform[i] = sample[i];
+        }
+    }
+
+    fSampleLoaded = true;
+
+    updateQueue.push(kSampleLoaded);
+
+    // analyseWaveform();
 
     return 0;
 };
@@ -133,8 +152,8 @@ void WAIVESampler::analyseWaveform()
     int n_fft = 1024;
     int n_hop = 441;
     std::string window = "hann";
-    bool center = false;
-    std::string pad_mode = "reflect";
+    bool center = true;
+    std::string pad_mode = "constant";
     float power = 2.f;
     int n_mel = 64;
     int fmin = 0;
@@ -142,7 +161,7 @@ void WAIVESampler::analyseWaveform()
 
     std::vector<std::vector<float>> melspec = librosa::Feature::melspectrogram(
         fWaveform, 
-        sampleRate, 
+        22050, 
         n_fft, 
         n_hop, 
         window, 
@@ -156,7 +175,7 @@ void WAIVESampler::analyseWaveform()
 
     printf(" ** melspec:\n");
     printf(" %.d rows, %d cols\n", melspec.size(), melspec[0].size());
-    printf(" value at (4, 5) = %.2f\n", melspec[4][5]);
+    printf(" value at (4, 5) = %.4f\n", melspec[4][5]);
     std::cout << std::endl;
 }
 

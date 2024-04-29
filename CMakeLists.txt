@@ -8,9 +8,5 @@ project(
 
 add_subdirectory(dpf)
 add_subdirectory(external/LibrosaCpp)
-# externals
-# add_subdirectory(external/Gist)
-# add_compile_options(-DUSE_KISS_FFT)
-
 
 add_subdirectory(plugins/WAIVE_Sampler)
