@@ -64,8 +64,6 @@ $ cmake --build . --config Release
 
 The plugins are found in ```build/bin``` folder. Move your prefered format binary to your plugins folder (see [instructions](#installation) above).
 
-*TODO:* installation instructions.
-
 #### Windows
 
 *TODO*

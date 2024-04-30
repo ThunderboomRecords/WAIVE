@@ -30,6 +30,7 @@ if(APPLE)
   find_library(COREFOUNDATION CoreFoundation)
 elseif(WIN32)
 elseif(UNIX AND NOT APPLE)
+  target_compile_definitions(WAIVE_Sampler PUBLIC LINUX)
 endif()
 
 link_directories(
@@ -57,6 +58,7 @@ target_include_directories(
     .
     ../../common
     ../../external/LibrosaCpp
+    ../../external/fast-cpp-csv-parser
 )
 
 set_target_properties(WAIVE_Sampler PROPERTIES LINK_FLAGS "--libs=sndfile")

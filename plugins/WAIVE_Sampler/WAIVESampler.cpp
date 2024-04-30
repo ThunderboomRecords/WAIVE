@@ -1,5 +1,17 @@
 #include "WAIVESampler.hpp"
 
+fs::path get_homedir()
+{
+    std::string homedir = "";
+#ifdef WIN32
+    homedir += getenv("HOMEDRIVE") + getenv("HOMEPATH");
+#else
+    homedir += getenv("HOME");
+#endif
+    return fs::path(homedir);
+}
+
+
 START_NAMESPACE_DISTRHO
 
 
@@ -8,6 +20,34 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fSampleLoaded(false),
                                sampleRate(getSampleRate())
 {
+    // Get and create the directory where samples and sound files will
+    // be saved to
+
+    fs::path homedir = get_homedir();
+    fCacheDir = homedir/CACHE_DIR;
+
+    std::cout << "homedir: " << homedir << std::endl;
+    std::cout << "cacheDir: " << fCacheDir << std::endl;
+
+    bool result = fs::create_directory(fCacheDir);
+    std::cout << "fCacheDir created: " << (result ? "true" : "false") << std::endl;
+
+    if(result)
+    {
+        // newly created cache, make database file...
+    }
+
+
+    // read database file
+    io::CSVReader<3> in(fCacheDir/"db.csv");
+    in.read_header(io::ignore_extra_column, "index", "data1", "data2");
+    std::string data1, data2;
+    int index;
+    while(in.read_row(index, data1, data2))
+    {
+        std::cout << "index: " << index << " data1: " << data1 << " data2: " << data2 << std::endl;
+    }
+
 
 }
 
@@ -139,6 +179,12 @@ int WAIVESampler::loadSample(const char *fp)
     fSampleLoaded = true;
 
     updateQueue.push(kSampleLoaded);
+
+    // make sure the queue does not get too long..
+    while(updateQueue.size() > 64)
+    {
+        updateQueue.pop();
+    }
 
     // analyseWaveform();
 

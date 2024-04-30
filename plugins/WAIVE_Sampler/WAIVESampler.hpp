@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <queue>
+#include <filesystem>
 
 #include <sndfile.hh>
 
@@ -13,6 +14,14 @@
 #include "WAIVESamplerParams.h"
 
 #include <librosa/librosa.h>
+#include "csv.h"
+
+#define MAX_PATH 128
+
+namespace fs = std::filesystem;
+
+fs::path get_homedir();
+
 
 START_NAMESPACE_DISTRHO
 
@@ -77,6 +86,8 @@ protected:
 
 private:
     float sampleRate;
+
+    fs::path fCacheDir;
 
     float fVolume0;
     std::string fFilepath;
