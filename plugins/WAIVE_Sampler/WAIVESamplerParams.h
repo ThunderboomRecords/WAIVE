@@ -11,6 +11,8 @@
 // - does it need backslashes, or does std::filesystem make
 //   the conversion from '/'?
 #define DATA_DIR "AppData\\Local\\WAIVE"
+#else
+#define DATA_DIR ".cache/WAIVE"
 #endif
 
 // SOURCE_DIR: folder in DATA_DIR that holds the source 
@@ -20,6 +22,8 @@
 // SAMPLE_DIR: folder in DATA_DIR that contains saved
 // sample waveforms
 #define SAMPLE_DIR "Samples"
+
+#define DB_FILE "db.csv"
 
 enum Parameters {
     kVolume0 = 0,

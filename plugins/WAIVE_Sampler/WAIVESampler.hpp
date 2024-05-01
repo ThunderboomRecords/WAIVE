@@ -6,6 +6,7 @@
 #include <string>
 #include <queue>
 #include <filesystem>
+#include <fstream>
 
 #include <sndfile.hh>
 

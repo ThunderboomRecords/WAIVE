@@ -45,9 +45,30 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
         fs::create_directory(fCacheDir/SAMPLE_DIR);
     }
 
+    // create database file if not present;
+    if(!fs::exists(fCacheDir/DB_FILE))
+    {
+        std::fstream db_file;
+        db_file.open(fCacheDir/DB_FILE, std::fstream::out);
+
+        if(db_file.is_open())
+        {
+            db_file << "index,data1,data2\n";
+            db_file << "0,some data,more data\n";
+
+            db_file.close();
+
+            std::cout << "made database file in ";
+            std::cout << fCacheDir/DB_FILE << std::endl;
+
+        } else {
+            std::cout << "Error making database file in ";
+            std::cout << fCacheDir/DB_FILE << std::endl;
+        }
+    }
 
     // read database file
-    io::CSVReader<3> in(fCacheDir/"db.csv");
+    io::CSVReader<3> in(fCacheDir/DB_FILE);
     in.read_header(io::ignore_extra_column, "index", "data1", "data2");
     std::string data1, data2;
     int index;
@@ -58,7 +79,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
 
     stretch.presetDefault(1, (int)sampleRate);
-
+    stretch.setTransposeFactor(0.25);
 }
 
 
@@ -205,6 +226,8 @@ bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
 
 void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end, std::vector<float> *destination)
 {
+    // TODO: ideally on separate thread (with mutex lock on fSample)
+
     if(start == end) return;
 
     if(start > end)
@@ -220,6 +243,13 @@ void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end
     fSampleLoaded = false;
 
     uint length = end - start;
+
+    // create working buffers
+    std::vector<std::vector<float>> inBuffer{{0.0f}};
+    std::vector<std::vector<float>> outBuffer{{0.0f}};
+
+    stretch.reset();
+
     destination->resize(length);
     fSampleLength = length;
 
@@ -228,11 +258,48 @@ void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end
     float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
     if(std::abs(normaliseRatio) <= 0.0001f) normaliseRatio = 1.0f;
 
-    for(int i=0; i < length; i++)
+    float startSemiTones = 24.0f;
+    float endSemiTones = 0.25f;
+
+    int blockSize = 256;
+
+    // pitch sample with varying pitch
+    inBuffer[0].resize(blockSize);
+    outBuffer[0].resize(blockSize);
+
+    int index = 0;
+
+    float st = startSemiTones;
+
+    while(index < length)
     {
-        destination->operator[](i) = source->operator[](start + i) / normaliseRatio;
+        for(int i=0; i < blockSize; i++)
+        {
+            if(index + i >= length) break;
+
+            inBuffer[0][i] = source->operator[](start + index + i) / normaliseRatio;
+
+        }
+
+        stretch.setTransposeSemitones(st);
+        stretch.process(inBuffer, blockSize, outBuffer, blockSize);
+
+        for(int i=0; i < blockSize; i++)
+        {
+            if(index + i >= length) break;
+
+            // TODO: Amp and filter envelope here too..
+
+            destination->operator[](index + i) = outBuffer[0][i];
+        }
+
+        index += blockSize;
+
+        st = endSemiTones + (startSemiTones - endSemiTones) * (1.0f - (float) index / (blockSize * 20) );
+        st = std::clamp(st, endSemiTones, startSemiTones);
     }
 
+    fSamplePtr = 0;
     fSampleLoaded = true;
 }
 
