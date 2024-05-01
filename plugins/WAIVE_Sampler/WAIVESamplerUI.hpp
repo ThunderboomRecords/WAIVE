@@ -9,6 +9,8 @@
 
 #include "HBox.hpp"
 #include "VBox.hpp"
+#include "Knob.hpp"
+#include "Knob3D.hpp"
 #include "SimpleButton.hpp"
 #include "Waveform.hpp"
 
@@ -28,7 +30,8 @@ const unsigned int UI_H = 380;
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
                        public IdleCallback,
-                       public Waveform::Callback
+                       public Waveform::Callback,
+                       public Knob::Callback
 {
 public:
     WAIVESamplerUI();
@@ -43,6 +46,9 @@ protected:
     void buttonClicked(Button *button) override;
     void idleCallback() override;
     void waveformSelection(Waveform *waveform, uint selectionStart, uint selectionEnd) override;
+    void knobDragStarted(Knob *knob) override;
+    void knobDragFinished(Knob *knob, float value) override;
+    void knobValueChanged(Knob *knob, float value) override;
 
 private:
     float fScale;
@@ -54,6 +60,7 @@ private:
 
     Button *open_button;
     Waveform *waveform_display, *sample_display;
+    Knob3D *pitch, *volume;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 

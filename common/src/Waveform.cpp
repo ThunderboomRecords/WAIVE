@@ -58,6 +58,7 @@ void Waveform::calculateWaveform(std::vector<float> *wf)
     }
 
     waveformCached = true;
+    repaint();
 }
 
 void Waveform::onNanoDisplay()
@@ -75,8 +76,9 @@ void Waveform::onNanoDisplay()
     if(!waveformCached) return;
 
     beginPath();
+    lineCap(ROUND);
     strokeColor(lineColor);
-    strokeWidth(1.0f);
+    strokeWidth(0.8f);
     moveTo(0, half);
 
     for(int i = 0; i < waveformMin.size(); i++)

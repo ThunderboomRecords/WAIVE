@@ -17,7 +17,8 @@ START_NAMESPACE_DISTRHO
 
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                sampleRate(getSampleRate()),
-                               fVolume0(0.0f),
+                               fSampleVolume(1.0f),
+                               fSamplePitch(1.0f),
                                fSampleLoaded(false),
                                fSampleLength(0),
                                fSamplePtr(0)
@@ -79,7 +80,6 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
 
     stretch.presetDefault(1, (int)sampleRate);
-    stretch.setTransposeFactor(0.25);
 }
 
 
@@ -87,7 +87,7 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
 {
     switch(index)
     {
-        case kVolume0:
+        case kSampleVolume:
             parameter.name = "Volume0";
             parameter.symbol = "volume0";
             parameter.ranges.min = 0.0f;
@@ -95,6 +95,13 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
             parameter.ranges.def = 0.8f;
             parameter.hints = kParameterIsAutomatable;
             break;
+        case kSamplePitch:
+            parameter.name = "Sample Pitch";
+            parameter.symbol = "samplePitch";
+            parameter.ranges.min = 0.1f;
+            parameter.ranges.max = 4.0f;
+            parameter.ranges.def = 1.0f;
+            parameter.hints = kParameterIsAutomatable;
         default:
             break;
     }
@@ -106,8 +113,11 @@ float WAIVESampler::getParameterValue(uint32_t index) const
     float val = 0.0f;
     switch(index)
     {
-        case kVolume0:
-            val = fVolume0;
+        case kSampleVolume:
+            val = fSampleVolume;
+            break;
+        case kSamplePitch:
+            val = fSamplePitch;
             break;
         default:
             break;
@@ -121,8 +131,13 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
 {
     switch(index)
     {
-        case kVolume0:
-            fVolume0 = value;
+        case kSampleVolume:
+            fSampleVolume = value;
+            renderSample();
+            break;
+        case kSamplePitch:
+            fSamplePitch = value;
+            repitchSample();
             break;
         default:
             break;
@@ -218,13 +233,13 @@ bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
         }
     }
 
-    addToUpdateQueue(kSampleLoaded);
+    addToUpdateQueue(kSourceLoaded);
 
     return true;
 };
 
 
-void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end, std::vector<float> *destination)
+void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end)
 {
     // TODO: ideally on separate thread (with mutex lock on fSample)
 
@@ -241,25 +256,38 @@ void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end
         end = source->size() - 1;
 
     fSampleLoaded = false;
+    addToUpdateQueue(kSampleLoading);
 
-    uint length = end - start;
 
-    // create working buffers
-    std::vector<std::vector<float>> inBuffer{{0.0f}};
-    std::vector<std::vector<float>> outBuffer{{0.0f}};
-
-    stretch.reset();
-
-    destination->resize(length);
-    fSampleLength = length;
+    fSampleLength = end - start;
+    fSampleRaw.resize(fSampleLength);
+    fSamplePitched.resize(fSampleLength);
+    fSample.resize(fSampleLength);
 
     // normalise selection to [-1.0, 1.0]
     auto minmax = std::minmax_element(source->begin()+start, source->begin()+end);
     float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
     if(std::abs(normaliseRatio) <= 0.0001f) normaliseRatio = 1.0f;
 
-    float startSemiTones = 24.0f;
-    float endSemiTones = 0.25f;
+    for(int i=0; i<fSampleLength; i++)
+    {
+        fSampleRaw[i] = source->operator[](start + i) / normaliseRatio;
+    }
+
+    fSamplePtr = 0;
+    repitchSample();
+}
+
+void WAIVESampler::repitchSample()
+{
+    // create working buffers
+    std::vector<std::vector<float>> inBuffer{{0.0f}};
+    std::vector<std::vector<float>> outBuffer{{0.0f}};
+
+    stretch.reset();
+
+    float startFactor = 4.0f;
+    float endFactor = fSamplePitch;
 
     int blockSize = 256;
 
@@ -267,40 +295,47 @@ void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end
     inBuffer[0].resize(blockSize);
     outBuffer[0].resize(blockSize);
 
-    int index = 0;
+    int blockstart = 0;
 
-    float st = startSemiTones;
+    float st = startFactor;
 
-    while(index < length)
+    while(blockstart < fSampleLength)
     {
         for(int i=0; i < blockSize; i++)
         {
-            if(index + i >= length) break;
+            if(blockstart + i >= fSampleLength) break;
 
-            inBuffer[0][i] = source->operator[](start + index + i) / normaliseRatio;
-
+            inBuffer[0][i] = fSampleRaw[blockstart + i];
         }
 
-        stretch.setTransposeSemitones(st);
+        stretch.setTransposeFactor(st);
         stretch.process(inBuffer, blockSize, outBuffer, blockSize);
 
         for(int i=0; i < blockSize; i++)
         {
-            if(index + i >= length) break;
-
-            // TODO: Amp and filter envelope here too..
-
-            destination->operator[](index + i) = outBuffer[0][i];
+            if(blockstart + i >= fSampleLength) break;
+            fSamplePitched[blockstart + i] = outBuffer[0][i];
         }
 
-        index += blockSize;
+        blockstart += blockSize;
 
-        st = endSemiTones + (startSemiTones - endSemiTones) * (1.0f - (float) index / (blockSize * 20) );
-        st = std::clamp(st, endSemiTones, startSemiTones);
+        st = endFactor + (startFactor - endFactor) * (1.0f - (float) blockstart / (blockSize * 20) );
+        st = std::clamp(st, endFactor, startFactor);
     }
 
-    fSamplePtr = 0;
+    renderSample();
+}
+
+void WAIVESampler::renderSample()
+{
+   
+    for(int i=0; i<fSampleLength; i++)
+    {
+        fSample[i] = fSamplePitched[i] * fSampleVolume;
+    }
+
     fSampleLoaded = true;
+    addToUpdateQueue(kSampleUpdated);
 }
 
 

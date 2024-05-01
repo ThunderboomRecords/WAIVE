@@ -40,9 +40,9 @@ protected:
 private:
     Callback *callback;
     bool dragging_;
-    float value_, tmp_value_;
-    int mouseY_;
-    int last_mouse_y_;
+    float value_, tmp_p;
+    float dragStart;
+    bool sensitive;
 
     DISTRHO_LEAK_DETECTOR(Knob);
 };

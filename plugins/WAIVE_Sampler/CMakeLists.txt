@@ -16,6 +16,8 @@ dpf_add_plugin(
       ../../common/src/HBox.cpp
       ../../common/src/VBox.cpp
       ../../common/src/Notes.cpp
+      ../../common/src/Knob.cpp
+      ../../common/src/Knob3D.cpp
       ../../common/src/Slider.cpp
       ../../common/src/VSlider.cpp
       ../../common/src/Playhead.cpp

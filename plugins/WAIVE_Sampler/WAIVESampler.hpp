@@ -84,7 +84,9 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
 
     bool loadWaveform(const char *fp, std::vector<float> *buffer);
-    void selectSample(std::vector<float> *source, uint start, uint end, std::vector<float> *destination);
+    void selectSample(std::vector<float> *source, uint start, uint end);
+    void repitchSample();
+    void renderSample();
     void analyseWaveform();
 
 private:
@@ -96,12 +98,13 @@ private:
 
     signalsmith::stretch::SignalsmithStretch<float> stretch;
 
-    float fVolume0;
+    float fSampleVolume;
+    float fSamplePitch;
     std::string fFilepath;
 
     std::vector<float> fSourceWaveform;
 
-    std::vector<float> fSample;
+    std::vector<float> fSampleRaw, fSamplePitched, fSample;
     bool fSampleLoaded;
     uint fSampleLength, fSamplePtr;
 

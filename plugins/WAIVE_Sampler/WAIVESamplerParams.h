@@ -26,13 +26,16 @@
 #define DB_FILE "db.csv"
 
 enum Parameters {
-    kVolume0 = 0,
+    kSampleVolume = 0,
+    kSamplePitch,
     kParameterCount
 };
 
 enum Updates {
-    kSampleLoading = 1000,
-    kSampleLoaded
+    kSourceLoading = 1000,
+    kSourceLoaded,
+    kSampleLoading,
+    kSampleUpdated,
 };
 
 #endif

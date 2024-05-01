@@ -6,19 +6,19 @@ using DGL_NAMESPACE::Color;
 
 
 Knob::Knob(Widget *parent) noexcept
-    : NanoSubWidget(parent)
+    : NanoSubWidget(parent),
+      dragging_(false),
+      dragStart(0.0f),
+      value_(0.0f),
+      min(0.0f),
+      max(1.0f),
+      foreground_color(Color(200, 200, 200)),
+      background_color(Color(40, 40, 40)),
+      gauge_width(10.0f),
+      sensitive(false),
+      callback(nullptr)
 {
-    loadSharedResources();
-    parent->getWindow().addIdleCallback(this);
 
-    dragging_ = false;
-    value_ = 0.0f;
-    tmp_value_ = 0.0f;
-    min = 0.0f;
-    max = 1.0f;
-    foreground_color = Color(255, 255, 255);
-    background_color = Color(0, 0, 0);
-    gauge_width = 6.0f;
 }
 
 float Knob::getValue() noexcept
@@ -30,70 +30,83 @@ void Knob::setValue(float val, bool sendCallback) noexcept
 {
     if(val == value_) return;
 
-    value_ = std::max(min, std::min(max, val));
-    // float normValue = 0.0f;
-    tmp_value_ = value_;
-
-    // normValue = (value_ - min)/(max - min);
+    value_ = std::clamp(val, min, max);
 
     if(sendCallback && callback != nullptr)
     {
         callback->knobValueChanged(this, value_);
     }
+
+    repaint();
 }
 
 bool Knob::onMouse(const MouseEvent &ev)
 {
     if(!isVisible() || ev.button != 1) return false;
 
-    if(ev.press)
+    if(ev.press && contains(ev.pos))
     {
-        if(!contains(ev.pos)) return false;
-
         dragging_ = true;
-        last_mouse_y_ = ev.pos.getY();
+        dragStart = ev.pos.getY();
+        tmp_p = (value_ - min) / (max - min);
+
+        sensitive = (ev.mod == kModifierShift);
 
         if(callback != nullptr)
         {
             callback->knobDragStarted(this);
         }
         repaint();
-        return false;
     } 
-    else if(dragging_)
+    else if(!ev.press && dragging_)
     {
         dragging_ = false;
+    } 
+    else 
+    {
+        return false;
     }
 
-    return false;
+    return true;
 }
 
 bool Knob::onMotion(const MotionEvent &ev)
 {
-    if(!isVisible()) return false;
-    
+    if(!isVisible() || !dragging_) return false;
 
-    if(!dragging_) return false;
+    const float height = getHeight();
 
-    float d, value = 0.0f;
-    d = 200.f;
-    const int movY = last_mouse_y_ - ev.pos.getY();
-    value = tmp_value_ - (float(min - max)/d * float(movY));
-    
-    // printf("min: %f  max: %f  value: %f\n", min, max, value);
+    float scale = sensitive ? 200.0f : 100.0f;
 
-    if(value < min) tmp_value_ = value = min;
-    else if(value > max) tmp_value_ = value = max;
+    float d_y = ev.pos.getY() - dragStart;
+    float d_p = d_y / scale;
+    float p = tmp_p - d_p;
 
-    setValue(value, true);
-    last_mouse_y_ = ev.pos.getY();
+    float new_value = min + (max - min) * p;
+    new_value = std::clamp(new_value, min, max);
 
-    return false;
+    setValue(new_value, true);
+    return true;
 }
 
 bool Knob::onScroll(const ScrollEvent &ev)
 {
-    return false;
+    if(!isVisible() || dragging_ || !contains(ev.pos)) return false;
+
+    std::cout << "onScroll" << ev.delta.getY() << " " << std::endl;
+
+    sensitive = ev.mod == kModifierShift;
+
+    float p = (getValue() - min) / (max - min);
+    float scale = sensitive ? 0.01 : 0.03;
+
+    float new_p = p + ev.delta.getY() * scale;
+    float new_value = min + (max - min) * new_p;
+    new_value = std::clamp(new_value, min, max);
+
+    setValue(new_value, true);
+
+    return true;
 }
 
 void Knob::onNanoDisplay()

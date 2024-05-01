@@ -31,6 +31,28 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_display->setSize(180, 80);
     sample_display->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10); 
 
+    pitch = new Knob3D(this);
+    pitch->setSize(60, 60);
+    pitch->setAbsolutePos(UI_W - 10 - 180 - 100, 70+80+10);
+    pitch->gauge_width = 7.0f;
+    pitch->background_color = Color(190, 190, 190);
+    pitch->foreground_color = Color(0, 160, 245);
+    pitch->min = 0.25f;
+    pitch->max = 4.0f;
+    pitch->setValue(1.0f, false);
+    pitch->setCallback(this);
+
+    volume = new Knob3D(this);
+    volume->setSize(60, 60);
+    volume->setAbsolutePos(UI_W - 10 - 180 - 100 - 70, 70+80+10);
+    volume->gauge_width = 7.0f;
+    volume->background_color = Color(190, 190, 190);
+    volume->foreground_color = Color(0, 160, 245);
+    volume->min = 0.0f;
+    volume->max = 2.0f;
+    volume->setValue(1.0f, false);
+    volume->setCallback(this);
+
     addIdleCallback(this);
 
     setGeometryConstraints(UI_W*fScaleFactor, UI_H*fScaleFactor, false, false);
@@ -83,11 +105,27 @@ void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart, 
 {
     std::cout << "WAIVESamplerUI::waveformSelection " << selectionStart << " - " << selectionEnd << std::endl;
 
-    plugin->selectSample(&plugin->fSourceWaveform, selectionStart, selectionEnd, &plugin->fSample);
-
-    sample_display->calculateWaveform(&plugin->fSample);
-
+    plugin->selectSample(&plugin->fSourceWaveform, selectionStart, selectionEnd);
 }
+
+
+void WAIVESamplerUI::knobDragStarted(Knob *knob) { }
+
+void WAIVESamplerUI::knobDragFinished(Knob *knob, float value) { }
+
+void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
+{ 
+    // std::cout << "WAIVESamplerUI::knobValueChanged " << value << std::endl;
+    if(knob == pitch)
+    {
+        setParameterValue(kSamplePitch, value);
+    }
+    else if(knob == volume)
+    {
+        setParameterValue(kSampleVolume, value);
+    }
+}
+
 
 void WAIVESamplerUI::onNanoDisplay()
 {
@@ -123,14 +161,18 @@ void WAIVESamplerUI::idleCallback()
     for(; !updateQueue->empty(); updateQueue->pop())
     {
         int msg = updateQueue->front();
-        // std::cout << "msg: " << msg << std::endl;
 
         switch(msg)
         {
+            case kSourceLoading:
+                break;
+            case kSourceLoaded:
+                waveform_display->calculateWaveform(&plugin->fSourceWaveform);
+                break;
             case kSampleLoading:
                 break;
-            case kSampleLoaded:
-                waveform_display->calculateWaveform(&plugin->fSourceWaveform);
+            case kSampleUpdated:
+                sample_display->calculateWaveform(&plugin->fSample);
                 break;
             default:
                 std::cout << "Unknown update: " << msg << std::endl;
