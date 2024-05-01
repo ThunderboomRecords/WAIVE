@@ -24,6 +24,12 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     waveform_display = new Waveform(this);
     waveform_display->setSize(UI_W - 20, 80);
     waveform_display->setAbsolutePos(10, 70);
+    waveform_display->selectable = true;
+    waveform_display->setCallback(this);
+
+    sample_display = new Waveform(this);
+    sample_display->setSize(180, 80);
+    sample_display->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10); 
 
     addIdleCallback(this);
 
@@ -72,6 +78,17 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     
 }
 
+
+void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart, uint selectionEnd)
+{
+    std::cout << "WAIVESamplerUI::waveformSelection " << selectionStart << " - " << selectionEnd << std::endl;
+
+    plugin->selectSample(&plugin->fSourceWaveform, selectionStart, selectionEnd, &plugin->fSample);
+
+    sample_display->calculateWaveform(&plugin->fSample);
+
+}
+
 void WAIVESamplerUI::onNanoDisplay()
 {
     float width = getWidth();
@@ -113,7 +130,7 @@ void WAIVESamplerUI::idleCallback()
             case kSampleLoading:
                 break;
             case kSampleLoaded:
-                waveform_display->calculateWaveform(&plugin->fWaveform);
+                waveform_display->calculateWaveform(&plugin->fSourceWaveform);
                 break;
             default:
                 std::cout << "Unknown update: " << msg << std::endl;

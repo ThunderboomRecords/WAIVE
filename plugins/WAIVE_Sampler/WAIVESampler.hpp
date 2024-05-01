@@ -13,7 +13,8 @@
 #include "DistrhoPlugin.hpp"
 #include "WAIVESamplerParams.h"
 
-#include <librosa/librosa.h>
+#include <librosa.h>
+#include "signalsmith-stretch.h"
 #include "csv.h"
 
 #define MAX_PATH 128
@@ -81,21 +82,27 @@ protected:
     void run(const float **, float **outputs, uint32_t numFrames, const MidiEvent *midiEvents, uint32_t midiEventCount) override;
     void sampleRateChanged(double newSampleRate) override;
 
-    int loadSample(const char *fp);
+    bool loadWaveform(const char *fp, std::vector<float> *buffer);
+    void selectSample(std::vector<float> *source, uint start, uint end, std::vector<float> *destination);
     void analyseWaveform();
 
 private:
+    void addToUpdateQueue(int ev);
+
     float sampleRate;
 
     fs::path fCacheDir;
 
+    signalsmith::stretch::SignalsmithStretch<float> stretch;
+
     float fVolume0;
     std::string fFilepath;
-    bool fSampleLoaded;
 
-    std::vector<float> fWaveform;
-    int fSampleLength;
-    int fSamplePtr;
+    std::vector<float> fSourceWaveform;
+
+    std::vector<float> fSample;
+    bool fSampleLoaded;
+    uint fSampleLength, fSamplePtr;
 
     std::queue<int> updateQueue;
 

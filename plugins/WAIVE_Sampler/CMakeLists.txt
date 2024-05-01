@@ -42,7 +42,6 @@ message(STATUS "Sndfile library found: ${SNDFILE_LIBRARY}")
 else()
 message(FATAL_ERROR "Sndfile library not found")
 endif()
-
     
 target_link_libraries(
     WAIVE_Sampler
@@ -57,8 +56,9 @@ target_include_directories(
   PUBLIC 
     .
     ../../common
-    ../../external/LibrosaCpp
+    ../../external/LibrosaCpp/librosa
     ../../external/fast-cpp-csv-parser
+    ../../external/signalsmith-stretch
 )
 
 set_target_properties(WAIVE_Sampler PROPERTIES LINK_FLAGS "--libs=sndfile")

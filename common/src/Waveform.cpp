@@ -6,7 +6,12 @@ Waveform::Waveform(Widget *widget) noexcept
     : NanoSubWidget(widget),
       backgroundColor(Color(40, 40, 40)),
       lineColor(Color(200, 200, 200)),
-      waveformCached(false)
+      waveformCached(false),
+      dragging(false),
+      waveformLength(0),
+      waveformSelectStart(0),
+      waveformSelectEnd(0),
+      selectable(false)
 {
 
 }
@@ -17,6 +22,7 @@ void Waveform::calculateWaveform(std::vector<float> *wf)
 
     int size = wf->size();
     if(size == 0) return;
+    waveformLength = size;
 
     const int width = getWidth();
     double samples_per_pixel = size / (double) (width);
@@ -83,7 +89,74 @@ void Waveform::onNanoDisplay()
     }
     stroke();
     closePath();
+
+    if(waveformLength > 0)
+    {
+        float cursorPosStart = (float) waveformSelectStart / waveformLength;
+        float cursorPosEnd = (float) waveformSelectEnd / waveformLength;
+        float x1 = width * cursorPosStart;
+        float x2 = width * cursorPosEnd;
+        beginPath();
+        fillColor(Color(200, 200, 0, 0.3f));
+        rect(x1, 0, x2 - x1, height);
+        fill();
+        closePath();
+    }
 }
 
+bool Waveform::onMouse(const MouseEvent &ev)
+{ 
+    if(!selectable) return false;
+
+    if(contains(ev.pos) && ev.press)
+    {
+        dragging = true;
+        waveformSelectStart = (uint) (waveformLength * ev.pos.getX() / getWidth());
+        waveformSelectEnd = waveformSelectStart;
+    }
+    else if(!ev.press && dragging)
+    {
+        dragging = false;
+
+        if(waveformSelectStart != waveformSelectEnd && waveformLength > 0)
+        {
+            callback->waveformSelection(this, waveformSelectStart, waveformSelectEnd);
+        }
+
+        repaint();
+    } else {
+        return false;
+    }
+
+    return true; 
+}
+
+bool Waveform::onMotion(const MotionEvent &ev)
+{
+
+    if(!dragging || !selectable) return false;
+
+    int cursorPos = (int) (waveformLength * ev.pos.getX() / getWidth());
+    cursorPos = std::clamp(cursorPos, 0, (int)waveformLength);
+
+    if(cursorPos < waveformSelectStart)
+    {
+        waveformSelectStart = cursorPos;
+    } 
+    else if(cursorPos > waveformSelectStart)
+    {
+        waveformSelectEnd = cursorPos;
+    }
+
+    repaint();
+    return true; 
+}
+
+bool Waveform::onScroll(const ScrollEvent &ev) { return false; }
+
+void Waveform::setCallback(Callback *cb)
+{
+    callback = cb;
+}
 
 END_NAMESPACE_DISTRHO

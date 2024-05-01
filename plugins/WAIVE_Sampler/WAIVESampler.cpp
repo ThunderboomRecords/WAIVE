@@ -16,15 +16,21 @@ START_NAMESPACE_DISTRHO
 
 
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
+                               sampleRate(getSampleRate()),
                                fVolume0(0.0f),
                                fSampleLoaded(false),
-                               sampleRate(getSampleRate())
+                               fSampleLength(0),
+                               fSamplePtr(0)
 {
+    if(isDummyInstance())
+    {
+        std::cout << "** dummy instance" << std::endl;
+    }
+
     // Get and create the directory where samples and sound files will
     // be saved to
-
     fs::path homedir = get_homedir();
-    fCacheDir = homedir/CACHE_DIR;
+    fCacheDir = homedir/DATA_DIR;
 
     std::cout << "homedir: " << homedir << std::endl;
     std::cout << "cacheDir: " << fCacheDir << std::endl;
@@ -34,7 +40,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
     if(result)
     {
-        // newly created cache, make database file...
+        // newly created cache, make database file and source folder
+        fs::create_directory(fCacheDir/SOURCE_DIR);
+        fs::create_directory(fCacheDir/SAMPLE_DIR);
     }
 
 
@@ -48,6 +56,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
         std::cout << "index: " << index << " data1: " << data1 << " data2: " << data2 << std::endl;
     }
 
+
+    stretch.presetDefault(1, (int)sampleRate);
 
 }
 
@@ -104,7 +114,7 @@ void WAIVESampler::setState(const char *key, const char *value)
     if(strcmp(key, "filename") == 0)
     {
         fFilepath = std::string(value);
-        loadSample(value);
+        loadWaveform(value, &fSourceWaveform);
     }
 }
 
@@ -134,19 +144,31 @@ void WAIVESampler::run(
     uint32_t midiEventCount      // Number of MIDI events in block
 )
 {
-    for(uint32_t i = 0; i < numFrames; i++)
+    if(!fSampleLoaded)
     {
-        outputs[0][i] = 0.0f;
-        outputs[1][i] = 0.0f;
+        for(uint32_t i = 0; i < numFrames; i++)
+        {
+            outputs[0][i] = 0.0f;
+            outputs[1][i] = 0.0f;
+        }
+    }
+    else
+    {
+        for(uint32_t i = 0; i < numFrames; i++)
+        {
+            outputs[0][i] = fSample[fSamplePtr];
+            outputs[1][i] = fSample[fSamplePtr];
+            fSamplePtr = (fSamplePtr + 1) % fSampleLength;
+        }
     }
 }
 
 
-int WAIVESampler::loadSample(const char *fp)
+bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
 {
-    printf("loadSample %s\n", fp);
+    printf("WAIVESampler::loadWaveform %s\n", fp);
 
-    updateQueue.push(kSampleLoading);
+    addToUpdateQueue(kSampleLoading);
 
     SndfileHandle fileHandle(fp);
     int sampleLength = fileHandle.frames() - 1;
@@ -154,42 +176,65 @@ int WAIVESampler::loadSample(const char *fp)
     if (sampleLength == -1)
     {
         printf("Error: Unable to open input file '%s'\n", fp);
-        return 0;
+        return false;
     }
 
-    fSampleLength = sampleLength;
     int sampleChannels = fileHandle.channels();
 
     std::vector<float> sample;
     sample.resize(sampleLength * sampleChannels);
     fileHandle.read(&sample.at(0), sampleLength * sampleChannels);
 
-    fWaveform.resize(fSampleLength);
+    buffer->resize(sampleLength);
 
     if(sampleChannels > 1){
-        for (int i = 0; i < fSampleLength; i++) {
-            fWaveform[i] = (sample[i * sampleChannels] + sample[i * sampleChannels + 1]) * 0.5f;
+        for (int i = 0; i < sampleLength; i++) {
+            buffer->operator[](i) = (sample[i * sampleChannels] + sample[i * sampleChannels + 1]) * 0.5f;
         }
     } else {
-        for (int i = 0; i < fSampleLength; i++) {
-            fWaveform[i] = sample[i];
+        for (int i = 0; i < sampleLength; i++) {
+            buffer->operator[](i) = sample[i];
         }
+    }
+
+    addToUpdateQueue(kSampleLoaded);
+
+    return true;
+};
+
+
+void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end, std::vector<float> *destination)
+{
+    if(start == end) return;
+
+    if(start > end)
+    {
+        uint tmp = end;
+        end = start;
+        start = tmp;
+    }
+
+    if(end >= source->size())
+        end = source->size() - 1;
+
+    fSampleLoaded = false;
+
+    uint length = end - start;
+    destination->resize(length);
+    fSampleLength = length;
+
+    // normalise selection to [-1.0, 1.0]
+    auto minmax = std::minmax_element(source->begin()+start, source->begin()+end);
+    float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
+    if(std::abs(normaliseRatio) <= 0.0001f) normaliseRatio = 1.0f;
+
+    for(int i=0; i < length; i++)
+    {
+        destination->operator[](i) = source->operator[](start + i) / normaliseRatio;
     }
 
     fSampleLoaded = true;
-
-    updateQueue.push(kSampleLoaded);
-
-    // make sure the queue does not get too long..
-    while(updateQueue.size() > 64)
-    {
-        updateQueue.pop();
-    }
-
-    // analyseWaveform();
-
-    return 0;
-};
+}
 
 
 void WAIVESampler::analyseWaveform()
@@ -206,7 +251,7 @@ void WAIVESampler::analyseWaveform()
     int fmax = 22050;
 
     std::vector<std::vector<float>> melspec = librosa::Feature::melspectrogram(
-        fWaveform, 
+        fSourceWaveform, 
         22050, 
         n_fft, 
         n_hop, 
@@ -223,6 +268,18 @@ void WAIVESampler::analyseWaveform()
     printf(" %.d rows, %d cols\n", melspec.size(), melspec[0].size());
     printf(" value at (4, 5) = %.4f\n", melspec[4][5]);
     std::cout << std::endl;
+}
+
+
+void WAIVESampler::addToUpdateQueue(int ev)
+{
+    updateQueue.push(ev);
+
+    // make sure the queue does not get too long..
+    while(updateQueue.size() > 64)
+    {
+        updateQueue.pop();
+    }
 }
 
 

@@ -27,7 +27,8 @@ const unsigned int UI_H = 380;
 
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
-                       public IdleCallback
+                       public IdleCallback,
+                       public Waveform::Callback
 {
 public:
     WAIVESamplerUI();
@@ -41,6 +42,7 @@ protected:
 
     void buttonClicked(Button *button) override;
     void idleCallback() override;
+    void waveformSelection(Waveform *waveform, uint selectionStart, uint selectionEnd) override;
 
 private:
     float fScale;
@@ -51,7 +53,7 @@ private:
     FontId logo_font;
 
     Button *open_button;
-    Waveform *waveform_display;
+    Waveform *waveform_display, *sample_display;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 

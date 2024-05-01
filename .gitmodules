@@ -7,3 +7,6 @@
 [submodule "external/fast-cpp-csv-parser"]
 	path = external/fast-cpp-csv-parser
 	url = https://github.com/ben-strasser/fast-cpp-csv-parser
+[submodule "external/signalsmith-stretch"]
+	path = external/signalsmith-stretch
+	url = https://github.com/Signalsmith-Audio/signalsmith-stretch.git
