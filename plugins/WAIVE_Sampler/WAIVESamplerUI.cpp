@@ -2,7 +2,6 @@
 
 START_NAMESPACE_DISTRHO
 
-
 WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
                                    fScaleFactor(getScaleFactor()),
                                    fScale(1.0f)
@@ -10,7 +9,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
-
 
     open_button = new Button(this);
     open_button->setLabel("Open");
@@ -29,11 +27,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     sample_display = new Waveform(this);
     sample_display->setSize(180, 80);
-    sample_display->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10); 
+    sample_display->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10);
 
     pitch = new Knob3D(this);
     pitch->setSize(60, 60);
-    pitch->setAbsolutePos(UI_W - 10 - 180 - 100, 70+80+10);
+    pitch->setAbsolutePos(UI_W - 10 - 180 - 100, 70 + 80 + 10);
     pitch->gauge_width = 7.0f;
     pitch->background_color = Color(190, 190, 190);
     pitch->foreground_color = Color(0, 160, 245);
@@ -44,7 +42,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     volume = new Knob3D(this);
     volume->setSize(60, 60);
-    volume->setAbsolutePos(UI_W - 10 - 180 - 100 - 70, 70+80+10);
+    volume->setAbsolutePos(UI_W - 10 - 180 - 100 - 70, 70 + 80 + 10);
     volume->gauge_width = 7.0f;
     volume->background_color = Color(190, 190, 190);
     volume->foreground_color = Color(0, 160, 245);
@@ -53,53 +51,54 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     volume->setValue(1.0f, false);
     volume->setCallback(this);
 
+    value_indicator = new ValueIndicator(this);
+    value_indicator->setSize(70, 20);
+    value_indicator->fontId = logo_font;
+    value_indicator->hide();
+
     addIdleCallback(this);
 
-    setGeometryConstraints(UI_W*fScaleFactor, UI_H*fScaleFactor, false, false);
+    setGeometryConstraints(UI_W * fScaleFactor, UI_H * fScaleFactor, false, false);
 
-    if(fScaleFactor != 1.0)
+    if (fScaleFactor != 1.0)
     {
-        setSize(UI_W*fScaleFactor, UI_H*fScaleFactor);
+        setSize(UI_W * fScaleFactor, UI_H * fScaleFactor);
     }
 }
 
-
-WAIVESamplerUI::~WAIVESamplerUI() { }
-
+WAIVESamplerUI::~WAIVESamplerUI() {}
 
 void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
-{   
-    switch(index)
+{
+    switch (index)
     {
-        default:
-            break;
+    default:
+        break;
     }
 
     repaint();
 }
-
 
 void WAIVESamplerUI::stateChanged(const char *key, const char *value)
 {
     std::cout << "WAIVESamplerUI::stateChanged: " << key << " -> " << value << std::endl;
 
-    if(strcmp(key, "filename") == 0){ }
+    if (strcmp(key, "filename") == 0)
+    {
+    }
 
     repaint();
 }
 
-
 void WAIVESamplerUI::buttonClicked(Button *button)
 {
     std::cout << "button clicked" << std::endl;
-    
-    if(button == open_button)
+
+    if (button == open_button)
     {
         requestStateFile("filename");
     }
-    
 }
-
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart, uint selectionEnd)
 {
@@ -108,24 +107,39 @@ void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart, 
     plugin->selectSample(&plugin->fSourceWaveform, selectionStart, selectionEnd);
 }
 
+void WAIVESamplerUI::knobDragStarted(Knob *knob)
+{
 
-void WAIVESamplerUI::knobDragStarted(Knob *knob) { }
+    // value_indicator->setAbsolutePos(knob->getAbsolutePos());
+    value_indicator->setAbsoluteX(knob->getAbsoluteX());
+    value_indicator->setWidth(knob->getWidth());
+    value_indicator->setAbsoluteY(knob->getAbsoluteY() + knob->getHeight());
+    value_indicator->setFormatString(knob->getFormat());
+    value_indicator->setValue(knob->getValue());
+    value_indicator->show();
+}
 
-void WAIVESamplerUI::knobDragFinished(Knob *knob, float value) { }
+void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
+{
+    std::cout << "WAIVESamplerUI::knobDragFinished" << std::endl;
+    value_indicator->hide();
+    repaint();
+}
 
 void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
-{ 
+{
     // std::cout << "WAIVESamplerUI::knobValueChanged " << value << std::endl;
-    if(knob == pitch)
+    if (knob == pitch)
     {
         setParameterValue(kSamplePitch, value);
     }
-    else if(knob == volume)
+    else if (knob == volume)
     {
         setParameterValue(kSampleVolume, value);
     }
-}
 
+    value_indicator->setValue(knob->getValue());
+}
 
 void WAIVESamplerUI::onNanoDisplay()
 {
@@ -140,43 +154,40 @@ void WAIVESamplerUI::onNanoDisplay()
 
     beginPath();
     fillColor(Color(40, 40, 40));
-    fontSize(32*fScale*fScaleFactor);
+    fontSize(32 * fScale * fScaleFactor);
     textAlign(Align::ALIGN_RIGHT | Align::ALIGN_TOP);
-    fontFaceId(logo_font);
-    text(width-10*fScale*fScaleFactor, 4*fScale*fScaleFactor, "waive sampler", nullptr);
+    // fontFaceId(logo_font);
+    text(width - 10 * fScale * fScaleFactor, 4 * fScale * fScaleFactor, "waive sampler", nullptr);
     closePath();
-
 }
-
 
 void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
 {
     fScaleFactor = scaleFactor;
 }
 
-
 void WAIVESamplerUI::idleCallback()
 {
     std::queue<int> *updateQueue = &plugin->updateQueue;
-    for(; !updateQueue->empty(); updateQueue->pop())
+    for (; !updateQueue->empty(); updateQueue->pop())
     {
         int msg = updateQueue->front();
 
-        switch(msg)
+        switch (msg)
         {
-            case kSourceLoading:
-                break;
-            case kSourceLoaded:
-                waveform_display->calculateWaveform(&plugin->fSourceWaveform);
-                break;
-            case kSampleLoading:
-                break;
-            case kSampleUpdated:
-                sample_display->calculateWaveform(&plugin->fSample);
-                break;
-            default:
-                std::cout << "Unknown update: " << msg << std::endl;
-                break;
+        case kSourceLoading:
+            break;
+        case kSourceLoaded:
+            waveform_display->calculateWaveform(&plugin->fSourceWaveform);
+            break;
+        case kSampleLoading:
+            break;
+        case kSampleUpdated:
+            sample_display->calculateWaveform(&plugin->fSample);
+            break;
+        default:
+            std::cout << "Unknown update: " << msg << std::endl;
+            break;
         }
     }
 }

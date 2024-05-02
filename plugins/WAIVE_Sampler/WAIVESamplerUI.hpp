@@ -13,19 +13,17 @@
 #include "Knob3D.hpp"
 #include "SimpleButton.hpp"
 #include "Waveform.hpp"
+#include "ValueIndicator.hpp"
 
 #include "fonts.h"
 
 #include "WAIVESampler.hpp"
 #include "WAIVESamplerParams.h"
 
-
-
 START_NAMESPACE_DISTRHO
 
 const unsigned int UI_W = 840;
 const unsigned int UI_H = 380;
-
 
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
@@ -58,6 +56,7 @@ private:
 
     FontId logo_font;
 
+    ValueIndicator *value_indicator;
     Button *open_button;
     Waveform *waveform_display, *sample_display;
     Knob3D *pitch, *volume;
@@ -65,14 +64,12 @@ private:
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
-
 };
 
 UI *createUI()
 {
     return new WAIVESamplerUI();
 }
-
 
 END_NAMESPACE_DISTRHO
 

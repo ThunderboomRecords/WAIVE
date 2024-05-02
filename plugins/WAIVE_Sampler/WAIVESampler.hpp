@@ -24,9 +24,7 @@ namespace fs = std::filesystem;
 
 fs::path get_homedir();
 
-
 START_NAMESPACE_DISTRHO
-
 
 class WAIVESampler : public Plugin
 {
@@ -103,6 +101,7 @@ private:
     std::string fFilepath;
 
     std::vector<float> fSourceWaveform;
+    bool fSourceLoaded;
 
     std::vector<float> fSampleRaw, fSamplePitched, fSample;
     bool fSampleLoaded;
@@ -111,9 +110,7 @@ private:
     std::queue<int> updateQueue;
 
     friend class WAIVESamplerUI;
-
 };
-
 
 END_NAMESPACE_DISTRHO
 

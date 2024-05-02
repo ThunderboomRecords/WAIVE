@@ -23,6 +23,7 @@ dpf_add_plugin(
       ../../common/src/Playhead.cpp
       ../../common/src/Waveform.cpp
       ../../common/src/SimpleButton.cpp
+      ../../common/src/ValueIndicator.cpp
 )
 
 
@@ -44,6 +45,8 @@ message(STATUS "Sndfile library found: ${SNDFILE_LIBRARY}")
 else()
 message(FATAL_ERROR "Sndfile library not found")
 endif()
+
+find_package(fmt)
     
 target_link_libraries(
     WAIVE_Sampler
@@ -51,6 +54,7 @@ target_link_libraries(
     ${CoreFoundation}
     ${Foundation}
     ${SNDFILE_LIBRARY}
+    fmt::fmt
 )
     
 target_include_directories(

@@ -12,19 +12,21 @@ class Knob : public NanoSubWidget,
              public IdleCallback
 {
 public:
-    class Callback {
-        public:
-            virtual ~Callback() {};
-            virtual void knobDragStarted(Knob *knob) = 0;
-            virtual void knobDragFinished(Knob *knob, float value) = 0;
-            virtual void knobValueChanged(Knob *knob, float value) = 0;
+    class Callback
+    {
+    public:
+        virtual ~Callback(){};
+        virtual void knobDragStarted(Knob *knob) = 0;
+        virtual void knobDragFinished(Knob *knob, float value) = 0;
+        virtual void knobValueChanged(Knob *knob, float value) = 0;
     };
 
     explicit Knob(Widget *widget) noexcept;
 
     void setCallback(Callback *cb);
-    void setValue(float val, bool sendCallback=false) noexcept;
+    void setValue(float val, bool sendCallback = false) noexcept;
     float getValue() noexcept;
+    std::string getFormat() noexcept;
     void idleCallback() override;
 
     float min, max;
@@ -36,18 +38,19 @@ protected:
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
     bool onScroll(const ScrollEvent &) override;
+    void drawIndicator();
 
 private:
     Callback *callback;
-    bool dragging_;
+    bool dragging_, mousedown_;
     float value_, tmp_p;
     float dragStart;
     bool sensitive;
 
+    std::string format;
+
     DISTRHO_LEAK_DETECTOR(Knob);
 };
-
-
 
 END_NAMESPACE_DISTRHO
 

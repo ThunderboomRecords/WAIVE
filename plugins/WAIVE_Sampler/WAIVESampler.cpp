@@ -11,9 +11,7 @@ fs::path get_homedir()
     return fs::path(homedir);
 }
 
-
 START_NAMESPACE_DISTRHO
-
 
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                sampleRate(getSampleRate()),
@@ -21,9 +19,10 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fSamplePitch(1.0f),
                                fSampleLoaded(false),
                                fSampleLength(0),
-                               fSamplePtr(0)
+                               fSamplePtr(0),
+                               fSourceLoaded(false)
 {
-    if(isDummyInstance())
+    if (isDummyInstance())
     {
         std::cout << "** dummy instance" << std::endl;
     }
@@ -31,7 +30,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     // Get and create the directory where samples and sound files will
     // be saved to
     fs::path homedir = get_homedir();
-    fCacheDir = homedir/DATA_DIR;
+    fCacheDir = homedir / DATA_DIR;
 
     std::cout << "homedir: " << homedir << std::endl;
     std::cout << "cacheDir: " << fCacheDir << std::endl;
@@ -39,20 +38,20 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     bool result = fs::create_directory(fCacheDir);
     std::cout << "fCacheDir created: " << (result ? "true" : "false") << std::endl;
 
-    if(result)
+    if (result)
     {
         // newly created cache, make database file and source folder
-        fs::create_directory(fCacheDir/SOURCE_DIR);
-        fs::create_directory(fCacheDir/SAMPLE_DIR);
+        fs::create_directory(fCacheDir / SOURCE_DIR);
+        fs::create_directory(fCacheDir / SAMPLE_DIR);
     }
 
     // create database file if not present;
-    if(!fs::exists(fCacheDir/DB_FILE))
+    if (!fs::exists(fCacheDir / DB_FILE))
     {
         std::fstream db_file;
-        db_file.open(fCacheDir/DB_FILE, std::fstream::out);
+        db_file.open(fCacheDir / DB_FILE, std::fstream::out);
 
-        if(db_file.is_open())
+        if (db_file.is_open())
         {
             db_file << "index,data1,data2\n";
             db_file << "0,some data,more data\n";
@@ -60,100 +59,95 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
             db_file.close();
 
             std::cout << "made database file in ";
-            std::cout << fCacheDir/DB_FILE << std::endl;
-
-        } else {
+            std::cout << fCacheDir / DB_FILE << std::endl;
+        }
+        else
+        {
             std::cout << "Error making database file in ";
-            std::cout << fCacheDir/DB_FILE << std::endl;
+            std::cout << fCacheDir / DB_FILE << std::endl;
         }
     }
 
     // read database file
-    io::CSVReader<3> in(fCacheDir/DB_FILE);
+    io::CSVReader<3> in(fCacheDir / DB_FILE);
     in.read_header(io::ignore_extra_column, "index", "data1", "data2");
     std::string data1, data2;
     int index;
-    while(in.read_row(index, data1, data2))
+    while (in.read_row(index, data1, data2))
     {
         std::cout << "index: " << index << " data1: " << data1 << " data2: " << data2 << std::endl;
     }
 
-
     stretch.presetDefault(1, (int)sampleRate);
 }
 
-
 void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
 {
-    switch(index)
+    switch (index)
     {
-        case kSampleVolume:
-            parameter.name = "Volume0";
-            parameter.symbol = "volume0";
-            parameter.ranges.min = 0.0f;
-            parameter.ranges.max = 1.0f;
-            parameter.ranges.def = 0.8f;
-            parameter.hints = kParameterIsAutomatable;
-            break;
-        case kSamplePitch:
-            parameter.name = "Sample Pitch";
-            parameter.symbol = "samplePitch";
-            parameter.ranges.min = 0.1f;
-            parameter.ranges.max = 4.0f;
-            parameter.ranges.def = 1.0f;
-            parameter.hints = kParameterIsAutomatable;
-        default:
-            break;
+    case kSampleVolume:
+        parameter.name = "Volume0";
+        parameter.symbol = "volume0";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.8f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
+    case kSamplePitch:
+        parameter.name = "Sample Pitch";
+        parameter.symbol = "samplePitch";
+        parameter.ranges.min = 0.1f;
+        parameter.ranges.max = 4.0f;
+        parameter.ranges.def = 1.0f;
+        parameter.hints = kParameterIsAutomatable;
+    default:
+        break;
     }
 }
-
 
 float WAIVESampler::getParameterValue(uint32_t index) const
 {
     float val = 0.0f;
-    switch(index)
+    switch (index)
     {
-        case kSampleVolume:
-            val = fSampleVolume;
-            break;
-        case kSamplePitch:
-            val = fSamplePitch;
-            break;
-        default:
-            break;
+    case kSampleVolume:
+        val = fSampleVolume;
+        break;
+    case kSamplePitch:
+        val = fSamplePitch;
+        break;
+    default:
+        break;
     }
 
     return val;
 }
 
-
 void WAIVESampler::setParameterValue(uint32_t index, float value)
 {
-    switch(index)
+    switch (index)
     {
-        case kSampleVolume:
-            fSampleVolume = value;
-            renderSample();
-            break;
-        case kSamplePitch:
-            fSamplePitch = value;
-            repitchSample();
-            break;
-        default:
-            break;
+    case kSampleVolume:
+        fSampleVolume = value;
+        renderSample();
+        break;
+    case kSamplePitch:
+        fSamplePitch = value;
+        repitchSample();
+        break;
+    default:
+        break;
     }
 }
 
-
 void WAIVESampler::setState(const char *key, const char *value)
 {
-    if(strcmp(key, "filename") == 0)
+    if (strcmp(key, "filename") == 0)
     {
         fFilepath = std::string(value);
         loadWaveform(value, &fSourceWaveform);
     }
 }
-
 
 String WAIVESampler::getState(const char *key) const
 {
@@ -161,16 +155,14 @@ String WAIVESampler::getState(const char *key) const
     return retString;
 }
 
-
 void WAIVESampler::initState(unsigned int index, String &stateKey, String &defaultStateValue)
 {
-    switch(index)
+    switch (index)
     {
-        default:
+    default:
         break;
     }
 }
-
 
 void WAIVESampler::run(
     const float **,              // incoming audio
@@ -180,9 +172,9 @@ void WAIVESampler::run(
     uint32_t midiEventCount      // Number of MIDI events in block
 )
 {
-    if(!fSampleLoaded)
+    if (!fSampleLoaded)
     {
-        for(uint32_t i = 0; i < numFrames; i++)
+        for (uint32_t i = 0; i < numFrames; i++)
         {
             outputs[0][i] = 0.0f;
             outputs[1][i] = 0.0f;
@@ -190,7 +182,7 @@ void WAIVESampler::run(
     }
     else
     {
-        for(uint32_t i = 0; i < numFrames; i++)
+        for (uint32_t i = 0; i < numFrames; i++)
         {
             outputs[0][i] = fSample[fSamplePtr];
             outputs[1][i] = fSample[fSamplePtr];
@@ -199,11 +191,11 @@ void WAIVESampler::run(
     }
 }
 
-
 bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
 {
     printf("WAIVESampler::loadWaveform %s\n", fp);
 
+    fSourceLoaded = false;
     addToUpdateQueue(kSampleLoading);
 
     SndfileHandle fileHandle(fp);
@@ -223,41 +215,46 @@ bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
 
     buffer->resize(sampleLength);
 
-    if(sampleChannels > 1){
-        for (int i = 0; i < sampleLength; i++) {
+    if (sampleChannels > 1)
+    {
+        for (int i = 0; i < sampleLength; i++)
+        {
             buffer->operator[](i) = (sample[i * sampleChannels] + sample[i * sampleChannels + 1]) * 0.5f;
         }
-    } else {
-        for (int i = 0; i < sampleLength; i++) {
+    }
+    else
+    {
+        for (int i = 0; i < sampleLength; i++)
+        {
             buffer->operator[](i) = sample[i];
         }
     }
 
+    fSourceLoaded = true;
     addToUpdateQueue(kSourceLoaded);
 
     return true;
 };
 
-
 void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end)
 {
     // TODO: ideally on separate thread (with mutex lock on fSample)
 
-    if(start == end) return;
+    if (start == end)
+        return;
 
-    if(start > end)
+    if (start > end)
     {
         uint tmp = end;
         end = start;
         start = tmp;
     }
 
-    if(end >= source->size())
+    if (end >= source->size())
         end = source->size() - 1;
 
     fSampleLoaded = false;
     addToUpdateQueue(kSampleLoading);
-
 
     fSampleLength = end - start;
     fSampleRaw.resize(fSampleLength);
@@ -265,14 +262,17 @@ void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end
     fSample.resize(fSampleLength);
 
     // normalise selection to [-1.0, 1.0]
-    auto minmax = std::minmax_element(source->begin()+start, source->begin()+end);
+    auto minmax = std::minmax_element(source->begin() + start, source->begin() + end);
     float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
-    if(std::abs(normaliseRatio) <= 0.0001f) normaliseRatio = 1.0f;
+    if (std::abs(normaliseRatio) <= 0.0001f)
+        normaliseRatio = 1.0f;
 
-    for(int i=0; i<fSampleLength; i++)
+    for (int i = 0; i < fSampleLength; i++)
     {
         fSampleRaw[i] = source->operator[](start + i) / normaliseRatio;
     }
+
+    fSampleLoaded = true;
 
     fSamplePtr = 0;
     repitchSample();
@@ -280,6 +280,10 @@ void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end
 
 void WAIVESampler::repitchSample()
 {
+
+    if (!fSampleLoaded)
+        return;
+
     // create working buffers
     std::vector<std::vector<float>> inBuffer{{0.0f}};
     std::vector<std::vector<float>> outBuffer{{0.0f}};
@@ -299,11 +303,12 @@ void WAIVESampler::repitchSample()
 
     float st = startFactor;
 
-    while(blockstart < fSampleLength)
+    while (blockstart < fSampleLength)
     {
-        for(int i=0; i < blockSize; i++)
+        for (int i = 0; i < blockSize; i++)
         {
-            if(blockstart + i >= fSampleLength) break;
+            if (blockstart + i >= fSampleLength)
+                break;
 
             inBuffer[0][i] = fSampleRaw[blockstart + i];
         }
@@ -311,15 +316,16 @@ void WAIVESampler::repitchSample()
         stretch.setTransposeFactor(st);
         stretch.process(inBuffer, blockSize, outBuffer, blockSize);
 
-        for(int i=0; i < blockSize; i++)
+        for (int i = 0; i < blockSize; i++)
         {
-            if(blockstart + i >= fSampleLength) break;
+            if (blockstart + i >= fSampleLength)
+                break;
             fSamplePitched[blockstart + i] = outBuffer[0][i];
         }
 
         blockstart += blockSize;
 
-        st = endFactor + (startFactor - endFactor) * (1.0f - (float) blockstart / (blockSize * 20) );
+        st = endFactor + (startFactor - endFactor) * (1.0f - (float)blockstart / (blockSize * 20));
         st = std::clamp(st, endFactor, startFactor);
     }
 
@@ -328,16 +334,16 @@ void WAIVESampler::repitchSample()
 
 void WAIVESampler::renderSample()
 {
-   
-    for(int i=0; i<fSampleLength; i++)
+    if (!fSampleLoaded)
+        return;
+
+    for (int i = 0; i < fSampleLength; i++)
     {
         fSample[i] = fSamplePitched[i] * fSampleVolume;
     }
 
-    fSampleLoaded = true;
     addToUpdateQueue(kSampleUpdated);
 }
-
 
 void WAIVESampler::analyseWaveform()
 {
@@ -353,18 +359,17 @@ void WAIVESampler::analyseWaveform()
     int fmax = 22050;
 
     std::vector<std::vector<float>> melspec = librosa::Feature::melspectrogram(
-        fSourceWaveform, 
-        22050, 
-        n_fft, 
-        n_hop, 
-        window, 
-        center, 
-        pad_mode, 
+        fSourceWaveform,
+        22050,
+        n_fft,
+        n_hop,
+        window,
+        center,
+        pad_mode,
         power,
-        n_mel, 
-        fmin, 
-        fmax
-    );
+        n_mel,
+        fmin,
+        fmax);
 
     printf(" ** melspec:\n");
     printf(" %.d rows, %d cols\n", melspec.size(), melspec[0].size());
@@ -372,29 +377,25 @@ void WAIVESampler::analyseWaveform()
     std::cout << std::endl;
 }
 
-
 void WAIVESampler::addToUpdateQueue(int ev)
 {
     updateQueue.push(ev);
 
     // make sure the queue does not get too long..
-    while(updateQueue.size() > 64)
+    while (updateQueue.size() > 64)
     {
         updateQueue.pop();
     }
 }
-
 
 void WAIVESampler::sampleRateChanged(double newSampleRate)
 {
     sampleRate = newSampleRate;
 }
 
-
 Plugin *createPlugin()
 {
     return new WAIVESampler();
 }
-
 
 END_NAMESPACE_DISTRHO

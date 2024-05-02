@@ -45,6 +45,10 @@ Requires cmake:
 - on Linux: use your distributions package manager
 - Windows: *TODO*
 
+Requires:
+- [`libsndfile`](https://libsndfile.github.io/libsndfile/)
+- [`fmt`](https://fmt.dev/latest/index.html) 
+
 #### Linux/macOS
 ```shell
 $ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git

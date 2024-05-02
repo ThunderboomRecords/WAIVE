@@ -33,27 +33,8 @@ void Knob3D::onNanoDisplay()
     float normValue = (getValue() - min) / (max - min);
     if(normValue < 0.0f) normValue = 0.0f;
 
-    // draw outside indicator
-    beginPath();
-    strokeWidth(gauge_width);
-    strokeColor(background_color);
-    arc(center_x, center_y, radius - gauge_width / 2, 0.75f * M_PI, 0.25f * M_PI, NanoVG::Winding::CW);
-    stroke();
-    closePath();
-
-    beginPath();
-    strokeWidth(gauge_width);
-    strokeColor(foreground_color);
-    arc(
-        center_x,
-        center_y,
-        radius - gauge_width/2.0f,
-        0.75f*M_PI,
-        (0.75 + normValue*1.5f)*M_PI,
-        NanoVG::Winding::CW
-    );
-    stroke();
-    closePath();
+    // draw indicator
+    drawIndicator();
 
     // draw knob
     Color highlight = Color(Color(255, 255, 255), knob_color, 0.05);
