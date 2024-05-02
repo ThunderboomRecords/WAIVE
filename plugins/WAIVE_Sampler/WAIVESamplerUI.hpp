@@ -36,6 +36,7 @@ public:
     ~WAIVESamplerUI();
 
 protected:
+    // void onFileSelected(const char* filename) override;
     void parameterChanged(uint32_t index, float value) override;
     void stateChanged(const char *key, const char *value) override;
     void onNanoDisplay() override;
@@ -57,7 +58,7 @@ private:
     FontId logo_font;
 
     ValueIndicator *value_indicator;
-    Button *open_button;
+    Button *open_button, *save_sample_button;
     Waveform *waveform_display, *sample_display;
     Knob3D *pitch, *volume;
 

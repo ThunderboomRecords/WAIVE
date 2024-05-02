@@ -7,7 +7,11 @@
 #include <queue>
 #include <filesystem>
 #include <fstream>
+#include <thread>
+#include <stdlib.h>
+#include <time.h>
 
+#include <fmt/core.h>
 #include <sndfile.hh>
 
 #include "DistrhoPluginInfo.h"
@@ -82,7 +86,9 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
 
     bool loadWaveform(const char *fp, std::vector<float> *buffer);
+    bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
     void selectSample(std::vector<float> *source, uint start, uint end);
+    void addToLibrary();
     void repitchSample();
     void renderSample();
     void analyseWaveform();
@@ -108,6 +114,8 @@ private:
     uint fSampleLength, fSamplePtr;
 
     std::queue<int> updateQueue;
+
+    std::thread *tWaveShaping;
 
     friend class WAIVESamplerUI;
 };

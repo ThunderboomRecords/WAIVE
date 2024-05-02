@@ -140,7 +140,8 @@
     "thread": "cpp",
     "valarray": "cpp",
     "variant": "cpp",
-    "*.ipp": "cpp"
+    "*.ipp": "cpp",
+    "ranges": "cpp"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

@@ -78,7 +78,7 @@ void Waveform::onNanoDisplay()
     beginPath();
     lineCap(ROUND);
     strokeColor(lineColor);
-    strokeWidth(0.8f);
+    strokeWidth(1.0f);
     moveTo(0, half);
 
     for(int i = 0; i < waveformMin.size(); i++)

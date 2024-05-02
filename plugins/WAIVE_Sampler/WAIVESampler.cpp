@@ -27,6 +27,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
         std::cout << "** dummy instance" << std::endl;
     }
 
+    srand(time(NULL));
+
     // Get and create the directory where samples and sound files will
     // be saved to
     fs::path homedir = get_homedir();
@@ -53,8 +55,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
         if (db_file.is_open())
         {
-            db_file << "index,data1,data2\n";
-            db_file << "0,some data,more data\n";
+            db_file << "index,fp,embedX,embedY,source,volume,pitch";
 
             db_file.close();
 
@@ -69,13 +70,14 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     }
 
     // read database file
-    io::CSVReader<3> in(fCacheDir / DB_FILE);
-    in.read_header(io::ignore_extra_column, "index", "data1", "data2");
-    std::string data1, data2;
+    io::CSVReader<4> in(fCacheDir / DB_FILE);
+    in.read_header(io::ignore_extra_column, "index", "fp", "embedX", "embedY");
+    std::string fp;
     int index;
-    while (in.read_row(index, data1, data2))
+    float embedX, embedY;
+    while (in.read_row(index, fp, embedX, embedY))
     {
-        std::cout << "index: " << index << " data1: " << data1 << " data2: " << data2 << std::endl;
+        std::cout << "index: " << index << " fp: " << fp << " embedX: " << embedX << " embedY: " << embedY << std::endl;
     }
 
     stretch.presetDefault(1, (int)sampleRate);
@@ -86,8 +88,8 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
     switch (index)
     {
     case kSampleVolume:
-        parameter.name = "Volume0";
-        parameter.symbol = "volume0";
+        parameter.name = "Sample Volume";
+        parameter.symbol = "sampleVolume";
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 1.0f;
         parameter.ranges.def = 0.8f;
@@ -234,7 +236,51 @@ bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
     addToUpdateQueue(kSourceLoaded);
 
     return true;
-};
+}
+
+bool WAIVESampler::saveWaveform(const char *fp, float *buffer, sf_count_t size)
+{
+    std::cout << "WAIVESampler::saveWaveform" << std::endl;
+
+    SndfileHandle file = SndfileHandle(
+        fp,
+        SFM_WRITE,
+        SF_FORMAT_WAV | SF_FORMAT_PCM_16,
+        1,
+        sampleRate);
+
+    file.write(buffer, size);
+    std::cout << "waveform saved to " << fp << std::endl;
+
+    return true;
+}
+
+void WAIVESampler::addToLibrary()
+{
+    if (!fSampleLoaded)
+        return;
+
+    // generate name for sample
+    // better to use timestamp than random
+    std::string name = fmt::format("{:04d}.wav", rand() % 10000);
+    std::cout << "Adding to library " << name << std::endl;
+
+    // save to Samples/ folder
+    saveWaveform((fCacheDir / SAMPLE_DIR / name).c_str(), &fSample[0], fSample.size());
+
+    // get embedding
+    float embedX = (float)(rand() % 10000) / 10000.0f;
+    float embedY = (float)(rand() % 10000) / 10000.0f;
+
+    // add to db.csv
+    // std::fstream db_file;
+    // db_file.open(fCacheDir / DB_FILE, std::fstream::app);
+
+    // if (db_file.is_open())
+    // {
+    //     std::string row = fmt::format("{:d},{},{:.4f},{:.4f}");
+    // }
+}
 
 void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end)
 {
@@ -275,12 +321,13 @@ void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end
     fSampleLoaded = true;
 
     fSamplePtr = 0;
+
+    // tWaveShaping = new std::thread(&WAIVESampler::repitchSample, this);
     repitchSample();
 }
 
 void WAIVESampler::repitchSample()
 {
-
     if (!fSampleLoaded)
         return;
 
@@ -289,6 +336,8 @@ void WAIVESampler::repitchSample()
     std::vector<std::vector<float>> outBuffer{{0.0f}};
 
     stretch.reset();
+
+    std::cout << "stretch latency: in " << stretch.inputLatency() << "  out " << stretch.outputLatency() << std::endl;
 
     float startFactor = 4.0f;
     float endFactor = fSamplePitch;
@@ -299,8 +348,10 @@ void WAIVESampler::repitchSample()
     inBuffer[0].resize(blockSize);
     outBuffer[0].resize(blockSize);
 
-    int blockstart = 0;
+    std::vector<float> result{};
+    result.resize(fSampleLength + stretch.inputLatency() + stretch.outputLatency());
 
+    int blockstart = 0;
     float st = startFactor;
 
     while (blockstart < fSampleLength)
@@ -320,13 +371,18 @@ void WAIVESampler::repitchSample()
         {
             if (blockstart + i >= fSampleLength)
                 break;
-            fSamplePitched[blockstart + i] = outBuffer[0][i];
+            result[blockstart + i] = outBuffer[0][i];
         }
 
         blockstart += blockSize;
 
         st = endFactor + (startFactor - endFactor) * (1.0f - (float)blockstart / (blockSize * 20));
         st = std::clamp(st, endFactor, startFactor);
+    }
+
+    for (int i = 0; i < fSampleLength; i++)
+    {
+        fSamplePitched[i] = result[i + stretch.inputLatency() + stretch.outputLatency()];
     }
 
     renderSample();

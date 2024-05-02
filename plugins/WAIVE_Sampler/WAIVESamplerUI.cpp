@@ -19,20 +19,30 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     open_button->setAbsolutePos(10, 10);
     open_button->setCallback(this);
 
+    save_sample_button = new Button(this);
+    save_sample_button->setLabel("add");
+    save_sample_button->setFontScale(fScaleFactor);
+    save_sample_button->setBackgroundColor(Color(220, 220, 220));
+    save_sample_button->setLabelColor(Color(10, 10, 10));
+    save_sample_button->setSize(70, 20);
+    save_sample_button->setAbsolutePos(UI_W - 10 - 70, 70 + 80 + 10 + 80 + 10);
+    save_sample_button->setCallback(this);
+
     waveform_display = new Waveform(this);
     waveform_display->setSize(UI_W - 20, 80);
     waveform_display->setAbsolutePos(10, 70);
     waveform_display->selectable = true;
     waveform_display->setCallback(this);
+    waveform_display->lineColor = Color(255, 255, 255);
 
     sample_display = new Waveform(this);
     sample_display->setSize(180, 80);
     sample_display->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10);
 
     pitch = new Knob3D(this);
-    pitch->setSize(60, 60);
+    pitch->setSize(50, 50);
     pitch->setAbsolutePos(UI_W - 10 - 180 - 100, 70 + 80 + 10);
-    pitch->gauge_width = 7.0f;
+    pitch->gauge_width = 6.0f;
     pitch->background_color = Color(190, 190, 190);
     pitch->foreground_color = Color(0, 160, 245);
     pitch->min = 0.25f;
@@ -41,9 +51,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     pitch->setCallback(this);
 
     volume = new Knob3D(this);
-    volume->setSize(60, 60);
+    volume->setSize(50, 50);
     volume->setAbsolutePos(UI_W - 10 - 180 - 100 - 70, 70 + 80 + 10);
-    volume->gauge_width = 7.0f;
+    volume->gauge_width = 6.0f;
     volume->background_color = Color(190, 190, 190);
     volume->foreground_color = Color(0, 160, 245);
     volume->min = 0.0f;
@@ -98,19 +108,19 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     {
         requestStateFile("filename");
     }
+    else if (button == save_sample_button)
+    {
+        plugin->addToLibrary();
+    }
 }
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart, uint selectionEnd)
 {
-    std::cout << "WAIVESamplerUI::waveformSelection " << selectionStart << " - " << selectionEnd << std::endl;
-
     plugin->selectSample(&plugin->fSourceWaveform, selectionStart, selectionEnd);
 }
 
 void WAIVESamplerUI::knobDragStarted(Knob *knob)
 {
-
-    // value_indicator->setAbsolutePos(knob->getAbsolutePos());
     value_indicator->setAbsoluteX(knob->getAbsoluteX());
     value_indicator->setWidth(knob->getWidth());
     value_indicator->setAbsoluteY(knob->getAbsoluteY() + knob->getHeight());
@@ -121,19 +131,17 @@ void WAIVESamplerUI::knobDragStarted(Knob *knob)
 
 void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 {
-    std::cout << "WAIVESamplerUI::knobDragFinished" << std::endl;
+    if (knob == pitch)
+    {
+        setParameterValue(kSamplePitch, value);
+    }
     value_indicator->hide();
     repaint();
 }
 
 void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 {
-    // std::cout << "WAIVESamplerUI::knobValueChanged " << value << std::endl;
-    if (knob == pitch)
-    {
-        setParameterValue(kSamplePitch, value);
-    }
-    else if (knob == volume)
+    if (knob == volume)
     {
         setParameterValue(kSampleVolume, value);
     }
