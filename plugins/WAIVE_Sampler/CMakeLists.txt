@@ -10,6 +10,7 @@ dpf_add_plugin(
       clap
   FILES_DSP
       WAIVESampler.cpp
+      SampleDatabase.cpp
   FILES_UI
       WAIVESamplerUI.cpp
       ../../common/fonts.h
@@ -46,7 +47,8 @@ else()
 message(FATAL_ERROR "Sndfile library not found")
 endif()
 
-find_package(fmt)
+find_package(fmt REQUIRED)
+find_package(SQLite3 REQUIRED)
     
 target_link_libraries(
     WAIVE_Sampler
@@ -55,6 +57,7 @@ target_link_libraries(
     ${Foundation}
     ${SNDFILE_LIBRARY}
     fmt::fmt
+    SQLite::SQLite3
 )
     
 target_include_directories(
@@ -63,7 +66,6 @@ target_include_directories(
     .
     ../../common
     ../../external/LibrosaCpp/librosa
-    ../../external/fast-cpp-csv-parser
     ../../external/signalsmith-stretch
 )
 

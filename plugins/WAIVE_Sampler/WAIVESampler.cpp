@@ -42,45 +42,19 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
     if (result)
     {
-        // newly created cache, make database file and source folder
+        // newly created cache, make source folder
         fs::create_directory(fCacheDir / SOURCE_DIR);
         fs::create_directory(fCacheDir / SAMPLE_DIR);
     }
 
-    // create database file if not present;
-    if (!fs::exists(fCacheDir / DB_FILE))
-    {
-        std::fstream db_file;
-        db_file.open(fCacheDir / DB_FILE, std::fstream::out);
-
-        if (db_file.is_open())
-        {
-            db_file << "index,fp,embedX,embedY,source,volume,pitch";
-
-            db_file.close();
-
-            std::cout << "made database file in ";
-            std::cout << fCacheDir / DB_FILE << std::endl;
-        }
-        else
-        {
-            std::cout << "Error making database file in ";
-            std::cout << fCacheDir / DB_FILE << std::endl;
-        }
-    }
-
-    // read database file
-    io::CSVReader<4> in(fCacheDir / DB_FILE);
-    in.read_header(io::ignore_extra_column, "index", "fp", "embedX", "embedY");
-    std::string fp;
-    int index;
-    float embedX, embedY;
-    while (in.read_row(index, fp, embedX, embedY))
-    {
-        std::cout << "index: " << index << " fp: " << fp << " embedX: " << embedX << " embedY: " << embedY << std::endl;
-    }
+    db = new SampleDatabase((fCacheDir/"waive_sampler.db").string());
 
     stretch.presetDefault(1, (int)sampleRate);
+}
+
+WAIVESampler::~WAIVESampler()
+{
+    std::cout << "closing WAIVESampler..." << std::endl;
 }
 
 void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
@@ -146,7 +120,6 @@ void WAIVESampler::setState(const char *key, const char *value)
 {
     if (strcmp(key, "filename") == 0)
     {
-        fFilepath = std::string(value);
         loadWaveform(value, &fSourceWaveform);
     }
 }
@@ -261,8 +234,8 @@ void WAIVESampler::addToLibrary()
         return;
 
     // generate name for sample
-    // better to use timestamp than random
-    std::string name = fmt::format("{:04d}.wav", rand() % 10000);
+    time_t current_time = time(NULL);
+    std::string name = fmt::format("{:d}.wav", current_time);
     std::cout << "Adding to library " << name << std::endl;
 
     // save to Samples/ folder
@@ -272,14 +245,14 @@ void WAIVESampler::addToLibrary()
     float embedX = (float)(rand() % 10000) / 10000.0f;
     float embedY = (float)(rand() % 10000) / 10000.0f;
 
-    // add to db.csv
-    // std::fstream db_file;
-    // db_file.open(fCacheDir / DB_FILE, std::fstream::app);
+    SampleInfo s = SampleInfo(current_time, name, fCacheDir / SAMPLE_DIR, embedX, embedY, true);
+    s.source = "example.wav";
+    s.pitch = fSamplePitch;
+    s.volume = fSampleVolume;
+    s.tags = "";
 
-    // if (db_file.is_open())
-    // {
-    //     std::string row = fmt::format("{:d},{},{:.4f},{:.4f}");
-    // }
+    // add to database
+    db->insertSample(s);
 }
 
 void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end)

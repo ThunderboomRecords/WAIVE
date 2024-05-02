@@ -17,10 +17,10 @@
 #include "DistrhoPluginInfo.h"
 #include "DistrhoPlugin.hpp"
 #include "WAIVESamplerParams.h"
+#include "SampleDatabase.hpp"
 
 #include <librosa.h>
 #include "signalsmith-stretch.h"
-#include "csv.h"
 
 #define MAX_PATH 128
 
@@ -34,6 +34,7 @@ class WAIVESampler : public Plugin
 {
 public:
     WAIVESampler();
+    ~WAIVESampler();
 
 protected:
     const char *getLabel() const noexcept override
@@ -99,12 +100,12 @@ private:
     float sampleRate;
 
     fs::path fCacheDir;
+    SampleDatabase *db;
 
     signalsmith::stretch::SignalsmithStretch<float> stretch;
 
     float fSampleVolume;
     float fSamplePitch;
-    std::string fFilepath;
 
     std::vector<float> fSourceWaveform;
     bool fSourceLoaded;

@@ -45,9 +45,10 @@ Requires cmake:
 - on Linux: use your distributions package manager
 - Windows: *TODO*
 
-Requires:
+Requires already installed:
 - [`libsndfile`](https://libsndfile.github.io/libsndfile/)
 - [`fmt`](https://fmt.dev/latest/index.html) 
+- ['Sqlite3'](https://www.sqlite.org/)
 
 #### Linux/macOS
 ```shell
