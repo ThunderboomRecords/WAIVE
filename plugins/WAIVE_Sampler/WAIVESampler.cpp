@@ -107,12 +107,14 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
     {
     case kSampleVolume:
         fSampleVolume = value;
-        fCurrentSample->volume = value;
+        if (fCurrentSample != nullptr)
+            fCurrentSample->volume = value;
         renderSample();
         break;
     case kSamplePitch:
         fSamplePitch = value;
-        fCurrentSample->pitch = value;
+        if (fCurrentSample != nullptr)
+            fCurrentSample->pitch = value;
         repitchSample();
         break;
     default:
@@ -211,7 +213,7 @@ bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
 
     fSourceLoaded = true;
     fSourceFilepath = std::string(fp);
-    if(fCurrentSample != nullptr)
+    if (fCurrentSample != nullptr)
     {
         fCurrentSample->source = fSourceFilepath;
     }
@@ -239,7 +241,6 @@ bool WAIVESampler::saveWaveform(const char *fp, float *buffer, sf_count_t size)
 
 void WAIVESampler::addToLibrary()
 {
-    std::cout << "WAIVESampler::addToLibrary" << std::endl;
     if (!fSampleLoaded || fCurrentSample == nullptr)
         return;
 
@@ -257,6 +258,11 @@ void WAIVESampler::addToLibrary()
     {
         saveWaveform((fs::path(fCurrentSample->path) / fCurrentSample->name).c_str(), &fSample[0], fSample.size());
         fCurrentSample->saved = true;
+
+        fAllSamples.push_back(*fCurrentSample);
+        addToUpdateQueue(kSampleAdded);
+
+        newSample();
     }
 }
 
@@ -416,8 +422,8 @@ void WAIVESampler::renderSample()
 void WAIVESampler::getEmbeding()
 {
     // TODO: placeholder is random for now
-    float embedX = (float)(rand() % 10000) / 10000.0f;
-    float embedY = (float)(rand() % 10000) / 10000.0f;
+    float embedX = (float)(rand() % 10000) / 5000.0f - 1.0f;
+    float embedY = (float)(rand() % 10000) / 5000.0f - 1.0f;
 
     fCurrentSample->embedX = embedX;
     fCurrentSample->embedY = embedY;
@@ -459,11 +465,8 @@ void WAIVESampler::addToUpdateQueue(int ev)
 {
     updateQueue.push(ev);
 
-    // make sure the queue does not get too long..
     while (updateQueue.size() > 64)
-    {
         updateQueue.pop();
-    }
 }
 
 void WAIVESampler::sampleRateChanged(double newSampleRate)

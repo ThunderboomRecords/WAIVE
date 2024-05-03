@@ -61,6 +61,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     volume->setValue(1.0f, false);
     volume->setCallback(this);
 
+    sample_map = new SampleMap(this);
+    sample_map->setSize(300, 300);
+    sample_map->setAbsolutePos(10, 160);
+    sample_map->allSamples = &plugin->fAllSamples;
+
     value_indicator = new ValueIndicator(this);
     value_indicator->setSize(70, 20);
     value_indicator->fontId = logo_font;
@@ -162,7 +167,8 @@ void WAIVESamplerUI::onNanoDisplay()
     fillColor(Color(40, 40, 40));
     fontSize(32 * fScale * fScaleFactor);
     textAlign(Align::ALIGN_RIGHT | Align::ALIGN_TOP);
-    // fontFaceId(logo_font);
+
+    fontFaceId(logo_font);
     text(width - 10 * fScale * fScaleFactor, 4 * fScale * fScaleFactor, "waive sampler", nullptr);
     closePath();
 }
@@ -190,6 +196,9 @@ void WAIVESamplerUI::idleCallback()
             break;
         case kSampleUpdated:
             sample_display->calculateWaveform(&plugin->fSample);
+            break;
+        case kSampleAdded:
+            sample_map->repaint();
             break;
         default:
             std::cout << "Unknown update: " << msg << std::endl;

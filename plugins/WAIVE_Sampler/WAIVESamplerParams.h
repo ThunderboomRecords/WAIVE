@@ -36,6 +36,7 @@ enum Updates {
     kSourceLoaded,
     kSampleLoading,
     kSampleUpdated,
+    kSampleAdded,
 };
 
 #endif

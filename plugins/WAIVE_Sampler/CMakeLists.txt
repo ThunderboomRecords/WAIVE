@@ -23,6 +23,7 @@ dpf_add_plugin(
       ../../common/src/VSlider.cpp
       ../../common/src/Playhead.cpp
       ../../common/src/Waveform.cpp
+      ../../common/src/SampleMap.cpp
       ../../common/src/SimpleButton.cpp
       ../../common/src/ValueIndicator.cpp
 )

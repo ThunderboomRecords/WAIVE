@@ -11,8 +11,9 @@
 #include "VBox.hpp"
 #include "Knob.hpp"
 #include "Knob3D.hpp"
-#include "SimpleButton.hpp"
 #include "Waveform.hpp"
+#include "SampleMap.hpp"
+#include "SimpleButton.hpp"
 #include "ValueIndicator.hpp"
 
 #include "fonts.h"
@@ -23,7 +24,7 @@
 START_NAMESPACE_DISTRHO
 
 const unsigned int UI_W = 840;
-const unsigned int UI_H = 380;
+const unsigned int UI_H = 480;
 
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
@@ -61,6 +62,7 @@ private:
     Button *open_button, *save_sample_button;
     Waveform *waveform_display, *sample_display;
     Knob3D *pitch, *volume;
+    SampleMap *sample_map;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 
