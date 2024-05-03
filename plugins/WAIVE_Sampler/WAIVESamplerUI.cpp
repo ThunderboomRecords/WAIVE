@@ -34,10 +34,12 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     waveform_display->selectable = true;
     waveform_display->setCallback(this);
     waveform_display->lineColor = Color(255, 255, 255);
+    waveform_display->setWaveform(&plugin->fSourceWaveform);
 
     sample_display = new Waveform(this);
     sample_display->setSize(180, 80);
     sample_display->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10);
+    sample_display->setWaveform(&plugin->fSample);
 
     pitch = new Knob3D(this);
     pitch->setSize(50, 50);
@@ -190,12 +192,12 @@ void WAIVESamplerUI::idleCallback()
         case kSourceLoading:
             break;
         case kSourceLoaded:
-            waveform_display->calculateWaveform(&plugin->fSourceWaveform);
+            waveform_display->waveformNew();
             break;
         case kSampleLoading:
             break;
         case kSampleUpdated:
-            sample_display->calculateWaveform(&plugin->fSample);
+            sample_display->waveformNew();
             break;
         case kSampleAdded:
             sample_map->repaint();
