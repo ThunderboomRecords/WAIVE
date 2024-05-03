@@ -102,8 +102,6 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
 
 void WAIVESamplerUI::buttonClicked(Button *button)
 {
-    std::cout << "button clicked" << std::endl;
-
     if (button == open_button)
     {
         requestStateFile("filename");

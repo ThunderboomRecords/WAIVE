@@ -20,7 +20,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fSampleLoaded(false),
                                fSampleLength(0),
                                fSamplePtr(0),
-                               fSourceLoaded(false)
+                               fSourceLoaded(false),
+                               fCurrentSample(nullptr)
 {
     if (isDummyInstance())
     {
@@ -47,7 +48,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
         fs::create_directory(fCacheDir / SAMPLE_DIR);
     }
 
-    db = new SampleDatabase((fCacheDir/"waive_sampler.db").string());
+    db = new SampleDatabase((fCacheDir / "waive_sampler.db").string());
+    fAllSamples = db->getAllSamples();
 
     stretch.presetDefault(1, (int)sampleRate);
 }
@@ -105,10 +107,12 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
     {
     case kSampleVolume:
         fSampleVolume = value;
+        fCurrentSample->volume = value;
         renderSample();
         break;
     case kSamplePitch:
         fSamplePitch = value;
+        fCurrentSample->pitch = value;
         repitchSample();
         break;
     default:
@@ -206,6 +210,11 @@ bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
     }
 
     fSourceLoaded = true;
+    fSourceFilepath = std::string(fp);
+    if(fCurrentSample != nullptr)
+    {
+        fCurrentSample->source = fSourceFilepath;
+    }
     addToUpdateQueue(kSourceLoaded);
 
     return true;
@@ -230,29 +239,52 @@ bool WAIVESampler::saveWaveform(const char *fp, float *buffer, sf_count_t size)
 
 void WAIVESampler::addToLibrary()
 {
-    if (!fSampleLoaded)
+    std::cout << "WAIVESampler::addToLibrary" << std::endl;
+    if (!fSampleLoaded || fCurrentSample == nullptr)
         return;
 
-    // generate name for sample
+    bool result = false;
+    if (fCurrentSample->saved)
+    {
+        result = db->updateSample(*fCurrentSample);
+    }
+    else
+    {
+        result = db->insertSample(*fCurrentSample);
+    }
+
+    if (result)
+    {
+        saveWaveform((fs::path(fCurrentSample->path) / fCurrentSample->name).c_str(), &fSample[0], fSample.size());
+        fCurrentSample->saved = true;
+    }
+}
+
+void WAIVESampler::newSample()
+{
+    std::cout << "WAIVESampler::newSample" << std::endl;
     time_t current_time = time(NULL);
     std::string name = fmt::format("{:d}.wav", current_time);
-    std::cout << "Adding to library " << name << std::endl;
 
-    // save to Samples/ folder
-    saveWaveform((fCacheDir / SAMPLE_DIR / name).c_str(), &fSample[0], fSample.size());
+    fCurrentSample = new SampleInfo(current_time, name, fCacheDir / SAMPLE_DIR, true);
+    fCurrentSample->pitch = fSamplePitch;
+    fCurrentSample->volume = fSampleVolume;
+    fCurrentSample->source = fSourceFilepath;
+}
 
-    // get embedding
-    float embedX = (float)(rand() % 10000) / 10000.0f;
-    float embedY = (float)(rand() % 10000) / 10000.0f;
+void WAIVESampler::loadSample(SampleInfo *s)
+{
+    fCurrentSample = s;
+    if (!s->waive)
+    {
+        // TODO: load waveform, hide/reset controls
+        return;
+    }
 
-    SampleInfo s = SampleInfo(current_time, name, fCacheDir / SAMPLE_DIR, embedX, embedY, true);
-    s.source = "example.wav";
-    s.pitch = fSamplePitch;
-    s.volume = fSampleVolume;
-    s.tags = "";
-
-    // add to database
-    db->insertSample(s);
+    loadWaveform(s->source.c_str(), &fSourceWaveform);
+    setParameterValue(kSamplePitch, s->pitch);
+    setParameterValue(kSampleVolume, s->volume);
+    selectSample(&fSourceWaveform, s->sourceStart, s->sourceEnd);
 }
 
 void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end)
@@ -267,6 +299,11 @@ void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end
         uint tmp = end;
         end = start;
         start = tmp;
+    }
+
+    if (fCurrentSample == nullptr)
+    {
+        newSample();
     }
 
     if (end >= source->size())
@@ -371,7 +408,19 @@ void WAIVESampler::renderSample()
         fSample[i] = fSamplePitched[i] * fSampleVolume;
     }
 
+    getEmbeding();
+
     addToUpdateQueue(kSampleUpdated);
+}
+
+void WAIVESampler::getEmbeding()
+{
+    // TODO: placeholder is random for now
+    float embedX = (float)(rand() % 10000) / 10000.0f;
+    float embedY = (float)(rand() % 10000) / 10000.0f;
+
+    fCurrentSample->embedX = embedX;
+    fCurrentSample->embedY = embedY;
 }
 
 void WAIVESampler::analyseWaveform()

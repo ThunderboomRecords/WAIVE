@@ -82,16 +82,18 @@ protected:
     void setParameterValue(uint32_t index, float value) override;
 
     // --- Process ----------------
-    // void activate() override;
     void run(const float **, float **outputs, uint32_t numFrames, const MidiEvent *midiEvents, uint32_t midiEventCount) override;
     void sampleRateChanged(double newSampleRate) override;
 
+    void newSample();
+    void loadSample(SampleInfo *s);
     bool loadWaveform(const char *fp, std::vector<float> *buffer);
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
     void selectSample(std::vector<float> *source, uint start, uint end);
     void addToLibrary();
     void repitchSample();
     void renderSample();
+    void getEmbeding();
     void analyseWaveform();
 
 private:
@@ -101,13 +103,16 @@ private:
 
     fs::path fCacheDir;
     SampleDatabase *db;
+    std::vector<SampleInfo> fAllSamples;
 
+    SampleInfo *fCurrentSample;
     signalsmith::stretch::SignalsmithStretch<float> stretch;
 
     float fSampleVolume;
     float fSamplePitch;
 
     std::vector<float> fSourceWaveform;
+    std::string fSourceFilepath;
     bool fSourceLoaded;
 
     std::vector<float> fSampleRaw, fSamplePitched, fSample;
