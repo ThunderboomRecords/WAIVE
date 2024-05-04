@@ -88,8 +88,12 @@ WAIVESamplerUI::~WAIVESamplerUI() {}
 
 void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
 {
+    std::cout << "WAIVESamplerUI::parameterChanged" << std::endl;
     switch (index)
     {
+    case kSamplePitch:
+        pitch->repaint();
+        break;
     default:
         break;
     }
@@ -122,7 +126,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart, uint selectionEnd)
 {
-    plugin->selectSample(&plugin->fSourceWaveform, selectionStart, selectionEnd);
+    plugin->selectWaveform(&plugin->fSourceWaveform, selectionStart, selectionEnd, true);
 }
 
 void WAIVESamplerUI::knobDragStarted(Knob *knob)
@@ -158,6 +162,7 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 void WAIVESamplerUI::mapSampleSelected(int id)
 {
     std::cout << "WAIVESamplerUI::mapSampleSelected " << id << std::endl;
+    plugin->loadSample(id);
 }
 
 void WAIVESamplerUI::onNanoDisplay()
@@ -213,6 +218,11 @@ void WAIVESamplerUI::idleCallback()
             break;
         case kSampleAdded:
             sample_map->repaint();
+            break;
+        case kParametersChanged:
+            pitch->setValue(plugin->fSamplePitch, false);
+            volume->setValue(plugin->fSampleVolume, false);
+            waveform_display->setSelection(plugin->fCurrentSample->sourceStart, plugin->fCurrentSample->sourceEnd, false);
             break;
         default:
             std::cout << "Unknown update: " << msg << std::endl;

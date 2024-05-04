@@ -25,6 +25,18 @@ void Waveform::setWaveform(std::vector<float> *wf_)
     wf = wf_;
 }
 
+void Waveform::setSelection(int start, int end, bool sendCallback = false)
+{
+    std::cout << "setSelection: " << start << " " << end << std::endl;
+    waveformSelectStart = std::clamp(start, 0, (int)waveformLength);
+    waveformSelectEnd = std::clamp(end, 0, (int)waveformLength);
+
+    if (callback != nullptr && sendCallback)
+        callback->waveformSelection(this, waveformSelectStart, waveformSelectEnd);
+
+    repaint();
+}
+
 void Waveform::waveformNew()
 {
     std::cout << "waveformNew()" << std::endl;

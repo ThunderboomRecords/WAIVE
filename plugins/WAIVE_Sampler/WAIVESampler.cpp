@@ -41,12 +41,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     bool result = fs::create_directory(fCacheDir);
     std::cout << "fCacheDir created: " << (result ? "true" : "false") << std::endl;
 
-    if (result)
-    {
-        // newly created cache, make source folder
-        fs::create_directory(fCacheDir / SOURCE_DIR);
-        fs::create_directory(fCacheDir / SAMPLE_DIR);
-    }
+    fs::create_directory(fCacheDir / SOURCE_DIR);
+    fs::create_directory(fCacheDir / SAMPLE_DIR);
 
     db = new SampleDatabase((fCacheDir / "waive_sampler.db").string());
     fAllSamples = db->getAllSamples();
@@ -126,7 +122,7 @@ void WAIVESampler::setState(const char *key, const char *value)
 {
     if (strcmp(key, "filename") == 0)
     {
-        loadWaveform(value, &fSourceWaveform);
+        loadSource(value);
     }
 }
 
@@ -172,12 +168,29 @@ void WAIVESampler::run(
     }
 }
 
-bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
+void WAIVESampler::loadSource(const char *fp)
 {
-    printf("WAIVESampler::loadWaveform %s\n", fp);
 
     fSourceLoaded = false;
     addToUpdateQueue(kSourceLoading);
+
+    bool result = loadWaveform(fp, &fSourceWaveform);
+
+    if (result)
+    {
+        fSourceLoaded = true;
+        fSourceFilepath = std::string(fp);
+        if (fCurrentSample != nullptr)
+        {
+            fCurrentSample->source = fSourceFilepath;
+        }
+        addToUpdateQueue(kSourceLoaded);
+    }
+}
+
+bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
+{
+    printf("WAIVESampler::loadWaveform %s\n", fp);
 
     SndfileHandle fileHandle(fp);
     int sampleLength = fileHandle.frames() - 1;
@@ -210,14 +223,6 @@ bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
             buffer->operator[](i) = sample[i];
         }
     }
-
-    fSourceLoaded = true;
-    fSourceFilepath = std::string(fp);
-    if (fCurrentSample != nullptr)
-    {
-        fCurrentSample->source = fSourceFilepath;
-    }
-    addToUpdateQueue(kSourceLoaded);
 
     return true;
 }
@@ -278,22 +283,39 @@ void WAIVESampler::newSample()
     fCurrentSample->source = fSourceFilepath;
 }
 
+void WAIVESampler::loadSample(int id)
+{
+    for (int i = 0; i < fAllSamples.size(); i++)
+    {
+        if (fAllSamples[i].getId() == id)
+        {
+            loadSample(&fAllSamples[i]);
+            return;
+        }
+    }
+}
+
 void WAIVESampler::loadSample(SampleInfo *s)
 {
     fCurrentSample = s;
-    if (!s->waive)
+
+    // load source (if avaliable)
+    if (fCurrentSample->waive)
     {
-        // TODO: load waveform, hide/reset controls
-        return;
+        loadSource(fCurrentSample->source.c_str());
+        setParameterValue(kSamplePitch, fCurrentSample->pitch);
+        setParameterValue(kSampleVolume, fCurrentSample->volume);
     }
 
-    loadWaveform(s->source.c_str(), &fSourceWaveform);
-    setParameterValue(kSamplePitch, s->pitch);
-    setParameterValue(kSampleVolume, s->volume);
-    selectSample(&fSourceWaveform, s->sourceStart, s->sourceEnd);
+    // load sample directly
+    fs::path fp = fs::path(fCurrentSample->path) / fCurrentSample->name;
+    loadWaveform(fp.c_str(), &fSample);
+
+    addToUpdateQueue(kSampleLoaded);
+    addToUpdateQueue(kParametersChanged);
 }
 
-void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end)
+void WAIVESampler::selectWaveform(std::vector<float> *source, uint start, uint end, bool process = true)
 {
     // TODO: ideally on separate thread (with mutex lock on fSample)
 
@@ -335,12 +357,16 @@ void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end
     }
 
     fSampleLoaded = true;
+    fCurrentSample->sourceStart = start;
+    fCurrentSample->sourceEnd = end;
+
     addToUpdateQueue(kSampleLoaded);
 
     fSamplePtr = 0;
 
     // tWaveShaping = new std::thread(&WAIVESampler::repitchSample, this);
-    repitchSample();
+    if (process)
+        repitchSample();
 }
 
 void WAIVESampler::repitchSample()

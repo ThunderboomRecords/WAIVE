@@ -41,6 +41,7 @@ enum Updates
     kSampleLoaded,
     kSampleUpdated,
     kSampleAdded,
+    kParametersChanged,
 };
 
 #endif

@@ -86,10 +86,12 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
 
     void newSample();
+    void loadSample(int id);
     void loadSample(SampleInfo *s);
+    void loadSource(const char *fp);
     bool loadWaveform(const char *fp, std::vector<float> *buffer);
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
-    void selectSample(std::vector<float> *source, uint start, uint end);
+    void selectWaveform(std::vector<float> *source, uint start, uint end, bool process);
     void addToLibrary();
     void repitchSample();
     void renderSample();

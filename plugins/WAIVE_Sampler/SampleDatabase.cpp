@@ -194,11 +194,6 @@ bool SampleDatabase::deleteSample(SampleInfo s)
     return execSQL(query);
 }
 
-bool SampleDatabase::findSample(int id)
-{
-    return false;
-}
-
 std::vector<SampleInfo> SampleDatabase::getAllSamples()
 {
     sqlite3_stmt *stmt;
@@ -219,17 +214,17 @@ std::vector<SampleInfo> SampleDatabase::getAllSamples()
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
         int id(sqlite3_column_int(stmt, ID_COLUMN));
-        std::string name(reinterpret_cast<const char*>(sqlite3_column_text(stmt, NAME_COLUMN)));
-        std::string path(reinterpret_cast<const char*>(sqlite3_column_text(stmt, FOLDER_COLUMN)));
+        std::string name(reinterpret_cast<const char *>(sqlite3_column_text(stmt, NAME_COLUMN)));
+        std::string path(reinterpret_cast<const char *>(sqlite3_column_text(stmt, FOLDER_COLUMN)));
         bool waive(sqlite3_column_int(stmt, WAIVE_COLUMN));
 
         SampleInfo s(id, name, path, waive);
         s.embedX = sqlite3_column_double(stmt, EMBEDX_COLUMN);
         s.embedY = sqlite3_column_double(stmt, EMBEDY_COLUMN);
-        s.source = reinterpret_cast<const char*>(sqlite3_column_text(stmt, SOURCE_COLUMN));
+        s.source = reinterpret_cast<const char *>(sqlite3_column_text(stmt, SOURCE_COLUMN));
         s.pitch = sqlite3_column_double(stmt, PITCH_COLUMN);
         s.volume = sqlite3_column_double(stmt, VOLUME_COLUMN);
-        s.tags = reinterpret_cast<const char*>(sqlite3_column_text(stmt, TAGS_COLUMN));
+        s.tags = reinterpret_cast<const char *>(sqlite3_column_text(stmt, TAGS_COLUMN));
         s.sourceStart = sqlite3_column_int(stmt, SOURCE_START_COLUMN);
         s.sourceEnd = sqlite3_column_int(stmt, SOURCE_END_COLUMN);
 

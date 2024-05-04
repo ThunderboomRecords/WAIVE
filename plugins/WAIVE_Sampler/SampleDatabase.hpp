@@ -58,7 +58,6 @@ public:
     bool insertSample(SampleInfo);
     bool updateSample(SampleInfo);
     bool deleteSample(SampleInfo);
-    bool findSample(int);
     std::vector<SampleInfo> getAllSamples();
 
     bool verbose;

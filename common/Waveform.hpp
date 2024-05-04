@@ -30,6 +30,7 @@ public:
     explicit Waveform(Widget *widget) noexcept;
     void setCallback(Callback *cb);
     void setWaveform(std::vector<float> *wf);
+    void setSelection(int start, int end, bool sendCallback);
     void waveformNew();
     void waveformUpdated();
 
