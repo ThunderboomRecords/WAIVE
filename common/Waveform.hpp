@@ -48,7 +48,7 @@ private:
 
     Callback *callback;
     std::vector<float> waveformMin, waveformMax;
-    bool waveformCached;
+    bool waveformCached, reduced;
     uint waveformLength;
     int waveformSelectStart, waveformSelectEnd;
 

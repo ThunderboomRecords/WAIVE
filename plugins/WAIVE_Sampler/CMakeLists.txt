@@ -13,19 +13,19 @@ dpf_add_plugin(
       SampleDatabase.cpp
   FILES_UI
       WAIVESamplerUI.cpp
-      ../../common/fonts.h
-      ../../common/src/HBox.cpp
-      ../../common/src/VBox.cpp
-      ../../common/src/Notes.cpp
-      ../../common/src/Knob.cpp
-      ../../common/src/Knob3D.cpp
-      ../../common/src/Slider.cpp
-      ../../common/src/VSlider.cpp
-      ../../common/src/Playhead.cpp
-      ../../common/src/Waveform.cpp
-      ../../common/src/SampleMap.cpp
-      ../../common/src/SimpleButton.cpp
-      ../../common/src/ValueIndicator.cpp
+      ${CMAKE_SOURCE_DIR}/common/fonts.h
+      ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Notes.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Knob.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Knob3D.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Slider.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/VSlider.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Playhead.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Waveform.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/SampleMap.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/ValueIndicator.cpp
 )
 
 
@@ -59,15 +59,20 @@ target_link_libraries(
     ${SNDFILE_LIBRARY}
     fmt::fmt
     SQLite::SQLite3
+    samplerate
 )
+
+message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
     
 target_include_directories(
   WAIVE_Sampler
   PUBLIC 
     .
-    ../../common
-    ../../external/LibrosaCpp/librosa
-    ../../external/signalsmith-stretch
+    ${CMAKE_SOURCE_DIR}/common
+    ${CMAKE_SOURCE_DIR}/external/LibrosaCpp/librosa
+    ${CMAKE_SOURCE_DIR}/external/signalsmith-stretch
+    ${CMAKE_SOURCE_DIR}/external/libsamplerate/include
 )
 
 set_target_properties(WAIVE_Sampler PROPERTIES LINK_FLAGS "--libs=sndfile")

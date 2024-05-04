@@ -170,7 +170,6 @@ void WAIVESampler::run(
 
 void WAIVESampler::loadSource(const char *fp)
 {
-
     fSourceLoaded = false;
     addToUpdateQueue(kSourceLoading);
 
@@ -193,19 +192,54 @@ bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
     printf("WAIVESampler::loadWaveform %s\n", fp);
 
     SndfileHandle fileHandle(fp);
-    int sampleLength = fileHandle.frames() - 1;
+    int sampleLength = fileHandle.frames();
 
-    if (sampleLength == -1)
+    if (sampleLength == 0)
     {
-        printf("Error: Unable to open input file '%s'\n", fp);
+        std::cerr << "Error: Unable to open input file " << fp << std::endl;
         return false;
     }
 
     int sampleChannels = fileHandle.channels();
+    int fileSampleRate = fileHandle.samplerate();
+
+    std::cout << "sampleChannels: " << sampleChannels << " "
+              << " fileSampleRate: " << fileSampleRate
+              << " (sampleRate: " << sampleRate << ")\n";
 
     std::vector<float> sample;
     sample.resize(sampleLength * sampleChannels);
     fileHandle.read(&sample.at(0), sampleLength * sampleChannels);
+
+    std::vector<float> sample_tmp;
+
+    // resample data
+    if (fileSampleRate != sampleRate)
+    {
+        int new_size = sampleLength * sampleRate / fileSampleRate;
+        sample_tmp.resize(new_size);
+
+        SRC_DATA src_data;
+        src_data.data_in = &sample.at(0);
+        src_data.input_frames = sampleLength;
+        src_data.data_out = &sample_tmp.at(0);
+        src_data.output_frames = new_size;
+        src_data.src_ratio = sampleRate / fileSampleRate;
+
+        int result = src_simple(&src_data, SRC_SINC_BEST_QUALITY, sampleChannels);
+        if (result != 0)
+        {
+            std::cerr << "Failed to convert sample rate: " << src_strerror(result) << std::endl;
+        }
+        else
+        {
+            std::cout << "sample rate conversion complete. ratio: " << src_data.src_ratio << std::endl;
+        }
+    }
+    else
+    {
+        sample_tmp = sample;
+    }
 
     buffer->resize(sampleLength);
 
@@ -213,14 +247,14 @@ bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
     {
         for (int i = 0; i < sampleLength; i++)
         {
-            buffer->operator[](i) = (sample[i * sampleChannels] + sample[i * sampleChannels + 1]) * 0.5f;
+            buffer->operator[](i) = (sample_tmp[i * sampleChannels] + sample_tmp[i * sampleChannels + 1]) * 0.5f;
         }
     }
     else
     {
         for (int i = 0; i < sampleLength; i++)
         {
-            buffer->operator[](i) = sample[i];
+            buffer->operator[](i) = sample_tmp[i];
         }
     }
 
@@ -366,21 +400,26 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, uint start, uint e
 
     // tWaveShaping = new std::thread(&WAIVESampler::repitchSample, this);
     if (process)
-        repitchSample();
+        repitchSample(true);
 }
 
-void WAIVESampler::repitchSample()
+void WAIVESampler::repitchSample(bool bypass)
 {
     if (!fSampleLoaded)
         return;
+
+    if (bypass)
+    {
+        fSamplePitched = std::vector<float>(fSampleRaw);
+        renderSample();
+        return;
+    }
 
     // create working buffers
     std::vector<std::vector<float>> inBuffer{{0.0f}};
     std::vector<std::vector<float>> outBuffer{{0.0f}};
 
     stretch.reset();
-
-    std::cout << "stretch latency: in " << stretch.inputLatency() << "  out " << stretch.outputLatency() << std::endl;
 
     float startFactor = 4.0f;
     float endFactor = fSamplePitch;
@@ -438,7 +477,7 @@ void WAIVESampler::renderSample()
 
     for (int i = 0; i < fSampleLength; i++)
     {
-        fSample[i] = fSamplePitched[i] * fSampleVolume;
+        fSample[i] = std::clamp(fSamplePitched[i] * fSampleVolume, -0.99f, 0.99f);
     }
 
     getEmbeding();

@@ -7,3 +7,6 @@
 [submodule "external/signalsmith-stretch"]
 	path = external/signalsmith-stretch
 	url = https://github.com/Signalsmith-Audio/signalsmith-stretch.git
+[submodule "external/libsamplerate"]
+	path = external/libsamplerate
+	url = https://github.com/libsndfile/libsamplerate.git

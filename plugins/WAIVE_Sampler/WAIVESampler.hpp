@@ -21,6 +21,7 @@
 
 #include <librosa.h>
 #include "signalsmith-stretch.h"
+#include "samplerate.h"
 
 #define MAX_PATH 128
 
@@ -93,7 +94,7 @@ protected:
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
     void selectWaveform(std::vector<float> *source, uint start, uint end, bool process);
     void addToLibrary();
-    void repitchSample();
+    void repitchSample(bool bypass = false);
     void renderSample();
     void getEmbeding();
     void analyseWaveform();

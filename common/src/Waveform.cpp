@@ -15,6 +15,7 @@ Waveform::Waveform(Widget *widget) noexcept
       zoomable(true),
       visibleStart(0),
       visibleEnd(100),
+      reduced(false),
       wf(nullptr)
 {
 }
@@ -69,6 +70,7 @@ void Waveform::calculateWaveform()
 
     const int width = getWidth();
     double samples_per_pixel = (visibleEnd - visibleStart) / (double)(width);
+    reduced = samples_per_pixel > 1.0f;
 
     waveformMin.resize(width);
     waveformMax.resize(width);
@@ -126,7 +128,8 @@ void Waveform::onNanoDisplay()
     {
 
         lineTo(i, half - waveformMax[i] * half);
-        lineTo(i, half - waveformMin[i] * half);
+        if (reduced)
+            lineTo(i, half - waveformMin[i] * half);
     }
     stroke();
     closePath();
