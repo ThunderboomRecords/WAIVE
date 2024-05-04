@@ -12,8 +12,9 @@ SampleMap::SampleMap(Widget *widget) noexcept
       c3(Color::fromHSL(0.8f, 0.8f, 0.7f)),
       zoomLevel(1.0f),
       centerPos({0.0, 0.0}),
-      dragging(false)
-
+      dragging(false),
+      selectedSample(nullptr),
+      callback(nullptr)
 {
 }
 
@@ -51,11 +52,18 @@ bool SampleMap::onMouse(const MouseEvent &ev)
     if (!contains(ev.pos) && !dragging)
         return false;
 
-    if (ev.press && !dragging)
+    if (ev.press)
     {
-        dragging = true;
-        dragStart = Point<double>(ev.pos);
-        centerStart = Point<double>{centerPos.getX(), centerPos.getY()};
+        if (selectedSample != nullptr && callback != nullptr)
+        {
+            callback->mapSampleSelected(selectedSample->getId());
+        }
+        else if (!dragging)
+        {
+            dragging = true;
+            dragStart = Point<double>(ev.pos);
+            centerStart = Point<double>{centerPos.getX(), centerPos.getY()};
+        }
     }
     else if (!ev.press && dragging)
     {
@@ -72,7 +80,42 @@ bool SampleMap::onMouse(const MouseEvent &ev)
 bool SampleMap::onMotion(const MotionEvent &ev)
 {
     if (!dragging)
-        return false;
+    {
+        if (!contains(ev.pos))
+        {
+            selectedSample = nullptr;
+            return false;
+        }
+
+        // find nearest in Map space, to be be consistent with
+        // distance from mouse
+
+        SampleInfo *nearest = nullptr;
+        float d = INFINITY;
+
+        for (int i = 0; i < allSamples->size(); i++)
+        {
+            Point<double> sPos = embeddingToMap({
+                allSamples->at(i).embedX,
+                allSamples->at(i).embedY,
+            });
+
+            float dX = sPos.getX() - ev.pos.getX();
+            float dY = sPos.getY() - ev.pos.getY();
+            float dS = dX * dX + dY * dY;
+            if (dS < 100.0f && dS < d)
+            {
+                nearest = &allSamples->at(i);
+                d = dS;
+            }
+
+            selectedSample = nearest;
+        }
+
+        repaint();
+
+        return true;
+    }
 
     const float width = getWidth();
     const float height = getHeight();
@@ -138,10 +181,6 @@ void SampleMap::onNanoDisplay()
 
     for (int i = 0; i < allSamples->size(); i++)
     {
-        // for (float embedX = -1.0f; embedX < 1.0f; embedX += 0.1f)
-        // {
-        //     for (float embedY = -1.0f; embedY < 1.0f; embedY += 0.1f)
-        //     {
         float embedX = allSamples->at(i).embedX;
         float embedY = allSamples->at(i).embedY;
 
@@ -150,13 +189,23 @@ void SampleMap::onNanoDisplay()
         if (!contains(pMap))
             continue;
 
+        float r = 3.0f;
+        if (selectedSample != nullptr && selectedSample->getId() == allSamples->at(i).getId())
+        {
+            r = 6.0f;
+        }
+
         beginPath();
         fillColor(get2DColor(embedX, embedY));
-        circle(pMap.getX(), pMap.getY(), 3.0f);
+        circle(pMap.getX(), pMap.getY(), r);
         fill();
         closePath();
-        // }
     }
+}
+
+void SampleMap::setCallback(Callback *cb)
+{
+    callback = cb;
 }
 
 END_NAMESPACE_DISTRHO

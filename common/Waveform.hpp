@@ -9,6 +9,14 @@
 
 START_NAMESPACE_DISTRHO
 
+enum DragAction
+{
+    NONE = 0,
+    CLICKING,
+    SELECTING,
+    SCROLLING,
+};
+
 class Waveform : public NanoSubWidget
 {
 public:
@@ -21,12 +29,12 @@ public:
 
     explicit Waveform(Widget *widget) noexcept;
     void setCallback(Callback *cb);
-    void calculateWaveform();
     void setWaveform(std::vector<float> *wf);
     void waveformNew();
+    void waveformUpdated();
 
     Color backgroundColor, lineColor;
-    bool selectable;
+    bool selectable, zoomable;
 
 protected:
     void onNanoDisplay() override;
@@ -35,16 +43,17 @@ protected:
     bool onScroll(const ScrollEvent &) override;
 
 private:
+    void calculateWaveform();
+
     Callback *callback;
     std::vector<float> waveformMin, waveformMax;
     bool waveformCached;
     uint waveformLength;
-    uint waveformSelectStart, waveformSelectEnd;
+    int waveformSelectStart, waveformSelectEnd;
 
-    bool dragging;
-    float zoomLevel;
-    uint visibleStart, visibleEnd;
-    uint visibleStartCached, visibleEndCached;
+    DragAction dragAction;
+    Point<double> clickStart;
+    int visibleStart, visibleEnd;
 
     std::vector<float> *wf;
 

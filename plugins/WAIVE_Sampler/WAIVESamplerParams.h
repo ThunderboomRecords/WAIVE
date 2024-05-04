@@ -7,7 +7,7 @@
 #elif APPLE
 #define DATA_DIR "Library/Application Support/com.thunderboomrecords.waive"
 #elif WIN32
-// TODO: test on Windows! 
+// TODO: test on Windows!
 // - does it need backslashes, or does std::filesystem make
 //   the conversion from '/'?
 #define DATA_DIR "AppData\\Local\\WAIVE"
@@ -15,7 +15,7 @@
 #define DATA_DIR ".cache/WAIVE"
 #endif
 
-// SOURCE_DIR: folder in DATA_DIR that holds the source 
+// SOURCE_DIR: folder in DATA_DIR that holds the source
 // audio files.
 #define SOURCE_DIR "Sources"
 
@@ -25,16 +25,20 @@
 
 #define DB_FILE "db.csv"
 
-enum Parameters {
+enum Parameters
+{
     kSampleVolume = 0,
     kSamplePitch,
     kParameterCount
 };
 
-enum Updates {
+enum Updates
+{
     kSourceLoading = 1000,
     kSourceLoaded,
+    kSourceUpdated,
     kSampleLoading,
+    kSampleLoaded,
     kSampleUpdated,
     kSampleAdded,
 };

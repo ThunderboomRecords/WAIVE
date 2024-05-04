@@ -19,13 +19,16 @@ public:
     {
     public:
         virtual ~Callback(){};
-        virtual void mapSampleSelected() = 0;
+        virtual void mapSampleSelected(int id) = 0;
     };
 
     explicit SampleMap(Widget *widget) noexcept;
+    void setCallback(Callback *cb);
+
     Color background_color;
 
     std::vector<SampleInfo> *allSamples;
+    SampleInfo *selectedSample;
 
 protected:
     void onNanoDisplay() override;
@@ -35,13 +38,15 @@ protected:
     Color get2DColor(float x, float y);
 
 private:
+    Callback *callback;
+
     Color c0, c1, c2, c3;
 
     Point<double> embeddingToMap(Point<double>);
     Point<double> mapToEmbedding(Point<double>);
 
     float zoomLevel;
-    Point<double> centerPos, dragStart, centerStart;
+    Point<double> centerPos, dragStart, centerStart, cursorPos;
 
     std::map<int, Color> colorCache;
 

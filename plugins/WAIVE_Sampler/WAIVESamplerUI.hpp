@@ -30,7 +30,8 @@ class WAIVESamplerUI : public UI,
                        public Button::Callback,
                        public IdleCallback,
                        public Waveform::Callback,
-                       public Knob::Callback
+                       public Knob::Callback,
+                       public SampleMap::Callback
 {
 public:
     WAIVESamplerUI();
@@ -49,6 +50,7 @@ protected:
     void knobDragStarted(Knob *knob) override;
     void knobDragFinished(Knob *knob, float value) override;
     void knobValueChanged(Knob *knob, float value) override;
+    void mapSampleSelected(int id) override;
 
 private:
     float fScale;

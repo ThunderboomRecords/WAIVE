@@ -177,7 +177,7 @@ bool WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
     printf("WAIVESampler::loadWaveform %s\n", fp);
 
     fSourceLoaded = false;
-    addToUpdateQueue(kSampleLoading);
+    addToUpdateQueue(kSourceLoading);
 
     SndfileHandle fileHandle(fp);
     int sampleLength = fileHandle.frames() - 1;
@@ -335,6 +335,7 @@ void WAIVESampler::selectSample(std::vector<float> *source, uint start, uint end
     }
 
     fSampleLoaded = true;
+    addToUpdateQueue(kSampleLoaded);
 
     fSamplePtr = 0;
 

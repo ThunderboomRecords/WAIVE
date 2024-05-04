@@ -67,6 +67,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_map->setSize(300, 300);
     sample_map->setAbsolutePos(10, 160);
     sample_map->allSamples = &plugin->fAllSamples;
+    sample_map->setCallback(this);
 
     value_indicator = new ValueIndicator(this);
     value_indicator->setSize(70, 20);
@@ -154,6 +155,11 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
     value_indicator->setValue(knob->getValue());
 }
 
+void WAIVESamplerUI::mapSampleSelected(int id)
+{
+    std::cout << "WAIVESamplerUI::mapSampleSelected " << id << std::endl;
+}
+
 void WAIVESamplerUI::onNanoDisplay()
 {
     float width = getWidth();
@@ -194,10 +200,16 @@ void WAIVESamplerUI::idleCallback()
         case kSourceLoaded:
             waveform_display->waveformNew();
             break;
+        case kSourceUpdated:
+            waveform_display->waveformUpdated();
+            break;
         case kSampleLoading:
             break;
-        case kSampleUpdated:
+        case kSampleLoaded:
             sample_display->waveformNew();
+            break;
+        case kSampleUpdated:
+            sample_display->waveformUpdated();
             break;
         case kSampleAdded:
             sample_map->repaint();

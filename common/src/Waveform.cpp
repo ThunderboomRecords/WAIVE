@@ -7,16 +7,15 @@ Waveform::Waveform(Widget *widget) noexcept
       backgroundColor(Color(40, 40, 40)),
       lineColor(Color(200, 200, 200)),
       waveformCached(false),
-      dragging(false),
+      dragAction(NONE),
       waveformLength(0),
       waveformSelectStart(0),
       waveformSelectEnd(0),
       selectable(false),
-      zoomLevel(1.0f),
+      zoomable(true),
       visibleStart(0),
       visibleEnd(100),
-      visibleStartCached(1),
-      visibleEndCached(101)
+      wf(nullptr)
 {
 }
 
@@ -28,6 +27,14 @@ void Waveform::setWaveform(std::vector<float> *wf_)
 
 void Waveform::waveformNew()
 {
+    std::cout << "waveformNew()" << std::endl;
+
+    if (wf == nullptr)
+    {
+        std::cout << "waveform not set\n";
+        return;
+    }
+
     waveformLength = wf->size();
 
     if (waveformLength == 0)
@@ -35,16 +42,17 @@ void Waveform::waveformNew()
 
     visibleStart = 0;
     visibleEnd = waveformLength;
-    zoomLevel = 1.0f;
 
+    calculateWaveform();
+}
+
+void Waveform::waveformUpdated()
+{
     calculateWaveform();
 }
 
 void Waveform::calculateWaveform()
 {
-    // if(visibleEnd == visibleEndCached && visibleStart == visibleStartCached)
-    //     return;
-
     waveformCached = false;
 
     const int width = getWidth();
@@ -53,40 +61,34 @@ void Waveform::calculateWaveform()
     waveformMin.resize(width);
     waveformMax.resize(width);
 
-    float fIndex = 0.0f;
-    int index = 0;
-
     for (int i = 0; i < width; i++)
     {
         waveformMin[i] = 0.0f;
         waveformMax[i] = 0.0f;
-        for (int j = 0; j < samples_per_pixel; j++)
-        {
-            try
-            {
-                waveformMax[i] = std::max(waveformMax[i], wf->at(visibleStart + index));
-                waveformMin[i] = std::min(waveformMin[i], wf->at(visibleStart + index));
-                index++;
-            }
-            catch (const std::out_of_range &e)
-            {
-                // std::cout << index << " out of range" << std::endl;
-                break;
-            }
-        }
+
+        int start = (int)(i * samples_per_pixel) + visibleStart;
+        int end = std::min((int)waveformLength, (int)((i + 1) * samples_per_pixel) + visibleStart);
+
+        auto [min, max] = std::minmax_element(
+            wf->begin() + start,
+            wf->begin() + end);
+
+        waveformMin[i] = min[0];
+        waveformMax[i] = max[0];
 
         waveformMax[i] = std::clamp(waveformMax[i], -1.0f, 1.0f);
         waveformMin[i] = std::clamp(waveformMin[i], -1.0f, 1.0f);
     }
 
     waveformCached = true;
-    visibleStartCached = visibleStart;
-    visibleEndCached = visibleEnd;
     repaint();
 }
 
 void Waveform::onNanoDisplay()
 {
+    if (!isVisible())
+        return;
+
     const int width = getWidth();
     const int height = getHeight();
     const int half = height / 2;
@@ -97,36 +99,60 @@ void Waveform::onNanoDisplay()
     fill();
     closePath();
 
-    if (!waveformCached)
+    if (!waveformCached || wf == nullptr || waveformLength == 0)
         return;
 
+    // draw waveform
     beginPath();
-    lineCap(ROUND);
+    lineJoin(BEVEL);
+    lineCap(BUTT);
     strokeColor(lineColor);
     strokeWidth(1.0f);
     moveTo(0, half);
 
     for (int i = 0; i < waveformMin.size(); i++)
     {
-        float min = waveformMin[i];
-        float max = waveformMax[i];
 
-        moveTo(i, half - max * half);
-        lineTo(i, half - min * half);
+        lineTo(i, half - waveformMax[i] * half);
+        lineTo(i, half - waveformMin[i] * half);
     }
     stroke();
     closePath();
 
-    if (waveformLength > 0)
+    //  draw highlighted region
+    float cursorPosStart = (float)(waveformSelectStart - visibleStart) / (visibleEnd - visibleStart);
+    float cursorPosEnd = (float)(waveformSelectEnd - visibleStart) / (visibleEnd - visibleStart);
+    float x1 = width * std::clamp(cursorPosStart, 0.0f, 1.0f);
+    float x2 = width * std::clamp(cursorPosEnd, 0.0f, 1.0f);
+    beginPath();
+    fillColor(Color(200, 200, 0, 0.3f));
+    rect(x1, 0, x2 - x1, height);
+    fill();
+    closePath();
+
+    // draw minimap if zoomed in
+    if (visibleStart > 0 || visibleEnd < waveformLength)
     {
-        float cursorPosStart = (float)waveformSelectStart / waveformLength;
-        float cursorPosEnd = (float)waveformSelectEnd / waveformLength;
-        float x1 = width * cursorPosStart;
-        float x2 = width * cursorPosEnd;
+        beginPath();
+        fillColor(Color(30, 30, 30));
+        rect(0, height - 12.0f, width, 12.0f);
+        fill();
+        closePath();
+
         beginPath();
         fillColor(Color(200, 200, 0, 0.3f));
-        rect(x1, 0, x2 - x1, height);
+        float x = (float)waveformSelectStart / waveformLength * width;
+        float w = (float)(waveformSelectEnd - waveformSelectStart) / waveformLength * width;
+        rect(x, height - 12.0f, w, 12.0f);
         fill();
+        closePath();
+
+        beginPath();
+        strokeColor(Color(230, 230, 230));
+        x = (float)visibleStart / waveformLength * width;
+        w = (float)(visibleEnd - visibleStart) / waveformLength * width;
+        rect(x + 1.0f, height - 12.0f + 1.0f, w - 2.0f, 12.0f - 1.0f);
+        stroke();
         closePath();
     }
 }
@@ -138,45 +164,104 @@ bool Waveform::onMouse(const MouseEvent &ev)
 
     if (contains(ev.pos) && ev.press)
     {
-        dragging = true;
-        waveformSelectStart = (uint)(waveformLength * ev.pos.getX() / getWidth());
-        waveformSelectEnd = waveformSelectStart;
+        dragAction = CLICKING;
+        clickStart = ev.pos;
+        return true;
     }
-    else if (!ev.press && dragging)
+    else if (!ev.press && dragAction != NONE)
     {
-        dragging = false;
-
-        if (waveformSelectStart != waveformSelectEnd && waveformLength > 0)
+        switch (dragAction)
         {
-            callback->waveformSelection(this, waveformSelectStart, waveformSelectEnd);
+        case SELECTING:
+            if (waveformSelectStart != waveformSelectEnd && waveformLength > 0)
+                callback->waveformSelection(this, waveformSelectStart, waveformSelectEnd);
+
+            break;
+        case SCROLLING:
+            break;
+
+        case CLICKING:
+            std::cout << "Waveform clicked" << std::endl;
+            break;
+
+        default:
+            break;
         }
+        dragAction = NONE;
 
         repaint();
+        return true;
     }
     else
     {
         return false;
     }
-
-    return true;
 }
 
 bool Waveform::onMotion(const MotionEvent &ev)
 {
-
-    if (!dragging || !selectable)
+    if (dragAction == NONE)
         return false;
 
-    int cursorPos = (int)(waveformLength * ev.pos.getX() / getWidth());
-    cursorPos = std::clamp(cursorPos, 0, (int)waveformLength);
-
-    if (cursorPos < waveformSelectStart)
+    if (dragAction == CLICKING)
     {
-        waveformSelectStart = cursorPos;
+        if (ev.pos.getY() <= getHeight() - 12.0f)
+        {
+            if (!selectable)
+                return true;
+            // started selecting
+            dragAction = SELECTING;
+            int range = visibleEnd - visibleStart;
+            waveformSelectStart = visibleStart + (int)(range * ev.pos.getX() / getWidth());
+            waveformSelectEnd = waveformSelectStart;
+        }
+        else
+        {
+            // started scrolling
+            dragAction = SCROLLING;
+        }
     }
-    else if (cursorPos > waveformSelectStart)
+
+    int range = visibleEnd - visibleStart;
+
+    int cursorPos = (int)(range * (ev.pos.getX() / getWidth()));
+    cursorPos = std::clamp(cursorPos, 0, (int)range);
+
+    float dX;
+    int dV;
+
+    switch (dragAction)
     {
-        waveformSelectEnd = cursorPos;
+    case SELECTING:
+        if (cursorPos < waveformSelectStart)
+        {
+            waveformSelectStart = cursorPos + visibleStart;
+        }
+        else if (cursorPos > waveformSelectStart)
+        {
+            waveformSelectEnd = cursorPos + visibleStart;
+        }
+
+        break;
+    case SCROLLING:
+        dX = ev.pos.getX() - clickStart.getX();
+        dV = (int)(dX * (waveformLength / getWidth()));
+
+        if (visibleStart + dV <= 0)
+            dV = -visibleStart;
+
+        if (visibleEnd + dV >= waveformLength)
+            dV = waveformLength - visibleEnd;
+
+        visibleEnd += dV;
+        visibleStart += dV;
+
+        clickStart = ev.pos;
+
+        calculateWaveform();
+        break;
+    default:
+        break;
     }
 
     repaint();
@@ -185,16 +270,23 @@ bool Waveform::onMotion(const MotionEvent &ev)
 
 bool Waveform::onScroll(const ScrollEvent &ev)
 {
-    if (!contains(ev.pos))
+    if (!contains(ev.pos) || !zoomable || wf == nullptr || wf->size() == 0)
         return false;
 
-    zoomLevel *= (1.0f + ev.delta.getY() * 0.05f);
-    zoomLevel = std::min(zoomLevel, 1.0f);
+    int range = visibleEnd - visibleStart;
+    int newRange = range * (1.0f + ev.delta.getY() * 0.05f);
+    newRange = std::max(newRange, (int)getWidth());
 
-    // std::cout << zoomLevel << " " << ev.delta.getY() << " x: " << ev.delta.getX() << std::endl;
+    visibleEnd = visibleStart + newRange;
+    if (visibleEnd >= waveformLength)
+    {
+        int delta = visibleEnd - waveformLength;
+        visibleEnd -= delta;
+        visibleStart -= delta;
+    }
 
-    visibleEnd = waveformLength * zoomLevel;
-    visibleEnd = std::clamp(visibleEnd, visibleStart + 10, waveformLength);
+    if (visibleStart < 0)
+        visibleStart = 0;
 
     calculateWaveform();
     return true;
