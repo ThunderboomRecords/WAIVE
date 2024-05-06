@@ -13,11 +13,17 @@ Knob::Knob(Widget *parent) noexcept
       max(1.0f),
       foreground_color(Color(200, 200, 200)),
       background_color(Color(40, 40, 40)),
+      label_color(Color(40, 40, 40)),
+      label_size(14.0f),
       gauge_width(10.0f),
       sensitive(false),
       callback(nullptr),
-      format("{:.2f}")
+      format("{:.2f}"),
+      label("knob"),
+      enabled(true),
+      radius(25.0f)
 {
+    loadSharedResources();
 }
 
 float Knob::getValue() noexcept
@@ -28,6 +34,15 @@ float Knob::getValue() noexcept
 std::string Knob::getFormat() noexcept
 {
     return format;
+}
+
+void Knob::setRadius(float r)
+{
+    fontSize(label_size);
+    Rectangle<float> bounds;
+    textBounds(0, 0, label.c_str(), NULL, bounds);
+
+    setSize(2 * radius, 2 * radius + bounds.getHeight() * 1.1);
 }
 
 void Knob::setValue(float val, bool sendCallback) noexcept
@@ -47,7 +62,7 @@ void Knob::setValue(float val, bool sendCallback) noexcept
 
 bool Knob::onMouse(const MouseEvent &ev)
 {
-    if (!isVisible() || ev.button != 1)
+    if (!isVisible() || ev.button != 1 || !enabled)
         return false;
 
     if (ev.press && contains(ev.pos))
@@ -83,7 +98,7 @@ bool Knob::onMouse(const MouseEvent &ev)
 
 bool Knob::onMotion(const MotionEvent &ev)
 {
-    if (!isVisible() || !dragging_)
+    if (!isVisible() || !dragging_ || !enabled)
         return false;
 
     const float height = getHeight();
@@ -103,7 +118,7 @@ bool Knob::onMotion(const MotionEvent &ev)
 
 bool Knob::onScroll(const ScrollEvent &ev)
 {
-    if (!isVisible() || dragging_ || !contains(ev.pos))
+    if (!isVisible() || dragging_ || !contains(ev.pos) || !enabled)
         return false;
 
     sensitive = ev.mod == kModifierShift;
@@ -123,6 +138,7 @@ bool Knob::onScroll(const ScrollEvent &ev)
 void Knob::onNanoDisplay()
 {
     drawIndicator();
+    drawLabel();
 }
 
 void Knob::drawIndicator()
@@ -147,7 +163,13 @@ void Knob::drawIndicator()
 
     beginPath();
     strokeWidth(gauge_width);
-    strokeColor(foreground_color);
+    if (enabled)
+        strokeColor(foreground_color);
+    else
+    {
+        float gray = (foreground_color.red + foreground_color.green + foreground_color.blue) / 3.0f;
+        strokeColor(gray, gray, gray);
+    }
     arc(
         center_x,
         center_y,
@@ -156,6 +178,18 @@ void Knob::drawIndicator()
         (0.75 + normValue * 1.5f) * M_PI,
         NanoVG::Winding::CW);
     stroke();
+    closePath();
+}
+
+void Knob::drawLabel()
+{
+    beginPath();
+    fillColor(label_color);
+    fontFaceId(font);
+    textAlign(Align::ALIGN_CENTER | Align::ALIGN_TOP);
+    fontSize(label_size);
+    text(getWidth() / 2.0f, getHeight() - label_size, label.c_str(), nullptr);
+
     closePath();
 }
 

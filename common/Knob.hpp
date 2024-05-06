@@ -28,11 +28,19 @@ public:
     float getValue() noexcept;
     std::string getFormat() noexcept;
     void idleCallback() override;
+    void setRadius(float r);
 
+    float radius;
     float min, max;
     float gauge_width;
-    Color foreground_color, background_color;
+    Color foreground_color, background_color, label_color;
     std::string format;
+    float label_size;
+
+    bool enabled;
+
+    FontId font;
+    std::string label;
 
 protected:
     void onNanoDisplay() override;
@@ -40,6 +48,7 @@ protected:
     bool onMotion(const MotionEvent &) override;
     bool onScroll(const ScrollEvent &) override;
     void drawIndicator();
+    void drawLabel();
 
 private:
     Callback *callback;
@@ -47,7 +56,6 @@ private:
     float value_, tmp_p;
     float dragStart;
     bool sensitive;
-
 
     DISTRHO_LEAK_DETECTOR(Knob);
 };

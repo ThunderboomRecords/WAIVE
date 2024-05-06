@@ -47,7 +47,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     ampADSRKnobs->justify_content = HBox::Justify_Content::right;
 
     pitch = new Knob3D(this);
-    pitch->setSize(50, 50);
+    pitch->setRadius(25.f);
     pitch->gauge_width = 6.0f;
     pitch->background_color = Color(190, 190, 190);
     pitch->foreground_color = Color(0, 160, 245);
@@ -56,9 +56,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     pitch->setValue(1.0f, false);
     pitch->setCallback(this);
     pitch->setId(kSamplePitch);
+    pitch->label = "pitch";
 
     volume = new Knob3D(this);
-    volume->setSize(50, 50);
+    volume->setRadius(25.f);
     volume->gauge_width = 6.0f;
     volume->background_color = Color(190, 190, 190);
     volume->foreground_color = Color(0, 160, 245);
@@ -67,9 +68,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     volume->setValue(1.0f, false);
     volume->setCallback(this);
     volume->setId(kSampleVolume);
+    volume->label = "volume";
+    volume->font = logo_font;
 
     ampAttack = new Knob3D(this);
-    ampAttack->setSize(50, 50);
+    ampAttack->setRadius(25.f);
     ampAttack->gauge_width = 6.0f;
     ampAttack->background_color = Color(190, 190, 190);
     ampAttack->foreground_color = Color(0, 160, 245);
@@ -79,9 +82,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     ampAttack->setValue(100.0f, false);
     ampAttack->setCallback(this);
     ampAttack->setId(kAmpAttack);
+    ampAttack->label = "attack";
 
     ampDecay = new Knob3D(this);
-    ampDecay->setSize(50, 50);
+    ampDecay->setRadius(25.f);
     ampDecay->gauge_width = 6.0f;
     ampDecay->background_color = Color(190, 190, 190);
     ampDecay->foreground_color = Color(0, 160, 245);
@@ -91,9 +95,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     ampDecay->setValue(100.0f, false);
     ampDecay->setCallback(this);
     ampDecay->setId(kAmpDecay);
+    ampDecay->label = "decay";
 
     ampSustain = new Knob3D(this);
-    ampSustain->setSize(50, 50);
+    ampSustain->setRadius(25.f);
     ampSustain->gauge_width = 6.0f;
     ampSustain->background_color = Color(190, 190, 190);
     ampSustain->foreground_color = Color(0, 160, 245);
@@ -102,9 +107,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     ampSustain->setValue(1.0f, false);
     ampSustain->setCallback(this);
     ampSustain->setId(kAmpSustain);
+    ampSustain->label = "sustain";
 
     ampRelease = new Knob3D(this);
-    ampRelease->setSize(50, 50);
+    ampRelease->setRadius(25.f);
     ampRelease->gauge_width = 6.0f;
     ampRelease->background_color = Color(190, 190, 190);
     ampRelease->foreground_color = Color(0, 160, 245);
@@ -114,6 +120,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     ampRelease->setValue(100.0f, false);
     ampRelease->setCallback(this);
     ampRelease->setId(kAmpRelease);
+    ampRelease->label = "release";
 
     ampADSRKnobs->addWidget(pitch);
     ampADSRKnobs->addWidget(ampAttack);
