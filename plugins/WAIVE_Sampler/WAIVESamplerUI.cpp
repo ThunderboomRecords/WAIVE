@@ -46,81 +46,22 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     ampADSRKnobs->setSize(300, 60);
     ampADSRKnobs->justify_content = HBox::Justify_Content::right;
 
-    pitch = new Knob3D(this);
-    pitch->setRadius(25.f);
-    pitch->gauge_width = 6.0f;
-    pitch->background_color = Color(190, 190, 190);
-    pitch->foreground_color = Color(0, 160, 245);
-    pitch->min = 0.25f;
-    pitch->max = 4.0f;
-    pitch->setValue(1.0f, false);
-    pitch->setCallback(this);
-    pitch->setId(kSamplePitch);
-    pitch->label = "pitch";
+    // Wave shaping
+    pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f);
+    volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f);
 
-    volume = new Knob3D(this);
-    volume->setRadius(25.f);
-    volume->gauge_width = 6.0f;
-    volume->background_color = Color(190, 190, 190);
-    volume->foreground_color = Color(0, 160, 245);
-    volume->min = 0.0f;
-    volume->max = 2.0f;
-    volume->setValue(1.0f, false);
-    volume->setCallback(this);
-    volume->setId(kSampleVolume);
-    volume->label = "volume";
-    volume->font = logo_font;
-
-    ampAttack = new Knob3D(this);
-    ampAttack->setRadius(25.f);
-    ampAttack->gauge_width = 6.0f;
-    ampAttack->background_color = Color(190, 190, 190);
-    ampAttack->foreground_color = Color(0, 160, 245);
-    ampAttack->min = 0.0f;
-    ampAttack->max = 500.0f;
+    // Amp ADSR
+    ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 100.0f);
     ampAttack->format = "{:.0f} ms";
-    ampAttack->setValue(100.0f, false);
-    ampAttack->setCallback(this);
-    ampAttack->setId(kAmpAttack);
-    ampAttack->label = "attack";
 
-    ampDecay = new Knob3D(this);
-    ampDecay->setRadius(25.f);
-    ampDecay->gauge_width = 6.0f;
-    ampDecay->background_color = Color(190, 190, 190);
-    ampDecay->foreground_color = Color(0, 160, 245);
-    ampDecay->min = 0.0f;
-    ampDecay->max = 500.0f;
+    ampDecay = createWAIVEKnob(this, kAmpDecay, "decay", 0.0f, 500.0f, 100.0f);
     ampDecay->format = "{:.0f} ms";
-    ampDecay->setValue(100.0f, false);
-    ampDecay->setCallback(this);
-    ampDecay->setId(kAmpDecay);
-    ampDecay->label = "decay";
 
-    ampSustain = new Knob3D(this);
-    ampSustain->setRadius(25.f);
-    ampSustain->gauge_width = 6.0f;
-    ampSustain->background_color = Color(190, 190, 190);
-    ampSustain->foreground_color = Color(0, 160, 245);
-    ampSustain->min = 0.0f;
-    ampSustain->max = 1.0f;
-    ampSustain->setValue(1.0f, false);
-    ampSustain->setCallback(this);
-    ampSustain->setId(kAmpSustain);
-    ampSustain->label = "sustain";
+    ampSustain = createWAIVEKnob(this, kAmpSustain, "sustain", 0.0f, 1.0f, 0.8f);
+    ampSustain->format = "{:.0f} ms";
 
-    ampRelease = new Knob3D(this);
-    ampRelease->setRadius(25.f);
-    ampRelease->gauge_width = 6.0f;
-    ampRelease->background_color = Color(190, 190, 190);
-    ampRelease->foreground_color = Color(0, 160, 245);
-    ampRelease->min = 0.0f;
-    ampRelease->max = 500.0f;
+    ampRelease = createWAIVEKnob(this, kAmpRelease, "release", 0.0f, 500.0f, 100.0f);
     ampRelease->format = "{:.0f} ms";
-    ampRelease->setValue(100.0f, false);
-    ampRelease->setCallback(this);
-    ampRelease->setId(kAmpRelease);
-    ampRelease->label = "release";
 
     ampADSRKnobs->addWidget(pitch);
     ampADSRKnobs->addWidget(ampAttack);
@@ -301,6 +242,30 @@ void WAIVESamplerUI::idleCallback()
             break;
         }
     }
+}
+
+// Helper functions to set up UI
+Knob3D *createWAIVEKnob(
+    WAIVESamplerUI *parent,
+    Parameters param,
+    std::string label,
+    float min,
+    float max,
+    float value)
+{
+    Knob3D *knob = new Knob3D(parent);
+    knob->setId(param);
+    knob->label = label;
+    knob->setRadius(25.f);
+    knob->min = min;
+    knob->max = max;
+    knob->setValue(value);
+    knob->gauge_width = 6.0f;
+    knob->background_color = Color(190, 190, 190);
+    knob->foreground_color = Color(0, 160, 245);
+    knob->setCallback(parent);
+
+    return knob;
 }
 
 END_NAMESPACE_DISTRHO
