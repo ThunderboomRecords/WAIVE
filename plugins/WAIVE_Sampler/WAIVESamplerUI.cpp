@@ -41,9 +41,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_display->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10);
     sample_display->setWaveform(&plugin->fSample);
 
+    ampADSRKnobs = new HBox(this);
+    ampADSRKnobs->setAbsolutePos(320, 160);
+    ampADSRKnobs->setSize(300, 60);
+    ampADSRKnobs->justify_content = HBox::Justify_Content::right;
+
     pitch = new Knob3D(this);
     pitch->setSize(50, 50);
-    pitch->setAbsolutePos(UI_W - 10 - 180 - 100, 70 + 80 + 10);
     pitch->gauge_width = 6.0f;
     pitch->background_color = Color(190, 190, 190);
     pitch->foreground_color = Color(0, 160, 245);
@@ -51,10 +55,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     pitch->max = 4.0f;
     pitch->setValue(1.0f, false);
     pitch->setCallback(this);
+    pitch->setId(kSamplePitch);
 
     volume = new Knob3D(this);
     volume->setSize(50, 50);
-    volume->setAbsolutePos(UI_W - 10 - 180 - 100 - 70, 70 + 80 + 10);
     volume->gauge_width = 6.0f;
     volume->background_color = Color(190, 190, 190);
     volume->foreground_color = Color(0, 160, 245);
@@ -62,6 +66,62 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     volume->max = 2.0f;
     volume->setValue(1.0f, false);
     volume->setCallback(this);
+    volume->setId(kSampleVolume);
+
+    ampAttack = new Knob3D(this);
+    ampAttack->setSize(50, 50);
+    ampAttack->gauge_width = 6.0f;
+    ampAttack->background_color = Color(190, 190, 190);
+    ampAttack->foreground_color = Color(0, 160, 245);
+    ampAttack->min = 0.0f;
+    ampAttack->max = 500.0f;
+    ampAttack->format = "{:.0f} ms";
+    ampAttack->setValue(100.0f, false);
+    ampAttack->setCallback(this);
+    ampAttack->setId(kAmpAttack);
+
+    ampDecay = new Knob3D(this);
+    ampDecay->setSize(50, 50);
+    ampDecay->gauge_width = 6.0f;
+    ampDecay->background_color = Color(190, 190, 190);
+    ampDecay->foreground_color = Color(0, 160, 245);
+    ampDecay->min = 0.0f;
+    ampDecay->max = 500.0f;
+    ampDecay->format = "{:.0f} ms";
+    ampDecay->setValue(100.0f, false);
+    ampDecay->setCallback(this);
+    ampDecay->setId(kAmpDecay);
+
+    ampSustain = new Knob3D(this);
+    ampSustain->setSize(50, 50);
+    ampSustain->gauge_width = 6.0f;
+    ampSustain->background_color = Color(190, 190, 190);
+    ampSustain->foreground_color = Color(0, 160, 245);
+    ampSustain->min = 0.0f;
+    ampSustain->max = 1.0f;
+    ampSustain->setValue(1.0f, false);
+    ampSustain->setCallback(this);
+    ampSustain->setId(kAmpSustain);
+
+    ampRelease = new Knob3D(this);
+    ampRelease->setSize(50, 50);
+    ampRelease->gauge_width = 6.0f;
+    ampRelease->background_color = Color(190, 190, 190);
+    ampRelease->foreground_color = Color(0, 160, 245);
+    ampRelease->min = 0.0f;
+    ampRelease->max = 500.0f;
+    ampRelease->format = "{:.0f} ms";
+    ampRelease->setValue(100.0f, false);
+    ampRelease->setCallback(this);
+    ampRelease->setId(kAmpRelease);
+
+    ampADSRKnobs->addWidget(pitch);
+    ampADSRKnobs->addWidget(ampAttack);
+    ampADSRKnobs->addWidget(ampDecay);
+    ampADSRKnobs->addWidget(ampSustain);
+    ampADSRKnobs->addWidget(ampRelease);
+    ampADSRKnobs->addWidget(volume);
+    ampADSRKnobs->positionWidgets();
 
     sample_map = new SampleMap(this);
     sample_map->setSize(300, 300);
@@ -151,10 +211,15 @@ void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 
 void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 {
-    if (knob == volume)
-    {
-        setParameterValue(kSampleVolume, value);
-    }
+    // if (knob == volume)
+    // {
+    //     setParameterValue(kSampleVolume, value);
+    // }
+
+    if (knob == pitch)
+        return;
+
+    setParameterValue(knob->getId(), value);
 
     value_indicator->setValue(knob->getValue());
 }

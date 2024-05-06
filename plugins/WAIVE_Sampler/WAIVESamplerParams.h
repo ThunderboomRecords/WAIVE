@@ -29,6 +29,10 @@ enum Parameters
 {
     kSampleVolume = 0,
     kSamplePitch,
+    kAmpAttack,
+    kAmpDecay,
+    kAmpSustain,
+    kAmpRelease,
     kParameterCount
 };
 

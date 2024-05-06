@@ -11,8 +11,10 @@ dpf_add_plugin(
   FILES_DSP
       WAIVESampler.cpp
       SampleDatabase.cpp
+      Envelopes.cpp
   FILES_UI
       WAIVESamplerUI.cpp
+      Layout.hpp
       ${CMAKE_SOURCE_DIR}/common/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp

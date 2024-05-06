@@ -18,6 +18,7 @@
 #include "DistrhoPlugin.hpp"
 #include "WAIVESamplerParams.h"
 #include "SampleDatabase.hpp"
+#include "Envelopes.hpp"
 
 #include <librosa.h>
 #include "signalsmith-stretch.h"
@@ -113,6 +114,9 @@ private:
 
     float fSampleVolume;
     float fSamplePitch;
+    // float fAmpAttack, fAmpDecay, fAmpSustain, fAmpRelease;
+    ADSR_Params fAmpADSRParams;
+    EnvGen ampEnvGen;
 
     std::vector<float> fSourceWaveform;
     std::string fSourceFilepath;

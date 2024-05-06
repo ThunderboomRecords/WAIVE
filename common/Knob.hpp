@@ -32,6 +32,7 @@ public:
     float min, max;
     float gauge_width;
     Color foreground_color, background_color;
+    std::string format;
 
 protected:
     void onNanoDisplay() override;
@@ -47,7 +48,6 @@ private:
     float dragStart;
     bool sensitive;
 
-    std::string format;
 
     DISTRHO_LEAK_DETECTOR(Knob);
 };

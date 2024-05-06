@@ -63,8 +63,9 @@ private:
     ValueIndicator *value_indicator;
     Button *open_button, *save_sample_button;
     Waveform *waveform_display, *sample_display;
-    Knob3D *pitch, *volume;
+    Knob3D *pitch, *volume, *ampAttack, *ampDecay, *ampSustain, *ampRelease;
     SampleMap *sample_map;
+    HBox *ampADSRKnobs;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 

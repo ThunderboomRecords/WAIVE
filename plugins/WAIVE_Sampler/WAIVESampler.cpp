@@ -21,7 +21,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fSampleLength(0),
                                fSamplePtr(0),
                                fSourceLoaded(false),
-                               fCurrentSample(nullptr)
+                               fCurrentSample(nullptr),
+                               ampEnvGen(sampleRate, ENV_TYPE::ADSR, fAmpADSRParams)
 {
     if (isDummyInstance())
     {
@@ -74,6 +75,40 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.max = 4.0f;
         parameter.ranges.def = 1.0f;
         parameter.hints = kParameterIsAutomatable;
+        break;
+    case kAmpAttack:
+        parameter.name = "Amp Attack";
+        parameter.symbol = "ampAttack";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 500.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
+    case kAmpDecay:
+        parameter.name = "Amp Decay";
+        parameter.symbol = "ampDecay";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 500.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
+    case kAmpSustain:
+        parameter.name = "Amp Sustain";
+        parameter.symbol = "ampSustain";
+        parameter.ranges.min = 0.1f;
+        parameter.ranges.max = 4.0f;
+        parameter.ranges.def = 1.0f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
+    case kAmpRelease:
+        parameter.name = "Amp Release";
+        parameter.symbol = "ampRelease";
+        parameter.ranges.min = 0.1f;
+        parameter.ranges.max = 4.0f;
+        parameter.ranges.def = 1.0f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
+
     default:
         break;
     }
@@ -90,6 +125,18 @@ float WAIVESampler::getParameterValue(uint32_t index) const
     case kSamplePitch:
         val = fSamplePitch;
         break;
+    case kAmpAttack:
+        val = fAmpADSRParams.attack;
+        break;
+    case kAmpDecay:
+        val = fAmpADSRParams.decay;
+        break;
+    case kAmpSustain:
+        val = fAmpADSRParams.sustain;
+        break;
+    case kAmpRelease:
+        val = fAmpADSRParams.release;
+        break;
     default:
         break;
     }
@@ -99,6 +146,7 @@ float WAIVESampler::getParameterValue(uint32_t index) const
 
 void WAIVESampler::setParameterValue(uint32_t index, float value)
 {
+    printf("WAIVESampler::setParameterValue %d -> %.2f\n", index, value);
     switch (index)
     {
     case kSampleVolume:
@@ -112,6 +160,26 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
         if (fCurrentSample != nullptr)
             fCurrentSample->pitch = value;
         repitchSample();
+        break;
+    case kAmpAttack:
+        fAmpADSRParams.attack = value;
+        ampEnvGen.setADSR(fAmpADSRParams);
+        renderSample();
+        break;
+    case kAmpDecay:
+        fAmpADSRParams.decay = value;
+        ampEnvGen.setADSR(fAmpADSRParams);
+        renderSample();
+        break;
+    case kAmpSustain:
+        fAmpADSRParams.sustain = value;
+        ampEnvGen.setADSR(fAmpADSRParams);
+        renderSample();
+        break;
+    case kAmpRelease:
+        fAmpADSRParams.release = value;
+        ampEnvGen.setADSR(fAmpADSRParams);
+        renderSample();
         break;
     default:
         break;
@@ -475,9 +543,18 @@ void WAIVESampler::renderSample()
     if (!fSampleLoaded)
         return;
 
+    ampEnvGen.reset();
+    ampEnvGen.trigger();
+
+    float amp = ampEnvGen.getValue();
+
     for (int i = 0; i < fSampleLength; i++)
     {
-        fSample[i] = std::clamp(fSamplePitched[i] * fSampleVolume, -0.99f, 0.99f);
+        fSample[i] = std::clamp(fSamplePitched[i] * fSampleVolume * amp, -0.99f, 0.99f);
+        if (i == sampleRate)
+            ampEnvGen.release();
+        ampEnvGen.process();
+        amp = ampEnvGen.getValue();
     }
 
     getEmbeding();
