@@ -18,7 +18,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fSampleVolume(1.0f),
                                fSamplePitch(1.0f),
                                fSampleLoaded(false),
+                               fSamplePitchedCached(false),
                                fSampleLength(0),
+                               fNormalisationRatio(1.0f),
                                fSamplePtr(0),
                                fSourceLoaded(false),
                                fCurrentSample(nullptr),
@@ -157,18 +159,21 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
         break;
     case kSamplePitch:
         fSamplePitch = value;
+        fSamplePitchedCached = false;
         if (fCurrentSample != nullptr)
             fCurrentSample->pitch = value;
-        repitchSample();
+        renderSample();
         break;
     case kAmpAttack:
         fAmpADSRParams.attack = value;
         ampEnvGen.setADSR(fAmpADSRParams);
+        // fSamplePitchedCached = false;
         renderSample();
         break;
     case kAmpDecay:
         fAmpADSRParams.decay = value;
         ampEnvGen.setADSR(fAmpADSRParams);
+        // fSamplePitchedCached = false;
         renderSample();
         break;
     case kAmpSustain:
@@ -179,6 +184,7 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
     case kAmpRelease:
         fAmpADSRParams.release = value;
         ampEnvGen.setADSR(fAmpADSRParams);
+        // fSamplePitchedCached = false;
         renderSample();
         break;
     default:
@@ -419,8 +425,6 @@ void WAIVESampler::loadSample(SampleInfo *s)
 
 void WAIVESampler::selectWaveform(std::vector<float> *source, uint start, uint end, bool process = true)
 {
-    // TODO: ideally on separate thread (with mutex lock on fSample)
-
     if (start == end)
         return;
 
@@ -439,47 +443,51 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, uint start, uint e
     if (end >= source->size())
         end = source->size() - 1;
 
-    fSampleLoaded = false;
-    addToUpdateQueue(kSampleLoading);
+    // fSampleLoaded = false;
+    // addToUpdateQueue(kSampleLoading);
 
-    fSampleLength = end - start;
-    fSampleRaw.resize(fSampleLength);
-    fSamplePitched.resize(fSampleLength);
-    fSample.resize(fSampleLength);
+    // fSampleLength = end - start;
+    // fSampleRaw.resize(fSampleLength);
+    // fSampleLength = ADSR_Params.attack + ADSR_Params.decay +
 
     // normalise selection to [-1.0, 1.0]
-    auto minmax = std::minmax_element(source->begin() + start, source->begin() + end);
-    float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
-    if (std::abs(normaliseRatio) <= 0.0001f)
-        normaliseRatio = 1.0f;
+    // auto minmax = std::minmax_element(source->begin() + start, source->begin() + end);
+    // float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
+    // if (std::abs(normaliseRatio) <= 0.0001f)
+    //     normaliseRatio = 1.0f;
 
-    for (int i = 0; i < fSampleLength; i++)
-    {
-        fSampleRaw[i] = source->operator[](start + i) / normaliseRatio;
-    }
+    // for (int i = 0; i < fSampleLength; i++)
+    // {
+    //     fSampleRaw[i] = source->operator[](start + i) / normaliseRatio;
+    // }
 
     fSampleLoaded = true;
+    fSamplePitchedCached = false;
     fCurrentSample->sourceStart = start;
-    fCurrentSample->sourceEnd = end;
-
-    addToUpdateQueue(kSampleLoaded);
+    // fCurrentSample->sourceEnd = end;
 
     fSamplePtr = 0;
 
+    renderSample();
+
     // tWaveShaping = new std::thread(&WAIVESampler::repitchSample, this);
-    if (process)
-        repitchSample(true);
+    // if (process)
+    //     repitchSample(true);
 }
 
 void WAIVESampler::repitchSample(bool bypass)
 {
-    if (!fSampleLoaded)
-        return;
+    std::cout << "WAIVESampler::repitchSample" << std::endl;
+    fSamplePitched.resize(fSampleLength);
 
     if (bypass)
     {
-        fSamplePitched = std::vector<float>(fSampleRaw);
-        renderSample();
+        // fSamplePitched = std::vector<float>(&fSourceWaveform[fSampleStart], &fSourceWaveform[fSampleStart + fSampleLength]);
+        for (int i = 0; i < fSampleLength; i++)
+        {
+            fSamplePitched[i] = fSourceWaveform[fSampleStart + i];
+        }
+        fSamplePitchedCached = true;
         return;
     }
 
@@ -511,7 +519,7 @@ void WAIVESampler::repitchSample(bool bypass)
             if (blockstart + i >= fSampleLength)
                 break;
 
-            inBuffer[0][i] = fSampleRaw[blockstart + i];
+            inBuffer[0][i] = fSourceWaveform[fSampleStart + blockstart + i];
         }
 
         stretch.setTransposeFactor(st);
@@ -535,30 +543,51 @@ void WAIVESampler::repitchSample(bool bypass)
         fSamplePitched[i] = result[i + stretch.inputLatency() + stretch.outputLatency()];
     }
 
-    renderSample();
+    fSamplePitchedCached = true;
 }
 
 void WAIVESampler::renderSample()
 {
+    std::cout << "WAIVESampler::renderSample" << std::endl;
+
     if (!fSampleLoaded)
         return;
 
+    fSampleLength = ampEnvGen.getLength(300.0f);
+    fSampleLength = std::min(fSampleLength, (uint)fSourceWaveform.size() - fSampleStart);
+    std::cout << "fSampleLength: " << fSampleLength << std::endl;
+
+    auto minmax = std::minmax_element(&fSourceWaveform[fSampleStart], &fSourceWaveform[fSampleStart + fSampleLength]);
+    float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
+    if (std::abs(normaliseRatio) <= 0.0001f)
+        normaliseRatio = 1.0f;
+
+    fSample.resize(fSampleLength);
+
     ampEnvGen.reset();
     ampEnvGen.trigger();
+
+    if (!fSamplePitchedCached)
+        repitchSample(true);
 
     float amp = ampEnvGen.getValue();
 
     for (int i = 0; i < fSampleLength; i++)
     {
-        fSample[i] = std::clamp(fSamplePitched[i] * fSampleVolume * amp, -0.99f, 0.99f);
+        fSample[i] = std::clamp(fSamplePitched[i] * fSampleVolume * amp / normaliseRatio, -1.0f, 1.0f);
         if (i == sampleRate)
             ampEnvGen.release();
         ampEnvGen.process();
         amp = ampEnvGen.getValue();
+
+        if (i < 100)
+        {
+            printf("%.6f ", fSample[i]);
+        }
     }
 
     getEmbeding();
-
+    addToUpdateQueue(kSampleLoaded);
     addToUpdateQueue(kSampleUpdated);
 }
 

@@ -185,3 +185,27 @@ void EnvGen::process()
 
     step++;
 }
+
+int EnvGen::getLength(float sustain_time = 0.0f)
+{
+    float ms = 0.0f;
+    switch (type)
+    {
+    case ENV_TYPE::ADSR:
+        ms = adsr.attack + adsr.decay + adsr.release + sustain_time;
+        break;
+    case ENV_TYPE::AD:
+        ms = adsr.attack + adsr.decay;
+        break;
+    case ENV_TYPE::SR:
+        ms = sustain_time + adsr.release;
+        break;
+    case ENV_TYPE::D:
+        ms = adsr.decay;
+        break;
+    default:
+        break;
+    }
+
+    return (int)(sampleRate * ms / 1000.0f);
+}

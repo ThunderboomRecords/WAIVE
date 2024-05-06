@@ -40,8 +40,6 @@ void Waveform::setSelection(int start, int end, bool sendCallback = false)
 
 void Waveform::waveformNew()
 {
-    std::cout << "waveformNew()" << std::endl;
-
     if (wf == nullptr)
     {
         std::cout << "waveform not set\n";

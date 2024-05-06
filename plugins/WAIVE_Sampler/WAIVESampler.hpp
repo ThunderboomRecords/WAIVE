@@ -114,7 +114,6 @@ private:
 
     float fSampleVolume;
     float fSamplePitch;
-    // float fAmpAttack, fAmpDecay, fAmpSustain, fAmpRelease;
     ADSR_Params fAmpADSRParams;
     EnvGen ampEnvGen;
 
@@ -122,9 +121,10 @@ private:
     std::string fSourceFilepath;
     bool fSourceLoaded;
 
-    std::vector<float> fSampleRaw, fSamplePitched, fSample;
-    bool fSampleLoaded;
-    uint fSampleLength, fSamplePtr;
+    std::vector<float> fSamplePitched, fSample;
+    bool fSampleLoaded, fSamplePitchedCached;
+    uint fSampleStart, fSampleLength, fSamplePtr;
+    float fNormalisationRatio;
 
     std::queue<int> updateQueue;
 

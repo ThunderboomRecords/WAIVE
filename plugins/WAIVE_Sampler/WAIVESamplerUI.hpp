@@ -72,6 +72,14 @@ private:
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 };
 
+Knob3D *createWAIVEKnob(
+    WAIVESamplerUI *parent,
+    Parameters param,
+    std::string label,
+    float min,
+    float max,
+    float value);
+
 UI *createUI()
 {
     return new WAIVESamplerUI();
