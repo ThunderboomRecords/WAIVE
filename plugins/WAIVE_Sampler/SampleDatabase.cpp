@@ -10,6 +10,7 @@ SampleInfo::SampleInfo(
                    tags(""),
                    volume(1.0f),
                    pitch(1.0f),
+                   sustainTime(10.0f),
                    sourceStart(0),
                    sourceEnd(0),
                    saved(false)
@@ -95,6 +96,11 @@ bool SampleDatabase::createTable()
                         "source         TEXT,"
                         "volume         REAL,"
                         "pitch          REAL,"
+                        "ampAttack      REAL,"
+                        "ampDecay       REAL,"
+                        "ampSustain     REAL,"
+                        "ampRelease     REAL,"
+                        "sustainLength  REAL,"
                         "sourceStart    INT,"
                         "sourceEnd      INT"
                         ");";
@@ -104,7 +110,7 @@ bool SampleDatabase::createTable()
 bool SampleDatabase::insertSample(SampleInfo s)
 {
     sqlite3_stmt *stmt;
-    const char *query = "INSERT INTO Samples (id, name, folder, embedX, embedY, waive, tags, source, volume, pitch, sourceStart, sourceEnd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const char *query = "INSERT INTO Samples (id, name, folder, embedX, embedY, waive, tags, source, volume, pitch, ampAttack, ampDecay, ampSustain, ampRelease, sustainLength, sourceStart, sourceEnd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr);
     if (rc != SQLITE_OK)
@@ -128,8 +134,13 @@ bool SampleDatabase::insertSample(SampleInfo s)
     sqlite3_bind_text(stmt, 8, s.source.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_double(stmt, 9, s.volume);
     sqlite3_bind_double(stmt, 10, s.pitch);
-    sqlite3_bind_int(stmt, 11, s.sourceStart);
-    sqlite3_bind_int(stmt, 12, s.sourceEnd);
+    sqlite3_bind_double(stmt, 11, s.adsr.attack);
+    sqlite3_bind_double(stmt, 12, s.adsr.decay);
+    sqlite3_bind_double(stmt, 13, s.adsr.sustain);
+    sqlite3_bind_double(stmt, 14, s.adsr.release);
+    sqlite3_bind_double(stmt, 15, s.sustainTime);
+    sqlite3_bind_int(stmt, 16, s.sourceStart);
+    sqlite3_bind_int(stmt, 17, s.sourceEnd);
 
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
@@ -147,7 +158,7 @@ bool SampleDatabase::insertSample(SampleInfo s)
 bool SampleDatabase::updateSample(SampleInfo s)
 {
     sqlite3_stmt *stmt;
-    const char *query = "UPDATE Samples SET name=?, folder=?, embedX=?, embedY=?, waive=?, tags=?, source=?, volume=?, pitch=?, sourceStart=?, sourceEnd=? WHERE id=?";
+    const char *query = "UPDATE Samples SET name=?, folder=?, embedX=?, embedY=?, waive=?, tags=?, source=?, volume=?, pitch=?, ampAttack=?, ampDecay=?, ampSustain=?, ampRelease=?, sustainTime=?, sourceStart=?, sourceEnd=? WHERE id=?";
 
     rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr);
     if (rc != SQLITE_OK)
@@ -170,9 +181,14 @@ bool SampleDatabase::updateSample(SampleInfo s)
     sqlite3_bind_text(stmt, 7, s.source.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_double(stmt, 8, s.volume);
     sqlite3_bind_double(stmt, 9, s.pitch);
-    sqlite3_bind_int(stmt, 10, s.sourceStart);
-    sqlite3_bind_int(stmt, 11, s.sourceEnd);
-    sqlite3_bind_int(stmt, 12, s.getId());
+    sqlite3_bind_double(stmt, 10, s.adsr.attack);
+    sqlite3_bind_double(stmt, 11, s.adsr.decay);
+    sqlite3_bind_double(stmt, 12, s.adsr.sustain);
+    sqlite3_bind_double(stmt, 13, s.adsr.release);
+    sqlite3_bind_double(stmt, 14, s.sustainTime);
+    sqlite3_bind_int(stmt, 15, s.sourceStart);
+    sqlite3_bind_int(stmt, 16, s.sourceEnd);
+    sqlite3_bind_int(stmt, 17, s.getId());
 
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
@@ -227,6 +243,13 @@ std::vector<SampleInfo> SampleDatabase::getAllSamples()
         s.tags = reinterpret_cast<const char *>(sqlite3_column_text(stmt, TAGS_COLUMN));
         s.sourceStart = sqlite3_column_int(stmt, SOURCE_START_COLUMN);
         s.sourceEnd = sqlite3_column_int(stmt, SOURCE_END_COLUMN);
+
+        s.adsr = {
+            (float)sqlite3_column_double(stmt, AMP_ATTACK_COLUMN),
+            (float)sqlite3_column_double(stmt, AMP_DECAY_COLUMN),
+            (float)sqlite3_column_double(stmt, AMP_SUSTAIN_COLUMN),
+            (float)sqlite3_column_double(stmt, AMP_RELEASE_COLUMN),
+        };
 
         s.saved = true;
 

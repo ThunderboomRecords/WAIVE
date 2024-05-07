@@ -93,7 +93,7 @@ protected:
     void loadSource(const char *fp);
     bool loadWaveform(const char *fp, std::vector<float> *buffer);
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
-    void selectWaveform(std::vector<float> *source, uint start, uint end, bool process);
+    void selectWaveform(std::vector<float> *source, uint start, bool process);
     void addToLibrary();
     void repitchSample(bool bypass = false);
     void renderSample();
@@ -115,15 +115,17 @@ private:
     float fSampleVolume;
     float fSamplePitch;
     ADSR_Params fAmpADSRParams;
+    float fSustainLength;
     EnvGen ampEnvGen;
 
     std::vector<float> fSourceWaveform;
     std::string fSourceFilepath;
     bool fSourceLoaded;
+    int fSourceLength;
 
     std::vector<float> fSamplePitched, fSample;
     bool fSampleLoaded, fSamplePitchedCached;
-    uint fSampleStart, fSampleLength, fSamplePtr;
+    int fSampleStart, fSampleLength, fSamplePtr;
     float fNormalisationRatio;
 
     std::queue<int> updateQueue;

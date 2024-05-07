@@ -1,6 +1,10 @@
 #ifndef WAIVESAMPLER_PARAMS_H_INCLUDED
 #define WAIVESAMPLER_PARAMS_H_INCLUDED
 
+#ifndef LOG_LOCATION
+#define LOG_LOCATION std::cout << __func__ << "():  " << __FILE__ << ":" << __LINE__ << std::endl;
+#endif
+
 // DATA_DIR: relative from the users $HOME directory
 #ifdef LINUX
 #define DATA_DIR ".cache/WAIVE"
@@ -33,6 +37,7 @@ enum Parameters
     kAmpDecay,
     kAmpSustain,
     kAmpRelease,
+    kSustainLength,
     kParameterCount
 };
 

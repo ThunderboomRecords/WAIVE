@@ -7,6 +7,10 @@
 #include <vector>
 #include <iostream>
 
+#ifndef LOG_LOCATION
+#define LOG_LOCATION std::cout << __func__ << "():  " << __FILE__ << ":" << __LINE__ << std::endl;
+#endif
+
 START_NAMESPACE_DISTRHO
 
 enum DragAction
@@ -24,18 +28,19 @@ public:
     {
     public:
         virtual ~Callback(){};
-        virtual void waveformSelection(Waveform *waveform, uint selectionStart, uint selectionEnd) = 0;
+        virtual void waveformSelection(Waveform *waveform, uint selectionStart) = 0;
     };
 
     explicit Waveform(Widget *widget) noexcept;
     void setCallback(Callback *cb);
     void setWaveform(std::vector<float> *wf);
-    void setSelection(int start, int end, bool sendCallback);
+    void setSelection(int start, bool sendCallback);
     void waveformNew();
     void waveformUpdated();
 
     Color backgroundColor, lineColor;
     bool selectable, zoomable;
+    int *waveformLength;
 
 protected:
     void onNanoDisplay() override;
@@ -49,7 +54,6 @@ private:
     Callback *callback;
     std::vector<float> waveformMin, waveformMax;
     bool waveformCached, reduced;
-    uint waveformLength;
     int waveformSelectStart, waveformSelectEnd;
 
     DragAction dragAction;

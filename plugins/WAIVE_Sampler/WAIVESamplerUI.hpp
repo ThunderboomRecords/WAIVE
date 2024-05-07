@@ -38,7 +38,6 @@ public:
     ~WAIVESamplerUI();
 
 protected:
-    // void onFileSelected(const char* filename) override;
     void parameterChanged(uint32_t index, float value) override;
     void stateChanged(const char *key, const char *value) override;
     void onNanoDisplay() override;
@@ -46,7 +45,7 @@ protected:
 
     void buttonClicked(Button *button) override;
     void idleCallback() override;
-    void waveformSelection(Waveform *waveform, uint selectionStart, uint selectionEnd) override;
+    void waveformSelection(Waveform *waveform, uint selectionStart) override;
     void knobDragStarted(Knob *knob) override;
     void knobDragFinished(Knob *knob, float value) override;
     void knobValueChanged(Knob *knob, float value) override;
@@ -63,9 +62,9 @@ private:
     ValueIndicator *value_indicator;
     Button *open_button, *save_sample_button;
     Waveform *waveform_display, *sample_display;
-    Knob3D *pitch, *volume, *ampAttack, *ampDecay, *ampSustain, *ampRelease;
+    Knob3D *pitch, *volume, *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
     SampleMap *sample_map;
-    HBox *ampADSRKnobs;
+    HBox *ampADSRKnobs, *shapeKnobs;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 

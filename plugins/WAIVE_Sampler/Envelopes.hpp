@@ -51,10 +51,12 @@ public:
 
     float getValue();
     int getLength(float sustainTime);
+    ADSR_Stage getStage();
 
     void setADSR(ADSR_Params adsr);
 
     int sampleRate;
+    bool active;
 
 private:
     void calculateStages();
@@ -63,7 +65,6 @@ private:
     ENV_TYPE type;
     float value;
     int step;
-    bool active;
 
     int startAttack, startDecay, startRelease, startSustain, endStep;
 };

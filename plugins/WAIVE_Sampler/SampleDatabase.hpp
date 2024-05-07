@@ -6,6 +6,7 @@
 #include <vector>
 #include <sqlite3.h>
 #include <fmt/core.h>
+#include "Envelopes.hpp"
 
 enum ColumnIndex
 {
@@ -19,6 +20,11 @@ enum ColumnIndex
     SOURCE_COLUMN,
     VOLUME_COLUMN,
     PITCH_COLUMN,
+    AMP_ATTACK_COLUMN,
+    AMP_DECAY_COLUMN,
+    AMP_SUSTAIN_COLUMN,
+    AMP_RELEASE_COLUMN,
+    SUSTAIN_LENGTH_COLUMN,
     SOURCE_START_COLUMN,
     SOURCE_END_COLUMN,
 };
@@ -39,6 +45,8 @@ public:
     std::string source;
     float volume;
     float pitch;
+    ADSR_Params adsr;
+    float sustainTime;
     uint sourceStart;
     uint sourceEnd;
 

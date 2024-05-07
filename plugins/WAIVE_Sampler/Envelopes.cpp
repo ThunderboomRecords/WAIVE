@@ -52,6 +52,11 @@ void EnvGen::setADSR(ADSR_Params adsr)
     calculateStages();
 }
 
+ADSR_Stage EnvGen::getStage()
+{
+    return stage;
+}
+
 void EnvGen::calculateStages()
 {
     float t = 0;
@@ -84,11 +89,6 @@ void EnvGen::calculateStages()
         startSustain = (int)(t * sampleRate / 1000.f);
         endStep = INT_MAX; // endStep calculated on Sustain release.
     }
-
-    printf("EnvGen::calculateStages():\n");
-    printf("  EnvType: %d\n", type);
-    printf("  Params:  %.1f %.1f %.3f %.1f\n", adsr.attack, adsr.decay, adsr.sustain, adsr.release);
-    printf("  start:  %d %d %d %d\n", startAttack, startDecay, startSustain, endStep);
 }
 
 void EnvGen::reset()

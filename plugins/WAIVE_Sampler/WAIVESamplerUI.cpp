@@ -35,41 +35,56 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     waveform_display->setCallback(this);
     waveform_display->lineColor = Color(255, 255, 255);
     waveform_display->setWaveform(&plugin->fSourceWaveform);
+    waveform_display->waveformLength = &plugin->fSourceLength;
 
     sample_display = new Waveform(this);
     sample_display->setSize(180, 80);
     sample_display->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10);
     sample_display->setWaveform(&plugin->fSample);
+    sample_display->waveformLength = &plugin->fSampleLength;
 
     ampADSRKnobs = new HBox(this);
     ampADSRKnobs->setAbsolutePos(320, 160);
     ampADSRKnobs->setSize(300, 60);
-    ampADSRKnobs->justify_content = HBox::Justify_Content::right;
+    ampADSRKnobs->justify_content = HBox::Justify_Content::left;
+    ampADSRKnobs->padding = 5;
+
+    shapeKnobs = new HBox(this);
+    shapeKnobs->setAbsolutePos(320, 240);
+    shapeKnobs->setSize(300, 60);
+    shapeKnobs->justify_content = HBox::Justify_Content::left;
+    shapeKnobs->padding = 5;
 
     // Wave shaping
     pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f);
     volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f);
 
     // Amp ADSR
-    ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 100.0f);
-    ampAttack->format = "{:.0f} ms";
+    ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 10.0f);
+    ampAttack->format = "{:.0f}ms";
 
-    ampDecay = createWAIVEKnob(this, kAmpDecay, "decay", 0.0f, 500.0f, 100.0f);
-    ampDecay->format = "{:.0f} ms";
+    ampDecay = createWAIVEKnob(this, kAmpDecay, "decay", 0.0f, 500.0f, 50.0f);
+    ampDecay->format = "{:.0f}ms";
 
     ampSustain = createWAIVEKnob(this, kAmpSustain, "sustain", 0.0f, 1.0f, 0.8f);
-    ampSustain->format = "{:.0f} ms";
 
     ampRelease = createWAIVEKnob(this, kAmpRelease, "release", 0.0f, 500.0f, 100.0f);
-    ampRelease->format = "{:.0f} ms";
+    ampRelease->format = "{:.0f}ms";
 
-    ampADSRKnobs->addWidget(pitch);
+    sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 500.0f, 100.f);
+    sustainLength->format = "{:.0f}ms";
+
     ampADSRKnobs->addWidget(ampAttack);
     ampADSRKnobs->addWidget(ampDecay);
     ampADSRKnobs->addWidget(ampSustain);
     ampADSRKnobs->addWidget(ampRelease);
-    ampADSRKnobs->addWidget(volume);
+    ampADSRKnobs->addWidget(sustainLength);
     ampADSRKnobs->positionWidgets();
+
+    shapeKnobs->addWidget(sustainLength);
+    shapeKnobs->addWidget(pitch);
+    shapeKnobs->addWidget(volume);
+    shapeKnobs->positionWidgets();
 
     sample_map = new SampleMap(this);
     sample_map->setSize(300, 300);
@@ -132,9 +147,9 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
 }
 
-void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart, uint selectionEnd)
+void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
 {
-    plugin->selectWaveform(&plugin->fSourceWaveform, selectionStart, selectionEnd, true);
+    plugin->selectWaveform(&plugin->fSourceWaveform, selectionStart, true);
 }
 
 void WAIVESamplerUI::knobDragStarted(Knob *knob)
@@ -149,26 +164,13 @@ void WAIVESamplerUI::knobDragStarted(Knob *knob)
 
 void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 {
-    if (knob == pitch)
-    {
-        setParameterValue(kSamplePitch, value);
-    }
     value_indicator->hide();
     repaint();
 }
 
 void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 {
-    // if (knob == volume)
-    // {
-    //     setParameterValue(kSampleVolume, value);
-    // }
-
-    if (knob == pitch)
-        return;
-
     setParameterValue(knob->getId(), value);
-
     value_indicator->setValue(knob->getValue());
 }
 
@@ -235,7 +237,13 @@ void WAIVESamplerUI::idleCallback()
         case kParametersChanged:
             pitch->setValue(plugin->fSamplePitch, false);
             volume->setValue(plugin->fSampleVolume, false);
-            waveform_display->setSelection(plugin->fCurrentSample->sourceStart, plugin->fCurrentSample->sourceEnd, false);
+            ampAttack->setValue(plugin->fAmpADSRParams.attack, false);
+            ampDecay->setValue(plugin->fAmpADSRParams.decay, false);
+            ampSustain->setValue(plugin->fAmpADSRParams.sustain, false);
+            ampRelease->setValue(plugin->fAmpADSRParams.release, false);
+            sustainLength->setValue(plugin->fSustainLength, false);
+
+            waveform_display->setSelection(plugin->fSampleStart, false);
             break;
         default:
             std::cout << "Unknown update: " << msg << std::endl;
