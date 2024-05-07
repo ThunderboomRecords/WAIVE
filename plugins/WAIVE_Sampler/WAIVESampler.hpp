@@ -21,7 +21,6 @@
 #include "Envelopes.hpp"
 
 #include <librosa.h>
-#include "signalsmith-stretch.h"
 #include "samplerate.h"
 
 #define MAX_PATH 128
@@ -31,6 +30,21 @@ namespace fs = std::filesystem;
 fs::path get_homedir();
 
 START_NAMESPACE_DISTRHO
+
+enum PlayState
+{
+    STOPPED = 0,
+    TRIGGERED,
+    PLAYING
+};
+
+struct SamplePlayer
+{
+    std::vector<float> *waveform;
+    int length;
+    int ptr = 0;
+    PlayState state = PlayState::STOPPED;
+};
 
 class WAIVESampler : public Plugin
 {
@@ -95,7 +109,6 @@ protected:
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
     void selectWaveform(std::vector<float> *source, uint start, bool process);
     void addToLibrary();
-    void repitchSample(bool bypass = false);
     void renderSample();
     void getEmbeding();
     void analyseWaveform();
@@ -110,7 +123,6 @@ private:
     std::vector<SampleInfo> fAllSamples;
 
     SampleInfo *fCurrentSample;
-    signalsmith::stretch::SignalsmithStretch<float> stretch;
 
     float fSampleVolume;
     float fSamplePitch;
@@ -124,9 +136,11 @@ private:
     int fSourceLength;
 
     std::vector<float> fSamplePitched, fSample;
-    bool fSampleLoaded, fSamplePitchedCached;
-    int fSampleStart, fSampleLength, fSamplePtr;
+    bool fSampleLoaded;
+    int fSampleStart, fSampleLength;
     float fNormalisationRatio;
+
+    SamplePlayer previewPlayer;
 
     std::queue<int> updateQueue;
 

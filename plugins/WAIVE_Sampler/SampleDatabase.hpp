@@ -46,7 +46,7 @@ public:
     float volume;
     float pitch;
     ADSR_Params adsr;
-    float sustainTime;
+    float sustainLength;
     uint sourceStart;
     uint sourceEnd;
 

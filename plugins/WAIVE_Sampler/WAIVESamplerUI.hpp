@@ -60,7 +60,7 @@ private:
     FontId logo_font;
 
     ValueIndicator *value_indicator;
-    Button *open_button, *save_sample_button;
+    Button *open_button, *save_sample_button, *play_button;
     Waveform *waveform_display, *sample_display;
     Knob3D *pitch, *volume, *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
     SampleMap *sample_map;

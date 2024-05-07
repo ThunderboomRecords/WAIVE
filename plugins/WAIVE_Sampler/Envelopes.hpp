@@ -50,7 +50,7 @@ public:
     void release();
 
     float getValue();
-    int getLength(float sustainTime);
+    int getLength(float sustainLength);
     ADSR_Stage getStage();
 
     void setADSR(ADSR_Params adsr);

@@ -28,6 +28,15 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     save_sample_button->setAbsolutePos(UI_W - 10 - 70, 70 + 80 + 10 + 80 + 10);
     save_sample_button->setCallback(this);
 
+    play_button = new Button(this);
+    play_button->setLabel("preview");
+    play_button->setFontScale(fScaleFactor);
+    play_button->setBackgroundColor(Color(220, 220, 220));
+    play_button->setLabelColor(Color(10, 10, 10));
+    play_button->setSize(70, 20);
+    play_button->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10 + 80 + 10);
+    play_button->setCallback(this);
+
     waveform_display = new Waveform(this);
     waveform_display->setSize(UI_W - 20, 80);
     waveform_display->setAbsolutePos(10, 70);
@@ -137,14 +146,13 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
 
 void WAIVESamplerUI::buttonClicked(Button *button)
 {
+    LOG_LOCATION
     if (button == open_button)
-    {
         requestStateFile("filename");
-    }
     else if (button == save_sample_button)
-    {
         plugin->addToLibrary();
-    }
+    else if (button == play_button)
+        plugin->previewPlayer.state = PlayState::TRIGGERED;
 }
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
@@ -176,7 +184,6 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 
 void WAIVESamplerUI::mapSampleSelected(int id)
 {
-    std::cout << "WAIVESamplerUI::mapSampleSelected " << id << std::endl;
     plugin->loadSample(id);
 }
 

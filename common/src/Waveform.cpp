@@ -199,6 +199,8 @@ bool Waveform::onMouse(const MouseEvent &ev)
             break;
 
         case CLICKING:
+            if (!selectable)
+                break;
             LOG_LOCATION
             waveformSelectStart = cursorPos + visibleStart;
             if (*waveformLength > 0)
@@ -254,15 +256,6 @@ bool Waveform::onMotion(const MotionEvent &ev)
     switch (dragAction)
     {
     case SELECTING:
-        // if (cursorPos < waveformSelectStart)
-        // {
-        //     waveformSelectStart = cursorPos + visibleStart;
-        // }
-        // else if (cursorPos > waveformSelectStart)
-        // {
-        //     waveformSelectEnd = cursorPos + visibleStart;
-        // }
-
         break;
     case SCROLLING:
         dX = ev.pos.getX() - clickStart.getX();

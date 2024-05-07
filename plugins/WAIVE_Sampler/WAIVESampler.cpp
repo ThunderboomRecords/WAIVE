@@ -18,10 +18,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fSampleVolume(1.0f),
                                fSamplePitch(1.0f),
                                fSampleLoaded(false),
-                               fSamplePitchedCached(false),
                                fSampleLength(0),
                                fNormalisationRatio(1.0f),
-                               fSamplePtr(0),
                                fSourceLoaded(false),
                                fCurrentSample(nullptr),
                                ampEnvGen(sampleRate, ENV_TYPE::ADSR, fAmpADSRParams)
@@ -50,7 +48,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     db = new SampleDatabase((fCacheDir / "waive_sampler.db").string());
     fAllSamples = db->getAllSamples();
 
-    stretch.presetDefault(1, (int)sampleRate);
+    // stretch.presetDefault(1, (int)sampleRate);
+    previewPlayer.waveform = &fSample;
 }
 
 WAIVESampler::~WAIVESampler()
@@ -231,21 +230,29 @@ void WAIVESampler::run(
     uint32_t midiEventCount      // Number of MIDI events in block
 )
 {
-    if (!fSampleLoaded)
+    if (previewPlayer.length > 0 && previewPlayer.state == PlayState::TRIGGERED)
     {
-        for (uint32_t i = 0; i < numFrames; i++)
+        previewPlayer.ptr = 0;
+        previewPlayer.state = PlayState::PLAYING;
+    }
+
+    for (uint32_t i = 0; i < numFrames; i++)
+    {
+        if (previewPlayer.state == PlayState::PLAYING)
+        {
+            outputs[0][i] = previewPlayer.waveform->at(previewPlayer.ptr);
+            outputs[1][i] = previewPlayer.waveform->at(previewPlayer.ptr);
+            previewPlayer.ptr = (previewPlayer.ptr + 1);
+            if (previewPlayer.ptr >= previewPlayer.length)
+            {
+                previewPlayer.ptr = 0;
+                previewPlayer.state = PlayState::STOPPED;
+            }
+        }
+        else
         {
             outputs[0][i] = 0.0f;
             outputs[1][i] = 0.0f;
-        }
-    }
-    else
-    {
-        for (uint32_t i = 0; i < numFrames; i++)
-        {
-            outputs[0][i] = fSample[fSamplePtr];
-            outputs[1][i] = fSample[fSamplePtr];
-            fSamplePtr = (fSamplePtr + 1) % fSampleLength;
         }
     }
 }
@@ -368,7 +375,7 @@ void WAIVESampler::addToLibrary()
 
     bool result = false;
     fCurrentSample->adsr = fAmpADSRParams;
-    fCurrentSample->sustainTime = fSustainLength;
+    fCurrentSample->sustainLength = fSustainLength;
     fCurrentSample->sourceStart = fSampleStart;
     fCurrentSample->source = fSourceFilepath;
 
@@ -424,7 +431,6 @@ void WAIVESampler::loadSample(SampleInfo *s)
 
     fCurrentSample = s;
     fSampleLoaded = false;
-    fSamplePtr = 0;
 
     // load source (if avaliable)
     if (fCurrentSample->waive)
@@ -436,7 +442,7 @@ void WAIVESampler::loadSample(SampleInfo *s)
         setParameterValue(kAmpDecay, fCurrentSample->adsr.decay);
         setParameterValue(kAmpSustain, fCurrentSample->adsr.sustain);
         setParameterValue(kAmpRelease, fCurrentSample->adsr.release);
-        setParameterValue(kSustainLength, fCurrentSample->sustainTime);
+        setParameterValue(kSustainLength, fCurrentSample->sustainLength);
         fSampleStart = fCurrentSample->sourceStart;
     }
     else
@@ -463,78 +469,8 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, uint start, bool p
     fSampleStart = start;
     fSampleLoaded = true;
 
-    fSamplePtr = 0;
     renderSample();
     addToUpdateQueue(kSampleUpdated);
-}
-
-void WAIVESampler::repitchSample(bool bypass)
-{
-    std::cout << "WAIVESampler::repitchSample" << std::endl;
-    fSamplePitched.resize(fSampleLength);
-
-    if (bypass)
-    {
-        for (int i = 0; i < fSampleLength; i++)
-        {
-            fSamplePitched[i] = fSourceWaveform[fSampleStart + i];
-        }
-        return;
-    }
-
-    // create working buffers
-    std::vector<std::vector<float>> inBuffer{{0.0f}};
-    std::vector<std::vector<float>> outBuffer{{0.0f}};
-
-    stretch.reset();
-
-    float startFactor = 4.0f;
-    float endFactor = fSamplePitch;
-
-    int blockSize = 256;
-
-    // pitch sample with varying pitch
-    inBuffer[0].resize(blockSize);
-    outBuffer[0].resize(blockSize);
-
-    std::vector<float> result{};
-    result.resize(fSampleLength + stretch.inputLatency() + stretch.outputLatency());
-
-    int blockstart = 0;
-    float st = startFactor;
-
-    while (blockstart < fSampleLength)
-    {
-        for (int i = 0; i < blockSize; i++)
-        {
-            if (blockstart + i >= fSampleLength)
-                break;
-
-            inBuffer[0][i] = fSourceWaveform[fSampleStart + blockstart + i];
-        }
-
-        stretch.setTransposeFactor(st);
-        stretch.process(inBuffer, blockSize, outBuffer, blockSize);
-
-        for (int i = 0; i < blockSize; i++)
-        {
-            if (blockstart + i >= fSampleLength)
-                break;
-            result[blockstart + i] = outBuffer[0][i];
-        }
-
-        blockstart += blockSize;
-
-        st = endFactor + (startFactor - endFactor) * (1.0f - (float)blockstart / (blockSize * 20));
-        st = std::clamp(st, endFactor, startFactor);
-    }
-
-    for (int i = 0; i < fSampleLength; i++)
-    {
-        fSamplePitched[i] = result[i + stretch.inputLatency() + stretch.outputLatency()];
-    }
-
-    fSamplePitchedCached = true;
 }
 
 void WAIVESampler::renderSample()
@@ -545,6 +481,7 @@ void WAIVESampler::renderSample()
     fSampleLoaded = false;
     fSampleLength = ampEnvGen.getLength(fSustainLength);
     fSampleLength = std::min(fSampleLength, (int)fSourceWaveform.size() - fSampleStart);
+    previewPlayer.length = fSampleLength;
 
     auto minmax = std::minmax_element(&fSourceWaveform[fSampleStart], &fSourceWaveform[fSampleStart + fSampleLength]);
     float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
@@ -566,6 +503,12 @@ void WAIVESampler::renderSample()
     for (int i = 0; i < fSampleLength; i++)
     {
         index = (int)indexF;
+        if (fSampleStart + index >= fSourceLength)
+        {
+            fSampleLength = i;
+            previewPlayer.length = fSampleLength;
+            break;
+        }
         y = fSourceWaveform[fSampleStart + index];
         fSample[i] = std::clamp(y * fSampleVolume * amp / normaliseRatio, -1.0f, 1.0f);
 
@@ -584,6 +527,11 @@ void WAIVESampler::renderSample()
     // getEmbeding();
     fSampleLoaded = true;
     addToUpdateQueue(kSampleUpdated);
+    if (previewPlayer.state == PlayState::STOPPED)
+    {
+        previewPlayer.ptr = 0;
+        previewPlayer.state = PlayState::TRIGGERED;
+    }
 }
 
 void WAIVESampler::getEmbeding()

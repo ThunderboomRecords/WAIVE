@@ -10,7 +10,7 @@ SampleInfo::SampleInfo(
                    tags(""),
                    volume(1.0f),
                    pitch(1.0f),
-                   sustainTime(10.0f),
+                   sustainLength(10.0f),
                    sourceStart(0),
                    sourceEnd(0),
                    saved(false)
@@ -138,7 +138,7 @@ bool SampleDatabase::insertSample(SampleInfo s)
     sqlite3_bind_double(stmt, 12, s.adsr.decay);
     sqlite3_bind_double(stmt, 13, s.adsr.sustain);
     sqlite3_bind_double(stmt, 14, s.adsr.release);
-    sqlite3_bind_double(stmt, 15, s.sustainTime);
+    sqlite3_bind_double(stmt, 15, s.sustainLength);
     sqlite3_bind_int(stmt, 16, s.sourceStart);
     sqlite3_bind_int(stmt, 17, s.sourceEnd);
 
@@ -158,7 +158,7 @@ bool SampleDatabase::insertSample(SampleInfo s)
 bool SampleDatabase::updateSample(SampleInfo s)
 {
     sqlite3_stmt *stmt;
-    const char *query = "UPDATE Samples SET name=?, folder=?, embedX=?, embedY=?, waive=?, tags=?, source=?, volume=?, pitch=?, ampAttack=?, ampDecay=?, ampSustain=?, ampRelease=?, sustainTime=?, sourceStart=?, sourceEnd=? WHERE id=?";
+    const char *query = "UPDATE Samples SET name=?, folder=?, embedX=?, embedY=?, waive=?, tags=?, source=?, volume=?, pitch=?, ampAttack=?, ampDecay=?, ampSustain=?, ampRelease=?, sustainLength=?, sourceStart=?, sourceEnd=? WHERE id=?";
 
     rc = sqlite3_prepare_v2(db, query, -1, &stmt, nullptr);
     if (rc != SQLITE_OK)
@@ -185,7 +185,7 @@ bool SampleDatabase::updateSample(SampleInfo s)
     sqlite3_bind_double(stmt, 11, s.adsr.decay);
     sqlite3_bind_double(stmt, 12, s.adsr.sustain);
     sqlite3_bind_double(stmt, 13, s.adsr.release);
-    sqlite3_bind_double(stmt, 14, s.sustainTime);
+    sqlite3_bind_double(stmt, 14, s.sustainLength);
     sqlite3_bind_int(stmt, 15, s.sourceStart);
     sqlite3_bind_int(stmt, 16, s.sourceEnd);
     sqlite3_bind_int(stmt, 17, s.getId());
