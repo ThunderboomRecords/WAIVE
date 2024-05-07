@@ -264,7 +264,6 @@ void WAIVESampler::loadSource(const char *fp)
         fSourceLength = fSourceWaveform.size();
         if (fCurrentSample != nullptr)
         {
-            fCurrentSample->source = fSourceFilepath;
         }
         addToUpdateQueue(kSourceLoaded);
     }
@@ -371,6 +370,7 @@ void WAIVESampler::addToLibrary()
     fCurrentSample->adsr = fAmpADSRParams;
     fCurrentSample->sustainTime = fSustainLength;
     fCurrentSample->sourceStart = fSampleStart;
+    fCurrentSample->source = fSourceFilepath;
 
     if (fCurrentSample->saved)
         result = db->updateSample(*fCurrentSample);
@@ -447,11 +447,10 @@ void WAIVESampler::loadSample(SampleInfo *s)
     }
 
     fSampleLoaded = true;
+    renderSample();
 
     // addToUpdateQueue(kSampleLoaded);
     addToUpdateQueue(kParametersChanged);
-
-    renderSample();
 }
 
 void WAIVESampler::selectWaveform(std::vector<float> *source, uint start, bool process = true)
@@ -543,6 +542,7 @@ void WAIVESampler::renderSample()
     if (!fSampleLoaded)
         return;
 
+    fSampleLoaded = false;
     fSampleLength = ampEnvGen.getLength(fSustainLength);
     fSampleLength = std::min(fSampleLength, (int)fSourceWaveform.size() - fSampleStart);
 
@@ -582,6 +582,7 @@ void WAIVESampler::renderSample()
     }
 
     // getEmbeding();
+    fSampleLoaded = true;
     addToUpdateQueue(kSampleUpdated);
 }
 
