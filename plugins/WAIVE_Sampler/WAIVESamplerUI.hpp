@@ -77,7 +77,8 @@ Knob3D *createWAIVEKnob(
     std::string label,
     float min,
     float max,
-    float value);
+    float value,
+    UI::FontId font);
 
 UI *createUI()
 {

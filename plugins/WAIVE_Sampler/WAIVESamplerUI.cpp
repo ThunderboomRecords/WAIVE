@@ -1,5 +1,4 @@
 #include "WAIVESamplerUI.hpp"
-
 START_NAMESPACE_DISTRHO
 
 WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
@@ -65,22 +64,22 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     shapeKnobs->padding = 5;
 
     // Wave shaping
-    pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f);
-    volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f);
+    pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f, logo_font);
+    volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f, logo_font);
 
     // Amp ADSR
-    ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 10.0f);
+    ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 10.0f, logo_font);
     ampAttack->format = "{:.0f}ms";
 
-    ampDecay = createWAIVEKnob(this, kAmpDecay, "decay", 0.0f, 500.0f, 50.0f);
+    ampDecay = createWAIVEKnob(this, kAmpDecay, "decay", 0.0f, 500.0f, 50.0f, logo_font);
     ampDecay->format = "{:.0f}ms";
 
-    ampSustain = createWAIVEKnob(this, kAmpSustain, "sustain", 0.0f, 1.0f, 0.8f);
+    ampSustain = createWAIVEKnob(this, kAmpSustain, "sustain", 0.0f, 1.0f, 0.8f, logo_font);
 
-    ampRelease = createWAIVEKnob(this, kAmpRelease, "release", 0.0f, 500.0f, 100.0f);
+    ampRelease = createWAIVEKnob(this, kAmpRelease, "release", 0.0f, 500.0f, 100.0f, logo_font);
     ampRelease->format = "{:.0f}ms";
 
-    sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 500.0f, 100.f);
+    sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 500.0f, 100.f, logo_font);
     sustainLength->format = "{:.0f}ms";
 
     ampADSRKnobs->addWidget(ampAttack);
@@ -266,7 +265,8 @@ Knob3D *createWAIVEKnob(
     std::string label,
     float min,
     float max,
-    float value)
+    float value,
+    UI::FontId font)
 {
     Knob3D *knob = new Knob3D(parent);
     knob->setId(param);
@@ -279,6 +279,7 @@ Knob3D *createWAIVEKnob(
     knob->background_color = Color(190, 190, 190);
     knob->foreground_color = Color(0, 160, 245);
     knob->setCallback(parent);
+    knob->font = font;
 
     return knob;
 }
