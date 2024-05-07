@@ -363,6 +363,7 @@ bool WAIVESampler::saveWaveform(const char *fp, float *buffer, sf_count_t size)
 
 void WAIVESampler::addToLibrary()
 {
+    LOG_LOCATION
     if (!fSampleLoaded || fCurrentSample == nullptr)
         return;
 
@@ -390,7 +391,7 @@ void WAIVESampler::addToLibrary()
 
 void WAIVESampler::newSample()
 {
-    std::cout << "WAIVESampler::newSample" << std::endl;
+    LOG_LOCATION
     time_t current_time = time(NULL);
     std::string name = fmt::format("{:d}.wav", current_time);
 
@@ -438,12 +439,15 @@ void WAIVESampler::loadSample(SampleInfo *s)
         setParameterValue(kSustainLength, fCurrentSample->sustainTime);
         fSampleStart = fCurrentSample->sourceStart;
     }
-
-    // load sample directly (hide sample controls?)
-    fs::path fp = fs::path(fCurrentSample->path) / fCurrentSample->name;
-    loadWaveform(fp.c_str(), &fSample);
+    else
+    {
+        // load sample directly (hide sample controls?)
+        fs::path fp = fs::path(fCurrentSample->path) / fCurrentSample->name;
+        loadWaveform(fp.c_str(), &fSample);
+    }
 
     fSampleLoaded = true;
+
     // addToUpdateQueue(kSampleLoaded);
     addToUpdateQueue(kParametersChanged);
 

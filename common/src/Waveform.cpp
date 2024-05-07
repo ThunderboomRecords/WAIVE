@@ -132,13 +132,16 @@ void Waveform::onNanoDisplay()
     closePath();
 
     //  draw highlighted region
-    float cursorPosStart = (float)(waveformSelectStart - visibleStart) / (visibleEnd - visibleStart);
-    float x1 = width * std::clamp(cursorPosStart, 0.0f, 1.0f);
-    beginPath();
-    fillColor(Color(255, 200, 0, 0.8f));
-    rect(x1, 0, 2, height);
-    fill();
-    closePath();
+    if (selectable)
+    {
+        float cursorPosStart = (float)(waveformSelectStart - visibleStart) / (visibleEnd - visibleStart);
+        float x1 = width * std::clamp(cursorPosStart, 0.0f, 1.0f);
+        beginPath();
+        fillColor(Color(255, 200, 0, 0.8f));
+        rect(x1, 0, 2, height);
+        fill();
+        closePath();
+    }
 
     // draw minimap if zoomed in
     if (visibleStart > 0 || visibleEnd < *waveformLength)
@@ -149,13 +152,17 @@ void Waveform::onNanoDisplay()
         fill();
         closePath();
 
-        beginPath();
-        fillColor(Color(200, 200, 0, 0.3f));
-        float x = (float)waveformSelectStart / *waveformLength * width;
-        // float w = (float)(waveformSelectEnd - waveformSelectStart) / *waveformLength * width;
-        rect(x, height - 12.0f, 2, 12.0f);
-        fill();
-        closePath();
+        float x;
+        if (selectable)
+        {
+            beginPath();
+            fillColor(Color(200, 200, 0, 0.3f));
+            x = (float)waveformSelectStart / *waveformLength * width;
+            // float w = (float)(waveformSelectEnd - waveformSelectStart) / *waveformLength * width;
+            rect(x, height - 12.0f, 2, 12.0f);
+            fill();
+            closePath();
+        }
 
         beginPath();
         strokeColor(Color(230, 230, 230));
@@ -169,7 +176,7 @@ void Waveform::onNanoDisplay()
 
 bool Waveform::onMouse(const MouseEvent &ev)
 {
-    if (!selectable)
+    if (!isVisible())
         return false;
 
     if (contains(ev.pos) && ev.press)
