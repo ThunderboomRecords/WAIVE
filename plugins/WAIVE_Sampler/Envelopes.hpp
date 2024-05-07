@@ -41,8 +41,7 @@ float interpolate(float p, float a, float b, float power, bool clamp);
 class EnvGen
 {
 public:
-    EnvGen(int sampleRate, ENV_TYPE type, ADSR_Params adsr);
-    EnvGen(int sampleRate, ENV_TYPE type, float a = 100.f, float d = 100.f, float s = 0.5f, float r = 100.f);
+    EnvGen(int sampleRate, ENV_TYPE type, ADSR_Params *adsr);
 
     void reset();
     void process();
@@ -53,15 +52,16 @@ public:
     int getLength(float sustainLength);
     ADSR_Stage getStage();
 
-    void setADSR(ADSR_Params adsr);
+    void setADSR(ADSR_Params *adsr);
+    void calculateStages();
 
     int sampleRate;
     bool active;
+    float power;
 
 private:
-    void calculateStages();
     ADSR_Stage stage;
-    ADSR_Params adsr;
+    ADSR_Params *adsr;
     ENV_TYPE type;
     float value;
     int step;

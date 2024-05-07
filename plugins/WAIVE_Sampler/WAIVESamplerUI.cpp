@@ -74,7 +74,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     ampDecay = createWAIVEKnob(this, kAmpDecay, "decay", 0.0f, 500.0f, 50.0f, logo_font);
     ampDecay->format = "{:.0f}ms";
 
-    ampSustain = createWAIVEKnob(this, kAmpSustain, "sustain", 0.0f, 1.0f, 0.8f, logo_font);
+    ampSustain = createWAIVEKnob(this, kAmpSustain, "sustain", 0.0f, 1.0f, 0.7f, logo_font);
 
     ampRelease = createWAIVEKnob(this, kAmpRelease, "release", 0.0f, 500.0f, 100.0f, logo_font);
     ampRelease->format = "{:.0f}ms";
@@ -119,11 +119,28 @@ WAIVESamplerUI::~WAIVESamplerUI() {}
 
 void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
 {
-    std::cout << "WAIVESamplerUI::parameterChanged" << std::endl;
     switch (index)
     {
     case kSamplePitch:
-        pitch->repaint();
+        pitch->setValue(value, false);
+        break;
+    case kSampleVolume:
+        volume->setValue(value, false);
+        break;
+    case kAmpAttack:
+        ampAttack->setValue(value, false);
+        break;
+    case kAmpDecay:
+        ampDecay->setValue(value, false);
+        break;
+    case kAmpSustain:
+        ampSustain->setValue(value, false);
+        break;
+    case kAmpRelease:
+        ampRelease->setValue(value, false);
+        break;
+    case kSustainLength:
+        sustainLength->setValue(value, false);
         break;
     default:
         break;

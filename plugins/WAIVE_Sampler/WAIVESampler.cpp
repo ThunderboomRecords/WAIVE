@@ -22,7 +22,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fNormalisationRatio(1.0f),
                                fSourceLoaded(false),
                                fCurrentSample(nullptr),
-                               ampEnvGen(sampleRate, ENV_TYPE::ADSR, fAmpADSRParams)
+                               fAmpADSRParams({10, 50, 0.7, 100}),
+                               ampEnvGen(sampleRate, ENV_TYPE::ADSR, &fAmpADSRParams)
 {
     if (isDummyInstance())
     {
@@ -65,14 +66,14 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.name = "Sample Volume";
         parameter.symbol = "sampleVolume";
         parameter.ranges.min = 0.0f;
-        parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 0.8f;
+        parameter.ranges.max = 2.0f;
+        parameter.ranges.def = 1.0f;
         parameter.hints = kParameterIsAutomatable;
         break;
     case kSamplePitch:
         parameter.name = "Sample Pitch";
         parameter.symbol = "samplePitch";
-        parameter.ranges.min = 0.1f;
+        parameter.ranges.min = 0.2f;
         parameter.ranges.max = 4.0f;
         parameter.ranges.def = 1.0f;
         parameter.hints = kParameterIsAutomatable;
@@ -96,9 +97,9 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
     case kAmpSustain:
         parameter.name = "Amp Sustain";
         parameter.symbol = "ampSustain";
-        parameter.ranges.min = 0.1f;
-        parameter.ranges.max = 4.0f;
-        parameter.ranges.def = 1.0f;
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.7f;
         parameter.hints = kParameterIsAutomatable;
         break;
     case kAmpRelease:
@@ -114,7 +115,7 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.symbol = "sustainLength";
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 500.0f;
-        parameter.ranges.def = 1.0f;
+        parameter.ranges.def = 100.0f;
         parameter.hints = kParameterIsAutomatable;
         break;
     default:
@@ -124,6 +125,7 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
 
 float WAIVESampler::getParameterValue(uint32_t index) const
 {
+    LOG_LOCATION
     float val = 0.0f;
     switch (index)
     {
@@ -149,6 +151,7 @@ float WAIVESampler::getParameterValue(uint32_t index) const
         val = fSustainLength;
         break;
     default:
+        std::cerr << "getParameter: Unknown parameter index: " << index << "  " << std::endl;
         break;
     }
 
@@ -157,6 +160,7 @@ float WAIVESampler::getParameterValue(uint32_t index) const
 
 void WAIVESampler::setParameterValue(uint32_t index, float value)
 {
+    std::cout << "WAIVESampler::setParameterValue : " << index << " -> " << value << std::endl;
     switch (index)
     {
     case kSampleVolume:
@@ -173,28 +177,30 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
         break;
     case kAmpAttack:
         fAmpADSRParams.attack = value;
-        ampEnvGen.setADSR(fAmpADSRParams);
+        ampEnvGen.calculateStages();
         renderSample();
         break;
     case kAmpDecay:
         fAmpADSRParams.decay = value;
-        ampEnvGen.setADSR(fAmpADSRParams);
+        ampEnvGen.calculateStages();
         renderSample();
         break;
     case kAmpSustain:
         fAmpADSRParams.sustain = value;
-        ampEnvGen.setADSR(fAmpADSRParams);
+        ampEnvGen.calculateStages();
         renderSample();
         break;
     case kAmpRelease:
         fAmpADSRParams.release = value;
-        ampEnvGen.setADSR(fAmpADSRParams);
+        ampEnvGen.calculateStages();
         renderSample();
         break;
     case kSustainLength:
         fSustainLength = value;
         renderSample();
+        break;
     default:
+        std::cerr << "Unknown parameter index: " << index << "  " << value << std::endl;
         break;
     }
 }
@@ -259,6 +265,7 @@ void WAIVESampler::run(
 
 void WAIVESampler::loadSource(const char *fp)
 {
+    LOG_LOCATION
     fSourceLoaded = false;
     addToUpdateQueue(kSourceLoading);
 
@@ -379,10 +386,14 @@ void WAIVESampler::addToLibrary()
     fCurrentSample->sourceStart = fSampleStart;
     fCurrentSample->source = fSourceFilepath;
 
+    std::cout << "updated fCurrentSample" << std::endl;
+
     if (fCurrentSample->saved)
         result = db->updateSample(*fCurrentSample);
     else
         result = db->insertSample(*fCurrentSample);
+
+    std::cout << "db update success: " << result << std::endl;
 
     if (result)
     {
@@ -408,6 +419,8 @@ void WAIVESampler::newSample()
     fCurrentSample->source = fSourceFilepath;
     fCurrentSample->adsr = fAmpADSRParams;
 
+    renderSample();
+
     getEmbeding();
 }
 
@@ -426,6 +439,13 @@ void WAIVESampler::loadSample(int id)
 void WAIVESampler::loadSample(SampleInfo *s)
 {
     LOG_LOCATION
+
+    if (fCurrentSample != nullptr && s->getId() == fCurrentSample->getId())
+    {
+        previewPlayer.state = PlayState::TRIGGERED;
+        return;
+    }
+
     // save/update current sample
     addToLibrary();
 
@@ -443,13 +463,13 @@ void WAIVESampler::loadSample(SampleInfo *s)
         setParameterValue(kAmpSustain, fCurrentSample->adsr.sustain);
         setParameterValue(kAmpRelease, fCurrentSample->adsr.release);
         setParameterValue(kSustainLength, fCurrentSample->sustainLength);
-        fSampleStart = fCurrentSample->sourceStart;
+        // fSampleStart = fCurrentSample->sourceStart;
     }
     else
     {
         // load sample directly (hide sample controls?)
         fs::path fp = fs::path(fCurrentSample->path) / fCurrentSample->name;
-        loadWaveform(fp.c_str(), &fSample);
+        bool result = loadWaveform(fp.c_str(), &fSample);
     }
 
     fSampleLoaded = true;
@@ -500,6 +520,8 @@ void WAIVESampler::renderSample()
     int index = 0;
     float indexF = 0.0f;
 
+    std::ofstream ofs("ampEnv.txt", std::ofstream::trunc);
+
     for (int i = 0; i < fSampleLength; i++)
     {
         index = (int)indexF;
@@ -509,6 +531,8 @@ void WAIVESampler::renderSample()
             previewPlayer.length = fSampleLength;
             break;
         }
+
+        ofs << amp << " ";
         y = fSourceWaveform[fSampleStart + index];
         fSample[i] = std::clamp(y * fSampleVolume * amp / normaliseRatio, -1.0f, 1.0f);
 
@@ -523,6 +547,8 @@ void WAIVESampler::renderSample()
 
         amp = ampEnvGen.getValue();
     }
+
+    ofs.close();
 
     // getEmbeding();
     fSampleLoaded = true;

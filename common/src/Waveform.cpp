@@ -27,8 +27,6 @@ void Waveform::setWaveform(std::vector<float> *wf_)
 
 void Waveform::setSelection(int start, bool sendCallback = false)
 {
-    LOG_LOCATION
-    std::cout << "setSelection: " << start << std::endl;
     waveformSelectStart = std::clamp(start, 0, *waveformLength);
 
     if (callback != nullptr && sendCallback)
