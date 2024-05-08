@@ -64,10 +64,10 @@ private:
 
     FontId logo_font;
 
-    Label *logo, *map_label, *sample_controls;
+    Label *logo, *map_label, *sample_controls_label;
     ValueIndicator *value_indicator;
-    Button *open_button, *save_sample_button, *play_button;
-    Waveform *waveform_display, *sample_display;
+    Button *open_btn, *new_sample_btn, *save_sample_btn, *play_btn;
+    Waveform *source_display, *sample_display;
     Knob3D *pitch, *volume, *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
     SampleMap *sample_map;
     std::vector<SampleSlot *> sampleSlots;

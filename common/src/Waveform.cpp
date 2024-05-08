@@ -27,7 +27,7 @@ void Waveform::setWaveform(std::vector<float> *wf_)
 
 void Waveform::setSelection(int start, bool sendCallback = false)
 {
-    waveformSelectStart = std::clamp(start, 0, *waveformLength);
+    waveformSelectStart = std::clamp(start, 0, waveformLength);
 
     if (callback != nullptr && sendCallback)
         callback->waveformSelection(this, waveformSelectStart);
@@ -43,11 +43,11 @@ void Waveform::waveformNew()
         return;
     }
 
-    if (*waveformLength == 0)
+    if (waveformLength == 0)
         return;
 
     visibleStart = 0;
-    visibleEnd = *waveformLength;
+    visibleEnd = waveformLength;
 
     calculateWaveform();
 }
@@ -55,12 +55,15 @@ void Waveform::waveformNew()
 void Waveform::waveformUpdated()
 {
     visibleStart = 0;
-    visibleEnd = *waveformLength;
+    visibleEnd = waveformLength;
     calculateWaveform();
 }
 
 void Waveform::calculateWaveform()
 {
+    if (waveformLength == 0)
+        return;
+
     waveformCached = false;
 
     const int width = getWidth();
@@ -76,7 +79,7 @@ void Waveform::calculateWaveform()
         waveformMax[i] = 0.0f;
 
         int start = (int)(i * samples_per_pixel) + visibleStart;
-        int end = std::min((int)*waveformLength, (int)((i + 1) * samples_per_pixel) + visibleStart);
+        int end = std::min((int)waveformLength, (int)((i + 1) * samples_per_pixel) + visibleStart);
 
         auto [min, max] = std::minmax_element(
             wf->begin() + start,
@@ -108,7 +111,7 @@ void Waveform::onNanoDisplay()
     fill();
     closePath();
 
-    if (!waveformCached || wf == nullptr || *waveformLength == 0)
+    if (!waveformCached || wf == nullptr || waveformLength == 0)
         return;
 
     // draw waveform
@@ -142,7 +145,7 @@ void Waveform::onNanoDisplay()
     }
 
     // draw minimap if zoomed in
-    if (visibleStart > 0 || visibleEnd < *waveformLength)
+    if (visibleStart > 0 || visibleEnd < waveformLength)
     {
         beginPath();
         fillColor(Color(30, 30, 30));
@@ -155,8 +158,8 @@ void Waveform::onNanoDisplay()
         {
             beginPath();
             fillColor(Color(200, 200, 0, 0.3f));
-            x = (float)waveformSelectStart / *waveformLength * width;
-            // float w = (float)(waveformSelectEnd - waveformSelectStart) / *waveformLength * width;
+            x = (float)waveformSelectStart / waveformLength * width;
+            // float w = (float)(waveformSelectEnd - waveformSelectStart) / waveformLength * width;
             rect(x, height - 12.0f, 2, 12.0f);
             fill();
             closePath();
@@ -164,8 +167,8 @@ void Waveform::onNanoDisplay()
 
         beginPath();
         strokeColor(Color(230, 230, 230));
-        x = (float)visibleStart / *waveformLength * width;
-        float w = (float)(visibleEnd - visibleStart) / *waveformLength * width;
+        x = (float)visibleStart / waveformLength * width;
+        float w = (float)(visibleEnd - visibleStart) / waveformLength * width;
         rect(x + 1.0f, height - 12.0f + 1.0f, w - 2.0f, 12.0f - 1.0f);
         stroke();
         closePath();
@@ -200,7 +203,7 @@ bool Waveform::onMouse(const MouseEvent &ev)
             if (!selectable)
                 break;
             waveformSelectStart = cursorPos + visibleStart;
-            if (*waveformLength > 0)
+            if (waveformLength > 0)
                 callback->waveformSelection(this, waveformSelectStart);
             break;
 
@@ -256,13 +259,13 @@ bool Waveform::onMotion(const MotionEvent &ev)
         break;
     case SCROLLING:
         dX = ev.pos.getX() - clickStart.getX();
-        dV = (int)(dX * (*waveformLength / getWidth()));
+        dV = (int)(dX * (waveformLength / getWidth()));
 
         if (visibleStart + dV <= 0)
             dV = -visibleStart;
 
-        if (visibleEnd + dV >= *waveformLength)
-            dV = *waveformLength - visibleEnd;
+        if (visibleEnd + dV >= waveformLength)
+            dV = waveformLength - visibleEnd;
 
         visibleEnd += dV;
         visibleStart += dV;
@@ -289,9 +292,9 @@ bool Waveform::onScroll(const ScrollEvent &ev)
     newRange = std::max(newRange, (int)getWidth());
 
     visibleEnd = visibleStart + newRange;
-    if (visibleEnd >= *waveformLength)
+    if (visibleEnd >= waveformLength)
     {
-        int delta = visibleEnd - *waveformLength;
+        int delta = visibleEnd - waveformLength;
         visibleEnd -= delta;
         visibleStart -= delta;
     }

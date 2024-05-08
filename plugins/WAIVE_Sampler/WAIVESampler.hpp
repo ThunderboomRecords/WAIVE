@@ -108,12 +108,14 @@ protected:
     void loadSource(const char *fp);
     int loadWaveform(const char *fp, std::vector<float> *buffer);
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
-    void selectWaveform(std::vector<float> *source, uint start, bool process);
+    void selectWaveform(std::vector<float> *source, int start);
     void addToLibrary();
     bool saveSamples();
     void renderSample();
     void getEmbeding();
     void analyseWaveform();
+
+    EnvGen ampEnvGen;
 
 private:
     void addToUpdateQueue(int ev);
@@ -121,32 +123,25 @@ private:
     float sampleRate;
 
     fs::path fCacheDir;
-    SampleDatabase *db;
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
 
     std::shared_ptr<SampleInfo> fCurrentSample;
 
-    float fSampleVolume;
-    float fSamplePitch;
-    ADSR_Params fAmpADSRParams;
-    float fSustainLength;
-    EnvGen ampEnvGen;
+    // float fSampleVolume;
+    // float fSamplePitch;
+    // float fSustainLength;
 
-    std::vector<float> fSourceWaveform;
-    std::string fSourceFilepath;
-    bool fSourceLoaded;
+    std::vector<float> fSourceWaveform, fSampleWaveform;
+    // std::string fSourceFilepath;
+    bool fSourceLoaded, fSampleLoaded;
     int fSourceLength;
 
-    std::vector<float> fSamplePitched, fSample;
-    bool fSampleLoaded;
-    int fSampleStart, fSampleLength;
+    // int fSampleStart, fSampleLength;
     float fNormalisationRatio;
 
     SamplePlayer previewPlayer;
 
     std::queue<int> updateQueue;
-
-    std::thread *tWaveShaping;
 
     friend class WAIVESamplerUI;
 };

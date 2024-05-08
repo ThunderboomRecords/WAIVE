@@ -15,6 +15,8 @@ public:
 
     void setText(std::string);
     void setFont(const char *name, const uchar *data, uint size);
+    void resizeToFit();
+
     FontId font;
     float label_size;
     Color text_color;
@@ -24,8 +26,9 @@ protected:
     void onNanoDisplay() override;
 
 private:
-    DISTRHO_LEAK_DETECTOR(Label);
     std::string label;
+
+    DISTRHO_LEAK_DETECTOR(Label);
 };
 
 END_NAMESPACE_DISTRHO

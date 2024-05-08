@@ -16,7 +16,7 @@ float interpolate(float p, float a, float b, float power = 1.0f, bool clamp = tr
     return p2 * (b - a) + a;
 }
 
-EnvGen::EnvGen(int sampleRate, ENV_TYPE type, ADSR_Params *adsr)
+EnvGen::EnvGen(int sampleRate, ENV_TYPE type, ADSR_Params adsr)
     : adsr(adsr),
       sampleRate(sampleRate),
       type(type),
@@ -26,32 +26,80 @@ EnvGen::EnvGen(int sampleRate, ENV_TYPE type, ADSR_Params *adsr)
     calculateStages();
 }
 
-void EnvGen::setADSR(ADSR_Params *adsr)
+void EnvGen::setADSR(ADSR_Params adsr)
 {
     EnvGen::adsr = adsr;
     calculateStages();
 }
 
-ADSR_Stage EnvGen::getStage()
+ADSR_Params EnvGen::getADSR() const
+{
+    return adsr;
+}
+
+void EnvGen::setAttack(float attack)
+{
+    adsr.attack = attack;
+    calculateStages();
+}
+
+float EnvGen::getAttack() const
+{
+    return adsr.attack;
+}
+
+void EnvGen::setDecay(float decay)
+{
+    adsr.decay = decay;
+    calculateStages();
+}
+
+float EnvGen::getDecay() const
+{
+    return adsr.decay;
+}
+
+void EnvGen::setSustain(float sustain)
+{
+    adsr.sustain = sustain;
+    calculateStages();
+}
+
+float EnvGen::getSustain() const
+{
+    return adsr.sustain;
+}
+
+void EnvGen::setRelease(float release)
+{
+    adsr.release = release;
+    calculateStages();
+}
+
+float EnvGen::getRelease() const
+{
+    return adsr.release;
+}
+
+ADSR_Stage EnvGen::getStage() const
 {
     return stage;
 }
 
 void EnvGen::calculateStages()
 {
-    std::cout << "EnvGen::calculateStages" << std::endl;
     float t = 0;
 
     if (type == ENV_TYPE::ADSR || type == ENV_TYPE::AD)
     {
         startAttack = (int)(t * sampleRate / 1000.f);
-        t += adsr->attack;
+        t += adsr.attack;
     }
 
     if (type == ENV_TYPE::ADSR || type == ENV_TYPE::AD || type == ENV_TYPE::D)
     {
         startDecay = (int)(t * sampleRate / 1000.f);
-        t += adsr->decay;
+        t += adsr.decay;
     }
 
     if (type == ENV_TYPE::AD || type == ENV_TYPE::D)
@@ -81,7 +129,7 @@ void EnvGen::reset()
         break;
     case SR:
         stage = ADSR_Stage::SUSTAIN;
-        value = adsr->sustain;
+        value = adsr.sustain;
         break;
     case D:
         stage = ADSR_Stage::DECAY;
@@ -91,7 +139,7 @@ void EnvGen::reset()
     }
 }
 
-float EnvGen::getValue()
+float EnvGen::getValue() const
 {
     return value;
 }
@@ -107,8 +155,8 @@ void EnvGen::release()
     {
         stage = ADSR_Stage::RELEASE;
         startRelease = step;
-        endStep = step + (int)(adsr->release * sampleRate / 1000.f);
-        value = adsr->sustain; // immediately jump to sustain value to start release
+        endStep = step + (int)(adsr.release * sampleRate / 1000.f);
+        value = adsr.sustain; // immediately jump to sustain value to start release
     }
 }
 
@@ -149,11 +197,11 @@ void EnvGen::process()
         break;
     case ADSR_Stage::DECAY:
         p = (float)(step - startDecay) / (startSustain - startDecay);
-        value = interpolate(p, 1.0f, adsr->sustain, power);
+        value = interpolate(p, 1.0f, adsr.sustain, power);
         break;
     case ADSR_Stage::RELEASE:
         p = (float)(step - startRelease) / (endStep - startRelease);
-        value = interpolate(p, adsr->sustain, 0.0f, power);
+        value = interpolate(p, adsr.sustain, 0.0f, power);
         break;
     default:
         break;
@@ -162,22 +210,24 @@ void EnvGen::process()
     step++;
 }
 
-int EnvGen::getLength(float sustain_time = 0.0f)
+int EnvGen::getLength(float sustain_time = 0.0f) const
 {
+    printf("adr: %.2f %.2f %.2f, sampleRate: %d \n", adsr.attack, adsr.decay, adsr.release, sampleRate);
+
     float ms = 0.0f;
     switch (type)
     {
     case ENV_TYPE::ADSR:
-        ms = adsr->attack + adsr->decay + adsr->release + sustain_time;
+        ms = adsr.attack + adsr.decay + adsr.release + sustain_time;
         break;
     case ENV_TYPE::AD:
-        ms = adsr->attack + adsr->decay;
+        ms = adsr.attack + adsr.decay;
         break;
     case ENV_TYPE::SR:
-        ms = sustain_time + adsr->release;
+        ms = sustain_time + adsr.release;
         break;
     case ENV_TYPE::D:
-        ms = adsr->decay;
+        ms = adsr.decay;
         break;
     default:
         break;

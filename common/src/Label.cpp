@@ -23,6 +23,19 @@ void Label::setFont(const char *name, const uchar *data, uint size)
     repaint();
 }
 
+void Label::resizeToFit()
+{
+    textAlign(text_align);
+    fontSize(label_size);
+    fontFaceId(font);
+
+    Rectangle<float> bounds;
+    textBounds(0, 0, label.c_str(), NULL, bounds);
+
+    setWidth(bounds.getWidth());
+    setHeight(bounds.getHeight());
+}
+
 void Label::onNanoDisplay()
 {
     beginPath();

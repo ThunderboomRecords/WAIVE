@@ -40,7 +40,7 @@ public:
 
     Color backgroundColor, lineColor;
     bool selectable, zoomable;
-    int *waveformLength;
+    int waveformLength;
 
 protected:
     void onNanoDisplay() override;

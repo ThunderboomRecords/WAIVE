@@ -25,57 +25,66 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     map_label = new Label(this, "sample map");
     map_label->setFont("VG5000", VG5000, VG5000_len);
-    map_label->setSize(200, 20);
     map_label->label_size = 16.0f;
+    map_label->resizeToFit();
     Layout::above(map_label, sample_map, Widget_Align::START, 5);
 
-    sample_controls = new Label(this, "sample controls");
-    sample_controls->setFont("VG5000", VG5000, VG5000_len);
-    sample_controls->setSize(200, 20);
-    sample_controls->label_size = 16.0f;
-    Layout::below(sample_controls, sample_map, Widget_Align::START, 5);
+    sample_controls_label = new Label(this, "sample editor");
+    sample_controls_label->setFont("VG5000", VG5000, VG5000_len);
+    sample_controls_label->label_size = 16.0f;
+    sample_controls_label->resizeToFit();
+    Layout::below(sample_controls_label, sample_map, Widget_Align::START, 5);
 
-    waveform_display = new Waveform(this);
-    waveform_display->setSize(UI_W - 20, 80);
-    Layout::below(waveform_display, sample_controls, Widget_Align::START, 5);
-    waveform_display->selectable = true;
-    waveform_display->setCallback(this);
-    waveform_display->lineColor = Color(255, 255, 255);
-    waveform_display->setWaveform(&plugin->fSourceWaveform);
-    waveform_display->waveformLength = &plugin->fSourceLength;
+    new_sample_btn = new Button(this);
+    new_sample_btn->setLabel("new");
+    new_sample_btn->setFontScale(fScaleFactor);
+    new_sample_btn->setBackgroundColor(Color(220, 220, 220));
+    new_sample_btn->setLabelColor(Color(10, 10, 10));
+    new_sample_btn->setSize(70, 20);
+    Layout::rightOf(new_sample_btn, sample_controls_label, Widget_Align::CENTER, 20);
+    new_sample_btn->setCallback(this);
 
-    open_button = new Button(this);
-    open_button->setLabel("import source");
-    open_button->setFontScale(fScaleFactor);
-    open_button->setBackgroundColor(Color(40, 40, 40));
-    open_button->setLabelColor(Color(200, 200, 200));
-    open_button->setSize(100, 20);
-    Layout::onTop(open_button, waveform_display, Widget_Align::END, Widget_Align::START, 2);
-    open_button->setCallback(this);
+    source_display = new Waveform(this);
+    source_display->setSize(UI_W - 20, 80);
+    Layout::below(source_display, sample_controls_label, Widget_Align::START, 5);
+    source_display->selectable = true;
+    source_display->setCallback(this);
+    source_display->lineColor = Color(255, 255, 255);
+    source_display->setWaveform(&plugin->fSourceWaveform);
+    // source_display->waveformLength = &plugin->fSourceLength;
+
+    open_btn = new Button(this);
+    open_btn->setLabel("import source");
+    open_btn->setFontScale(fScaleFactor);
+    open_btn->setBackgroundColor(Color(40, 40, 40));
+    open_btn->setLabelColor(Color(200, 200, 200));
+    open_btn->setSize(100, 20);
+    Layout::onTop(open_btn, source_display, Widget_Align::END, Widget_Align::START, 2);
+    open_btn->setCallback(this);
 
     sample_display = new Waveform(this);
     sample_display->setSize(180, 80);
-    Layout::below(sample_display, waveform_display, Widget_Align::END, 10.0f);
-    sample_display->setWaveform(&plugin->fSample);
-    sample_display->waveformLength = &plugin->fSampleLength;
+    Layout::below(sample_display, source_display, Widget_Align::END, 10.0f);
+    sample_display->setWaveform(&plugin->fSampleWaveform);
+    // sample_display->waveformLength = &plugin->fSampleLength;
 
-    save_sample_button = new Button(this);
-    save_sample_button->setLabel("add");
-    save_sample_button->setFontScale(fScaleFactor);
-    save_sample_button->setBackgroundColor(Color(220, 220, 220));
-    save_sample_button->setLabelColor(Color(10, 10, 10));
-    save_sample_button->setSize(70, 20);
-    Layout::below(save_sample_button, sample_display, Widget_Align::END, 10.f);
-    save_sample_button->setCallback(this);
+    save_sample_btn = new Button(this);
+    save_sample_btn->setLabel("add");
+    save_sample_btn->setFontScale(fScaleFactor);
+    save_sample_btn->setBackgroundColor(Color(220, 220, 220));
+    save_sample_btn->setLabelColor(Color(10, 10, 10));
+    save_sample_btn->setSize(70, 20);
+    Layout::below(save_sample_btn, sample_display, Widget_Align::END, 10.f);
+    save_sample_btn->setCallback(this);
 
-    play_button = new Button(this);
-    play_button->setLabel("preview");
-    play_button->setFontScale(fScaleFactor);
-    play_button->setBackgroundColor(Color(220, 220, 220));
-    play_button->setLabelColor(Color(10, 10, 10));
-    play_button->setSize(70, 20);
-    Layout::below(play_button, sample_display, Widget_Align::START, 10.f);
-    play_button->setCallback(this);
+    play_btn = new Button(this);
+    play_btn->setLabel("preview");
+    play_btn->setFontScale(fScaleFactor);
+    play_btn->setBackgroundColor(Color(220, 220, 220));
+    play_btn->setLabelColor(Color(10, 10, 10));
+    play_btn->setSize(70, 20);
+    Layout::below(play_btn, sample_display, Widget_Align::START, 10.f);
+    play_btn->setCallback(this);
 
     ampADSRKnobs = new HBox(this);
     ampADSRKnobs->setSize(300, 60);
@@ -182,17 +191,19 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
 void WAIVESamplerUI::buttonClicked(Button *button)
 {
     LOG_LOCATION
-    if (button == open_button)
+    if (button == open_btn)
         requestStateFile("filename");
-    else if (button == save_sample_button)
+    else if (button == save_sample_btn)
         plugin->addToLibrary();
-    else if (button == play_button)
+    else if (button == play_btn)
         plugin->previewPlayer.state = PlayState::TRIGGERED;
+    else if (button == new_sample_btn)
+        plugin->newSample();
 }
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
 {
-    plugin->selectWaveform(&plugin->fSourceWaveform, selectionStart, true);
+    plugin->selectWaveform(&plugin->fSourceWaveform, (int)selectionStart);
 }
 
 void WAIVESamplerUI::knobDragStarted(Knob *knob)
@@ -260,10 +271,12 @@ void WAIVESamplerUI::idleCallback()
         case kSourceLoading:
             break;
         case kSourceLoaded:
-            waveform_display->waveformNew();
+            source_display->waveformLength = plugin->fSourceLength;
+            source_display->waveformNew();
             break;
         case kSourceUpdated:
-            waveform_display->waveformUpdated();
+            source_display->waveformLength = plugin->fSourceLength;
+            source_display->waveformUpdated();
             break;
         case kSampleLoading:
             break;
@@ -271,21 +284,29 @@ void WAIVESamplerUI::idleCallback()
             sample_display->waveformNew();
             break;
         case kSampleUpdated:
-            sample_display->waveformUpdated();
+            if (plugin->fCurrentSample != nullptr)
+            {
+                sample_display->waveformLength = plugin->fCurrentSample->sampleLength;
+                sample_display->waveformUpdated();
+            }
             break;
         case kSampleAdded:
             sample_map->repaint();
             break;
         case kParametersChanged:
-            pitch->setValue(plugin->fSamplePitch, false);
-            volume->setValue(plugin->fSampleVolume, false);
-            ampAttack->setValue(plugin->fAmpADSRParams.attack, false);
-            ampDecay->setValue(plugin->fAmpADSRParams.decay, false);
-            ampSustain->setValue(plugin->fAmpADSRParams.sustain, false);
-            ampRelease->setValue(plugin->fAmpADSRParams.release, false);
-            sustainLength->setValue(plugin->fSustainLength, false);
+            if (plugin->fCurrentSample != nullptr)
+            {
+                pitch->setValue(plugin->fCurrentSample->pitch, false);
+                volume->setValue(plugin->fCurrentSample->volume, false);
+                sustainLength->setValue(plugin->fCurrentSample->sustainLength, false);
+                source_display->setSelection(plugin->fCurrentSample->sourceStart, false);
+            }
 
-            waveform_display->setSelection(plugin->fSampleStart, false);
+            ampAttack->setValue(plugin->ampEnvGen.getAttack(), false);
+            ampDecay->setValue(plugin->ampEnvGen.getDecay(), false);
+            ampSustain->setValue(plugin->ampEnvGen.getSustain(), false);
+            ampRelease->setValue(plugin->ampEnvGen.getRelease(), false);
+
             break;
         default:
             std::cout << "Unknown update: " << msg << std::endl;
