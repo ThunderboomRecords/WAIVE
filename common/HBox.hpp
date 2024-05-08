@@ -1,10 +1,12 @@
 #ifndef H_BOX_HPP
 #define H_BOX_HPP
 
+#include <iostream>
+#include <vector>
+
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
-#include <vector>
 
 START_NAMESPACE_DISTRHO
 
@@ -42,6 +44,7 @@ public:
     Color highlight_color;
     Color text_color;
     void positionWidgets();
+    void resizeToFit();
     int padding;
 
 protected:

@@ -14,18 +14,16 @@ dpf_add_plugin(
       Envelopes.cpp
   FILES_UI
       WAIVESamplerUI.cpp
-      Layout.hpp
       ${CMAKE_SOURCE_DIR}/common/fonts.h
+      ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/Notes.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Knob.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Knob3D.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/Slider.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/VSlider.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/Playhead.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Label.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Waveform.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SampleMap.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/SampleSlot.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
       ${CMAKE_SOURCE_DIR}/common/src/ValueIndicator.cpp
 )

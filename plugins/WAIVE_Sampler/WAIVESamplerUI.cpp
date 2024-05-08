@@ -9,14 +9,55 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
 
+    sample_map = new SampleMap(this);
+    sample_map->setSize(520, 300);
+    sample_map->setAbsolutePos(10, 46);
+    sample_map->allSamples = &plugin->fAllSamples;
+    sample_map->setCallback(this);
+
+    slots_container = new VBox(this);
+    slots_container->setSize(UI_W - sample_map->getWidth() - 30, sample_map->getHeight());
+    slots_container->padding = 2;
+    slots_container->justify_content = VBox::Justify_Content::space_evenly;
+    Layout::rightOf(slots_container, sample_map, Widget_Align::START, 10);
+    createSampleSlots(this, &sampleSlots, slots_container, 8, 300.f / 8.f - 5.f);
+    slots_container->positionWidgets();
+
+    map_label = new Label(this, "sample map");
+    map_label->setFont("VG5000", VG5000, VG5000_len);
+    map_label->setSize(200, 20);
+    map_label->label_size = 16.0f;
+    Layout::above(map_label, sample_map, Widget_Align::START, 5);
+
+    sample_controls = new Label(this, "sample controls");
+    sample_controls->setFont("VG5000", VG5000, VG5000_len);
+    sample_controls->setSize(200, 20);
+    sample_controls->label_size = 16.0f;
+    Layout::below(sample_controls, sample_map, Widget_Align::START, 5);
+
+    waveform_display = new Waveform(this);
+    waveform_display->setSize(UI_W - 20, 80);
+    Layout::below(waveform_display, sample_controls, Widget_Align::START, 5);
+    waveform_display->selectable = true;
+    waveform_display->setCallback(this);
+    waveform_display->lineColor = Color(255, 255, 255);
+    waveform_display->setWaveform(&plugin->fSourceWaveform);
+    waveform_display->waveformLength = &plugin->fSourceLength;
+
     open_button = new Button(this);
-    open_button->setLabel("Open");
+    open_button->setLabel("import source");
     open_button->setFontScale(fScaleFactor);
-    open_button->setBackgroundColor(Color(220, 220, 220));
-    open_button->setLabelColor(Color(10, 10, 10));
-    open_button->setSize(100, 50);
-    open_button->setAbsolutePos(10, 10);
+    open_button->setBackgroundColor(Color(40, 40, 40));
+    open_button->setLabelColor(Color(200, 200, 200));
+    open_button->setSize(100, 20);
+    Layout::onTop(open_button, waveform_display, Widget_Align::END, Widget_Align::START, 2);
     open_button->setCallback(this);
+
+    sample_display = new Waveform(this);
+    sample_display->setSize(180, 80);
+    Layout::below(sample_display, waveform_display, Widget_Align::END, 10.0f);
+    sample_display->setWaveform(&plugin->fSample);
+    sample_display->waveformLength = &plugin->fSampleLength;
 
     save_sample_button = new Button(this);
     save_sample_button->setLabel("add");
@@ -24,7 +65,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     save_sample_button->setBackgroundColor(Color(220, 220, 220));
     save_sample_button->setLabelColor(Color(10, 10, 10));
     save_sample_button->setSize(70, 20);
-    save_sample_button->setAbsolutePos(UI_W - 10 - 70, 70 + 80 + 10 + 80 + 10);
+    Layout::below(save_sample_button, sample_display, Widget_Align::END, 10.f);
     save_sample_button->setCallback(this);
 
     play_button = new Button(this);
@@ -33,34 +74,17 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     play_button->setBackgroundColor(Color(220, 220, 220));
     play_button->setLabelColor(Color(10, 10, 10));
     play_button->setSize(70, 20);
-    play_button->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10 + 80 + 10);
+    Layout::below(play_button, sample_display, Widget_Align::START, 10.f);
     play_button->setCallback(this);
 
-    waveform_display = new Waveform(this);
-    waveform_display->setSize(UI_W - 20, 80);
-    waveform_display->setAbsolutePos(10, 70);
-    waveform_display->selectable = true;
-    waveform_display->setCallback(this);
-    waveform_display->lineColor = Color(255, 255, 255);
-    waveform_display->setWaveform(&plugin->fSourceWaveform);
-    waveform_display->waveformLength = &plugin->fSourceLength;
-
-    sample_display = new Waveform(this);
-    sample_display->setSize(180, 80);
-    sample_display->setAbsolutePos(UI_W - 10 - 180, 70 + 80 + 10);
-    sample_display->setWaveform(&plugin->fSample);
-    sample_display->waveformLength = &plugin->fSampleLength;
-
     ampADSRKnobs = new HBox(this);
-    ampADSRKnobs->setAbsolutePos(320, 160);
     ampADSRKnobs->setSize(300, 60);
-    ampADSRKnobs->justify_content = HBox::Justify_Content::left;
+    ampADSRKnobs->justify_content = HBox::Justify_Content::right;
     ampADSRKnobs->padding = 5;
 
     shapeKnobs = new HBox(this);
-    shapeKnobs->setAbsolutePos(320, 240);
     shapeKnobs->setSize(300, 60);
-    shapeKnobs->justify_content = HBox::Justify_Content::left;
+    shapeKnobs->justify_content = HBox::Justify_Content::right;
     shapeKnobs->padding = 5;
 
     // Wave shaping
@@ -82,23 +106,20 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 500.0f, 100.f, logo_font);
     sustainLength->format = "{:.0f}ms";
 
+    shapeKnobs->addWidget(pitch);
+    shapeKnobs->addWidget(volume);
+    shapeKnobs->resizeToFit();
+    Layout::leftOf(shapeKnobs, sample_display, Widget_Align::CENTER, 10.f);
+    shapeKnobs->positionWidgets();
+
     ampADSRKnobs->addWidget(ampAttack);
     ampADSRKnobs->addWidget(ampDecay);
     ampADSRKnobs->addWidget(ampSustain);
     ampADSRKnobs->addWidget(ampRelease);
     ampADSRKnobs->addWidget(sustainLength);
+    ampADSRKnobs->resizeToFit();
+    Layout::leftOf(ampADSRKnobs, shapeKnobs, Widget_Align::CENTER, 10.f);
     ampADSRKnobs->positionWidgets();
-
-    shapeKnobs->addWidget(sustainLength);
-    shapeKnobs->addWidget(pitch);
-    shapeKnobs->addWidget(volume);
-    shapeKnobs->positionWidgets();
-
-    sample_map = new SampleMap(this);
-    sample_map->setSize(300, 300);
-    sample_map->setAbsolutePos(10, 160);
-    sample_map->allSamples = &plugin->fAllSamples;
-    sample_map->setCallback(this);
 
     value_indicator = new ValueIndicator(this);
     value_indicator->setSize(70, 20);
@@ -110,9 +131,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     setGeometryConstraints(UI_W * fScaleFactor, UI_H * fScaleFactor, false, false);
 
     if (fScaleFactor != 1.0)
-    {
         setSize(UI_W * fScaleFactor, UI_H * fScaleFactor);
-    }
 }
 
 WAIVESamplerUI::~WAIVESamplerUI() {}
@@ -299,6 +318,26 @@ Knob3D *createWAIVEKnob(
     knob->font = font;
 
     return knob;
+}
+
+void createSampleSlots(
+    Widget *parent,
+    std::vector<SampleSlot *> *slots,
+    VBox *container,
+    int n,
+    float height)
+{
+    float width = container->getWidth();
+    for (int i = 0; i < n; i++)
+    {
+        SampleSlot *slot = new SampleSlot(parent);
+        slot->setSize(width, height);
+
+        float hue = ((float)n - i) / (n + 2);
+        slot->highlight_color = Color::fromHSL(hue, 0.8f, 0.7f);
+        container->addWidget(slot);
+        slots->push_back(slot);
+    }
 }
 
 END_NAMESPACE_DISTRHO

@@ -2,6 +2,7 @@
 #define WAIVE_SAMPLER_UI_HPP
 
 #include <queue>
+#include <memory>
 
 #include "DistrhoUI.hpp"
 #include "NanoVG.hpp"
@@ -11,10 +12,14 @@
 #include "VBox.hpp"
 #include "Knob.hpp"
 #include "Knob3D.hpp"
+#include "Label.hpp"
 #include "Waveform.hpp"
 #include "SampleMap.hpp"
+#include "SampleSlot.hpp"
 #include "SimpleButton.hpp"
 #include "ValueIndicator.hpp"
+
+#include "Layout.hpp"
 
 #include "fonts.h"
 
@@ -24,7 +29,7 @@
 START_NAMESPACE_DISTRHO
 
 const unsigned int UI_W = 840;
-const unsigned int UI_H = 480;
+const unsigned int UI_H = 640;
 
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
@@ -59,12 +64,15 @@ private:
 
     FontId logo_font;
 
+    Label *logo, *map_label, *sample_controls;
     ValueIndicator *value_indicator;
     Button *open_button, *save_sample_button, *play_button;
     Waveform *waveform_display, *sample_display;
     Knob3D *pitch, *volume, *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
     SampleMap *sample_map;
+    std::vector<SampleSlot *> sampleSlots;
     HBox *ampADSRKnobs, *shapeKnobs;
+    VBox *slots_container;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 
@@ -79,6 +87,13 @@ Knob3D *createWAIVEKnob(
     float max,
     float value,
     UI::FontId font);
+
+void createSampleSlots(
+    Widget *parent,
+    std::vector<SampleSlot *> *slots,
+    VBox *container,
+    int n,
+    float height);
 
 UI *createUI()
 {

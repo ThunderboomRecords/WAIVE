@@ -28,16 +28,17 @@ public:
     Color background_color;
 
     std::vector<std::shared_ptr<SampleInfo>> *allSamples;
-    int selectedSample;
+    std::shared_ptr<SampleInfo> *selectedSample;
+    int highlightSample;
 
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
     bool onScroll(const ScrollEvent &) override;
-    Color get2DColor(float x, float y);
 
 private:
+    Color get2DColor(float x, float y);
     Callback *callback;
 
     Color c0, c1, c2, c3;

@@ -42,6 +42,7 @@ public:
     Color highlight_color;
     Color text_color;
     void positionWidgets();
+    void resizeToFit();
     int padding;
 
 protected:

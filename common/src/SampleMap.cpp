@@ -13,7 +13,7 @@ SampleMap::SampleMap(Widget *widget) noexcept
       zoomLevel(1.0f),
       centerPos({0.0, 0.0}),
       dragging(false),
-      selectedSample(-1),
+      highlightSample(-1),
       callback(nullptr)
 {
 }
@@ -54,9 +54,9 @@ bool SampleMap::onMouse(const MouseEvent &ev)
 
     if (ev.press)
     {
-        if (selectedSample >= 0 && callback != nullptr)
+        if (highlightSample >= 0 && callback != nullptr)
         {
-            callback->mapSampleSelected(selectedSample);
+            callback->mapSampleSelected(highlightSample);
         }
         else if (!dragging)
         {
@@ -83,7 +83,7 @@ bool SampleMap::onMotion(const MotionEvent &ev)
     {
         if (!contains(ev.pos))
         {
-            selectedSample = -1;
+            highlightSample = -1;
             return false;
         }
 
@@ -109,7 +109,7 @@ bool SampleMap::onMotion(const MotionEvent &ev)
                 d = dS;
             }
 
-            selectedSample = nearest;
+            highlightSample = nearest;
         }
 
         repaint();
@@ -190,10 +190,8 @@ void SampleMap::onNanoDisplay()
             continue;
 
         float r = 3.0f;
-        if (selectedSample >= -1 && selectedSample == allSamples->at(i)->getId())
-        {
+        if (highlightSample >= -1 && highlightSample == allSamples->at(i)->getId())
             r = 6.0f;
-        }
 
         beginPath();
         fillColor(get2DColor(embedX, embedY));

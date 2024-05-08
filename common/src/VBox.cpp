@@ -2,7 +2,6 @@
 
 START_NAMESPACE_DISTRHO
 
-
 VBox::VBox(Widget *widget) noexcept
     : NanoSubWidget(widget),
       align_items(Align_Items::middle),
@@ -72,7 +71,8 @@ void VBox::positionWidgets()
 
     printf("VBox::positionWidgets()\n  width = %d height = %d  box_x = %d box_y = %d\n", width, height, box_x, box_y);
 
-    if(items_.size() == 0) return;
+    if (items_.size() == 0)
+        return;
 
     switch (justify_content)
     {
@@ -174,15 +174,16 @@ void VBox::positionWidgets()
 
         int space_left = height - combined_widget_height;
         int space_between = 0;
-        if(number_of_items <= 1) 
+        if (number_of_items <= 1)
         {
             space_between = space_left;
         }
-        else 
+        else
         {
             space_between = space_left / (number_of_items - 1);
         }
-        if(space_between < 0) space_between = 0;
+        if (space_between < 0)
+            space_between = 0;
 
         int startY = box_y;
         for (auto it = items_.begin(); it != items_.end(); it++)
@@ -272,6 +273,21 @@ void VBox::positionWidgets()
     }
 }
 
-void VBox::onNanoDisplay(){ }
+void VBox::resizeToFit()
+{
+    float height = 0.0f;
+
+    for (auto it = items_.begin(); it != items_.end(); it++)
+    {
+        height += it->widget->getHeight();
+    }
+
+    if (items_.size() > 0)
+        height += (items_.size() - 1) * padding;
+
+    setHeight(height);
+}
+
+void VBox::onNanoDisplay() {}
 
 END_NAMESPACE_DISTRHO

@@ -273,6 +273,21 @@ void HBox::positionWidgets()
     }
 }
 
+void HBox::resizeToFit()
+{
+    float width = 0.0f;
+
+    for (auto it = items_.begin(); it != items_.end(); it++)
+    {
+        width += it->widget->getWidth();
+    }
+
+    if (items_.size() > 0)
+        width += (items_.size() - 1) * padding;
+
+    setWidth(width);
+}
+
 void HBox::onNanoDisplay() {}
 
 END_NAMESPACE_DISTRHO
