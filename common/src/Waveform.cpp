@@ -199,7 +199,6 @@ bool Waveform::onMouse(const MouseEvent &ev)
         case CLICKING:
             if (!selectable)
                 break;
-            LOG_LOCATION
             waveformSelectStart = cursorPos + visibleStart;
             if (*waveformLength > 0)
                 callback->waveformSelection(this, waveformSelectStart);

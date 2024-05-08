@@ -52,6 +52,16 @@ endif()
 
 find_package(fmt REQUIRED)
 find_package(SQLite3 REQUIRED)
+
+target_include_directories(
+  WAIVE_Sampler
+  PUBLIC 
+    .
+    ${CMAKE_SOURCE_DIR}/common
+    ${CMAKE_SOURCE_DIR}/external/LibrosaCpp/librosa
+    ${CMAKE_SOURCE_DIR}/external/libsamplerate/include
+    ${CMAKE_SOURCE_DIR}/external/nlohmann_json/single_include
+)
     
 target_link_libraries(
     WAIVE_Sampler
@@ -62,19 +72,11 @@ target_link_libraries(
     fmt::fmt
     SQLite::SQLite3
     samplerate
+    PRIVATE
+    nlohmann_json::nlohmann_json
 )
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
-    
-target_include_directories(
-  WAIVE_Sampler
-  PUBLIC 
-    .
-    ${CMAKE_SOURCE_DIR}/common
-    ${CMAKE_SOURCE_DIR}/external/LibrosaCpp/librosa
-    ${CMAKE_SOURCE_DIR}/external/signalsmith-stretch
-    ${CMAKE_SOURCE_DIR}/external/libsamplerate/include
-)
 
 set_target_properties(WAIVE_Sampler PROPERTIES LINK_FLAGS "--libs=sndfile")

@@ -1,6 +1,7 @@
 #ifndef WAIVE_SAMPLER_HPP
 #define WAIVE_SAMPLER_HPP
 
+#include <memory>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -103,12 +104,13 @@ protected:
 
     void newSample();
     void loadSample(int id);
-    void loadSample(SampleInfo *s);
+    void loadSample(std::shared_ptr<SampleInfo> s);
     void loadSource(const char *fp);
-    bool loadWaveform(const char *fp, std::vector<float> *buffer);
+    int loadWaveform(const char *fp, std::vector<float> *buffer);
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
     void selectWaveform(std::vector<float> *source, uint start, bool process);
     void addToLibrary();
+    bool saveSamples();
     void renderSample();
     void getEmbeding();
     void analyseWaveform();
@@ -120,9 +122,9 @@ private:
 
     fs::path fCacheDir;
     SampleDatabase *db;
-    std::vector<SampleInfo> fAllSamples;
+    std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
 
-    SampleInfo *fCurrentSample;
+    std::shared_ptr<SampleInfo> fCurrentSample;
 
     float fSampleVolume;
     float fSamplePitch;

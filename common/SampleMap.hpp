@@ -27,8 +27,8 @@ public:
 
     Color background_color;
 
-    std::vector<SampleInfo> *allSamples;
-    SampleInfo *selectedSample;
+    std::vector<std::shared_ptr<SampleInfo>> *allSamples;
+    int selectedSample;
 
 protected:
     void onNanoDisplay() override;

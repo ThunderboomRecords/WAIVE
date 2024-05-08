@@ -6,7 +6,10 @@ project(
     WAIVE_Sampler
 )
 
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+
 add_subdirectory(dpf)
 add_subdirectory(external/LibrosaCpp)
+add_subdirectory(external/nlohmann_json)
 
 add_subdirectory(plugins/WAIVE_Sampler)

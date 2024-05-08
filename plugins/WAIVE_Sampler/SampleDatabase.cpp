@@ -21,6 +21,81 @@ SampleInfo::SampleInfo(
     waive = waive_;
 }
 
+json serialiseSampleInfo(std::shared_ptr<SampleInfo> s)
+{
+    json data;
+    data["id"] = s->getId();
+    data["name"] = s->name;
+    data["path"] = s->path;
+    data["waive"] = s->waive;
+    data["source"] = s->source;
+    data["sourceStart"] = s->sourceStart;
+    data["embedding"] = {{"x", s->embedX}, {"y", s->embedY}};
+    data["ampEnv"] = {
+        {"attack", s->adsr.attack},
+        {"decay", s->adsr.decay},
+        {"sustain", s->adsr.sustain},
+        {"release", s->adsr.release},
+        {"sustainLength", s->sustainLength},
+    };
+    data["parameters"] = {
+        {"volume", s->volume},
+        {"pitch", s->pitch},
+    };
+    data["tags"] = s->tags;
+    return data;
+}
+
+std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data)
+{
+    std::shared_ptr<SampleInfo> s(new SampleInfo(data["id"], data["name"], data["path"], data["waive"]));
+
+    // SampleInfo s(data["id"], data["name"], data["path"], data["waive"]);
+    s->embedX = data["embedding"]["x"];
+    s->embedY = data["embedding"]["y"];
+    s->tags = data["tags"];
+    if (s->waive)
+    {
+        s->source = data["source"];
+        s->sourceStart = data["sourceStart"];
+        s->volume = data["parameters"]["volume"];
+        s->pitch = data["parameters"]["pitch"];
+        ADSR_Params adsr = {
+            data["ampEnv"]["attack"],
+            data["ampEnv"]["decay"],
+            data["ampEnv"]["sustain"],
+            data["ampEnv"]["release"],
+        };
+        s->adsr = adsr;
+        s->sustainLength = data["ampEnv"]["sustainLength"];
+    }
+
+    return s;
+}
+
+bool saveJson(json data, std::string fp)
+{
+    std::ofstream ofs(fp, std::ofstream::trunc);
+
+    if (!ofs.is_open())
+    {
+        std::cerr << "Failed to open " << fp << std::endl;
+        return false;
+    }
+
+    ofs << data;
+    ofs.close();
+    return true;
+}
+
+json openJson(std::string fp)
+{
+    std::ifstream f(fp);
+    json data = json::parse(f);
+    f.close();
+    return data;
+}
+
 int SampleInfo::getId()
 {
     return id;
@@ -109,6 +184,8 @@ bool SampleDatabase::createTable()
 
 bool SampleDatabase::insertSample(SampleInfo s)
 {
+    std::cout << "SampleDatabase::insertSample" << std::endl;
+
     sqlite3_stmt *stmt;
     const char *query = "INSERT INTO Samples (id, name, folder, embedX, embedY, waive, tags, source, volume, pitch, ampAttack, ampDecay, ampSustain, ampRelease, sustainLength, sourceStart, sourceEnd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -157,6 +234,7 @@ bool SampleDatabase::insertSample(SampleInfo s)
 
 bool SampleDatabase::updateSample(SampleInfo s)
 {
+    std::cout << "SampleDatabase::updateSample" << std::endl;
     sqlite3_stmt *stmt;
     const char *query = "UPDATE Samples SET name=?, folder=?, embedX=?, embedY=?, waive=?, tags=?, source=?, volume=?, pitch=?, ampAttack=?, ampDecay=?, ampSustain=?, ampRelease=?, sustainLength=?, sourceStart=?, sourceEnd=? WHERE id=?";
 

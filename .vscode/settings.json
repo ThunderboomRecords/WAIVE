@@ -143,6 +143,7 @@
     "*.ipp": "cpp",
     "ranges": "cpp",
     "__nullptr": "cpp"
-},
-  "C_Cpp.default.compilerPath": "/usr/bin/gcc"
+  },
+  "C_Cpp.default.compilerPath": "/usr/bin/gcc",
+  "C_Cpp.errorSquiggles": "enabledIfIncludesResolve"
 }

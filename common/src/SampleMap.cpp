@@ -13,7 +13,7 @@ SampleMap::SampleMap(Widget *widget) noexcept
       zoomLevel(1.0f),
       centerPos({0.0, 0.0}),
       dragging(false),
-      selectedSample(nullptr),
+      selectedSample(-1),
       callback(nullptr)
 {
 }
@@ -54,9 +54,9 @@ bool SampleMap::onMouse(const MouseEvent &ev)
 
     if (ev.press)
     {
-        if (selectedSample != nullptr && callback != nullptr)
+        if (selectedSample >= 0 && callback != nullptr)
         {
-            callback->mapSampleSelected(selectedSample->getId());
+            callback->mapSampleSelected(selectedSample);
         }
         else if (!dragging)
         {
@@ -83,21 +83,21 @@ bool SampleMap::onMotion(const MotionEvent &ev)
     {
         if (!contains(ev.pos))
         {
-            selectedSample = nullptr;
+            selectedSample = -1;
             return false;
         }
 
         // find nearest in Map space, to be be consistent with
         // distance from mouse
 
-        SampleInfo *nearest = nullptr;
+        int nearest = -1;
         float d = INFINITY;
 
         for (int i = 0; i < allSamples->size(); i++)
         {
             Point<double> sPos = embeddingToMap({
-                allSamples->at(i).embedX,
-                allSamples->at(i).embedY,
+                allSamples->at(i)->embedX,
+                allSamples->at(i)->embedY,
             });
 
             float dX = sPos.getX() - ev.pos.getX();
@@ -105,7 +105,7 @@ bool SampleMap::onMotion(const MotionEvent &ev)
             float dS = dX * dX + dY * dY;
             if (dS < 100.0f && dS < d)
             {
-                nearest = &allSamples->at(i);
+                nearest = allSamples->at(i)->getId();
                 d = dS;
             }
 
@@ -181,8 +181,8 @@ void SampleMap::onNanoDisplay()
 
     for (int i = 0; i < allSamples->size(); i++)
     {
-        float embedX = allSamples->at(i).embedX;
-        float embedY = allSamples->at(i).embedY;
+        float embedX = allSamples->at(i)->embedX;
+        float embedY = allSamples->at(i)->embedY;
 
         Point<double> pMap = embeddingToMap({embedX, embedY});
 
@@ -190,7 +190,7 @@ void SampleMap::onNanoDisplay()
             continue;
 
         float r = 3.0f;
-        if (selectedSample != nullptr && selectedSample->getId() == allSamples->at(i).getId())
+        if (selectedSample >= -1 && selectedSample == allSamples->at(i)->getId())
         {
             r = 6.0f;
         }

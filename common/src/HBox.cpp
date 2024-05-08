@@ -2,7 +2,6 @@
 
 START_NAMESPACE_DISTRHO
 
-
 HBox::HBox(Widget *widget) noexcept
     : NanoSubWidget(widget),
       align_items(Align_Items::middle),
@@ -70,9 +69,10 @@ void HBox::positionWidgets()
     const uint box_x = getAbsoluteX();
     const uint box_y = getAbsoluteY();
 
-    printf("HBox::positionWidgets()\n  width = %d height = %d  box_x = %d box_y = %d\n", width, height, box_x, box_y);
+    // printf("HBox::positionWidgets()\n  width = %d height = %d  box_x = %d box_y = %d\n", width, height, box_x, box_y);
 
-    if(items_.size() == 0) return;
+    if (items_.size() == 0)
+        return;
 
     switch (justify_content)
     {
@@ -174,15 +174,16 @@ void HBox::positionWidgets()
 
         int space_left = width - combined_widget_width;
         int space_between = 0;
-        if(number_of_items <= 1) 
+        if (number_of_items <= 1)
         {
             space_between = space_left;
         }
-        else 
+        else
         {
             space_between = space_left / (number_of_items - 1);
         }
-        if(space_between < 0) space_between = 0;
+        if (space_between < 0)
+            space_between = 0;
 
         int startX = box_x;
         for (auto it = items_.begin(); it != items_.end(); it++)
@@ -272,6 +273,6 @@ void HBox::positionWidgets()
     }
 }
 
-void HBox::onNanoDisplay(){ }
+void HBox::onNanoDisplay() {}
 
 END_NAMESPACE_DISTRHO

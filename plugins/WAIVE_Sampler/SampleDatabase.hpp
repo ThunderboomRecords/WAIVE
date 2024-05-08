@@ -1,12 +1,16 @@
 #ifndef SAMPLE_DATABASE_HPP
 #define SAMPLE_DATABASE_HPP
 
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <sqlite3.h>
 #include <fmt/core.h>
 #include "Envelopes.hpp"
+
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 enum ColumnIndex
 {
@@ -55,6 +59,11 @@ public:
 private:
     int id;
 };
+
+json serialiseSampleInfo(std::shared_ptr<SampleInfo> s);
+std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
+
+bool saveJson(json data, std::string fp);
 
 class SampleDatabase
 {

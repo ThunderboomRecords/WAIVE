@@ -4,9 +4,9 @@
 [submodule "external/LibrosaCpp"]
 	path = external/LibrosaCpp
 	url = https://github.com/ewan-xu/LibrosaCpp.git
-[submodule "external/signalsmith-stretch"]
-	path = external/signalsmith-stretch
-	url = https://github.com/Signalsmith-Audio/signalsmith-stretch.git
 [submodule "external/libsamplerate"]
 	path = external/libsamplerate
 	url = https://github.com/libsndfile/libsamplerate.git
+[submodule "external/nlohmann_json"]
+	path = external/nlohmann_json
+	url = https://github.com/nlohmann/json.git
