@@ -44,6 +44,7 @@ struct SamplePlayer
     std::vector<float> *waveform;
     int length;
     int ptr = 0;
+    float gain = 1.0f;
     PlayState state = PlayState::STOPPED;
 };
 
@@ -112,6 +113,7 @@ protected:
     void addToLibrary();
     bool saveSamples();
     void renderSample();
+    void loadSamplePlayer(int i, std::vector<float> *waveform, int length);
     void getEmbedding();
     void analyseWaveform();
 
@@ -127,16 +129,10 @@ private:
 
     std::shared_ptr<SampleInfo> fCurrentSample;
 
-    // float fSampleVolume;
-    // float fSamplePitch;
-    // float fSustainLength;
-
     std::vector<float> fSourceWaveform, fSampleWaveform;
-    // std::string fSourceFilepath;
     bool fSourceLoaded, fSampleLoaded;
     int fSourceLength;
 
-    // int fSampleStart, fSampleLength;
     float fNormalisationRatio;
 
     SamplePlayer previewPlayer;

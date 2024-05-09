@@ -13,14 +13,6 @@
 
 START_NAMESPACE_DISTRHO
 
-enum DragAction
-{
-    NONE = 0,
-    CLICKING,
-    SELECTING,
-    SCROLLING,
-};
-
 class Waveform : public NanoSubWidget
 {
 public:
@@ -49,6 +41,14 @@ protected:
     bool onScroll(const ScrollEvent &) override;
 
 private:
+    enum DragAction
+    {
+        NONE = 0,
+        CLICKING,
+        SELECTING,
+        SCROLLING,
+    };
+
     void calculateWaveform();
 
     Callback *callback;

@@ -38,6 +38,14 @@ protected:
     bool onScroll(const ScrollEvent &) override;
 
 private:
+    enum DragAction
+    {
+        NONE = 0,
+        CLICKING,
+        SELECTING,
+        SCROLLING,
+    };
+
     Color get2DColor(float x, float y);
     Callback *callback;
 
@@ -51,7 +59,8 @@ private:
 
     std::map<int, Color> colorCache;
 
-    bool dragging;
+    // bool dragging;
+    DragAction dragAction;
 };
 
 END_NAMESPACE_DISTRHO

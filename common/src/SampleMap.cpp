@@ -12,7 +12,8 @@ SampleMap::SampleMap(Widget *widget) noexcept
       c3(Color::fromHSL(0.8f, 0.8f, 0.7f)),
       zoomLevel(1.0f),
       centerPos({0.0, 0.0}),
-      dragging(false),
+      //   dragging(false)
+      dragAction(DragAction::NONE),
       highlightSample(-1),
       selectedSample(nullptr),
       callback(nullptr)
@@ -50,25 +51,34 @@ Point<double> SampleMap::mapToEmbedding(Point<double> p)
 
 bool SampleMap::onMouse(const MouseEvent &ev)
 {
-    if (!contains(ev.pos) && !dragging)
+    if (!isVisible())
         return false;
 
-    if (ev.press)
+    if (ev.press && contains(ev.pos))
     {
-        if (highlightSample >= 0 && callback != nullptr)
-        {
-            callback->mapSampleSelected(highlightSample);
-        }
-        else if (!dragging)
-        {
-            dragging = true;
-            dragStart = Point<double>(ev.pos);
-            centerStart = Point<double>{centerPos.getX(), centerPos.getY()};
-        }
+        dragAction = CLICKING;
+        return true;
     }
-    else if (!ev.press && dragging)
+    else if (!ev.press && dragAction != NONE)
     {
-        dragging = false;
+        // dragging = false;
+        switch (dragAction)
+        {
+        case CLICKING:
+            // select
+            if (highlightSample >= 0 && callback != nullptr)
+            {
+                callback->mapSampleSelected(highlightSample);
+            }
+            break;
+
+        case SCROLLING:
+            break;
+        default:
+            break;
+        }
+
+        dragAction = NONE;
     }
     else
     {
@@ -80,7 +90,10 @@ bool SampleMap::onMouse(const MouseEvent &ev)
 
 bool SampleMap::onMotion(const MotionEvent &ev)
 {
-    if (!dragging)
+    if (!isVisible())
+        return false;
+
+    if (dragAction == NONE)
     {
         if (!contains(ev.pos))
         {
@@ -117,30 +130,42 @@ bool SampleMap::onMotion(const MotionEvent &ev)
 
         return true;
     }
+    else if (dragAction == CLICKING)
+    {
+        dragAction = SCROLLING;
+        dragStart = Point<double>(ev.pos);
+        centerStart = Point<double>{centerPos.getX(), centerPos.getY()};
+        return true;
+    }
+    else if (dragAction == SCROLLING)
+    {
 
-    const float width = getWidth();
-    const float height = getHeight();
+        const float width = getWidth();
+        const float height = getHeight();
 
-    // get mouse delta
-    float dx = ev.pos.getX() - dragStart.getX();
-    float dy = ev.pos.getY() - dragStart.getY();
+        // get mouse delta
+        float dx = ev.pos.getX() - dragStart.getX();
+        float dy = ev.pos.getY() - dragStart.getY();
 
-    // scale to [-1, 1] coordinate space
-    dx = (dx / width) * 2.0f;
-    dy = (dy / height) * 2.0f;
+        // scale to [-1, 1] coordinate space
+        dx = (dx / width) * 2.0f;
+        dy = (dy / height) * 2.0f;
 
-    // scale by zoom level
-    dx /= zoomLevel;
-    dy /= zoomLevel;
+        // scale by zoom level
+        dx /= zoomLevel;
+        dy /= zoomLevel;
 
-    float newX = std::clamp(centerStart.getX() - dx, -0.8, 0.8);
-    float newY = std::clamp(centerStart.getY() - dy, -0.8, 0.8);
+        float newX = std::clamp(centerStart.getX() - dx, -0.8, 0.8);
+        float newY = std::clamp(centerStart.getY() - dy, -0.8, 0.8);
 
-    centerPos.setX(newX);
-    centerPos.setY(newY);
+        centerPos.setX(newX);
+        centerPos.setY(newY);
 
-    repaint();
-    return true;
+        repaint();
+        return true;
+    }
+
+    return false;
 };
 
 bool SampleMap::onScroll(const ScrollEvent &ev)

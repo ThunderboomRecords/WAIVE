@@ -15,6 +15,7 @@ dpf_add_plugin(
   FILES_UI
       WAIVESamplerUI.cpp
       ${CMAKE_SOURCE_DIR}/common/fonts.h
+      ${CMAKE_SOURCE_DIR}/common/src/DragDrop.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp

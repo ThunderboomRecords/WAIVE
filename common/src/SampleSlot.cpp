@@ -6,7 +6,8 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     : NanoSubWidget(parent),
       background_color(Color(200, 200, 200)),
       highlight_color(Color(30, 30, 30)),
-      active(false)
+      active(false),
+      samplePlayer(nullptr)
 {
 }
 

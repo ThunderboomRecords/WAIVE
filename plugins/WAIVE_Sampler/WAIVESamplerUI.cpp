@@ -308,6 +308,12 @@ void WAIVESamplerUI::idleCallback()
             sample_map->repaint();
 
             break;
+        case kSlotLoaded:
+            for (int i = 0; i < sampleSlots.size(); i++)
+            {
+                sampleSlots[i]->repaint();
+            }
+            break;
         default:
             std::cout << "Unknown update: " << msg << std::endl;
             break;

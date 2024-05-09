@@ -50,6 +50,7 @@ enum Updates
     kSampleLoaded,
     kSampleUpdated,
     kSampleAdded,
+    kSlotLoaded,
     kParametersChanged,
 };
 

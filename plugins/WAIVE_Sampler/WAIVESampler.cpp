@@ -49,7 +49,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
         auto samples = data["samples"];
         for (int i = 0; i < samples.size(); i++)
         {
-            std::cout << samples.at(i) << std::endl;
+            // std::cout << samples.at(i) << std::endl;
             std::shared_ptr<SampleInfo> s = deserialiseSampleInfo(samples.at(i));
             fAllSamples.push_back(s);
         }
@@ -249,24 +249,46 @@ void WAIVESampler::run(
         previewPlayer.state = PlayState::PLAYING;
     }
 
+    float y;
     for (uint32_t i = 0; i < numFrames; i++)
     {
+
+        // Parse Midi Messages
+        // TODO
+
+        // Mix sample players outputs
+        y = 0.0f;
+
         if (previewPlayer.state == PlayState::PLAYING)
         {
-            outputs[0][i] = previewPlayer.waveform->at(previewPlayer.ptr);
-            outputs[1][i] = previewPlayer.waveform->at(previewPlayer.ptr);
-            previewPlayer.ptr = (previewPlayer.ptr + 1);
+            y += previewPlayer.waveform->at(previewPlayer.ptr) * previewPlayer.gain;
+
+            previewPlayer.ptr++;
             if (previewPlayer.ptr >= previewPlayer.length)
             {
                 previewPlayer.ptr = 0;
                 previewPlayer.state = PlayState::STOPPED;
             }
         }
-        else
+
+        for (int j = 0; j < samplePlayers.size(); j++)
         {
-            outputs[0][i] = 0.0f;
-            outputs[1][i] = 0.0f;
+            if (samplePlayers[j].state == PlayState::STOPPED)
+                continue;
+
+            SamplePlayer *sp = &samplePlayers[j];
+            y += sp->waveform->at(sp->ptr) * sp->gain;
+
+            sp->ptr++;
+            if (sp->ptr >= sp->length)
+            {
+                sp->ptr = 0;
+                sp->state = PlayState::STOPPED;
+            }
         }
+
+        outputs[0][i] = y;
+        outputs[1][i] = y;
     }
 }
 
@@ -575,6 +597,17 @@ void WAIVESampler::renderSample()
         previewPlayer.ptr = 0;
         previewPlayer.state = PlayState::TRIGGERED;
     }
+}
+
+void WAIVESampler::loadSamplePlayer(int i, std::vector<float> *waveform, int length)
+{
+    SamplePlayer *sp = &samplePlayers[i];
+    sp->state = PlayState::STOPPED;
+    sp->ptr = 0;
+    sp->length = length;
+    sp->waveform = waveform;
+
+    addToUpdateQueue(kSlotLoaded);
 }
 
 void WAIVESampler::getEmbedding()

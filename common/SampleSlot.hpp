@@ -4,7 +4,10 @@
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
+#include "DragDrop.hpp"
 #include <iostream>
+
+#include "WAIVESampler.hpp"
 
 START_NAMESPACE_DISTRHO
 
@@ -22,6 +25,8 @@ public:
 
     Color background_color, highlight_color;
     bool active;
+
+    SamplePlayer *samplePlayer;
 
 protected:
     void onNanoDisplay() override;
