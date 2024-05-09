@@ -4,15 +4,18 @@
 #include <map>
 #include <iostream>
 
+#include "fonts.h"
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
 
+#include "Menu.hpp"
 #include "SampleDatabase.hpp"
 
 START_NAMESPACE_DISTRHO
 
-class SampleMap : public NanoSubWidget
+class SampleMap : public NanoSubWidget,
+                  public Menu::Callback
 {
 public:
     class Callback
@@ -31,11 +34,14 @@ public:
     std::shared_ptr<SampleInfo> *selectedSample;
     int highlightSample;
 
+    Menu *menu;
+
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
     bool onScroll(const ScrollEvent &) override;
+    void onMenuItemSelection(Menu *menu, int item) override;
 
 private:
     enum DragAction

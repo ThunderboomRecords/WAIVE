@@ -10,6 +10,7 @@
 
 #include "HBox.hpp"
 #include "VBox.hpp"
+#include "Menu.hpp"
 #include "Knob.hpp"
 #include "Knob3D.hpp"
 #include "Label.hpp"
@@ -73,6 +74,7 @@ private:
     std::vector<SampleSlot *> sampleSlots;
     HBox *ampADSRKnobs, *shapeKnobs;
     VBox *slots_container;
+    Menu *sample_map_menu;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 

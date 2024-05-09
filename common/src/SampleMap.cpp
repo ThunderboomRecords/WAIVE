@@ -12,7 +12,6 @@ SampleMap::SampleMap(Widget *widget) noexcept
       c3(Color::fromHSL(0.8f, 0.8f, 0.7f)),
       zoomLevel(1.0f),
       centerPos({0.0, 0.0}),
-      //   dragging(false)
       dragAction(DragAction::NONE),
       highlightSample(-1),
       selectedSample(nullptr),
@@ -56,7 +55,15 @@ bool SampleMap::onMouse(const MouseEvent &ev)
 
     if (ev.press && contains(ev.pos))
     {
-        dragAction = CLICKING;
+        if (ev.button == MouseButton::kMouseButtonLeft)
+            dragAction = CLICKING;
+        else if (ev.button == MouseButton::kMouseButtonRight)
+        {
+            menu->setAbsolutePos(
+                ev.pos.getX() + getAbsoluteX() - 2,
+                ev.pos.getY() + getAbsoluteY() - 2);
+            menu->show();
+        }
         return true;
     }
     else if (!ev.press && dragAction != NONE)
@@ -185,6 +192,11 @@ bool SampleMap::onScroll(const ScrollEvent &ev)
     repaint();
     return true;
 };
+
+void SampleMap::onMenuItemSelection(Menu *menu, int item)
+{
+    std::cout << "SampleMap::onMenuItemSelection" << std::endl;
+}
 
 Color SampleMap::get2DColor(float x, float y)
 {

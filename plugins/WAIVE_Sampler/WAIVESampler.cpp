@@ -271,21 +271,21 @@ void WAIVESampler::run(
             }
         }
 
-        for (int j = 0; j < samplePlayers.size(); j++)
-        {
-            if (samplePlayers[j].state == PlayState::STOPPED)
-                continue;
+        // for (int j = 0; j < samplePlayers.size(); j++)
+        // {
+        //     if (samplePlayers[j].state == PlayState::STOPPED)
+        //         continue;
 
-            SamplePlayer *sp = &samplePlayers[j];
-            y += sp->waveform->at(sp->ptr) * sp->gain;
+        //     SamplePlayer *sp = &samplePlayers[j];
+        //     y += sp->waveform->at(sp->ptr) * sp->gain;
 
-            sp->ptr++;
-            if (sp->ptr >= sp->length)
-            {
-                sp->ptr = 0;
-                sp->state = PlayState::STOPPED;
-            }
-        }
+        //     sp->ptr++;
+        //     if (sp->ptr >= sp->length)
+        //     {
+        //         sp->ptr = 0;
+        //         sp->state = PlayState::STOPPED;
+        //     }
+        // }
 
         outputs[0][i] = y;
         outputs[1][i] = y;

@@ -129,6 +129,24 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     Layout::leftOf(ampADSRKnobs, shapeKnobs, Widget_Align::CENTER, 10.f);
     ampADSRKnobs->positionWidgets();
 
+    sample_map_menu = new Menu(this);
+    sample_map_menu->addItem("Add to slot 1");
+    sample_map_menu->addItem("Add to slot 2");
+    sample_map_menu->addItem("Add to slot 3");
+    sample_map_menu->addItem("Add to slot 4");
+    sample_map_menu->addItem("Add to slot 5");
+    sample_map_menu->addItem("Add to slot 6");
+    sample_map_menu->addItem("Add to slot 7");
+    sample_map_menu->addItem("Add to slot 8");
+
+    sample_map_menu->setSize(100, 50);
+    sample_map_menu->display_number = 4;
+    sample_map_menu->setFont("VG5000", VG5000, VG5000_len);
+    sample_map_menu->hide();
+    sample_map_menu->setCallback(sample_map);
+
+    sample_map->menu = sample_map_menu;
+
     value_indicator = new ValueIndicator(this);
     value_indicator->setSize(70, 20);
     value_indicator->fontId = logo_font;
