@@ -393,7 +393,7 @@ void WAIVESampler::newSample()
 {
     LOG_LOCATION
 
-    // TODO: save current sample before creating a new one!
+    // TODO: save current sample before creating a new one?
 
     time_t current_time = time(NULL);
     std::string name = fmt::format("{:d}.wav", current_time);
@@ -405,10 +405,15 @@ void WAIVESampler::newSample()
         s->volume = fCurrentSample->volume;
         s->source = fCurrentSample->source;
         s->sourceStart = fCurrentSample->sourceStart;
+        s->sustainLength = fCurrentSample->sustainLength;
+        s->embedX = fCurrentSample->embedX;
+        s->embedY = fCurrentSample->embedY;
     }
     s->adsr = ADSR_Params(ampEnvGen.getADSR());
 
     fCurrentSample = s;
+
+    getEmbedding();
 
     std::cout << fCurrentSample->getId() << std::endl;
 
@@ -562,7 +567,7 @@ void WAIVESampler::renderSample()
 
     LOG_LOCATION
 
-    getEmbeding();
+    getEmbedding();
     fSampleLoaded = true;
     addToUpdateQueue(kSampleUpdated);
     if (previewPlayer.state == PlayState::STOPPED)
@@ -572,7 +577,7 @@ void WAIVESampler::renderSample()
     }
 }
 
-void WAIVESampler::getEmbeding()
+void WAIVESampler::getEmbedding()
 {
     // TODO: placeholder is random for now
     // float embedX = (float)(rand() % 10000) / 5000.0f - 1.0f;

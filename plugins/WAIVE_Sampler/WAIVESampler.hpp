@@ -112,7 +112,7 @@ protected:
     void addToLibrary();
     bool saveSamples();
     void renderSample();
-    void getEmbeding();
+    void getEmbedding();
     void analyseWaveform();
 
     EnvGen ampEnvGen;
