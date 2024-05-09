@@ -140,6 +140,7 @@ private:
     float fNormalisationRatio;
 
     SamplePlayer previewPlayer;
+    std::vector<SamplePlayer> samplePlayers;
 
     std::queue<int> updateQueue;
 

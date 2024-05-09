@@ -14,6 +14,7 @@ SampleMap::SampleMap(Widget *widget) noexcept
       centerPos({0.0, 0.0}),
       dragging(false),
       highlightSample(-1),
+      selectedSample(nullptr),
       callback(nullptr)
 {
 }
@@ -189,8 +190,10 @@ void SampleMap::onNanoDisplay()
         if (!contains(pMap))
             continue;
 
+        int sampleId = allSamples->at(i)->getId();
+
         float r = 3.0f;
-        if (highlightSample >= -1 && highlightSample == allSamples->at(i)->getId())
+        if (highlightSample >= -1 && highlightSample == sampleId)
             r = 6.0f;
 
         beginPath();
@@ -198,6 +201,16 @@ void SampleMap::onNanoDisplay()
         circle(pMap.getX(), pMap.getY(), r);
         fill();
         closePath();
+
+        if (selectedSample != nullptr && selectedSample->get()->getId() == sampleId)
+        {
+            beginPath();
+            strokeWidth(2.0f);
+            strokeColor(255, 255, 255);
+            circle(pMap.getX(), pMap.getY(), r);
+            stroke();
+            closePath();
+        }
     }
 }
 

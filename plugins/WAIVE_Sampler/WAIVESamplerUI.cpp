@@ -13,6 +13,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_map->setSize(520, 300);
     sample_map->setAbsolutePos(10, 46);
     sample_map->allSamples = &plugin->fAllSamples;
+    sample_map->selectedSample = &plugin->fCurrentSample;
     sample_map->setCallback(this);
 
     slots_container = new VBox(this);
@@ -51,7 +52,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     source_display->setCallback(this);
     source_display->lineColor = Color(255, 255, 255);
     source_display->setWaveform(&plugin->fSourceWaveform);
-    // source_display->waveformLength = &plugin->fSourceLength;
 
     open_btn = new Button(this);
     open_btn->setLabel("import source");
@@ -66,7 +66,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_display->setSize(180, 80);
     Layout::below(sample_display, source_display, Widget_Align::END, 10.0f);
     sample_display->setWaveform(&plugin->fSampleWaveform);
-    // sample_display->waveformLength = &plugin->fSampleLength;
 
     save_sample_btn = new Button(this);
     save_sample_btn->setLabel("add");
@@ -306,6 +305,7 @@ void WAIVESamplerUI::idleCallback()
             ampDecay->setValue(plugin->ampEnvGen.getDecay(), false);
             ampSustain->setValue(plugin->ampEnvGen.getSustain(), false);
             ampRelease->setValue(plugin->ampEnvGen.getRelease(), false);
+            sample_map->repaint();
 
             break;
         default:

@@ -81,7 +81,6 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 2.0f;
         parameter.ranges.def = 1.0f;
-        parameter.hints = kParameterIsAutomatable;
         break;
     case kSamplePitch:
         parameter.name = "Sample Pitch";
@@ -89,7 +88,6 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.min = 0.2f;
         parameter.ranges.max = 4.0f;
         parameter.ranges.def = 1.0f;
-        parameter.hints = kParameterIsAutomatable;
         break;
     case kAmpAttack:
         parameter.name = "Amp Attack";
@@ -97,7 +95,6 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 500.0f;
         parameter.ranges.def = 10.0f;
-        parameter.hints = kParameterIsAutomatable;
         break;
     case kAmpDecay:
         parameter.name = "Amp Decay";
@@ -105,7 +102,6 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 500.0f;
         parameter.ranges.def = 50.0f;
-        parameter.hints = kParameterIsAutomatable;
         break;
     case kAmpSustain:
         parameter.name = "Amp Sustain";
@@ -113,7 +109,6 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 1.0f;
         parameter.ranges.def = 0.7f;
-        parameter.hints = kParameterIsAutomatable;
         break;
     case kAmpRelease:
         parameter.name = "Amp Release";
@@ -121,7 +116,6 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 500.0f;
         parameter.ranges.def = 100.0f;
-        parameter.hints = kParameterIsAutomatable;
         break;
     case kSustainLength:
         parameter.name = "Sustain Length";
@@ -129,7 +123,6 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 500.0f;
         parameter.ranges.def = 100.0f;
-        parameter.hints = kParameterIsAutomatable;
         break;
     default:
         break;
@@ -393,7 +386,6 @@ void WAIVESampler::addToLibrary()
     fAllSamples.push_back(fCurrentSample);
     addToUpdateQueue(kSampleAdded);
 
-    newSample();
     saveSamples();
 }
 
@@ -419,6 +411,8 @@ void WAIVESampler::newSample()
     fCurrentSample = s;
 
     std::cout << fCurrentSample->getId() << std::endl;
+
+    addToUpdateQueue(kParametersChanged);
 }
 
 void WAIVESampler::loadSample(int id)
@@ -464,9 +458,7 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
         setParameterValue(kAmpSustain, fCurrentSample->adsr.sustain);
         setParameterValue(kAmpRelease, fCurrentSample->adsr.release);
         setParameterValue(kSustainLength, fCurrentSample->sustainLength);
-        // fSampleStart = fCurrentSample->sourceStart;
         selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
-        // fSampleLength = fCurrentSample->sampleLength;
     }
     else
     {
@@ -475,11 +467,10 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
         fCurrentSample->sampleLength = loadWaveform(fp.c_str(), &fSampleWaveform);
     }
 
-    LOG_LOCATION
     fSampleLoaded = true;
     renderSample();
 
-    // addToUpdateQueue(kSampleLoaded);
+    addToUpdateQueue(kSampleLoaded);
     addToUpdateQueue(kParametersChanged);
 }
 
@@ -501,8 +492,8 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
         return;
 
     fSampleLoaded = false;
-    // if (fCurrentSample == nullptr)
-    //     newSample();
+    if (fCurrentSample == nullptr)
+        newSample();
 
     fCurrentSample->sourceStart = start;
     fSampleLoaded = true;
@@ -574,11 +565,11 @@ void WAIVESampler::renderSample()
     getEmbeding();
     fSampleLoaded = true;
     addToUpdateQueue(kSampleUpdated);
-    // if (previewPlayer.state == PlayState::STOPPED)
-    // {
-    //     previewPlayer.ptr = 0;
-    //     previewPlayer.state = PlayState::TRIGGERED;
-    // }
+    if (previewPlayer.state == PlayState::STOPPED)
+    {
+        previewPlayer.ptr = 0;
+        previewPlayer.state = PlayState::TRIGGERED;
+    }
 }
 
 void WAIVESampler::getEmbeding()
@@ -586,8 +577,6 @@ void WAIVESampler::getEmbeding()
     // TODO: placeholder is random for now
     // float embedX = (float)(rand() % 10000) / 5000.0f - 1.0f;
     // float embedY = (float)(rand() % 10000) / 5000.0f - 1.0f;
-
-    LOG_LOCATION
 
     std::cout << fCurrentSample->getId() << std::endl;
 
@@ -601,8 +590,6 @@ void WAIVESampler::getEmbeding()
 
     fCurrentSample->embedX = embedX;
     fCurrentSample->embedY = embedY;
-
-    LOG_LOCATION
 
     std::cout << embedX << " " << embedY << std::endl;
 }
@@ -650,6 +637,7 @@ void WAIVESampler::addToUpdateQueue(int ev)
 void WAIVESampler::sampleRateChanged(double newSampleRate)
 {
     sampleRate = newSampleRate;
+    ampEnvGen.sampleRate = newSampleRate;
 }
 
 Plugin *createPlugin()
