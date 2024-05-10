@@ -21,7 +21,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     slots_container->padding = 2;
     slots_container->justify_content = VBox::Justify_Content::space_evenly;
     Layout::rightOf(slots_container, sample_map, Widget_Align::START, 10);
-    createSampleSlots(this, &sampleSlots, slots_container, 8, 300.f / 8.f - 5.f);
+    createSampleSlots(this, &sampleSlots, &plugin->samplePlayers, slots_container, 300.f / 8.f - 5.f);
     slots_container->positionWidgets();
 
     map_label = new Label(this, "sample map");
@@ -139,9 +139,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_map_menu->addItem("Add to slot 7");
     sample_map_menu->addItem("Add to slot 8");
 
-    sample_map_menu->setSize(100, 50);
-    sample_map_menu->display_number = 4;
+    sample_map_menu->setWidth(100);
     sample_map_menu->setFont("VG5000", VG5000, VG5000_len);
+    sample_map_menu->setDisplayNumber(4);
     sample_map_menu->hide();
     sample_map_menu->setCallback(sample_map);
 
@@ -248,6 +248,12 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 void WAIVESamplerUI::mapSampleSelected(int id)
 {
     plugin->loadSample(id);
+}
+
+void WAIVESamplerUI::mapSampleLoadSlot(int index, int slot)
+{
+    LOG_LOCATION
+    plugin->loadSamplePlayer(index, slot);
 }
 
 void WAIVESamplerUI::onNanoDisplay()
@@ -368,15 +374,17 @@ Knob3D *createWAIVEKnob(
 void createSampleSlots(
     Widget *parent,
     std::vector<SampleSlot *> *slots,
+    std::vector<SamplePlayer> *players,
     VBox *container,
-    int n,
     float height)
 {
+    int n = players->size();
     float width = container->getWidth();
     for (int i = 0; i < n; i++)
     {
         SampleSlot *slot = new SampleSlot(parent);
         slot->setSize(width, height);
+        slot->samplePlayer = &players->at(i);
 
         float hue = ((float)n - i) / (n + 2);
         slot->highlight_color = Color::fromHSL(hue, 0.8f, 0.7f);

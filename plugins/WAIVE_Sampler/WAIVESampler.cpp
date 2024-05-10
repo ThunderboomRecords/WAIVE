@@ -63,6 +63,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
     previewPlayer.waveform = &fSampleWaveform;
 
+    samplePlayers.resize(8);
+    samplePlayerWaveforms.resize(8);
+
     newSample();
 }
 
@@ -271,21 +274,21 @@ void WAIVESampler::run(
             }
         }
 
-        // for (int j = 0; j < samplePlayers.size(); j++)
-        // {
-        //     if (samplePlayers[j].state == PlayState::STOPPED)
-        //         continue;
+        for (int j = 0; j < samplePlayers.size(); j++)
+        {
+            if (samplePlayers[j].state == PlayState::STOPPED)
+                continue;
 
-        //     SamplePlayer *sp = &samplePlayers[j];
-        //     y += sp->waveform->at(sp->ptr) * sp->gain;
+            SamplePlayer *sp = &samplePlayers[j];
+            y += sp->waveform->at(sp->ptr) * sp->gain;
 
-        //     sp->ptr++;
-        //     if (sp->ptr >= sp->length)
-        //     {
-        //         sp->ptr = 0;
-        //         sp->state = PlayState::STOPPED;
-        //     }
-        // }
+            sp->ptr++;
+            if (sp->ptr >= sp->length)
+            {
+                sp->ptr = 0;
+                sp->state = PlayState::STOPPED;
+            }
+        }
 
         outputs[0][i] = y;
         outputs[1][i] = y;
@@ -599,13 +602,41 @@ void WAIVESampler::renderSample()
     }
 }
 
-void WAIVESampler::loadSamplePlayer(int i, std::vector<float> *waveform, int length)
+void WAIVESampler::loadSamplePlayer(const int id, const int slot)
 {
-    SamplePlayer *sp = &samplePlayers[i];
+    LOG_LOCATION
+    std::shared_ptr<SampleInfo> info = nullptr;
+    // TODO: implement more efficient search
+    for (int i = 0; i < fAllSamples.size(); i++)
+    {
+        if (fAllSamples[i]->getId() != id)
+            continue;
+
+        info = fAllSamples[i];
+        break;
+    }
+
+    if (info == nullptr)
+    {
+        std::cerr << "Could not load sample " << id << std::endl;
+        return;
+    }
+
+    int length = loadWaveform((fCacheDir / info->path / info->name).c_str(), &samplePlayerWaveforms[slot]);
+
+    if (length == 0)
+    {
+        std::cerr << "Sample " << id << " waveform length 0" << std::endl;
+        return;
+    }
+
+    SamplePlayer *sp = &samplePlayers[slot];
     sp->state = PlayState::STOPPED;
     sp->ptr = 0;
     sp->length = length;
-    sp->waveform = waveform;
+    sp->waveform = &samplePlayerWaveforms[slot];
+    sp->active = true;
+    sp->sampleInfo = info;
 
     addToUpdateQueue(kSlotLoaded);
 }

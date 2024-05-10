@@ -24,6 +24,17 @@ void Menu::addItem(const char *item)
     items.push_back(item);
 }
 
+void Menu::setDisplayNumber(int number)
+{
+    display_number = number;
+    Rectangle<float> bounds;
+    fontSize(font_size);
+    fontFaceId(font);
+    textBounds(0, 0, "item 1", nullptr, bounds);
+
+    setHeight(display_number * (bounds.getHeight() + 4));
+}
+
 void Menu::onNanoDisplay()
 {
     if (!isVisible())
@@ -61,7 +72,7 @@ void Menu::onNanoDisplay()
         fontFaceId(font);
         fillColor(text_color);
         textAlign(Align::ALIGN_LEFT | Align::ALIGN_TOP);
-        text(2, i * item_height, items[scroll_index + i], nullptr);
+        text(2, i * item_height + 2, items[scroll_index + i], nullptr);
         closePath();
     }
 
@@ -92,13 +103,11 @@ bool Menu::onMouse(const MouseEvent &ev)
         if (highlighted_item < 0)
             return true;
 
-        // select element
-        std::cout << " SELECTED " << highlighted_item << ": " << items[highlighted_item] << std::endl;
-
         if (callback != nullptr)
             callback->onMenuItemSelection(this, highlighted_item);
 
         hide();
+        repaint();
         return true;
     }
 
@@ -142,8 +151,12 @@ bool Menu::onScroll(const ScrollEvent &ev)
         delta = -1;
 
     int max_scroll_index = std::max(0, (int)items.size() - display_number);
-    scroll_index += delta;
+    scroll_index -= delta;
     scroll_index = std::clamp(scroll_index, 0, max_scroll_index);
+
+    const float height = getHeight();
+    const float item_height = height / display_number;
+    highlighted_item = scroll_index + std::floor(ev.pos.getY() / item_height);
 
     repaint();
     return true;

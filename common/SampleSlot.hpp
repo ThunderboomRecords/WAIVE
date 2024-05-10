@@ -1,13 +1,17 @@
 #ifndef SAMPLE_SLOT_HPP_INCLUDED
 #define SAMPLE_SLOT_HPP_INCLUDED
 
+#include <iostream>
+
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
-#include "DragDrop.hpp"
-#include <iostream>
+
+#include <fmt/core.h>
 
 #include "WAIVESampler.hpp"
+
+using namespace fmt::v10;
 
 START_NAMESPACE_DISTRHO
 

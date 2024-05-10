@@ -56,6 +56,7 @@ protected:
     void knobDragFinished(Knob *knob, float value) override;
     void knobValueChanged(Knob *knob, float value) override;
     void mapSampleSelected(int id) override;
+    void mapSampleLoadSlot(int index, int slot) override;
 
 private:
     float fScale;
@@ -93,8 +94,8 @@ Knob3D *createWAIVEKnob(
 void createSampleSlots(
     Widget *parent,
     std::vector<SampleSlot *> *slots,
+    std::vector<SamplePlayer> *players,
     VBox *container,
-    int n,
     float height);
 
 UI *createUI()

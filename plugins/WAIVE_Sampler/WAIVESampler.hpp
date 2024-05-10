@@ -41,11 +41,13 @@ enum PlayState
 
 struct SamplePlayer
 {
-    std::vector<float> *waveform;
-    int length;
+    std::vector<float> *waveform = nullptr;
+    int length = 0;
     int ptr = 0;
     float gain = 1.0f;
     PlayState state = PlayState::STOPPED;
+    bool active = false;
+    std::shared_ptr<SampleInfo> sampleInfo = nullptr;
 };
 
 class WAIVESampler : public Plugin
@@ -113,7 +115,7 @@ protected:
     void addToLibrary();
     bool saveSamples();
     void renderSample();
-    void loadSamplePlayer(int i, std::vector<float> *waveform, int length);
+    void loadSamplePlayer(const int index, const int slot);
     void getEmbedding();
     void analyseWaveform();
 
@@ -137,6 +139,7 @@ private:
 
     SamplePlayer previewPlayer;
     std::vector<SamplePlayer> samplePlayers;
+    std::vector<std::vector<float>> samplePlayerWaveforms;
 
     std::queue<int> updateQueue;
 

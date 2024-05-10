@@ -25,8 +25,7 @@ public:
     void setFont(const char *name, const uchar *data, uint dataSize);
     void setCallback(Callback *cb);
     void addItem(const char *item);
-
-    int display_number;
+    void setDisplayNumber(int number);
 
     Color background_color, text_color, highlight_color, border_color;
 
@@ -44,6 +43,7 @@ private:
     std::vector<const char *> items;
     int highlighted_item;
     int scroll_index;
+    int display_number;
 
     DISTRHO_LEAK_DETECTOR(Menu);
 };

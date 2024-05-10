@@ -23,6 +23,7 @@ public:
     public:
         virtual ~Callback(){};
         virtual void mapSampleSelected(int id) = 0;
+        virtual void mapSampleLoadSlot(int index, int slot) = 0;
     };
 
     explicit SampleMap(Widget *widget) noexcept;
@@ -32,7 +33,7 @@ public:
 
     std::vector<std::shared_ptr<SampleInfo>> *allSamples;
     std::shared_ptr<SampleInfo> *selectedSample;
-    int highlightSample;
+    int highlightSample, contextMenuSample;
 
     Menu *menu;
 

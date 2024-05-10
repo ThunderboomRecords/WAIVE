@@ -14,6 +14,7 @@ SampleMap::SampleMap(Widget *widget) noexcept
       centerPos({0.0, 0.0}),
       dragAction(DragAction::NONE),
       highlightSample(-1),
+      contextMenuSample(-1),
       selectedSample(nullptr),
       callback(nullptr)
 {
@@ -59,26 +60,27 @@ bool SampleMap::onMouse(const MouseEvent &ev)
             dragAction = CLICKING;
         else if (ev.button == MouseButton::kMouseButtonRight)
         {
-            menu->setAbsolutePos(
-                ev.pos.getX() + getAbsoluteX() - 2,
-                ev.pos.getY() + getAbsoluteY() - 2);
-            menu->show();
+            if (highlightSample >= 0)
+            {
+                contextMenuSample = highlightSample;
+                menu->setAbsolutePos(
+                    ev.pos.getX() + getAbsoluteX() - 2,
+                    ev.pos.getY() + getAbsoluteY() - 2);
+                menu->show();
+            }
         }
         return true;
     }
-    else if (!ev.press && dragAction != NONE)
+    else if (!ev.press && ev.button == MouseButton::kMouseButtonLeft && dragAction != NONE)
     {
-        // dragging = false;
         switch (dragAction)
         {
         case CLICKING:
-            // select
             if (highlightSample >= 0 && callback != nullptr)
             {
                 callback->mapSampleSelected(highlightSample);
             }
             break;
-
         case SCROLLING:
             break;
         default:
@@ -195,7 +197,9 @@ bool SampleMap::onScroll(const ScrollEvent &ev)
 
 void SampleMap::onMenuItemSelection(Menu *menu, int item)
 {
-    std::cout << "SampleMap::onMenuItemSelection" << std::endl;
+    // std::cout << "put sample " << contextMenuSample << " into slot " << item << std::endl;
+    if (callback != nullptr)
+        callback->mapSampleLoadSlot(contextMenuSample, item);
 }
 
 Color SampleMap::get2DColor(float x, float y)

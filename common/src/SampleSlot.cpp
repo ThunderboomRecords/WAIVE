@@ -9,6 +9,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
       active(false),
       samplePlayer(nullptr)
 {
+    loadSharedResources();
 }
 
 bool SampleSlot::onMouse(const MouseEvent &ev) { return false; }
@@ -35,7 +36,25 @@ void SampleSlot::onNanoDisplay()
     stroke();
     closePath();
 
-    // play button
+    // sample info
+    if (samplePlayer != nullptr && samplePlayer->active)
+    {
+        std::string state;
+        if (samplePlayer->state == PlayState::PLAYING)
+            state = "playing";
+        else
+            state = "stopped";
+
+        std::string info = fmt::format("Sample {:d}: {}", samplePlayer->sampleInfo->getId(), state);
+
+        beginPath();
+        fontSize(16.0f);
+        fillColor(Color(30, 30, 30));
+        textAlign(Align::ALIGN_MIDDLE);
+        fontFaceId(0);
+        text(0, height / 2, info.c_str(), nullptr);
+        closePath();
+    }
 }
 
 END_NAMESPACE_DISTRHO
