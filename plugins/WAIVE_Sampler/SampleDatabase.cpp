@@ -1,24 +1,24 @@
 #include "SampleDatabase.hpp"
 
 SampleInfo::SampleInfo(
-    int id_,
-    std::string name_,
-    std::string path_,
-    bool waive_) : id(id_),
-                   source(""),
-                   embedX(0.0f),
-                   embedY(0.0f),
-                   tags(""),
-                   volume(1.0f),
-                   pitch(1.0f),
-                   sustainLength(10.0f),
-                   sourceStart(0),
-                   sampleLength(0),
-                   saved(false)
+    int id,
+    std::string name,
+    std::string path,
+    bool waive) : id(id),
+                  source(""),
+                  embedX(0.0f),
+                  embedY(0.0f),
+                  tags(""),
+                  volume(1.0f),
+                  pitch(1.0f),
+                  sustainLength(10.0f),
+                  sourceStart(0),
+                  sampleLength(0),
+                  saved(false),
+                  name(name),
+                  path(path),
+                  waive(waive)
 {
-    name = name_;
-    path = path_;
-    waive = waive_;
 }
 
 json serialiseSampleInfo(std::shared_ptr<SampleInfo> s)
@@ -44,33 +44,44 @@ json serialiseSampleInfo(std::shared_ptr<SampleInfo> s)
         {"pitch", s->pitch},
     };
     data["tags"] = s->tags;
+    data["saved"] = s->saved;
     return data;
 }
 
 std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data)
 {
-    std::shared_ptr<SampleInfo> s(new SampleInfo(data["id"], data["name"], data["path"], data["waive"]));
-    s->embedX = data["embedding"]["x"];
-    s->embedY = data["embedding"]["y"];
-    s->tags = data["tags"];
-    s->sampleLength = data["sampleLength"];
-    if (s->waive)
+    try
     {
-        s->source = data["source"];
-        s->sourceStart = data["sourceStart"];
-        s->volume = data["parameters"]["volume"];
-        s->pitch = data["parameters"]["pitch"];
-        ADSR_Params adsr = {
-            data["ampEnv"]["attack"],
-            data["ampEnv"]["decay"],
-            data["ampEnv"]["sustain"],
-            data["ampEnv"]["release"],
-        };
-        s->adsr = adsr;
-        s->sustainLength = data["ampEnv"]["sustainLength"];
+        std::shared_ptr<SampleInfo> s(new SampleInfo(data["id"], data["name"], data["path"], data["waive"]));
+        s->embedX = data["embedding"]["x"];
+        s->embedY = data["embedding"]["y"];
+        s->tags = data["tags"];
+        s->sampleLength = data["sampleLength"];
+        if (s->waive)
+        {
+            s->source = data["source"];
+            s->sourceStart = data["sourceStart"];
+            s->volume = data["parameters"]["volume"];
+            s->pitch = data["parameters"]["pitch"];
+            ADSR_Params adsr = {
+                data["ampEnv"]["attack"],
+                data["ampEnv"]["decay"],
+                data["ampEnv"]["sustain"],
+                data["ampEnv"]["release"],
+            };
+            s->adsr = adsr;
+            s->sustainLength = data["ampEnv"]["sustainLength"];
+        }
+        s->saved = data["saved"];
+        return s;
+    }
+    catch (const json::exception &e)
+    {
+        std::cout << "Failed to load sample data" << std::endl;
+        std::cerr << e.what() << '\n';
     }
 
-    return s;
+    return nullptr;
 }
 
 bool saveJson(json data, std::string fp)

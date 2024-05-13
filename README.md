@@ -14,7 +14,10 @@ AI x Archive music tools
 
 A plugin suite that combines music, sound and MIDI generation with European cultural archives. 
 Aims to be an offline, modular version of [WAIVE-studio](https://www.waive.studio/) that can be integrated into your DAW.
-Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX Runtime](https://github.com/microsoft/onnxruntime). 
+Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX Runtime](https://github.com/microsoft/onnxruntime).
+
+- **WAIVE-Midi**: a rhythmic pattern generator
+- **WAIVE-Sampler**: a sample player, sample library and sample generator in one
 
 ### Installation
 1. Download and extract the zip archive containing the binaries for you system in the [Releases](https://github.com/ThunderboomRecords/WAIVE/releases) page, under the heading "Assets".

@@ -15,7 +15,6 @@ dpf_add_plugin(
   FILES_UI
       WAIVESamplerUI.cpp
       ${CMAKE_SOURCE_DIR}/common/fonts.h
-      # ${CMAKE_SOURCE_DIR}/common/src/DragDrop.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
@@ -24,6 +23,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/Knob3D.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Label.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Waveform.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/TextInput.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SampleMap.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SampleSlot.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp

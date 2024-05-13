@@ -49,9 +49,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
         auto samples = data["samples"];
         for (int i = 0; i < samples.size(); i++)
         {
-            // std::cout << samples.at(i) << std::endl;
             std::shared_ptr<SampleInfo> s = deserialiseSampleInfo(samples.at(i));
-            fAllSamples.push_back(s);
+            if (s != nullptr)
+                fAllSamples.push_back(s);
         }
     }
     else
@@ -80,6 +80,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 WAIVESampler::~WAIVESampler()
 {
     std::cout << "closing WAIVESampler..." << std::endl;
+    saveSamples();
 }
 
 void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
@@ -179,7 +180,7 @@ float WAIVESampler::getParameterValue(uint32_t index) const
 
 void WAIVESampler::setParameterValue(uint32_t index, float value)
 {
-    std::cout << "WAIVESampler::setParameterValue : " << index << " -> " << value << std::endl;
+    // std::cout << "WAIVESampler::setParameterValue : " << index << " -> " << value << std::endl;
     switch (index)
     {
     case kSampleVolume:
@@ -254,7 +255,7 @@ void WAIVESampler::run(
     uint32_t midiEventCount      // Number of MIDI events in block
 )
 {
-    previewMtx.lock();
+    samplePlayerMtx.lock();
     if (previewPlayer.length > 0 && previewPlayer.state == PlayState::TRIGGERED)
     {
         previewPlayer.ptr = 0;
@@ -353,7 +354,7 @@ void WAIVESampler::run(
         outputs[1][i] = y;
     }
 
-    previewMtx.unlock();
+    samplePlayerMtx.unlock();
 }
 
 void WAIVESampler::loadSource(const char *fp)
@@ -465,8 +466,12 @@ void WAIVESampler::addToLibrary()
 {
     LOG_LOCATION
 
+    // reload any sampleSlots that
+
     if (!fSampleLoaded || fCurrentSample == nullptr)
         return;
+
+    fCurrentSample->saved = true;
 
     saveWaveform((fCacheDir / fCurrentSample->path / fCurrentSample->name).c_str(), &fSampleWaveform[0], fSampleWaveform.size());
     fAllSamples.push_back(fCurrentSample);
@@ -496,6 +501,7 @@ void WAIVESampler::newSample()
         s->embedY = fCurrentSample->embedY;
     }
     s->adsr = ADSR_Params(ampEnvGen.getADSR());
+    s->saved = false;
 
     fCurrentSample = s;
 
@@ -595,11 +601,11 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
 
 void WAIVESampler::renderSample()
 {
-    LOG_LOCATION
+    // LOG_LOCATION
     if (!fSampleLoaded || fCurrentSample == nullptr)
         return;
 
-    previewMtx.lock();
+    samplePlayerMtx.lock();
 
     fSampleLoaded = false;
     fCurrentSample->sampleLength = ampEnvGen.getLength(fCurrentSample->sustainLength);
@@ -650,16 +656,17 @@ void WAIVESampler::renderSample()
         amp = ampEnvGen.getValue();
     }
 
-    LOG_LOCATION
+    // LOG_LOCATION
 
     getEmbedding();
     fSampleLoaded = true;
     addToUpdateQueue(kSampleUpdated);
-    previewMtx.unlock();
+    samplePlayerMtx.unlock();
 }
 
 void WAIVESampler::loadSamplePlayer(const int id, const int slot)
 {
+    samplePlayerMtx.lock();
     LOG_LOCATION
     std::shared_ptr<SampleInfo> info = nullptr;
     // TODO: implement more efficient search
@@ -695,6 +702,7 @@ void WAIVESampler::loadSamplePlayer(const int id, const int slot)
     sp->sampleInfo = info;
 
     addToUpdateQueue(kSlotLoaded);
+    samplePlayerMtx.unlock();
 }
 
 void WAIVESampler::triggerPreview()
@@ -709,23 +717,14 @@ void WAIVESampler::triggerPreview()
 void WAIVESampler::getEmbedding()
 {
     // TODO: placeholder is random for now
-    // float embedX = (float)(rand() % 10000) / 5000.0f - 1.0f;
-    // float embedY = (float)(rand() % 10000) / 5000.0f - 1.0f;
-
-    std::cout << fCurrentSample->getId() << std::endl;
-
     int x = ((long)fCurrentSample->getId() * 987) % 10000;
     int y = ((long)fCurrentSample->getId() * 12345) % 10000;
-
-    std::cout << x << " " << y << std::endl;
 
     float embedX = (float)x / 5000.0f - 1.0f;
     float embedY = (float)y / 5000.0f - 1.0f;
 
     fCurrentSample->embedX = embedX;
     fCurrentSample->embedY = embedY;
-
-    std::cout << embedX << " " << embedY << std::endl;
 }
 
 void WAIVESampler::analyseWaveform()

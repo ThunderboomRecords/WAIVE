@@ -45,6 +45,12 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     Layout::rightOf(new_sample_btn, sample_controls_label, Widget_Align::CENTER, 20);
     new_sample_btn->setCallback(this);
 
+    sample_name = new TextInput(this);
+    sample_name->setText("testing");
+    sample_name->setSize(160, 20);
+    Layout::rightOf(sample_name, new_sample_btn, Widget_Align::CENTER, 20);
+    sample_name->setCallback(this);
+
     source_display = new Waveform(this);
     source_display->setSize(UI_W - 20, 80);
     Layout::below(source_display, sample_controls_label, Widget_Align::START, 5);
@@ -205,24 +211,6 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
     repaint();
 }
 
-void WAIVESamplerUI::buttonClicked(Button *button)
-{
-    LOG_LOCATION
-    if (button == open_btn)
-        requestStateFile("filename");
-    else if (button == save_sample_btn)
-        plugin->addToLibrary();
-    else if (button == play_btn)
-        plugin->previewPlayer.state = PlayState::TRIGGERED;
-    else if (button == new_sample_btn)
-        plugin->newSample();
-}
-
-void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
-{
-    plugin->selectWaveform(&plugin->fSourceWaveform, (int)selectionStart);
-}
-
 void WAIVESamplerUI::knobDragStarted(Knob *knob)
 {
     value_indicator->setAbsoluteX(knob->getAbsoluteX());
@@ -247,6 +235,26 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
     value_indicator->setValue(knob->getValue());
 }
 
+void WAIVESamplerUI::buttonClicked(Button *button)
+{
+    LOG_LOCATION
+    if (button == open_btn)
+        requestStateFile("filename");
+    else if (button == save_sample_btn)
+        plugin->addToLibrary();
+    else if (button == play_btn)
+        plugin->previewPlayer.state = PlayState::TRIGGERED;
+    else if (button == new_sample_btn)
+        plugin->newSample();
+
+    repaint();
+}
+
+void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
+{
+    plugin->selectWaveform(&plugin->fSourceWaveform, (int)selectionStart);
+}
+
 void WAIVESamplerUI::mapSampleSelected(int id)
 {
     plugin->loadSample(id);
@@ -255,8 +263,12 @@ void WAIVESamplerUI::mapSampleSelected(int id)
 
 void WAIVESamplerUI::mapSampleLoadSlot(int index, int slot)
 {
-    LOG_LOCATION
     plugin->loadSamplePlayer(index, slot);
+}
+
+void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
+{
+    std::cout << "WAIVESamplerUI::textEntered " << text << std::endl;
 }
 
 void WAIVESamplerUI::onNanoDisplay()
@@ -314,6 +326,10 @@ void WAIVESamplerUI::idleCallback()
             {
                 sample_display->waveformLength = plugin->fCurrentSample->sampleLength;
                 sample_display->waveformUpdated();
+                if (plugin->fCurrentSample->saved)
+                    save_sample_btn->setLabel("update");
+                else
+                    save_sample_btn->setLabel("add");
             }
             break;
         case kSampleAdded:
@@ -326,6 +342,14 @@ void WAIVESamplerUI::idleCallback()
                 volume->setValue(plugin->fCurrentSample->volume, false);
                 sustainLength->setValue(plugin->fCurrentSample->sustainLength, false);
                 source_display->setSelection(plugin->fCurrentSample->sourceStart, false);
+                if (plugin->fCurrentSample->saved)
+                    save_sample_btn->setLabel("update");
+                else
+                    save_sample_btn->setLabel("add");
+            }
+            else
+            {
+                save_sample_btn->setLabel("add");
             }
 
             ampAttack->setValue(plugin->ampEnvGen.getAttack(), false);

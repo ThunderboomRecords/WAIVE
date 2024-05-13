@@ -212,8 +212,6 @@ void EnvGen::process()
 
 int EnvGen::getLength(float sustain_time = 0.0f) const
 {
-    printf("adr: %.2f %.2f %.2f, sampleRate: %d \n", adsr.attack, adsr.decay, adsr.release, sampleRate);
-
     float ms = 0.0f;
     switch (type)
     {

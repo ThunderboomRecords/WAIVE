@@ -141,7 +141,7 @@ private:
 
     float fNormalisationRatio;
 
-    std::mutex previewMtx;
+    std::mutex samplePlayerMtx;
     SamplePlayer previewPlayer;
     std::vector<SamplePlayer> samplePlayers;
     std::vector<std::vector<float>> samplePlayerWaveforms;
@@ -150,6 +150,7 @@ private:
     std::queue<int> updateQueue;
 
     friend class WAIVESamplerUI;
+    friend class SampleEditorControls;
 };
 
 END_NAMESPACE_DISTRHO
