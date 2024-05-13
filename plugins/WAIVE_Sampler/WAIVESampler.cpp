@@ -62,9 +62,17 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     std::cout << "Number of samples found: " << fAllSamples.size() << std::endl;
 
     previewPlayer.waveform = &fSampleWaveform;
+    previewPlayer.active = true;
 
     samplePlayers.resize(8);
     samplePlayerWaveforms.resize(8);
+
+    std::fill_n(midiMap, 128, -1);
+    uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
+    for (int i = 0; i < 8; i++)
+    {
+        midiMap[defaultMidiMap[i]] = i;
+    }
 
     newSample();
 }
@@ -246,23 +254,60 @@ void WAIVESampler::run(
     uint32_t midiEventCount      // Number of MIDI events in block
 )
 {
+    previewMtx.lock();
     if (previewPlayer.length > 0 && previewPlayer.state == PlayState::TRIGGERED)
     {
         previewPlayer.ptr = 0;
         previewPlayer.state = PlayState::PLAYING;
     }
 
+    int midiIndex = 0;
     float y;
     for (uint32_t i = 0; i < numFrames; i++)
     {
 
         // Parse Midi Messages
-        // TODO
+        while (midiIndex < midiEventCount && midiEvents[midiIndex].frame == i)
+        {
+            if (midiEvents[midiIndex].size > MidiEvent::kDataSize)
+                continue;
+
+            uint8_t status = midiEvents[midiIndex].data[0];
+            uint8_t data1 = midiEvents[midiIndex].data[1];
+            uint8_t data2 = midiEvents[midiIndex].data[2];
+
+            uint8_t channel = status & 0xF;
+            uint8_t type = status >> 4;
+
+            uint8_t note = data1;
+            uint8_t velocity = data2;
+            // std::cout << "noteOn: " << type << " " << note << ":" << velocity << std::endl;
+            printf("type: %02X data1: %02X (%d) data2: %02X (%d) \n", type, note, note, velocity, velocity);
+
+            if (type == 0x8 || (type == 0x9 && velocity == 0))
+            {
+                /* NoteOff */
+
+                // do nothing for now.. set release?
+            }
+            else if (type == 0x9)
+            {
+                /* NoteOn */
+
+                if (midiMap[note] > -1 && midiMap[note] < samplePlayers.size())
+                {
+                    if (samplePlayers[midiMap[note]].active)
+                        samplePlayers[midiMap[note]].state = PlayState::TRIGGERED;
+                }
+            }
+
+            midiIndex++;
+        }
 
         // Mix sample players outputs
         y = 0.0f;
 
-        if (previewPlayer.state == PlayState::PLAYING)
+        if (previewPlayer.active && previewPlayer.state == PlayState::PLAYING)
         {
             y += previewPlayer.waveform->at(previewPlayer.ptr) * previewPlayer.gain;
 
@@ -276,11 +321,25 @@ void WAIVESampler::run(
 
         for (int j = 0; j < samplePlayers.size(); j++)
         {
-            if (samplePlayers[j].state == PlayState::STOPPED)
+            if (!previewPlayer.active || samplePlayers[j].state == PlayState::STOPPED)
                 continue;
 
             SamplePlayer *sp = &samplePlayers[j];
-            y += sp->waveform->at(sp->ptr) * sp->gain;
+
+            if (sp->state == PlayState::TRIGGERED)
+            {
+                if (sp->length == 0)
+                {
+                    sp->state = PlayState::STOPPED;
+                }
+                else
+                {
+                    sp->state = PlayState::PLAYING;
+                    sp->ptr = 0;
+                }
+            }
+
+            y += sp->waveform->at(sp->ptr) * sp->gain * sp->velocity;
 
             sp->ptr++;
             if (sp->ptr >= sp->length)
@@ -293,6 +352,8 @@ void WAIVESampler::run(
         outputs[0][i] = y;
         outputs[1][i] = y;
     }
+
+    previewMtx.unlock();
 }
 
 void WAIVESampler::loadSource(const char *fp)
@@ -538,13 +599,13 @@ void WAIVESampler::renderSample()
     if (!fSampleLoaded || fCurrentSample == nullptr)
         return;
 
+    previewMtx.lock();
+
     fSampleLoaded = false;
     fCurrentSample->sampleLength = ampEnvGen.getLength(fCurrentSample->sustainLength);
     fCurrentSample->sampleLength = std::min(fCurrentSample->sampleLength, fSourceLength - fCurrentSample->sourceStart);
     previewPlayer.length = fCurrentSample->sampleLength;
-
-    // std::cout << fSampleLength << << std::endl;
-    printf("%d %d %d\n", fCurrentSample->sampleLength, fSourceLength, fCurrentSample->sourceStart);
+    previewPlayer.ptr = 0;
 
     auto minmax = std::minmax_element(
         &fSourceWaveform[fCurrentSample->sourceStart],
@@ -553,7 +614,6 @@ void WAIVESampler::renderSample()
     if (std::abs(normaliseRatio) <= 0.0001f)
         normaliseRatio = 1.0f;
 
-    // if (fSampleWaveform.size() < fSampleLength)
     fSampleWaveform.resize(fCurrentSample->sampleLength);
 
     ampEnvGen.reset();
@@ -595,11 +655,7 @@ void WAIVESampler::renderSample()
     getEmbedding();
     fSampleLoaded = true;
     addToUpdateQueue(kSampleUpdated);
-    if (previewPlayer.state == PlayState::STOPPED)
-    {
-        previewPlayer.ptr = 0;
-        previewPlayer.state = PlayState::TRIGGERED;
-    }
+    previewMtx.unlock();
 }
 
 void WAIVESampler::loadSamplePlayer(const int id, const int slot)
@@ -639,6 +695,15 @@ void WAIVESampler::loadSamplePlayer(const int id, const int slot)
     sp->sampleInfo = info;
 
     addToUpdateQueue(kSlotLoaded);
+}
+
+void WAIVESampler::triggerPreview()
+{
+    if (previewPlayer.state == PlayState::STOPPED)
+    {
+        previewPlayer.ptr = 0;
+        previewPlayer.state = PlayState::TRIGGERED;
+    }
 }
 
 void WAIVESampler::getEmbedding()

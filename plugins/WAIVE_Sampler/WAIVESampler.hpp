@@ -8,9 +8,11 @@
 #include <queue>
 #include <filesystem>
 #include <fstream>
-#include <thread>
+// #include <thread>
+#include <mutex>
 #include <stdlib.h>
 #include <time.h>
+#include <algorithm>
 
 #include <fmt/core.h>
 #include <sndfile.hh>
@@ -45,6 +47,7 @@ struct SamplePlayer
     int length = 0;
     int ptr = 0;
     float gain = 1.0f;
+    float velocity = 0.8f;
     PlayState state = PlayState::STOPPED;
     bool active = false;
     std::shared_ptr<SampleInfo> sampleInfo = nullptr;
@@ -116,6 +119,7 @@ protected:
     bool saveSamples();
     void renderSample();
     void loadSamplePlayer(const int index, const int slot);
+    void triggerPreview();
     void getEmbedding();
     void analyseWaveform();
 
@@ -137,9 +141,11 @@ private:
 
     float fNormalisationRatio;
 
+    std::mutex previewMtx;
     SamplePlayer previewPlayer;
     std::vector<SamplePlayer> samplePlayers;
     std::vector<std::vector<float>> samplePlayerWaveforms;
+    int midiMap[128];
 
     std::queue<int> updateQueue;
 

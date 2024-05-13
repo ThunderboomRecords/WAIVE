@@ -237,6 +237,8 @@ void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 {
     value_indicator->hide();
     repaint();
+
+    plugin->triggerPreview();
 }
 
 void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
@@ -248,6 +250,7 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 void WAIVESamplerUI::mapSampleSelected(int id)
 {
     plugin->loadSample(id);
+    plugin->triggerPreview();
 }
 
 void WAIVESamplerUI::mapSampleLoadSlot(int index, int slot)
