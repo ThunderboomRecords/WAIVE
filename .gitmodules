@@ -10,3 +10,9 @@
 [submodule "external/nlohmann_json"]
 	path = external/nlohmann_json
 	url = https://github.com/nlohmann/json.git
+[submodule "external/Gist"]
+	path = external/Gist
+	url = https://github.com/adamstark/Gist.git
+[submodule "external/kissfft"]
+	path = external/kissfft
+	url = https://github.com/mborgerding/kissfft.git

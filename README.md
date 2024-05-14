@@ -51,7 +51,6 @@ Requires cmake:
 Requires already installed:
 - [`libsndfile`](https://libsndfile.github.io/libsndfile/)
 - [`fmt`](https://fmt.dev/latest/index.html) 
-- ['Sqlite3'](https://www.sqlite.org/)
 
 #### Linux/macOS
 ```shell
@@ -84,3 +83,7 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 - [LibrosaCpp](https://github.com/ewan-xu/LibrosaCpp/tree/main) Apache-2.0
 - [libsndfile](https://github.com/libsndfile/libsndfile?tab=LGPL-2.1-1-ov-file) LGPL-2.1 
 - [VG5000 font](https://velvetyne.fr/fonts/vg5000/) SIL Open Font License, Version 1.1
+- [kissfft](https://github.com/mborgerding/kissfft) BSD-3-Clause
+- [Gist](https://github.com/adamstark/Gist) GPL-3.0 license
+- [libsamplerate](https://github.com/libsndfile/libsamplerate) BSD-3-Clause
+- [nlohmann/json](https://github.com/nlohmann/json) MIT

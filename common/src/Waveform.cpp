@@ -15,7 +15,9 @@ Waveform::Waveform(Widget *widget) noexcept
       visibleStart(0),
       visibleEnd(100),
       reduced(false),
-      wf(nullptr)
+      wf(nullptr),
+      wfFeatures(nullptr),
+      featureHighlight(-1)
 {
 }
 
@@ -23,6 +25,11 @@ void Waveform::setWaveform(std::vector<float> *wf_)
 {
     waveformCached = false;
     wf = wf_;
+}
+
+void Waveform::setWaveformFeatures(std::vector<WaveformFeature> *wfFeatures_)
+{
+    wfFeatures = wfFeatures_;
 }
 
 void Waveform::setSelection(int start, bool sendCallback = false)
@@ -105,6 +112,8 @@ void Waveform::onNanoDisplay()
     const int height = getHeight();
     const int half = height / 2;
 
+    float range = visibleEnd - visibleStart;
+
     beginPath();
     fillColor(backgroundColor);
     rect(0, 0, width, height);
@@ -135,13 +144,39 @@ void Waveform::onNanoDisplay()
     //  draw highlighted region
     if (selectable)
     {
-        float cursorPosStart = (float)(waveformSelectStart - visibleStart) / (visibleEnd - visibleStart);
+        float cursorPosStart = (float)(waveformSelectStart - visibleStart) / range;
         float x1 = width * std::clamp(cursorPosStart, 0.0f, 1.0f);
         beginPath();
         fillColor(Color(255, 200, 0, 0.8f));
         rect(x1, 0, 2, height);
         fill();
         closePath();
+    }
+
+    if (wfFeatures != nullptr)
+    {
+        for (int i = 0; i < wfFeatures->size(); i++)
+        {
+            WaveformFeature f = wfFeatures->at(i);
+            if (f.type == FeatureType::Onset)
+            {
+                float onsetStart = (float)(f.start - visibleStart) / range;
+
+                if (onsetStart > 1.0f || onsetStart < 0.0f)
+                    continue;
+
+                beginPath();
+                strokeColor(255, 0, 255);
+                if (i == featureHighlight)
+                    strokeWidth(3.0f);
+                else
+                    strokeWidth(1.0f);
+                moveTo(onsetStart * width, 0);
+                lineTo(onsetStart * width, height);
+                stroke();
+                closePath();
+            }
+        }
     }
 
     // draw minimap if zoomed in
@@ -223,8 +258,20 @@ bool Waveform::onMouse(const MouseEvent &ev)
 
 bool Waveform::onMotion(const MotionEvent &ev)
 {
+    // featureHighlight = -1;
     if (dragAction == NONE)
-        return false;
+    {
+        if (!contains(ev.pos))
+            return false;
+
+        int f = getNearestFeature(ev.pos.getX());
+        if (featureHighlight != f)
+        {
+            featureHighlight = f;
+            repaint();
+        }
+        return true;
+    }
 
     if (dragAction == CLICKING)
     {
@@ -245,10 +292,10 @@ bool Waveform::onMotion(const MotionEvent &ev)
         }
     }
 
-    int range = visibleEnd - visibleStart;
+    // int range = visibleEnd - visibleStart;
 
-    int cursorPos = (int)(range * (ev.pos.getX() / getWidth()));
-    cursorPos = std::clamp(cursorPos, 0, (int)range);
+    // int cursorPos = (int)(range * (ev.pos.getX() / getWidth()));
+    // cursorPos = std::clamp(cursorPos, 0, (int)range);
 
     float dX;
     int dV;
@@ -266,6 +313,9 @@ bool Waveform::onMotion(const MotionEvent &ev)
 
         if (visibleEnd + dV >= waveformLength)
             dV = waveformLength - visibleEnd;
+
+        if (dV == 0)
+            break;
 
         visibleEnd += dV;
         visibleStart += dV;
@@ -304,6 +354,30 @@ bool Waveform::onScroll(const ScrollEvent &ev)
 
     calculateWaveform();
     return true;
+}
+
+int Waveform::getNearestFeature(float x)
+{
+    if (wfFeatures == nullptr)
+        return -1;
+
+    float width = getWidth();
+    float range = visibleEnd - visibleStart;
+
+    int index = -1;
+
+    // find nearest feature and set to highlight
+    for (int i = 0; i < wfFeatures->size(); i++)
+    {
+        float fX = (float)(wfFeatures->at(i).start - visibleStart) / range;
+        if (fX < 0.0f || fX >= 1.0f)
+            continue;
+
+        if (std::abs(x - fX * width) < 4.0f)
+            index = i;
+    }
+
+    return index;
 }
 
 void Waveform::setCallback(Callback *cb)

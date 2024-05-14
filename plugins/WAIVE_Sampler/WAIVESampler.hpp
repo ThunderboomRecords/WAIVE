@@ -22,9 +22,11 @@
 #include "WAIVESamplerParams.h"
 #include "SampleDatabase.hpp"
 #include "Envelopes.hpp"
+#include "WaveformFeatures.hpp"
 
 #include <librosa.h>
 #include "samplerate.h"
+#include "Gist.h"
 
 #define MAX_PATH 128
 
@@ -123,6 +125,7 @@ protected:
     void triggerPreview();
     void getEmbedding();
     void analyseWaveform();
+    void getOnsets();
 
     EnvGen ampEnvGen;
 
@@ -130,6 +133,8 @@ private:
     void addToUpdateQueue(int ev);
 
     float sampleRate;
+
+    Gist<float> gist;
 
     fs::path fCacheDir;
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
@@ -139,6 +144,7 @@ private:
     std::vector<float> fSourceWaveform, fSampleWaveform;
     bool fSourceLoaded, fSampleLoaded;
     int fSourceLength;
+    std::vector<WaveformFeature> fSourceFeatures;
 
     float fNormalisationRatio;
 

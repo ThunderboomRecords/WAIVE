@@ -1,11 +1,13 @@
 #ifndef WAVEFORM_HPP
 #define WAVEFORM_HPP
 
+#include <iostream>
+#include <vector>
+
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
-#include <vector>
-#include <iostream>
+#include "WaveformFeatures.hpp"
 
 #ifndef LOG_LOCATION
 #define LOG_LOCATION std::cout << __func__ << "():  " << __FILE__ << ":" << __LINE__ << std::endl;
@@ -26,6 +28,7 @@ public:
     explicit Waveform(Widget *widget) noexcept;
     void setCallback(Callback *cb);
     void setWaveform(std::vector<float> *wf);
+    void setWaveformFeatures(std::vector<WaveformFeature> *wfFeatures);
     void setSelection(int start, bool sendCallback);
     void waveformNew();
     void waveformUpdated();
@@ -50,6 +53,7 @@ private:
     };
 
     void calculateWaveform();
+    int getNearestFeature(float x);
 
     Callback *callback;
     std::vector<float> waveformMin, waveformMax;
@@ -61,6 +65,8 @@ private:
     int visibleStart, visibleEnd;
 
     std::vector<float> *wf;
+    std::vector<WaveformFeature> *wfFeatures;
+    int featureHighlight;
 
     DISTRHO_LEAK_DETECTOR(Waveform);
 };

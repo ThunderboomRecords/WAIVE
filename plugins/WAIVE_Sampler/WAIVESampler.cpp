@@ -19,7 +19,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fNormalisationRatio(1.0f),
                                fSourceLoaded(false),
                                fCurrentSample(nullptr),
-                               ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100})
+                               ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
+                               gist({512, (int)getSampleRate()})
 {
     if (isDummyInstance())
     {
@@ -370,6 +371,8 @@ void WAIVESampler::loadSource(const char *fp)
         fSourceLoaded = true;
         fCurrentSample->source = std::string(fp);
 
+        getOnsets();
+
         addToUpdateQueue(kSourceLoaded);
     }
     else
@@ -482,7 +485,7 @@ void WAIVESampler::addToLibrary()
 
 void WAIVESampler::newSample()
 {
-    LOG_LOCATION
+    // LOG_LOCATION
 
     // TODO: save current sample before creating a new one?
 
@@ -786,6 +789,33 @@ void WAIVESampler::analyseWaveform()
     printf(" %.d rows, %d cols\n", melspec.size(), melspec[0].size());
     printf(" value at (4, 5) = %.4f\n", melspec[4][5]);
     std::cout << std::endl;
+}
+
+void WAIVESampler::getOnsets()
+{
+    if (fSourceLength == 0)
+        return;
+
+    int frame = 0;
+    fSourceFeatures.clear();
+
+    while (frame < fSourceLength - gist.getAudioFrameSize())
+    {
+        gist.processAudioFrame(std::vector<float>(fSourceWaveform.begin() + frame, fSourceWaveform.begin() + frame + gist.getAudioFrameSize()));
+        float onset = gist.spectralDifferenceHWR();
+        if (onset > 100.0f)
+        {
+            fSourceFeatures.push_back({FeatureType::Onset,
+                                       "onset",
+                                       onset,
+                                       frame,
+                                       frame});
+
+            printf(" - Onset detected at %d (onset: %.2f)\n", frame, onset);
+        }
+
+        frame += gist.getAudioFrameSize();
+    }
 }
 
 void WAIVESampler::addToUpdateQueue(int ev)

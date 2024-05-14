@@ -58,6 +58,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     source_display->setCallback(this);
     source_display->lineColor = Color(255, 255, 255);
     source_display->setWaveform(&plugin->fSourceWaveform);
+    source_display->setWaveformFeatures(&plugin->fSourceFeatures);
 
     open_btn = new Button(this);
     open_btn->setLabel("import source");

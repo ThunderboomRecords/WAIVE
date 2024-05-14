@@ -51,7 +51,7 @@ message(FATAL_ERROR "Sndfile library not found")
 endif()
 
 find_package(fmt REQUIRED)
-find_package(SQLite3 REQUIRED)
+# find_package(fftw3 REQUIRED)
 
 target_include_directories(
   WAIVE_Sampler
@@ -61,8 +61,11 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/LibrosaCpp/librosa
     ${CMAKE_SOURCE_DIR}/external/libsamplerate/include
     ${CMAKE_SOURCE_DIR}/external/nlohmann_json/single_include
+    ${CMAKE_SOURCE_DIR}/external/Gist/src
+    ${CMAKE_SOURCE_DIR}/external/kissfft
+    # ${CMAKE_SOURCE_DIR}/external/Gist/libs/kiss_fft130
 )
-    
+
 target_link_libraries(
     WAIVE_Sampler
     PUBLIC
@@ -70,8 +73,9 @@ target_link_libraries(
     ${Foundation}
     ${SNDFILE_LIBRARY}
     fmt::fmt
-    SQLite::SQLite3
     samplerate
+    kissfft
+    Gist
     PRIVATE
     nlohmann_json::nlohmann_json
 )
