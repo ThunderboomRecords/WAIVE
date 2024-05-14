@@ -37,6 +37,16 @@ void TextInput::onNanoDisplay()
     fill();
     closePath();
 
+    if (hasKeyFocus)
+    {
+        beginPath();
+        strokeColor(text_color);
+        strokeWidth(1);
+        rect(1, 1, width - 2, height - 2);
+        stroke();
+        closePath();
+    }
+
     if (fText.size() > 0)
     {
         beginPath();
@@ -81,7 +91,7 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
     if (!hasKeyFocus || !isVisible())
         return false;
 
-    std::cout << "TextInput::onCharacterInput: " << ev.string << " " << ev.keycode << std::endl;
+    // std::cout << "TextInput::onCharacterInput: " << ev.string << " " << ev.keycode << std::endl;
     switch (ev.keycode)
     {
     case 36:
@@ -121,7 +131,6 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
         break;
     }
 
-    std::cout << fText << " " << position << std::endl;
     repaint();
     return true;
 }
@@ -177,6 +186,10 @@ bool TextInput::onMouse(const MouseEvent &ev)
         }
         else if (!contains(ev.pos) && hasKeyFocus)
         {
+            if (callback != nullptr && fText.size() > 0 && fText.compare(fTextStart) != 0)
+                callback->textEntered(this, fText);
+            else if (fText.size() == 0)
+                fText.assign(fTextStart);
             hasKeyFocus = false;
             repaint();
             return true;

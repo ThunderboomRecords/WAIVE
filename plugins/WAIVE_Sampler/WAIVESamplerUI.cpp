@@ -47,7 +47,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     sample_name = new TextInput(this);
     sample_name->setText("testing");
-    sample_name->setSize(160, 20);
+    sample_name->setSize(200, 20);
     Layout::rightOf(sample_name, new_sample_btn, Widget_Align::CENTER, 20);
     sample_name->setCallback(this);
 
@@ -269,6 +269,11 @@ void WAIVESamplerUI::mapSampleLoadSlot(int index, int slot)
 void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
 {
     std::cout << "WAIVESamplerUI::textEntered " << text << std::endl;
+    if (textInput == sample_name)
+    {
+        if (plugin->fCurrentSample != nullptr)
+            plugin->renameCurrentSample(text);
+    }
 }
 
 void WAIVESamplerUI::onNanoDisplay()
@@ -346,6 +351,7 @@ void WAIVESamplerUI::idleCallback()
                     save_sample_btn->setLabel("update");
                 else
                     save_sample_btn->setLabel("add");
+                sample_name->setText(plugin->fCurrentSample->name.c_str(), false);
             }
             else
             {

@@ -116,6 +116,7 @@ protected:
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
     void selectWaveform(std::vector<float> *source, int start);
     void addToLibrary();
+    bool renameCurrentSample(std::string new_name);
     bool saveSamples();
     void renderSample();
     void loadSamplePlayer(const int index, const int slot);

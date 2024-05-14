@@ -487,7 +487,7 @@ void WAIVESampler::newSample()
     // TODO: save current sample before creating a new one?
 
     time_t current_time = time(NULL);
-    std::string name = fmt::format("{:d}.wav", current_time);
+    std::string name = fmt::format("Sample{:d}.wav", current_time % 10000);
 
     std::shared_ptr<SampleInfo> s(new SampleInfo(current_time, name, SAMPLE_DIR, true));
     if (fCurrentSample != nullptr)
@@ -510,6 +510,35 @@ void WAIVESampler::newSample()
     std::cout << fCurrentSample->getId() << std::endl;
 
     addToUpdateQueue(kParametersChanged);
+}
+
+bool WAIVESampler::renameCurrentSample(std::string new_name)
+{
+    if (fCurrentSample == nullptr)
+        return false;
+
+    // TODO: add guards, such as
+    // - checking if new_name contains folder seperator character
+    // - file extension included or not
+    // - check if filename exists already
+
+    // rename saved waveform if exists
+    try
+    {
+        fs::rename(
+            fCacheDir / fCurrentSample->path / fCurrentSample->name,
+            fCacheDir / fCurrentSample->path / new_name);
+    }
+    catch (fs::filesystem_error &e)
+    {
+        std::cerr << "Failed to rename sample to " << fCacheDir / fCurrentSample->path / new_name << std::endl;
+        std::cerr << e.what() << std::endl;
+    }
+
+    // updated SampleInfo
+    fCurrentSample->name.assign(new_name);
+
+    return true;
 }
 
 void WAIVESampler::loadSample(int id)
