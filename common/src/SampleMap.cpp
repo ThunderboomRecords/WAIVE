@@ -107,6 +107,7 @@ bool SampleMap::onMotion(const MotionEvent &ev)
         if (!contains(ev.pos))
         {
             highlightSample = -1;
+
             return false;
         }
 
@@ -131,11 +132,17 @@ bool SampleMap::onMotion(const MotionEvent &ev)
                 nearest = allSamples->at(i)->getId();
                 d = dS;
             }
-
-            highlightSample = nearest;
         }
 
-        repaint();
+        if (highlightSample != nearest)
+        {
+            highlightSample = nearest;
+
+            if (callback != nullptr)
+                callback->mapSampleHovered(highlightSample);
+
+            repaint();
+        }
 
         return true;
     }

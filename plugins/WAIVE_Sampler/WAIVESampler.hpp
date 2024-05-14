@@ -111,9 +111,12 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
 
     void newSample();
+    std::shared_ptr<SampleInfo> findSample(int id);
+    void loadPreview(int id);
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);
     void loadSource(const char *fp);
+    void loadSlot(int slot, int id);
     int loadWaveform(const char *fp, std::vector<float> *buffer);
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
     void selectWaveform(std::vector<float> *source, int start);
@@ -121,7 +124,7 @@ protected:
     bool renameCurrentSample(std::string new_name);
     bool saveSamples();
     void renderSample();
-    void loadSamplePlayer(const int index, const int slot);
+    void loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer);
     void triggerPreview();
     void getEmbedding();
     void analyseWaveform();
@@ -141,7 +144,7 @@ private:
 
     std::shared_ptr<SampleInfo> fCurrentSample;
 
-    std::vector<float> fSourceWaveform, fSampleWaveform;
+    std::vector<float> fSourceWaveform; //, fSampleWaveform;
     bool fSourceLoaded, fSampleLoaded;
     int fSourceLength;
     std::vector<WaveformFeature> fSourceFeatures;
@@ -149,7 +152,8 @@ private:
     float fNormalisationRatio;
 
     std::mutex samplePlayerMtx;
-    SamplePlayer previewPlayer;
+    SamplePlayer *editorPreviewPlayer, *mapPreviewPlayer;
+    std::vector<float> *editorPreviewWaveform, *mapPreviewWaveform;
     std::vector<SamplePlayer> samplePlayers;
     std::vector<std::vector<float>> samplePlayerWaveforms;
     int midiMap[128];

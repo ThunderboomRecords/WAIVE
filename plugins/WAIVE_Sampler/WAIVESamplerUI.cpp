@@ -21,7 +21,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     slots_container->padding = 2;
     slots_container->justify_content = VBox::Justify_Content::space_evenly;
     Layout::rightOf(slots_container, sample_map, Widget_Align::START, 10);
-    createSampleSlots(this, &sampleSlots, &plugin->samplePlayers, slots_container, 300.f / 8.f - 5.f);
+    createSampleSlots(this, &sampleSlots, &plugin->samplePlayers, 8, slots_container, 300.f / 8.f - 5.f);
     slots_container->positionWidgets();
 
     map_label = new Label(this, "sample map");
@@ -72,7 +72,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_display = new Waveform(this);
     sample_display->setSize(180, 80);
     Layout::below(sample_display, source_display, Widget_Align::END, 10.0f);
-    sample_display->setWaveform(&plugin->fSampleWaveform);
+    sample_display->setWaveform(plugin->editorPreviewWaveform);
 
     save_sample_btn = new Button(this);
     save_sample_btn->setLabel("add");
@@ -165,6 +165,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     if (fScaleFactor != 1.0)
         setSize(UI_W * fScaleFactor, UI_H * fScaleFactor);
+
+    std::cout << "WAIVESamplerUI initialised" << std::endl;
 }
 
 WAIVESamplerUI::~WAIVESamplerUI() {}
@@ -238,13 +240,12 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 
 void WAIVESamplerUI::buttonClicked(Button *button)
 {
-    LOG_LOCATION
     if (button == open_btn)
         requestStateFile("filename");
     else if (button == save_sample_btn)
         plugin->addToLibrary();
     else if (button == play_btn)
-        plugin->previewPlayer.state = PlayState::TRIGGERED;
+        plugin->triggerPreview();
     else if (button == new_sample_btn)
         plugin->newSample();
 
@@ -256,15 +257,20 @@ void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
     plugin->selectWaveform(&plugin->fSourceWaveform, (int)selectionStart);
 }
 
+void WAIVESamplerUI::mapSampleHovered(int id)
+{
+    plugin->loadPreview(id);
+}
+
 void WAIVESamplerUI::mapSampleSelected(int id)
 {
     plugin->loadSample(id);
-    plugin->triggerPreview();
 }
 
-void WAIVESamplerUI::mapSampleLoadSlot(int index, int slot)
+void WAIVESamplerUI::mapSampleLoadSlot(int id, int slot)
 {
-    plugin->loadSamplePlayer(index, slot);
+    // plugin->loadSamplePlayer(index, slot);
+    plugin->loadSlot(slot, id);
 }
 
 void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
@@ -309,6 +315,8 @@ void WAIVESamplerUI::idleCallback()
     for (; !updateQueue->empty(); updateQueue->pop())
     {
         int msg = updateQueue->front();
+
+        // std::cout << " - new msg: " << msg << std::endl;
 
         switch (msg)
         {
@@ -409,10 +417,10 @@ void createSampleSlots(
     Widget *parent,
     std::vector<SampleSlot *> *slots,
     std::vector<SamplePlayer> *players,
+    int n,
     VBox *container,
     float height)
 {
-    int n = players->size();
     float width = container->getWidth();
     for (int i = 0; i < n; i++)
     {

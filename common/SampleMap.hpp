@@ -22,6 +22,7 @@ public:
     {
     public:
         virtual ~Callback(){};
+        virtual void mapSampleHovered(int id) = 0;
         virtual void mapSampleSelected(int id) = 0;
         virtual void mapSampleLoadSlot(int index, int slot) = 0;
     };

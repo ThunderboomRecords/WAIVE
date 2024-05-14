@@ -110,7 +110,7 @@ void Waveform::onNanoDisplay()
 
     const int width = getWidth();
     const int height = getHeight();
-    const int half = height / 2;
+    const int half = std::floor(height / 2);
 
     float range = visibleEnd - visibleStart;
 
@@ -201,6 +201,7 @@ void Waveform::onNanoDisplay()
         }
 
         beginPath();
+        strokeWidth(1.0f);
         strokeColor(Color(230, 230, 230));
         x = (float)visibleStart / waveformLength * width;
         float w = (float)(visibleEnd - visibleStart) / waveformLength * width;

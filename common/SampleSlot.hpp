@@ -38,7 +38,7 @@ protected:
     bool onMotion(const MotionEvent &) override;
 
 private:
-    DISTRHO_LEAK_DETECTOR(SampleSlot);
+        DISTRHO_LEAK_DETECTOR(SampleSlot);
 };
 
 END_NAMESPACE_DISTRHO

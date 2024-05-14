@@ -57,6 +57,7 @@ protected:
     void knobDragStarted(Knob *knob) override;
     void knobDragFinished(Knob *knob, float value) override;
     void knobValueChanged(Knob *knob, float value) override;
+    void mapSampleHovered(int id) override;
     void mapSampleSelected(int id) override;
     void mapSampleLoadSlot(int index, int slot) override;
     void textEntered(TextInput *textInput, std::string text) override;
@@ -100,6 +101,7 @@ void createSampleSlots(
     Widget *parent,
     std::vector<SampleSlot *> *slots,
     std::vector<SamplePlayer> *players,
+    int n,
     VBox *container,
     float height);
 

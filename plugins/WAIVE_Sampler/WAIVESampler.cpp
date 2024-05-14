@@ -23,9 +23,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                gist({512, (int)getSampleRate()})
 {
     if (isDummyInstance())
-    {
         std::cout << "** dummy instance" << std::endl;
-    }
 
     srand(time(NULL));
 
@@ -34,11 +32,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     fs::path homedir = get_homedir();
     fCacheDir = homedir / DATA_DIR;
 
-    std::cout << "homedir: " << homedir << std::endl;
-    std::cout << "cacheDir: " << fCacheDir << std::endl;
-
     bool result = fs::create_directory(fCacheDir);
-    std::cout << "fCacheDir created: " << (result ? "true" : "false") << std::endl;
 
     fs::create_directory(fCacheDir / SOURCE_DIR);
     fs::create_directory(fCacheDir / SAMPLE_DIR);
@@ -62,18 +56,25 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
     std::cout << "Number of samples found: " << fAllSamples.size() << std::endl;
 
-    previewPlayer.waveform = &fSampleWaveform;
-    previewPlayer.active = true;
+    samplePlayerWaveforms.resize(10);
+    for (int i = 0; i < 10; i++)
+    {
+        SamplePlayer sp;
+        sp.waveform = &samplePlayerWaveforms[i];
+        samplePlayers.push_back(sp);
+    }
 
-    samplePlayers.resize(8);
-    samplePlayerWaveforms.resize(8);
+    editorPreviewPlayer = &samplePlayers[8];
+    editorPreviewWaveform = &samplePlayerWaveforms[8];
+    mapPreviewPlayer = &samplePlayers[9];
+    mapPreviewWaveform = &samplePlayerWaveforms[9];
+
+    LOG_LOCATION
 
     std::fill_n(midiMap, 128, -1);
     uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
     for (int i = 0; i < 8; i++)
-    {
         midiMap[defaultMidiMap[i]] = i;
-    }
 
     newSample();
 }
@@ -257,11 +258,6 @@ void WAIVESampler::run(
 )
 {
     samplePlayerMtx.lock();
-    if (previewPlayer.length > 0 && previewPlayer.state == PlayState::TRIGGERED)
-    {
-        previewPlayer.ptr = 0;
-        previewPlayer.state = PlayState::PLAYING;
-    }
 
     int midiIndex = 0;
     float y;
@@ -309,24 +305,13 @@ void WAIVESampler::run(
         // Mix sample players outputs
         y = 0.0f;
 
-        if (previewPlayer.active && previewPlayer.state == PlayState::PLAYING)
-        {
-            y += previewPlayer.waveform->at(previewPlayer.ptr) * previewPlayer.gain;
-
-            previewPlayer.ptr++;
-            if (previewPlayer.ptr >= previewPlayer.length)
-            {
-                previewPlayer.ptr = 0;
-                previewPlayer.state = PlayState::STOPPED;
-            }
-        }
-
         for (int j = 0; j < samplePlayers.size(); j++)
         {
-            if (!previewPlayer.active || samplePlayers[j].state == PlayState::STOPPED)
-                continue;
-
             SamplePlayer *sp = &samplePlayers[j];
+            if (sp->state == PlayState::STOPPED)
+            {
+                continue;
+            }
 
             if (sp->state == PlayState::TRIGGERED)
             {
@@ -383,7 +368,7 @@ void WAIVESampler::loadSource(const char *fp)
 
 int WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
 {
-    printf("WAIVESampler::loadWaveform %s\n", fp);
+    // printf("WAIVESampler::loadWaveform %s\n", fp);
 
     SndfileHandle fileHandle(fp);
     int sampleLength = fileHandle.frames();
@@ -476,7 +461,7 @@ void WAIVESampler::addToLibrary()
 
     fCurrentSample->saved = true;
 
-    saveWaveform((fCacheDir / fCurrentSample->path / fCurrentSample->name).c_str(), &fSampleWaveform[0], fSampleWaveform.size());
+    saveWaveform((fCacheDir / fCurrentSample->path / fCurrentSample->name).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength);
     fAllSamples.push_back(fCurrentSample);
     addToUpdateQueue(kSampleAdded);
 
@@ -485,7 +470,7 @@ void WAIVESampler::addToLibrary()
 
 void WAIVESampler::newSample()
 {
-    // LOG_LOCATION
+    LOG_LOCATION
 
     // TODO: save current sample before creating a new one?
 
@@ -544,27 +529,39 @@ bool WAIVESampler::renameCurrentSample(std::string new_name)
     return true;
 }
 
-void WAIVESampler::loadSample(int id)
+std::shared_ptr<SampleInfo> WAIVESampler::findSample(int id)
 {
+    // TODO: make more efficient
+    // - caching?
+    // - hash table?
+    // - kd tree?
+
     for (int i = 0; i < fAllSamples.size(); i++)
     {
         if (fAllSamples[i]->getId() == id)
-        {
-            loadSample(fAllSamples.at(i));
-            return;
-        }
+            return fAllSamples.at(i);
     }
+    return nullptr;
+}
+
+void WAIVESampler::loadPreview(int id)
+{
+    loadSlot(9, id);
+
+    if (mapPreviewPlayer->state == PlayState::STOPPED && mapPreviewPlayer->active)
+        mapPreviewPlayer->state = PlayState::TRIGGERED;
+}
+
+void WAIVESampler::loadSample(int id)
+{
+    loadSample(findSample(id));
 }
 
 void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
 {
-    LOG_LOCATION
-
-    if (fCurrentSample != nullptr && s == fCurrentSample)
-    {
-        previewPlayer.state = PlayState::TRIGGERED;
+    // LOG_LOCATION
+    if (s == nullptr)
         return;
-    }
 
     // save/update current sample
     // addToLibrary();
@@ -572,8 +569,6 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     fCurrentSample = s;
     std::cout << s->name << std::endl;
     fSampleLoaded = false;
-
-    LOG_LOCATION
 
     // load source (if avaliable)
     if (fCurrentSample->waive)
@@ -593,7 +588,7 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     {
         // load sample directly (hide sample controls?)
         fs::path fp = fCacheDir / fs::path(fCurrentSample->path) / fCurrentSample->name;
-        fCurrentSample->sampleLength = loadWaveform(fp.c_str(), &fSampleWaveform);
+        fCurrentSample->sampleLength = loadWaveform(fp.c_str(), editorPreviewWaveform);
     }
 
     fSampleLoaded = true;
@@ -642,8 +637,9 @@ void WAIVESampler::renderSample()
     fSampleLoaded = false;
     fCurrentSample->sampleLength = ampEnvGen.getLength(fCurrentSample->sustainLength);
     fCurrentSample->sampleLength = std::min(fCurrentSample->sampleLength, fSourceLength - fCurrentSample->sourceStart);
-    previewPlayer.length = fCurrentSample->sampleLength;
-    previewPlayer.ptr = 0;
+    editorPreviewPlayer->length = fCurrentSample->sampleLength;
+    editorPreviewPlayer->ptr = 0;
+    editorPreviewPlayer->active = true;
 
     auto minmax = std::minmax_element(
         &fSourceWaveform[fCurrentSample->sourceStart],
@@ -652,7 +648,7 @@ void WAIVESampler::renderSample()
     if (std::abs(normaliseRatio) <= 0.0001f)
         normaliseRatio = 1.0f;
 
-    fSampleWaveform.resize(fCurrentSample->sampleLength);
+    editorPreviewWaveform->resize(fCurrentSample->sampleLength);
 
     ampEnvGen.reset();
     ampEnvGen.trigger();
@@ -669,12 +665,12 @@ void WAIVESampler::renderSample()
         if (fCurrentSample->sourceStart + index >= fSourceLength)
         {
             fCurrentSample->sampleLength = i;
-            previewPlayer.length = i;
+            editorPreviewPlayer->length = i;
             break;
         }
 
         y = fSourceWaveform[fCurrentSample->sourceStart + index];
-        fSampleWaveform[i] = std::clamp(y * fCurrentSample->volume * amp / normaliseRatio, -1.0f, 1.0f);
+        editorPreviewWaveform->at(i) = std::clamp(y * fCurrentSample->volume * amp / normaliseRatio, -1.0f, 1.0f);
 
         indexF += delta;
 
@@ -688,61 +684,55 @@ void WAIVESampler::renderSample()
         amp = ampEnvGen.getValue();
     }
 
-    // LOG_LOCATION
-
     getEmbedding();
     fSampleLoaded = true;
     addToUpdateQueue(kSampleUpdated);
     samplePlayerMtx.unlock();
 }
 
-void WAIVESampler::loadSamplePlayer(const int id, const int slot)
+void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer)
 {
-    samplePlayerMtx.lock();
-    LOG_LOCATION
-    std::shared_ptr<SampleInfo> info = nullptr;
-    // TODO: implement more efficient search
-    for (int i = 0; i < fAllSamples.size(); i++)
-    {
-        if (fAllSamples[i]->getId() != id)
-            continue;
-
-        info = fAllSamples[i];
-        break;
-    }
-
+    // LOG_LOCATION
     if (info == nullptr)
     {
-        std::cerr << "Could not load sample " << id << std::endl;
+        sp.active = false;
         return;
     }
 
-    int length = loadWaveform((fCacheDir / info->path / info->name).c_str(), &samplePlayerWaveforms[slot]);
+    samplePlayerMtx.lock();
+
+    sp.state = PlayState::STOPPED;
+    sp.ptr = 0;
+    int length = loadWaveform((fCacheDir / info->path / info->name).c_str(), &buffer);
 
     if (length == 0)
     {
-        std::cerr << "Sample " << id << " waveform length 0" << std::endl;
+        sp.active = false;
+        samplePlayerMtx.unlock();
+        std::cerr << "WAIVESampler::loadSamplePlayer: Sample waveform length 0" << std::endl;
         return;
     }
 
-    SamplePlayer *sp = &samplePlayers[slot];
-    sp->state = PlayState::STOPPED;
-    sp->ptr = 0;
-    sp->length = length;
-    sp->waveform = &samplePlayerWaveforms[slot];
-    sp->active = true;
-    sp->sampleInfo = info;
+    sp.length = length;
+    sp.active = true;
+    sp.sampleInfo = info;
 
     addToUpdateQueue(kSlotLoaded);
     samplePlayerMtx.unlock();
 }
 
+void WAIVESampler::loadSlot(int slot, int id)
+{
+    std::shared_ptr<SampleInfo> info = findSample(id);
+    loadSamplePlayer(info, samplePlayers.at(slot), samplePlayerWaveforms.at(slot));
+}
+
 void WAIVESampler::triggerPreview()
 {
-    if (previewPlayer.state == PlayState::STOPPED)
+    if (samplePlayers[8].state == PlayState::STOPPED)
     {
-        previewPlayer.ptr = 0;
-        previewPlayer.state = PlayState::TRIGGERED;
+        samplePlayers[8].state = PlayState::TRIGGERED;
+        samplePlayers[8].active = true;
     }
 }
 
