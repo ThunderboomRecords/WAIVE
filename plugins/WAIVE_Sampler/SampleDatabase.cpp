@@ -21,34 +21,96 @@ SampleInfo::SampleInfo(
 {
 }
 
-json serialiseSampleInfo(std::shared_ptr<SampleInfo> s)
+int SampleInfo::getId() const
+{
+    return id;
+}
+
+float SampleInfo::operator[](int index)
+{
+    if (index == 0)
+        return embedX;
+    else
+        return embedY;
+}
+
+json SampleInfo::toJson() const
 {
     json data;
-    data["id"] = s->getId();
-    data["name"] = s->name;
-    data["path"] = s->path;
-    data["waive"] = s->waive;
-    data["source"] = s->source;
-    data["sourceStart"] = s->sourceStart;
-    data["sampleLength"] = s->sampleLength;
-    data["embedding"] = {{"x", s->embedX}, {"y", s->embedY}};
+    data["id"] = id;
+    data["name"] = name;
+    data["path"] = path;
+    data["waive"] = waive;
+    data["source"] = source;
+    data["sourceStart"] = sourceStart;
+    data["sampleLength"] = sampleLength;
+    data["embedding"] = {{"x", embedX}, {"y", embedY}};
     data["ampEnv"] = {
-        {"attack", s->adsr.attack},
-        {"decay", s->adsr.decay},
-        {"sustain", s->adsr.sustain},
-        {"release", s->adsr.release},
-        {"sustainLength", s->sustainLength},
+        {"attack", adsr.attack},
+        {"decay", adsr.decay},
+        {"sustain", adsr.sustain},
+        {"release", adsr.release},
+        {"sustainLength", sustainLength},
     };
     data["parameters"] = {
-        {"volume", s->volume},
-        {"pitch", s->pitch},
+        {"volume", volume},
+        {"pitch", pitch},
     };
-    data["tags"] = s->tags;
-    data["saved"] = s->saved;
+    data["tags"] = tags;
+    data["saved"] = saved;
+
     return data;
 }
 
-std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data)
+fs::path get_homedir()
+{
+    std::string homedir = "";
+#ifdef WIN32
+    homedir += getenv("HOMEDRIVE") + getenv("HOMEPATH");
+#else
+    homedir += getenv("HOME");
+#endif
+    return fs::path(homedir);
+}
+
+SampleDatabase::SampleDatabase()
+{
+    // Get and create the directory where samples and sound files will
+    // be saved to
+    fs::path homedir = get_homedir();
+    fCacheDir = homedir / DATA_DIR;
+
+    bool result = fs::create_directory(fCacheDir);
+
+    fs::create_directory(fCacheDir / SOURCE_DIR);
+    fs::create_directory(fCacheDir / SAMPLE_DIR);
+
+    std::ifstream f(fCacheDir / "waive_samples.json");
+    if (f.is_open())
+    {
+        json data = json::parse(f);
+        auto samples = data["samples"];
+        for (int i = 0; i < samples.size(); i++)
+        {
+            std::shared_ptr<SampleInfo> s = deserialiseSampleInfo(samples.at(i));
+            if (s != nullptr)
+            {
+                fAllSamples.push_back(s);
+
+                SamplePoint p = {0.0f, 0.0f};
+                p.info = s;
+            }
+        }
+    }
+    else
+        std::cout << "error reading waive_samples.json\n";
+
+    std::cout << "Number of samples found: " << fAllSamples.size() << std::endl;
+
+    kdtree.build(points);
+}
+
+std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
 {
     try
     {
@@ -84,7 +146,7 @@ std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data)
     return nullptr;
 }
 
-bool saveJson(json data, std::string fp)
+bool SampleDatabase::saveJson(json data, std::string fp)
 {
     std::ofstream ofs(fp, std::ofstream::trunc);
 
@@ -99,15 +161,104 @@ bool saveJson(json data, std::string fp)
     return true;
 }
 
-json openJson(std::string fp)
+// json SampleDatabase::openJson(std::string fp)
+// {
+//     std::ifstream f(fp);
+//     json data = json::parse(f);
+//     f.close();
+//     return data;
+// }
+
+bool SampleDatabase::saveSamples()
 {
-    std::ifstream f(fp);
-    json data = json::parse(f);
-    f.close();
-    return data;
+    json data;
+    data["samples"] = {};
+    for (int i = 0; i < fAllSamples.size(); i++)
+    {
+        data["samples"].push_back(fAllSamples.at(i)->toJson());
+    }
+
+    return saveJson(data, fCacheDir / "waive_samples.json");
 }
 
-int SampleInfo::getId() const
+bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
 {
-    return id;
+    if (sample == nullptr)
+        return false;
+
+    sample->saved = true;
+
+    fAllSamples.push_back(sample);
+
+    return saveSamples();
+}
+
+bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name)
+{
+    if (sample == nullptr)
+        return false;
+
+    // TODO: add guards, such as
+    // - checking if new_name contains folder seperator character
+    // - file extension included or not
+    // - check if filename exists already
+
+    // rename saved waveform if exists
+    try
+    {
+        fs::rename(
+            fCacheDir / sample->path / sample->name,
+            fCacheDir / sample->path / new_name);
+    }
+    catch (fs::filesystem_error &e)
+    {
+        std::cerr << "Failed to rename sample to " << fCacheDir / sample->path / new_name << std::endl;
+        std::cerr << e.what() << std::endl;
+    }
+
+    // updated SampleInfo
+    sample->name.assign(new_name);
+
+    return true;
+}
+
+std::shared_ptr<SampleInfo> SampleDatabase::findSample(int id)
+{
+    // TODO: make more efficient
+    // - caching?
+    // - hash table?
+
+    for (int i = 0; i < fAllSamples.size(); i++)
+    {
+        if (fAllSamples[i]->getId() == id)
+            return fAllSamples.at(i);
+    }
+    return nullptr;
+}
+
+std::vector<std::shared_ptr<SampleInfo>> SampleDatabase::findKNearest(float x, float y, int k)
+{
+    std::vector<int> indices = kdtree.knnSearch({x, y}, k);
+    std::vector<std::shared_ptr<SampleInfo>> result;
+    for (int i = 0; i < indices.size(); i++)
+    {
+        result.push_back(points[indices[i]].info);
+    }
+    return result;
+}
+
+std::vector<std::shared_ptr<SampleInfo>> SampleDatabase::findRadius(float x, float y, float r)
+{
+    std::vector<int> indices = kdtree.radiusSearch({x, y}, r);
+    std::vector<std::shared_ptr<SampleInfo>> result;
+    for (int i = 0; i < indices.size(); i++)
+    {
+        result.push_back(points[indices[i]].info);
+    }
+    return result;
+}
+
+std::string SampleDatabase::getSamplePath(std::shared_ptr<SampleInfo> sample)
+{
+    return (fCacheDir / sample->path / sample->name).string();
 }

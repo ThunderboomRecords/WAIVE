@@ -12,7 +12,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_map = new SampleMap(this);
     sample_map->setSize(520, 300);
     sample_map->setAbsolutePos(10, 46);
-    sample_map->allSamples = &plugin->fAllSamples;
+    sample_map->allSamples = &plugin->sd.fAllSamples;
     sample_map->selectedSample = &plugin->fCurrentSample;
     sample_map->setCallback(this);
 
@@ -148,7 +148,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     sample_map_menu->setWidth(100);
     sample_map_menu->setFont("VG5000", VG5000, VG5000_len);
-    sample_map_menu->setDisplayNumber(4);
+    sample_map_menu->setDisplayNumber(8);
     sample_map_menu->hide();
     sample_map_menu->setCallback(sample_map);
 
@@ -243,7 +243,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     if (button == open_btn)
         requestStateFile("filename");
     else if (button == save_sample_btn)
-        plugin->addToLibrary();
+        plugin->addCurrentSampleToLibrary();
     else if (button == play_btn)
         plugin->triggerPreview();
     else if (button == new_sample_btn)
@@ -269,7 +269,6 @@ void WAIVESamplerUI::mapSampleSelected(int id)
 
 void WAIVESamplerUI::mapSampleLoadSlot(int id, int slot)
 {
-    // plugin->loadSamplePlayer(index, slot);
     plugin->loadSlot(slot, id);
 }
 
@@ -279,7 +278,7 @@ void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
     if (textInput == sample_name)
     {
         if (plugin->fCurrentSample != nullptr)
-            plugin->renameCurrentSample(text);
+            plugin->sd.renameSample(plugin->fCurrentSample, text);
     }
 }
 

@@ -63,7 +63,7 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/nlohmann_json/single_include
     ${CMAKE_SOURCE_DIR}/external/Gist/src
     ${CMAKE_SOURCE_DIR}/external/kissfft
-    # ${CMAKE_SOURCE_DIR}/external/Gist/libs/kiss_fft130
+    ${CMAKE_SOURCE_DIR}/external/kd-tree
 )
 
 target_link_libraries(

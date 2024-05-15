@@ -6,9 +6,8 @@
 #include <vector>
 #include <string>
 #include <queue>
-#include <filesystem>
+
 #include <fstream>
-// #include <thread>
 #include <mutex>
 #include <stdlib.h>
 #include <time.h>
@@ -29,10 +28,6 @@
 #include "Gist.h"
 
 #define MAX_PATH 128
-
-namespace fs = std::filesystem;
-
-fs::path get_homedir();
 
 START_NAMESPACE_DISTRHO
 
@@ -114,7 +109,7 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
 
     void newSample();
-    std::shared_ptr<SampleInfo> findSample(int id);
+    // std::shared_ptr<SampleInfo> findSample(int id);
     void loadPreview(int id);
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);
@@ -123,9 +118,9 @@ protected:
     int loadWaveform(const char *fp, std::vector<float> *buffer);
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
     void selectWaveform(std::vector<float> *source, int start);
-    void addToLibrary();
-    bool renameCurrentSample(std::string new_name);
-    bool saveSamples();
+    void addCurrentSampleToLibrary();
+    // bool renameCurrentSample(std::string new_name);
+    // bool saveSamples();
     void renderSample();
     void loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer);
     void triggerPreview();
@@ -142,8 +137,9 @@ private:
 
     Gist<float> gist;
 
-    fs::path fCacheDir;
-    std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
+    SampleDatabase sd;
+
+    // fs::path fCacheDir;
 
     std::shared_ptr<SampleInfo> fCurrentSample;
 
@@ -159,7 +155,6 @@ private:
     std::vector<float> *editorPreviewWaveform, *mapPreviewWaveform;
     std::vector<SamplePlayer> samplePlayers;
     std::vector<std::vector<float>> samplePlayerWaveforms;
-    // int midiMap[128];
 
     std::queue<int> updateQueue;
 

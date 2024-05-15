@@ -16,3 +16,6 @@
 [submodule "external/kissfft"]
 	path = external/kissfft
 	url = https://github.com/mborgerding/kissfft.git
+[submodule "external/kd-tree"]
+	path = external/kd-tree
+	url = https://github.com/gishi523/kd-tree.git

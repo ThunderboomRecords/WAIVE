@@ -1,16 +1,5 @@
 #include "WAIVESampler.hpp"
 
-fs::path get_homedir()
-{
-    std::string homedir = "";
-#ifdef WIN32
-    homedir += getenv("HOMEDRIVE") + getenv("HOMEPATH");
-#else
-    homedir += getenv("HOME");
-#endif
-    return fs::path(homedir);
-}
-
 START_NAMESPACE_DISTRHO
 
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
@@ -27,34 +16,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
     srand(time(NULL));
 
-    // Get and create the directory where samples and sound files will
-    // be saved to
-    fs::path homedir = get_homedir();
-    fCacheDir = homedir / DATA_DIR;
-
-    bool result = fs::create_directory(fCacheDir);
-
-    fs::create_directory(fCacheDir / SOURCE_DIR);
-    fs::create_directory(fCacheDir / SAMPLE_DIR);
-
-    std::ifstream f(fCacheDir / "waive_samples.json");
-    if (f.is_open())
-    {
-        json data = json::parse(f);
-        auto samples = data["samples"];
-        for (int i = 0; i < samples.size(); i++)
-        {
-            std::shared_ptr<SampleInfo> s = deserialiseSampleInfo(samples.at(i));
-            if (s != nullptr)
-                fAllSamples.push_back(s);
-        }
-    }
-    else
-    {
-        std::cout << "error reading waive_samples.json\n";
-    }
-
-    std::cout << "Number of samples found: " << fAllSamples.size() << std::endl;
+    sd = SampleDatabase();
 
     samplePlayerWaveforms.resize(10);
     for (int i = 0; i < 10; i++)
@@ -79,7 +41,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 WAIVESampler::~WAIVESampler()
 {
     std::cout << "closing WAIVESampler..." << std::endl;
-    saveSamples();
+    sd.saveSamples();
 }
 
 void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
@@ -449,24 +411,6 @@ bool WAIVESampler::saveWaveform(const char *fp, float *buffer, sf_count_t size)
     return true;
 }
 
-void WAIVESampler::addToLibrary()
-{
-    LOG_LOCATION
-
-    // reload any sampleSlots that
-
-    if (!fSampleLoaded || fCurrentSample == nullptr)
-        return;
-
-    fCurrentSample->saved = true;
-
-    saveWaveform((fCacheDir / fCurrentSample->path / fCurrentSample->name).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength);
-    fAllSamples.push_back(fCurrentSample);
-    addToUpdateQueue(kSampleAdded);
-
-    saveSamples();
-}
-
 void WAIVESampler::newSample()
 {
     LOG_LOCATION
@@ -499,48 +443,10 @@ void WAIVESampler::newSample()
     addToUpdateQueue(kParametersChanged);
 }
 
-bool WAIVESampler::renameCurrentSample(std::string new_name)
+void WAIVESampler::addCurrentSampleToLibrary()
 {
-    if (fCurrentSample == nullptr)
-        return false;
-
-    // TODO: add guards, such as
-    // - checking if new_name contains folder seperator character
-    // - file extension included or not
-    // - check if filename exists already
-
-    // rename saved waveform if exists
-    try
-    {
-        fs::rename(
-            fCacheDir / fCurrentSample->path / fCurrentSample->name,
-            fCacheDir / fCurrentSample->path / new_name);
-    }
-    catch (fs::filesystem_error &e)
-    {
-        std::cerr << "Failed to rename sample to " << fCacheDir / fCurrentSample->path / new_name << std::endl;
-        std::cerr << e.what() << std::endl;
-    }
-
-    // updated SampleInfo
-    fCurrentSample->name.assign(new_name);
-
-    return true;
-}
-
-std::shared_ptr<SampleInfo> WAIVESampler::findSample(int id)
-{
-    // TODO: make more efficient
-    // - caching?
-    // - hash table?
-    // - kd tree?
-
-    for (int i = 0; i < fAllSamples.size(); i++)
-    {
-        if (fAllSamples[i]->getId() == id)
-            return fAllSamples.at(i);
-    }
-    return nullptr;
+    sd.addToLibrary(fCurrentSample);
+    saveWaveform(sd.getSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength);
 }
 
 void WAIVESampler::loadPreview(int id)
@@ -553,7 +459,7 @@ void WAIVESampler::loadPreview(int id)
 
 void WAIVESampler::loadSample(int id)
 {
-    loadSample(findSample(id));
+    loadSample(sd.findSample(id));
 }
 
 void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
@@ -585,9 +491,8 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     }
     else
     {
-        // load sample directly (hide sample controls?)
-        fs::path fp = fCacheDir / fs::path(fCurrentSample->path) / fCurrentSample->name;
-        fCurrentSample->sampleLength = loadWaveform(fp.c_str(), editorPreviewWaveform);
+        // TODO: load sample directly (hide sample controls?)
+        fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), editorPreviewWaveform);
     }
 
     fSampleLoaded = true;
@@ -595,18 +500,6 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
 
     addToUpdateQueue(kSampleLoaded);
     addToUpdateQueue(kParametersChanged);
-}
-
-bool WAIVESampler::saveSamples()
-{
-    json data;
-    data["samples"] = {};
-    for (int i = 0; i < fAllSamples.size(); i++)
-    {
-        data["samples"].push_back(serialiseSampleInfo(fAllSamples.at(i)));
-    }
-
-    return saveJson(data, fCacheDir / "waive_samples.json");
 }
 
 void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
@@ -702,7 +595,7 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
 
     sp.state = PlayState::STOPPED;
     sp.ptr = 0;
-    int length = loadWaveform((fCacheDir / info->path / info->name).c_str(), &buffer);
+    int length = loadWaveform(sd.getSamplePath(info).c_str(), &buffer);
 
     if (length == 0)
     {
@@ -722,7 +615,7 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
 
 void WAIVESampler::loadSlot(int slot, int id)
 {
-    std::shared_ptr<SampleInfo> info = findSample(id);
+    std::shared_ptr<SampleInfo> info = sd.findSample(id);
     loadSamplePlayer(info, samplePlayers.at(slot), samplePlayerWaveforms.at(slot));
 }
 
