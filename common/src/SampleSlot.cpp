@@ -37,7 +37,7 @@ void SampleSlot::onNanoDisplay()
     closePath();
 
     // sample info
-    if (samplePlayer != nullptr && samplePlayer->active)
+    if (samplePlayer != nullptr && samplePlayer->active && samplePlayer->sampleInfo != nullptr)
     {
         std::string state;
         if (samplePlayer->state == PlayState::PLAYING)
@@ -45,10 +45,10 @@ void SampleSlot::onNanoDisplay()
         else
             state = "stopped";
 
-        std::string info = fmt::format("Sample {:d}: {}", samplePlayer->sampleInfo->getId(), state);
+        std::string info = fmt::format("{}: {}", samplePlayer->sampleInfo->name, state);
 
         beginPath();
-        fontSize(16.0f);
+        fontSize(14.0f);
         fillColor(Color(30, 30, 30));
         textAlign(Align::ALIGN_MIDDLE);
         fontFaceId(0);

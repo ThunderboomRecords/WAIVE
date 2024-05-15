@@ -48,8 +48,11 @@ struct SamplePlayer
     std::vector<float> *waveform = nullptr;
     int length = 0;
     int ptr = 0;
+    int midi = -1;
     float gain = 1.0f;
     float velocity = 0.8f;
+    float pitch = 60.f;
+    float pan = 0.0f;
     PlayState state = PlayState::STOPPED;
     bool active = false;
     std::shared_ptr<SampleInfo> sampleInfo = nullptr;
@@ -144,7 +147,7 @@ private:
 
     std::shared_ptr<SampleInfo> fCurrentSample;
 
-    std::vector<float> fSourceWaveform; //, fSampleWaveform;
+    std::vector<float> fSourceWaveform;
     bool fSourceLoaded, fSampleLoaded;
     int fSourceLength;
     std::vector<WaveformFeature> fSourceFeatures;
@@ -156,7 +159,7 @@ private:
     std::vector<float> *editorPreviewWaveform, *mapPreviewWaveform;
     std::vector<SamplePlayer> samplePlayers;
     std::vector<std::vector<float>> samplePlayerWaveforms;
-    int midiMap[128];
+    // int midiMap[128];
 
     std::queue<int> updateQueue;
 

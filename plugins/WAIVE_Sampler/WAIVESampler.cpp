@@ -69,12 +69,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     mapPreviewPlayer = &samplePlayers[9];
     mapPreviewWaveform = &samplePlayerWaveforms[9];
 
-    LOG_LOCATION
-
-    std::fill_n(midiMap, 128, -1);
     uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
     for (int i = 0; i < 8; i++)
-        midiMap[defaultMidiMap[i]] = i;
+        samplePlayers[i].midi = defaultMidiMap[i];
 
     newSample();
 }
@@ -292,10 +289,13 @@ void WAIVESampler::run(
             {
                 /* NoteOn */
 
-                if (midiMap[note] > -1 && midiMap[note] < samplePlayers.size())
+                for (int j = 0; j < samplePlayers.size(); j++)
                 {
-                    if (samplePlayers[midiMap[note]].active)
-                        samplePlayers[midiMap[note]].state = PlayState::TRIGGERED;
+                    if (samplePlayers[j].active && samplePlayers[j].midi == note)
+                    {
+                        samplePlayers[j].state = PlayState::TRIGGERED;
+                        samplePlayers[j].velocity = (float)velocity / 128;
+                    }
                 }
             }
 
@@ -309,15 +309,14 @@ void WAIVESampler::run(
         {
             SamplePlayer *sp = &samplePlayers[j];
             if (sp->state == PlayState::STOPPED)
-            {
                 continue;
-            }
 
             if (sp->state == PlayState::TRIGGERED)
             {
                 if (sp->length == 0)
                 {
                     sp->state = PlayState::STOPPED;
+                    continue;
                 }
                 else
                 {
