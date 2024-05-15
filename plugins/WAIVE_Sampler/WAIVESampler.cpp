@@ -9,7 +9,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fSourceLoaded(false),
                                fCurrentSample(nullptr),
                                ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
-                               gist({512, (int)getSampleRate()})
+                               gist({512, (int)getSampleRate()}),
+                               server(SimpleUDPServer("127.0.0.1", 8000))
 {
     if (isDummyInstance())
         std::cout << "** dummy instance" << std::endl;
@@ -36,6 +37,11 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
         samplePlayers[i].midi = defaultMidiMap[i];
 
     newSample();
+
+    // OSC Test
+    int len = tosc_writeMessage(oscBuffer, sizeof(oscBuffer), "/WAIVE_Sampler", "s", "testing");
+    tosc_printOscBuffer(oscBuffer, len);
+    server.sendMessage(oscBuffer, len);
 }
 
 WAIVESampler::~WAIVESampler()
@@ -218,6 +224,10 @@ void WAIVESampler::run(
 {
     samplePlayerMtx.lock();
 
+    tosc_bundle bundle;
+    tosc_writeBundle(&bundle, 1, oscBuffer, sizeof(oscBuffer));
+    int bundle_length = 0;
+
     int midiIndex = 0;
     float y;
     for (uint32_t i = 0; i < numFrames; i++)
@@ -239,7 +249,7 @@ void WAIVESampler::run(
             uint8_t note = data1;
             uint8_t velocity = data2;
             // std::cout << "noteOn: " << type << " " << note << ":" << velocity << std::endl;
-            printf("type: %02X data1: %02X (%d) data2: %02X (%d) \n", type, note, note, velocity, velocity);
+            // printf("type: %02X data1: %02X (%d) data2: %02X (%d) \n", type, note, note, velocity, velocity);
 
             if (type == 0x8 || (type == 0x9 && velocity == 0))
             {
@@ -257,6 +267,14 @@ void WAIVESampler::run(
                     {
                         samplePlayers[j].state = PlayState::TRIGGERED;
                         samplePlayers[j].velocity = (float)velocity / 128;
+
+                        // send OSC
+                        bundle_length += tosc_writeNextMessage(
+                            &bundle,
+                            "/WAIVE_Sampler",
+                            "si",
+                            samplePlayers[j].sampleInfo->name.c_str(),
+                            note);
                     }
                 }
             }
@@ -300,6 +318,9 @@ void WAIVESampler::run(
         outputs[0][i] = y;
         outputs[1][i] = y;
     }
+
+    if (bundle_length)
+        server.sendMessage(oscBuffer, tosc_getBundleLength(&bundle));
 
     samplePlayerMtx.unlock();
 }

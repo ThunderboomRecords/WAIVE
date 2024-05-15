@@ -7,7 +7,6 @@
 #include <string>
 #include <queue>
 
-#include <fstream>
 #include <mutex>
 #include <stdlib.h>
 #include <time.h>
@@ -22,10 +21,13 @@
 #include "SampleDatabase.hpp"
 #include "Envelopes.hpp"
 #include "WaveformFeatures.hpp"
+#include "SimpleUDP.hpp"
 
 #include <librosa.h>
 #include "samplerate.h"
 #include "Gist.h"
+
+#include <tinyosc.h>
 
 #define MAX_PATH 128
 
@@ -109,7 +111,6 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
 
     void newSample();
-    // std::shared_ptr<SampleInfo> findSample(int id);
     void loadPreview(int id);
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);
@@ -119,8 +120,6 @@ protected:
     bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
     void selectWaveform(std::vector<float> *source, int start);
     void addCurrentSampleToLibrary();
-    // bool renameCurrentSample(std::string new_name);
-    // bool saveSamples();
     void renderSample();
     void loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer);
     void triggerPreview();
@@ -138,8 +137,8 @@ private:
     Gist<float> gist;
 
     SampleDatabase sd;
-
-    // fs::path fCacheDir;
+    SimpleUDPServer server;
+    char oscBuffer[2048];
 
     std::shared_ptr<SampleInfo> fCurrentSample;
 
