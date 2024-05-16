@@ -14,6 +14,7 @@
 #include "Knob.hpp"
 #include "Knob3D.hpp"
 #include "Label.hpp"
+#include "DropDown.hpp"
 #include "Waveform.hpp"
 #include "TextInput.hpp"
 #include "SampleMap.hpp"
@@ -39,7 +40,8 @@ class WAIVESamplerUI : public UI,
                        public Waveform::Callback,
                        public Knob::Callback,
                        public SampleMap::Callback,
-                       public TextInput::Callback
+                       public TextInput::Callback,
+                       public DropDown::Callback
 {
 public:
     WAIVESamplerUI();
@@ -61,6 +63,7 @@ protected:
     void mapSampleSelected(int id) override;
     void mapSampleLoadSlot(int index, int slot) override;
     void textEntered(TextInput *textInput, std::string text) override;
+    void dropdownSelection(DropDown *widget, int item) override;
 
 private:
     float fScale;
@@ -76,7 +79,8 @@ private:
     Waveform *source_display, *sample_display;
     Knob3D *pitch, *volume, *percussionBoost;
     Knob3D *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
-    Knob3D *filterCutoff, *filterResonance, *filterType;
+    Knob3D *filterCutoff, *filterResonance;
+    DropDown *filterType;
     SampleMap *sample_map;
     TextInput *sample_name;
 

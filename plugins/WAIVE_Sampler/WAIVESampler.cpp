@@ -555,8 +555,9 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     if (s == nullptr)
         return;
 
-    // save/update current sample
-    // addToLibrary();
+    bool newSource = fCurrentSample->source.compare(s->source) != 0;
+
+    // save/update current sample?
 
     fCurrentSample = s;
     std::cout << s->name << std::endl;
@@ -565,7 +566,8 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     // load source (if avaliable)
     if (fCurrentSample->waive)
     {
-        loadSource(fCurrentSample->source.c_str());
+        if (newSource)
+            loadSource(fCurrentSample->source.c_str());
         ampEnvGen.setADSR(fCurrentSample->adsr);
         setParameterValue(kSampleVolume, fCurrentSample->volume);
         setParameterValue(kSamplePitch, fCurrentSample->pitch);

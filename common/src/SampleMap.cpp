@@ -202,7 +202,7 @@ bool SampleMap::onScroll(const ScrollEvent &ev)
     return true;
 };
 
-void SampleMap::onMenuItemSelection(Menu *menu, int item)
+void SampleMap::onMenuItemSelection(Menu *menu, int item, const char *value)
 {
     // std::cout << "put sample " << contextMenuSample << " into slot " << item << std::endl;
     if (callback != nullptr)

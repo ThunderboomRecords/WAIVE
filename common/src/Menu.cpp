@@ -26,13 +26,8 @@ void Menu::addItem(const char *item)
 
 void Menu::setDisplayNumber(int number)
 {
-    display_number = number;
-    Rectangle<float> bounds;
-    fontSize(font_size);
-    fontFaceId(font);
-    textBounds(0, 0, "item 1", nullptr, bounds);
-
-    setHeight(display_number * (bounds.getHeight() + 4));
+    display_number = std::min(number, (int)items.size());
+    calculateHeight();
 }
 
 void Menu::onNanoDisplay()
@@ -48,6 +43,9 @@ void Menu::onNanoDisplay()
     rect(0, 0, width, height);
     fill();
     closePath();
+
+    if (items.size() == 0)
+        return;
 
     if (highlighted_item >= 0)
     {
@@ -65,7 +63,7 @@ void Menu::onNanoDisplay()
     stroke();
     closePath();
 
-    for (int i = 0; i < display_number; i++)
+    for (int i = 0; i < std::min(display_number, (int)items.size()); i++)
     {
         beginPath();
         fontSize(font_size);
@@ -89,7 +87,7 @@ void Menu::onNanoDisplay()
 
 bool Menu::onMouse(const MouseEvent &ev)
 {
-    if (!isVisible())
+    if (!isVisible() || items.size() == 0)
         return false;
 
     if (ev.press && ev.button == MouseButton::kMouseButtonLeft)
@@ -97,14 +95,15 @@ bool Menu::onMouse(const MouseEvent &ev)
         if (!contains(ev.pos))
         {
             hide();
+            repaint();
             return false;
         }
 
         if (highlighted_item < 0)
-            return true;
+            return false;
 
         if (callback != nullptr)
-            callback->onMenuItemSelection(this, highlighted_item);
+            callback->onMenuItemSelection(this, highlighted_item, items[highlighted_item]);
 
         hide();
         repaint();
@@ -116,12 +115,13 @@ bool Menu::onMouse(const MouseEvent &ev)
 
 bool Menu::onMotion(const MotionEvent &ev)
 {
-    if (!isVisible())
+    if (!isVisible() || items.size() == 0)
         return false;
 
     if (!contains(ev.pos))
     {
         hide(); // maybe not?
+        repaint();
         return false;
     }
 
@@ -135,7 +135,7 @@ bool Menu::onMotion(const MotionEvent &ev)
 
 bool Menu::onScroll(const ScrollEvent &ev)
 {
-    if (!isVisible())
+    if (!isVisible() || items.size() == 0)
         return false;
 
     if (!contains(ev.pos))
@@ -160,6 +160,40 @@ bool Menu::onScroll(const ScrollEvent &ev)
 
     repaint();
     return true;
+}
+
+void Menu::setItem(int item)
+{
+    highlighted_item = item;
+    int max_scroll_index = std::max(0, (int)items.size() - display_number);
+    scroll_index = std::clamp(highlighted_item, 0, max_scroll_index);
+}
+
+const char *Menu::getItem(int item) const
+{
+    try
+    {
+        return items.at(item);
+    }
+    catch (const std::exception &e)
+    {
+        return "";
+    }
+}
+
+int Menu::getNumberItems() const
+{
+    return items.size();
+}
+
+void Menu::calculateHeight()
+{
+    Rectangle<float> bounds;
+    fontSize(font_size);
+    fontFaceId(font);
+    textBounds(0, 0, "item 1", nullptr, bounds);
+
+    setHeight(display_number * (bounds.getHeight() + 4));
 }
 
 void Menu::setCallback(Callback *cb)

@@ -1,55 +1,51 @@
-#ifndef MENU_HPP_INCLUDED
-#define MENU_HPP_INCLUDED
+#ifndef DROPDOWN_HPP_INCLUDED
+#define DROPDOWN_HPP_INCLUDED
 
-#include <string>
+#include "Window.hpp"
+#include "Widget.hpp"
+#include "NanoVG.hpp"
 #include <iostream>
 
-#include "Widget.hpp"
-#include "Window.hpp"
-#include "NanoVG.hpp"
+#include "Menu.hpp"
 
 START_NAMESPACE_DISTRHO
 
-class Menu : public NanoSubWidget
+class DropDown : public NanoSubWidget,
+                 public Menu::Callback
 {
 public:
     class Callback
     {
     public:
         virtual ~Callback(){};
-        virtual void onMenuItemSelection(Menu *menu, int item, const char *value) = 0;
+        virtual void dropdownSelection(DropDown *widget, int item) = 0;
     };
 
-    explicit Menu(Widget *parent) noexcept;
+    explicit DropDown(Widget *parent) noexcept;
 
     void setFont(const char *name, const uchar *data, uint dataSize);
     void setCallback(Callback *cb);
     void addItem(const char *item);
     void setDisplayNumber(int number);
     void setItem(int item);
-    int getNumberItems() const;
-    const char *getItem(int item) const;
-    void calculateHeight();
 
+    Menu *menu;
     Color background_color, text_color, highlight_color, border_color;
     float font_size;
 
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &ev) override;
-    bool onMotion(const MotionEvent &ev) override;
-    bool onScroll(const ScrollEvent &ev) override;
+    void onMenuItemSelection(Menu *menu, int item, const char *value) override;
 
 private:
     Callback *callback;
 
     FontId font;
-    std::vector<const char *> items;
-    int highlighted_item;
-    int scroll_index;
-    int display_number;
 
-    DISTRHO_LEAK_DETECTOR(Menu);
+    std::string currentItem;
+
+    DISTRHO_LEAK_DETECTOR(DropDown);
 };
 
 END_NAMESPACE_DISTRHO

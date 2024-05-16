@@ -129,8 +129,15 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     // Filter
     filterCutoff = createWAIVEKnob(this, kFilterCutoff, "cutoff", 0.0, 0.999, 0.999, logo_font);
     filterResonance = createWAIVEKnob(this, kFilterResonance, "res.", 0.0, 1.0, 0.0, logo_font);
-    filterType = createWAIVEKnob(this, kFilterType, "type", 0.0, 3.0, 0.0, logo_font);
-    filterType->integer = true;
+    filterType = new DropDown(this);
+    filterType->font_size = 16.0f;
+    filterType->addItem("lowpass");
+    filterType->addItem("highpass");
+    filterType->addItem("bandpass");
+    filterType->setId(kFilterType);
+    filterType->setFont("VG5000", VG5000, VG5000_len);
+    filterType->setSize(80, 20);
+    filterType->setCallback(this);
 
     shapeKnobs->addWidget(pitch);
     shapeKnobs->addWidget(percussionBoost);
@@ -154,6 +161,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     filterKnobs->resizeToFit();
     Layout::leftOf(filterKnobs, ampADSRKnobs, Widget_Align::CENTER, 10.f);
     filterKnobs->positionWidgets();
+
+    // Layout::below(filterType, filterKnobs, Widget_Align::CENTER, 10.f);
 
     sample_map_menu = new Menu(this);
     sample_map_menu->addItem("Add to slot 1");
@@ -304,6 +313,14 @@ void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
     }
 }
 
+void WAIVESamplerUI::dropdownSelection(DropDown *widget, int item)
+{
+    if (widget == filterType)
+    {
+        setParameterValue(widget->getId(), item);
+    }
+}
+
 void WAIVESamplerUI::onNanoDisplay()
 {
     float width = getWidth();
@@ -379,7 +396,7 @@ void WAIVESamplerUI::idleCallback()
                 sustainLength->setValue(plugin->fCurrentSample->sustainLength, false);
                 filterCutoff->setValue(plugin->fCurrentSample->filterCutoff, false);
                 filterResonance->setValue(plugin->fCurrentSample->filterResonance, false);
-                filterType->setValue(plugin->fCurrentSample->filterType, false);
+                filterType->setItem(plugin->fCurrentSample->filterType);
 
                 source_display->setSelection(plugin->fCurrentSample->sourceStart, false);
                 if (plugin->fCurrentSample->saved)
