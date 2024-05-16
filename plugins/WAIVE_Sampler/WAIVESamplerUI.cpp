@@ -130,6 +130,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     filterCutoff = createWAIVEKnob(this, kFilterCutoff, "cutoff", 0.0, 0.999, 0.999, logo_font);
     filterResonance = createWAIVEKnob(this, kFilterResonance, "res.", 0.0, 1.0, 0.0, logo_font);
     filterType = createWAIVEKnob(this, kFilterType, "type", 0.0, 3.0, 0.0, logo_font);
+    filterType->integer = true;
 
     shapeKnobs->addWidget(pitch);
     shapeKnobs->addWidget(percussionBoost);

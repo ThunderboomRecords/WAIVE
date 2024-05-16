@@ -38,6 +38,7 @@ public:
     float label_size;
 
     bool enabled;
+    bool integer;
 
     FontId font;
     std::string label;

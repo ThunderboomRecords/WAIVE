@@ -21,7 +21,8 @@ Knob::Knob(Widget *parent) noexcept
       format("{:.2f}"),
       label("knob"),
       enabled(true),
-      radius(25.0f)
+      radius(25.0f),
+      integer(false)
 {
     loadSharedResources();
 }
@@ -51,11 +52,11 @@ void Knob::setValue(float val, bool sendCallback) noexcept
         return;
 
     value_ = std::clamp(val, min, max);
+    if (integer)
+        value_ = std::floor(value_);
 
     if (sendCallback && callback != nullptr)
-    {
         callback->knobValueChanged(this, value_);
-    }
 
     repaint();
 }
@@ -75,23 +76,17 @@ bool Knob::onMouse(const MouseEvent &ev)
         sensitive = (ev.mod == kModifierShift);
 
         if (callback != nullptr)
-        {
             callback->knobDragStarted(this);
-        }
         repaint();
     }
     else if (!ev.press && dragging_)
     {
         dragging_ = false;
         if (callback != nullptr)
-        {
             callback->knobDragFinished(this, value_);
-        }
     }
     else
-    {
         return false;
-    }
 
     return true;
 }
@@ -110,7 +105,6 @@ bool Knob::onMotion(const MotionEvent &ev)
     float p = tmp_p - d_p;
 
     float new_value = min + (max - min) * p;
-    new_value = std::clamp(new_value, min, max);
 
     setValue(new_value, true);
     return true;
