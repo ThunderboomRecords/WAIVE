@@ -38,6 +38,7 @@ enum Parameters
     kAmpSustain,
     kAmpRelease,
     kSustainLength,
+    kPercussiveBoost,
     kParameterCount
 };
 

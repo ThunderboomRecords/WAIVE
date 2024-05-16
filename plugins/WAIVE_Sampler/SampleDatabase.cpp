@@ -11,6 +11,7 @@ SampleInfo::SampleInfo(
                   tags(""),
                   volume(1.0f),
                   pitch(1.0f),
+                  percussiveBoost(1.0f),
                   sustainLength(10.0f),
                   sourceStart(0),
                   sampleLength(0),
@@ -55,6 +56,7 @@ json SampleInfo::toJson() const
     data["parameters"] = {
         {"volume", volume},
         {"pitch", pitch},
+        {"percussiveBoost", percussiveBoost},
     };
     data["tags"] = tags;
     data["saved"] = saved;
@@ -125,6 +127,7 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
             s->sourceStart = data["sourceStart"];
             s->volume = data["parameters"]["volume"];
             s->pitch = data["parameters"]["pitch"];
+            s->percussiveBoost = data["parameters"]["percussiveBoost"];
             ADSR_Params adsr = {
                 data["ampEnv"]["attack"],
                 data["ampEnv"]["decay"],
@@ -160,14 +163,6 @@ bool SampleDatabase::saveJson(json data, std::string fp)
     ofs.close();
     return true;
 }
-
-// json SampleDatabase::openJson(std::string fp)
-// {
-//     std::ifstream f(fp);
-//     json data = json::parse(f);
-//     f.close();
-//     return data;
-// }
 
 bool SampleDatabase::saveSamples()
 {
@@ -226,7 +221,7 @@ std::shared_ptr<SampleInfo> SampleDatabase::findSample(int id)
 {
     // TODO: make more efficient
     // - caching?
-    // - hash table?
+    // - hash table/unordered map?
 
     for (int i = 0; i < fAllSamples.size(); i++)
     {

@@ -74,7 +74,7 @@ private:
     ValueIndicator *value_indicator;
     Button *open_btn, *new_sample_btn, *save_sample_btn, *play_btn;
     Waveform *source_display, *sample_display;
-    Knob3D *pitch, *volume, *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
+    Knob3D *pitch, *volume, *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength, *percussionBoost;
     SampleMap *sample_map;
     TextInput *sample_name;
 

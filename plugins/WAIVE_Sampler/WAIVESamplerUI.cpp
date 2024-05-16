@@ -105,6 +105,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     // Wave shaping
     pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f, logo_font);
     volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f, logo_font);
+    percussionBoost = createWAIVEKnob(this, kPercussiveBoost, "perc.", 0.0f, 1.0f, 1.0f, logo_font);
 
     // Amp ADSR
     ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 10.0f, logo_font);
@@ -122,6 +123,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sustainLength->format = "{:.0f}ms";
 
     shapeKnobs->addWidget(pitch);
+    shapeKnobs->addWidget(percussionBoost);
     shapeKnobs->addWidget(volume);
     shapeKnobs->resizeToFit();
     Layout::leftOf(shapeKnobs, sample_display, Widget_Align::CENTER, 10.f);
@@ -177,6 +179,9 @@ void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
     {
     case kSamplePitch:
         pitch->setValue(value, false);
+        break;
+    case kPercussiveBoost:
+        percussionBoost->setValue(value, false);
         break;
     case kSampleVolume:
         volume->setValue(value, false);

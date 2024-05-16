@@ -68,6 +68,13 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.max = 4.0f;
         parameter.ranges.def = 1.0f;
         break;
+    case kPercussiveBoost:
+        parameter.name = "Percussion Boost";
+        parameter.symbol = "percussionBoost";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 1.0f;
+        break;
     case kAmpAttack:
         parameter.name = "Amp Attack";
         parameter.symbol = "ampAttack";
@@ -121,6 +128,10 @@ float WAIVESampler::getParameterValue(uint32_t index) const
         if (fCurrentSample != nullptr)
             val = fCurrentSample->pitch;
         break;
+    case kPercussiveBoost:
+        if (fCurrentSample != nullptr)
+            val = fCurrentSample->percussiveBoost;
+        break;
     case kAmpAttack:
         val = ampEnvGen.getAttack();
         break;
@@ -158,6 +169,11 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
     case kSamplePitch:
         if (fCurrentSample != nullptr)
             fCurrentSample->pitch = value;
+        renderSample();
+        break;
+    case kPercussiveBoost:
+        if (fCurrentSample != nullptr)
+            fCurrentSample->percussiveBoost = value;
         renderSample();
         break;
     case kAmpAttack:
@@ -567,7 +583,14 @@ void WAIVESampler::renderSample()
     ampEnvGen.trigger();
 
     float amp = ampEnvGen.getValue();
-    float delta = fCurrentSample->pitch;
+
+    // delta (pitch) envelope
+    float deltaStart = fCurrentSample->pitch + fCurrentSample->percussiveBoost * 3.0f;
+    float delta = deltaStart;
+    int deltaEnvLength = sampleRate / 20;
+    if (d_isZero(fCurrentSample->percussiveBoost))
+        deltaEnvLength = -1;
+
     float y = 0.0f;
     int index = 0;
     float indexF = 0.0f;
@@ -581,6 +604,11 @@ void WAIVESampler::renderSample()
             editorPreviewPlayer->length = i;
             break;
         }
+
+        if (i < deltaEnvLength)
+            delta = interpolate((float)i / (float)deltaEnvLength, deltaStart, fCurrentSample->pitch, 1.0f, true);
+        else
+            delta = fCurrentSample->pitch;
 
         y = fSourceWaveform[fCurrentSample->sourceStart + index];
         editorPreviewWaveform->at(i) = std::clamp(y * fCurrentSample->volume * amp / normaliseRatio, -1.0f, 1.0f);

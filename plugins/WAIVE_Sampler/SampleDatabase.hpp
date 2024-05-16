@@ -41,6 +41,7 @@ public:
     std::string source;
     float volume;
     float pitch;
+    float percussiveBoost;
     ADSR_Params adsr;
     float sustainLength;
     int sourceStart;
