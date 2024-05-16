@@ -87,3 +87,4 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 - [Gist](https://github.com/adamstark/Gist) GPL-3.0 license
 - [libsamplerate](https://github.com/libsndfile/libsamplerate) BSD-3-Clause
 - [nlohmann/json](https://github.com/nlohmann/json) MIT
+- [TinyOSC](https://github.com/mhroth/tinyosc/tree/master) ISC license

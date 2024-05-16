@@ -12,6 +12,8 @@ dpf_add_plugin(
       WAIVESampler.cpp
       SampleDatabase.cpp
       Envelopes.cpp
+      SimpleUDP.cpp
+      ${CMAKE_SOURCE_DIR}/external/tinyosc/tinyosc.c
   FILES_UI
       WAIVESamplerUI.cpp
       ${CMAKE_SOURCE_DIR}/common/fonts.h
@@ -51,7 +53,6 @@ message(FATAL_ERROR "Sndfile library not found")
 endif()
 
 find_package(fmt REQUIRED)
-# find_package(fftw3 REQUIRED)
 
 target_include_directories(
   WAIVE_Sampler
@@ -64,6 +65,8 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/Gist/src
     ${CMAKE_SOURCE_DIR}/external/kissfft
     ${CMAKE_SOURCE_DIR}/external/kd-tree
+    # ${CMAKE_SOURCE_DIR}/external/oscpkt
+    ${CMAKE_SOURCE_DIR}/external/tinyosc
 )
 
 target_link_libraries(

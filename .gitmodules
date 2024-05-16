@@ -19,3 +19,6 @@
 [submodule "external/kd-tree"]
 	path = external/kd-tree
 	url = https://github.com/gishi523/kd-tree.git
+[submodule "external/tinyosc"]
+	path = external/tinyosc
+	url = https://github.com/mhroth/tinyosc.git
