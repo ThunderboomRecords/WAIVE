@@ -110,6 +110,28 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.max = 500.0f;
         parameter.ranges.def = 100.0f;
         break;
+    case kFilterCutoff:
+        parameter.name = "Filter Cutoff";
+        parameter.symbol = "filterCutoff";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 0.999f;
+        parameter.ranges.def = 0.999f;
+        break;
+    case kFilterResonance:
+        parameter.name = "Filter Resonance";
+        parameter.symbol = "filterResonance";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.0f;
+        break;
+    case kFilterType:
+        parameter.name = "Filter Type";
+        parameter.symbol = "filterType";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 3.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsInteger;
+        break;
     default:
         break;
     }
@@ -148,6 +170,18 @@ float WAIVESampler::getParameterValue(uint32_t index) const
         if (fCurrentSample != nullptr)
             val = fCurrentSample->sustainLength;
         break;
+    case kFilterCutoff:
+        if (fCurrentSample != nullptr)
+            val = fCurrentSample->filterCutoff;
+        break;
+    case kFilterResonance:
+        if (fCurrentSample != nullptr)
+            val = fCurrentSample->filterResonance;
+        break;
+    case kFilterType:
+        if (fCurrentSample != nullptr)
+            val = fCurrentSample->filterType;
+        break;
     default:
         std::cerr << "getParameter: Unknown parameter index: " << index << "  " << std::endl;
         break;
@@ -178,27 +212,38 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
         break;
     case kAmpAttack:
         ampEnvGen.setAttack(value);
-        ampEnvGen.calculateStages();
         renderSample();
         break;
     case kAmpDecay:
         ampEnvGen.setDecay(value);
-        ampEnvGen.calculateStages();
         renderSample();
         break;
     case kAmpSustain:
         ampEnvGen.setSustain(value);
-        ampEnvGen.calculateStages();
         renderSample();
         break;
     case kAmpRelease:
         ampEnvGen.setRelease(value);
-        ampEnvGen.calculateStages();
         renderSample();
         break;
     case kSustainLength:
         if (fCurrentSample != nullptr)
             fCurrentSample->sustainLength = value;
+        renderSample();
+        break;
+    case kFilterCutoff:
+        if (fCurrentSample != nullptr)
+            fCurrentSample->filterCutoff = value;
+        renderSample();
+        break;
+    case kFilterResonance:
+        if (fCurrentSample != nullptr)
+            fCurrentSample->filterResonance = value;
+        renderSample();
+        break;
+    case kFilterType:
+        if (fCurrentSample != nullptr)
+            fCurrentSample->filterType = (Filter::FilterType)value;
         renderSample();
         break;
     default:
@@ -461,10 +506,15 @@ void WAIVESampler::newSample()
     if (fCurrentSample != nullptr)
     {
         s->pitch = fCurrentSample->pitch;
+        s->percussiveBoost = fCurrentSample->percussiveBoost;
         s->volume = fCurrentSample->volume;
+        s->filterCutoff = fCurrentSample->filterCutoff;
+        s->filterResonance = fCurrentSample->filterResonance;
+        s->filterType = fCurrentSample->filterType;
+        s->sustainLength = fCurrentSample->sustainLength;
+
         s->source = fCurrentSample->source;
         s->sourceStart = fCurrentSample->sourceStart;
-        s->sustainLength = fCurrentSample->sustainLength;
         s->embedX = fCurrentSample->embedX;
         s->embedY = fCurrentSample->embedY;
     }
@@ -584,6 +634,12 @@ void WAIVESampler::renderSample()
 
     float amp = ampEnvGen.getValue();
 
+    // filter setup
+    sampleFilter.setCutoff(fCurrentSample->filterCutoff);
+    sampleFilter.setResonance(fCurrentSample->filterResonance);
+    sampleFilter.mode = fCurrentSample->filterType;
+    sampleFilter.reset();
+
     // delta (pitch) envelope
     float deltaStart = fCurrentSample->pitch + fCurrentSample->percussiveBoost * 3.0f;
     float delta = deltaStart;
@@ -611,6 +667,8 @@ void WAIVESampler::renderSample()
             delta = fCurrentSample->pitch;
 
         y = fSourceWaveform[fCurrentSample->sourceStart + index];
+        y = sampleFilter.process(y);
+
         editorPreviewWaveform->at(i) = std::clamp(y * fCurrentSample->volume * amp / normaliseRatio, -1.0f, 1.0f);
 
         indexF += delta;

@@ -39,6 +39,9 @@ enum Parameters
     kAmpRelease,
     kSustainLength,
     kPercussiveBoost,
+    kFilterCutoff,
+    kFilterResonance,
+    kFilterType,
     kParameterCount
 };
 

@@ -102,6 +102,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     shapeKnobs->justify_content = HBox::Justify_Content::right;
     shapeKnobs->padding = 5;
 
+    filterKnobs = new HBox(this);
+    filterKnobs->justify_content = HBox::Justify_Content::right;
+    filterKnobs->padding = 5;
+
     // Wave shaping
     pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f, logo_font);
     volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f, logo_font);
@@ -122,6 +126,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 500.0f, 100.f, logo_font);
     sustainLength->format = "{:.0f}ms";
 
+    // Filter
+    filterCutoff = createWAIVEKnob(this, kFilterCutoff, "cutoff", 0.0, 0.999, 0.999, logo_font);
+    filterResonance = createWAIVEKnob(this, kFilterResonance, "res.", 0.0, 1.0, 0.0, logo_font);
+    filterType = createWAIVEKnob(this, kFilterType, "type", 0.0, 3.0, 0.0, logo_font);
+
     shapeKnobs->addWidget(pitch);
     shapeKnobs->addWidget(percussionBoost);
     shapeKnobs->addWidget(volume);
@@ -137,6 +146,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     ampADSRKnobs->resizeToFit();
     Layout::leftOf(ampADSRKnobs, shapeKnobs, Widget_Align::CENTER, 10.f);
     ampADSRKnobs->positionWidgets();
+
+    filterKnobs->addWidget(filterType);
+    filterKnobs->addWidget(filterCutoff);
+    filterKnobs->addWidget(filterResonance);
+    filterKnobs->resizeToFit();
+    Layout::leftOf(filterKnobs, ampADSRKnobs, Widget_Align::CENTER, 10.f);
+    filterKnobs->positionWidgets();
 
     sample_map_menu = new Menu(this);
     sample_map_menu->addItem("Add to slot 1");
@@ -357,8 +373,13 @@ void WAIVESamplerUI::idleCallback()
             if (plugin->fCurrentSample != nullptr)
             {
                 pitch->setValue(plugin->fCurrentSample->pitch, false);
+                percussionBoost->setValue(plugin->fCurrentSample->percussiveBoost, false);
                 volume->setValue(plugin->fCurrentSample->volume, false);
                 sustainLength->setValue(plugin->fCurrentSample->sustainLength, false);
+                filterCutoff->setValue(plugin->fCurrentSample->filterCutoff, false);
+                filterResonance->setValue(plugin->fCurrentSample->filterResonance, false);
+                filterType->setValue(plugin->fCurrentSample->filterType, false);
+
                 source_display->setSelection(plugin->fCurrentSample->sourceStart, false);
                 if (plugin->fCurrentSample->saved)
                     save_sample_btn->setLabel("update");

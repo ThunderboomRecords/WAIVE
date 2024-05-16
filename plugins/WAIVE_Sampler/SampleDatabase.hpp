@@ -8,6 +8,7 @@
 #include <fstream>
 #include <filesystem>
 
+#include "Filters.hpp"
 #include "Envelopes.hpp"
 #include "WAIVESamplerParams.h"
 
@@ -42,6 +43,9 @@ public:
     float volume;
     float pitch;
     float percussiveBoost;
+    float filterCutoff;
+    float filterResonance;
+    Filter::FilterType filterType;
     ADSR_Params adsr;
     float sustainLength;
     int sourceStart;

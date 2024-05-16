@@ -18,7 +18,10 @@ SampleInfo::SampleInfo(
                   saved(false),
                   name(name),
                   path(path),
-                  waive(waive)
+                  waive(waive),
+                  filterCutoff(0.99),
+                  filterResonance(0.0),
+                  filterType(Filter::FILTER_LOWPASS)
 {
 }
 
@@ -57,6 +60,11 @@ json SampleInfo::toJson() const
         {"volume", volume},
         {"pitch", pitch},
         {"percussiveBoost", percussiveBoost},
+    };
+    data["filter"] = {
+        {"filterCutoff", filterCutoff},
+        {"filterResonance", filterResonance},
+        {"filterType", filterType},
     };
     data["tags"] = tags;
     data["saved"] = saved;
@@ -125,18 +133,22 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
         {
             s->source = data["source"];
             s->sourceStart = data["sourceStart"];
-            s->volume = data["parameters"]["volume"];
-            s->pitch = data["parameters"]["pitch"];
-            s->percussiveBoost = data["parameters"]["percussiveBoost"];
-            ADSR_Params adsr = {
-                data["ampEnv"]["attack"],
-                data["ampEnv"]["decay"],
-                data["ampEnv"]["sustain"],
-                data["ampEnv"]["release"],
-            };
-            s->adsr = adsr;
-            s->sustainLength = data["ampEnv"]["sustainLength"];
         }
+        s->volume = data["parameters"]["volume"];
+        s->pitch = data["parameters"]["pitch"];
+        s->percussiveBoost = data["parameters"]["percussiveBoost"];
+        ADSR_Params adsr = {
+            data["ampEnv"]["attack"],
+            data["ampEnv"]["decay"],
+            data["ampEnv"]["sustain"],
+            data["ampEnv"]["release"],
+        };
+        s->adsr = adsr;
+        s->sustainLength = data["ampEnv"]["sustainLength"];
+        s->filterCutoff = data["filter"]["filterCutoff"];
+        s->filterResonance = data["filter"]["filterResonance"];
+        s->filterType = data["filter"]["filterType"];
+
         s->saved = data["saved"];
         return s;
     }

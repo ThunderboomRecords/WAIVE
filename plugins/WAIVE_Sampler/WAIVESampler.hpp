@@ -148,6 +148,7 @@ private:
     std::vector<WaveformFeature> fSourceFeatures;
 
     float fNormalisationRatio;
+    Filter sampleFilter;
 
     std::mutex samplePlayerMtx;
     SamplePlayer *editorPreviewPlayer, *mapPreviewPlayer;

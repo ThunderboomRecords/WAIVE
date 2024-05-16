@@ -13,6 +13,7 @@ dpf_add_plugin(
       SampleDatabase.cpp
       Envelopes.cpp
       SimpleUDP.cpp
+      Filters.cpp
       ${CMAKE_SOURCE_DIR}/external/tinyosc/tinyosc.c
   FILES_UI
       WAIVESamplerUI.cpp
