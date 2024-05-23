@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <string>
 #include <queue>
@@ -27,7 +28,19 @@
 #include "samplerate.h"
 #include "Gist.h"
 
+#include "version_config.h"
+
 #include <tinyosc.h>
+
+#ifdef WAIVE_PLUGINS_VERSION_INFO
+const int V_MAJ = WAIVE_PLUGINS_VERSION_MAJOR;
+const int V_MIN = WAIVE_PLUGINS_VERSION_MINOR;
+const int V_PAT = WAIVE_PLUGINS_VERSION_PATCH;
+#else
+const int V_MAJ = 1;
+const int V_MIN = 0;
+const int V_PAT = 0;
+#endif
 
 #define MAX_PATH 128
 
@@ -89,7 +102,7 @@ protected:
 
     uint32_t getVersion() const noexcept override
     {
-        return d_version(0, 3, 0);
+        return d_version(V_MAJ, V_MIN, V_PAT);
     }
 
     int64_t getUniqueId() const noexcept override

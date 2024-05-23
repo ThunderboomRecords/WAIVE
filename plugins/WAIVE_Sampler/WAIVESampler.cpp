@@ -17,6 +17,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     if (isDummyInstance())
         std::cout << "** dummy instance" << std::endl;
 
+    printf(" VERSION: %d.%d.%d\n", V_MAJ, V_MIN, V_PAT);
+
     srand(time(NULL));
 
     sd = SampleDatabase();
