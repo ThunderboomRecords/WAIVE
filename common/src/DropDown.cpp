@@ -3,39 +3,32 @@
 DropDown::DropDown(Widget *parent) noexcept
     : NanoSubWidget(parent),
       font_size(12.0f),
+      font(0),
       background_color(Color(200, 200, 200)),
       text_color(Color(30, 30, 30)),
       highlight_color(Color(180, 180, 180)),
-      border_color(Color(120, 120, 120))
+      border_color(Color(120, 120, 120)),
+      selected_item(0),
+      menu(nullptr),
+      callback(nullptr)
 {
-    menu = new Menu(parent);
-    menu->font_size = font_size;
-    menu->background_color = background_color;
-    menu->text_color = text_color;
-    menu->border_color = border_color;
-    menu->highlight_color = highlight_color;
-    menu->hide();
-    menu->setCallback(this);
-
     loadSharedResources();
 }
 
 void DropDown::setFont(const char *name, const uchar *data, uint size)
 {
     font = createFontFromMemory(name, data, size, false);
-    menu->setFont(name, data, size);
-    repaint();
 }
 
 void DropDown::setDisplayNumber(int number)
 {
-    menu->setDisplayNumber(number);
+    display_number = number;
 }
 
 void DropDown::onMenuItemSelection(Menu *menu, int item, const char *value)
 {
-    std::cout << "DropDown::onMenuItemSelection " << item << " " << value << std::endl;
     currentItem.assign(value);
+    selected_item = item;
     if (callback != nullptr)
         callback->dropdownSelection(this, item);
     repaint();
@@ -67,13 +60,16 @@ void DropDown::onNanoDisplay()
     fill();
     closePath();
 
-    beginPath();
-    fillColor(text_color);
-    fontFaceId(font);
-    fontSize(font_size);
-    textAlign(Align::ALIGN_MIDDLE);
-    text(2, height / 2, currentItem.c_str(), nullptr);
-    closePath();
+    if (currentItem.size() > 0)
+    {
+        beginPath();
+        fillColor(text_color);
+        fontFaceId(font);
+        fontSize(font_size);
+        textAlign(Align::ALIGN_MIDDLE);
+        text(2, height / 2, currentItem.c_str(), nullptr);
+        closePath();
+    }
 }
 
 bool DropDown::onMouse(const MouseEvent &ev)
@@ -81,12 +77,21 @@ bool DropDown::onMouse(const MouseEvent &ev)
     if (!isVisible())
         return false;
 
-    if (ev.press && ev.button == kMouseButtonLeft && contains(ev.pos))
+    if (ev.press && ev.button == kMouseButtonLeft && menu != nullptr && contains(ev.pos))
     {
-        menu->setWidth(getWidth());
-        menu->font_size = font_size;
+        std::cout << "DropDown::onMouse clicked" << std::endl;
+        std::cout << items.size() << std::endl;
+
+        menu->positionTo(this);
+        menu->clear();
+        for (int i = 0; i < items.size(); i++)
+            menu->addItem(items[i].c_str());
+
         menu->calculateHeight();
-        menu->setAbsolutePos(getAbsolutePos());
+        menu->setItem(selected_item, false);
+        menu->font_size = font_size;
+        menu->setCallback(this);
+        menu->setDisplayNumber(display_number);
         menu->show();
         return true;
     }
@@ -96,18 +101,15 @@ bool DropDown::onMouse(const MouseEvent &ev)
 
 void DropDown::addItem(const char *item)
 {
-    menu->addItem(item);
-    if (menu->getNumberItems() == 1)
-    {
-        menu->setItem(0);
-        currentItem.assign(menu->getItem(0));
-    }
+    items.push_back(item);
 }
 
-void DropDown::setItem(int item)
+void DropDown::setItem(int item, bool sendCallback = false)
 {
-    menu->setItem(item);
-    currentItem.assign(menu->getItem(item));
+    currentItem.assign(items[item]);
+    selected_item = item;
+    if (sendCallback && callback != nullptr)
+        callback->dropdownSelection(this, item);
 }
 
 void DropDown::setCallback(Callback *cb)

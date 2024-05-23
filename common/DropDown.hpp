@@ -27,7 +27,7 @@ public:
     void setCallback(Callback *cb);
     void addItem(const char *item);
     void setDisplayNumber(int number);
-    void setItem(int item);
+    void setItem(int item, bool sendCallback);
 
     Menu *menu;
     Color background_color, text_color, highlight_color, border_color;
@@ -44,6 +44,8 @@ private:
     FontId font;
 
     std::string currentItem;
+    std::vector<std::string> items;
+    int selected_item, display_number;
 
     DISTRHO_LEAK_DETECTOR(DropDown);
 };

@@ -25,11 +25,13 @@ public:
     void setFont(const char *name, const uchar *data, uint dataSize);
     void setCallback(Callback *cb);
     void addItem(const char *item);
+    void clear();
     void setDisplayNumber(int number);
-    void setItem(int item);
+    void setItem(int item, bool sendCallback);
     int getNumberItems() const;
     const char *getItem(int item) const;
     void calculateHeight();
+    void positionTo(NanoSubWidget *widget);
 
     Color background_color, text_color, highlight_color, border_color;
     float font_size;
@@ -39,6 +41,7 @@ protected:
     bool onMouse(const MouseEvent &ev) override;
     bool onMotion(const MotionEvent &ev) override;
     bool onScroll(const ScrollEvent &ev) override;
+    bool onKeyboard(const KeyboardEvent &ev) override;
 
 private:
     Callback *callback;
@@ -48,6 +51,8 @@ private:
     int highlighted_item;
     int scroll_index;
     int display_number;
+
+    bool has_focus;
 
     DISTRHO_LEAK_DETECTOR(Menu);
 };

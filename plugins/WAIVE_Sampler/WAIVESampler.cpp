@@ -2,6 +2,8 @@
 
 START_NAMESPACE_DISTRHO
 
+uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
+
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                sampleRate(getSampleRate()),
                                fSampleLoaded(false),
@@ -32,7 +34,6 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     mapPreviewPlayer = &samplePlayers[9];
     mapPreviewWaveform = &samplePlayerWaveforms[9];
 
-    uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
     for (int i = 0; i < 8; i++)
         samplePlayers[i].midi = defaultMidiMap[i];
 
@@ -52,6 +53,7 @@ WAIVESampler::~WAIVESampler()
 
 void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
 {
+    int slot = 0;
     switch (index)
     {
     case kSampleVolume:
@@ -132,6 +134,22 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.def = 0.0f;
         parameter.hints = kParameterIsInteger;
         break;
+    case kSlot1MidiNumber:
+    case kSlot2MidiNumber:
+    case kSlot3MidiNumber:
+    case kSlot4MidiNumber:
+    case kSlot5MidiNumber:
+    case kSlot6MidiNumber:
+    case kSlot7MidiNumber:
+    case kSlot8MidiNumber:
+        slot = index - kSlot1MidiNumber;
+        parameter.name = fmt::format("Sample {:d} Midi Number", slot + 1).c_str();
+        parameter.symbol = fmt::format("Sample{:d}Midi", slot + 1).c_str();
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 127.0f;
+        parameter.ranges.def = (float)defaultMidiMap[slot];
+        parameter.hints = kParameterIsInteger;
+        break;
     default:
         break;
     }
@@ -140,6 +158,7 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
 float WAIVESampler::getParameterValue(uint32_t index) const
 {
     float val = 0.0f;
+    int slot = 0;
     switch (index)
     {
     case kSampleVolume:
@@ -182,6 +201,17 @@ float WAIVESampler::getParameterValue(uint32_t index) const
         if (fCurrentSample != nullptr)
             val = fCurrentSample->filterType;
         break;
+    case kSlot1MidiNumber:
+    case kSlot2MidiNumber:
+    case kSlot3MidiNumber:
+    case kSlot4MidiNumber:
+    case kSlot5MidiNumber:
+    case kSlot6MidiNumber:
+    case kSlot7MidiNumber:
+    case kSlot8MidiNumber:
+        slot = index - kSlot1MidiNumber;
+        val = (float)samplePlayers[slot].midi;
+        break;
     default:
         std::cerr << "getParameter: Unknown parameter index: " << index << "  " << std::endl;
         break;
@@ -193,6 +223,7 @@ float WAIVESampler::getParameterValue(uint32_t index) const
 void WAIVESampler::setParameterValue(uint32_t index, float value)
 {
     // std::cout << "WAIVESampler::setParameterValue : " << index << " -> " << value << std::endl;
+    int slot = 0;
     switch (index)
     {
     case kSampleVolume:
@@ -245,6 +276,17 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
         if (fCurrentSample != nullptr)
             fCurrentSample->filterType = (Filter::FilterType)value;
         renderSample();
+        break;
+    case kSlot1MidiNumber:
+    case kSlot2MidiNumber:
+    case kSlot3MidiNumber:
+    case kSlot4MidiNumber:
+    case kSlot5MidiNumber:
+    case kSlot6MidiNumber:
+    case kSlot7MidiNumber:
+    case kSlot8MidiNumber:
+        slot = index - kSlot1MidiNumber;
+        samplePlayers[slot].midi = (int)value;
         break;
     default:
         std::cerr << "Unknown parameter index: " << index << "  " << value << std::endl;

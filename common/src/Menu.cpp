@@ -9,8 +9,10 @@ Menu::Menu(Widget *parent) noexcept
       background_color(Color(200, 200, 200)),
       text_color(Color(30, 30, 30)),
       highlight_color(Color(180, 180, 180)),
-      border_color(Color(120, 120, 120))
+      border_color(Color(120, 120, 120)),
+      has_focus(false)
 {
+    loadSharedResources();
 }
 
 void Menu::setFont(const char *name, const uchar *data, uint size)
@@ -19,15 +21,31 @@ void Menu::setFont(const char *name, const uchar *data, uint size)
     repaint();
 }
 
+void Menu::clear()
+{
+    items.clear();
+    highlighted_item = -1;
+    scroll_index = 0;
+}
+
 void Menu::addItem(const char *item)
 {
     items.push_back(item);
+    if (items.size() == 1)
+        highlighted_item = 0;
 }
 
 void Menu::setDisplayNumber(int number)
 {
     display_number = std::min(number, (int)items.size());
     calculateHeight();
+}
+
+void Menu::positionTo(NanoSubWidget *widget)
+{
+    // TODO: make sure it fits fully in parent window
+    setAbsolutePos(widget->getAbsolutePos());
+    setWidth(widget->getWidth());
 }
 
 void Menu::onNanoDisplay()
@@ -90,7 +108,7 @@ bool Menu::onMouse(const MouseEvent &ev)
     if (!isVisible() || items.size() == 0)
         return false;
 
-    if (ev.press && ev.button == MouseButton::kMouseButtonLeft)
+    if (ev.press && ev.button == MouseButton::kMouseButtonLeft && has_focus)
     {
         if (!contains(ev.pos))
         {
@@ -118,19 +136,24 @@ bool Menu::onMotion(const MotionEvent &ev)
     if (!isVisible() || items.size() == 0)
         return false;
 
-    if (!contains(ev.pos))
+    if (!contains(ev.pos) && has_focus)
     {
         hide(); // maybe not?
         repaint();
+        has_focus = false;
         return false;
     }
+    else if (contains(ev.pos))
+    {
+        has_focus = true;
+        const float height = getHeight();
+        const float item_height = height / display_number;
+        highlighted_item = scroll_index + std::floor(ev.pos.getY() / item_height);
 
-    const float height = getHeight();
-    const float item_height = height / display_number;
-    highlighted_item = scroll_index + std::floor(ev.pos.getY() / item_height);
-
-    repaint();
-    return true;
+        repaint();
+        return true;
+    }
+    return false;
 }
 
 bool Menu::onScroll(const ScrollEvent &ev)
@@ -162,11 +185,55 @@ bool Menu::onScroll(const ScrollEvent &ev)
     return true;
 }
 
-void Menu::setItem(int item)
+bool Menu::onKeyboard(const KeyboardEvent &ev)
+{
+    if (!isVisible() || !ev.press)
+        return false;
+
+    switch (ev.key)
+    {
+    case kKeyEscape:
+        has_focus = false;
+        hide();
+        return true;
+        break;
+    case kKeyEnter:
+        if (callback != nullptr)
+            callback->onMenuItemSelection(this, highlighted_item, items[highlighted_item]);
+        hide();
+        return true;
+    case kKeyUp:
+        if (highlighted_item > 0)
+        {
+            highlighted_item--;
+            if (scroll_index > highlighted_item)
+                scroll_index = std::min(highlighted_item, (int)items.size() - display_number);
+        }
+        repaint();
+        return true;
+    case kKeyDown:
+        if (highlighted_item < items.size() - 1)
+        {
+            highlighted_item++;
+            if (scroll_index + display_number <= highlighted_item)
+                scroll_index = std::max(0, highlighted_item - display_number + 1);
+        }
+        repaint();
+        return true;
+    default:
+        break;
+    }
+
+    return false;
+}
+
+void Menu::setItem(int item, bool sendCallback = false)
 {
     highlighted_item = item;
     int max_scroll_index = std::max(0, (int)items.size() - display_number);
     scroll_index = std::clamp(highlighted_item, 0, max_scroll_index);
+    if (callback != nullptr && sendCallback)
+        callback->onMenuItemSelection(this, highlighted_item, items[highlighted_item]);
 }
 
 const char *Menu::getItem(int item) const

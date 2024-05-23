@@ -21,7 +21,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     slots_container->padding = 2;
     slots_container->justify_content = VBox::Justify_Content::space_evenly;
     Layout::rightOf(slots_container, sample_map, Widget_Align::START, 10);
-    createSampleSlots(this, &sampleSlots, &plugin->samplePlayers, 8, slots_container, 300.f / 8.f - 5.f);
+    createSampleSlots();
     slots_container->positionWidgets();
 
     map_label = new Label(this, "sample map");
@@ -136,6 +136,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     filterType->addItem("bandpass");
     filterType->setId(kFilterType);
     filterType->setFont("VG5000", VG5000, VG5000_len);
+    filterType->setDisplayNumber(3);
     filterType->setSize(80, 20);
     filterType->setCallback(this);
 
@@ -162,8 +163,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     Layout::leftOf(filterKnobs, ampADSRKnobs, Widget_Align::CENTER, 10.f);
     filterKnobs->positionWidgets();
 
-    // Layout::below(filterType, filterKnobs, Widget_Align::CENTER, 10.f);
-
     sample_map_menu = new Menu(this);
     sample_map_menu->addItem("Add to slot 1");
     sample_map_menu->addItem("Add to slot 2");
@@ -181,6 +180,17 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_map_menu->setCallback(sample_map);
 
     sample_map->menu = sample_map_menu;
+
+    dropdown_menu = new Menu(this);
+    dropdown_menu->hide();
+    dropdown_menu->setFont("VG5000", VG5000, VG5000_len);
+
+    for (int i = 0; i < sampleSlots.size(); i++)
+    {
+        sampleSlots[i]->updateWidgetPositions();
+        sampleMidiDropdowns[i]->menu = dropdown_menu;
+    }
+    filterType->menu = dropdown_menu;
 
     value_indicator = new ValueIndicator(this);
     value_indicator->setSize(70, 20);
@@ -201,6 +211,7 @@ WAIVESamplerUI::~WAIVESamplerUI() {}
 
 void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
 {
+    int slot = 0;
     switch (index)
     {
     case kSamplePitch:
@@ -226,6 +237,26 @@ void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
         break;
     case kSustainLength:
         sustainLength->setValue(value, false);
+        break;
+    case kFilterCutoff:
+        filterCutoff->setValue(value, false);
+        break;
+    case kFilterResonance:
+        filterResonance->setValue(value, false);
+        break;
+    case kFilterType:
+        filterType->setItem(value, false);
+        break;
+    case kSlot1MidiNumber:
+    case kSlot2MidiNumber:
+    case kSlot3MidiNumber:
+    case kSlot4MidiNumber:
+    case kSlot5MidiNumber:
+    case kSlot6MidiNumber:
+    case kSlot7MidiNumber:
+    case kSlot8MidiNumber:
+        slot = index - kSlot1MidiNumber;
+        sampleMidiDropdowns[slot]->setItem(value, false);
         break;
     default:
         break;
@@ -396,7 +427,7 @@ void WAIVESamplerUI::idleCallback()
                 sustainLength->setValue(plugin->fCurrentSample->sustainLength, false);
                 filterCutoff->setValue(plugin->fCurrentSample->filterCutoff, false);
                 filterResonance->setValue(plugin->fCurrentSample->filterResonance, false);
-                filterType->setItem(plugin->fCurrentSample->filterType);
+                filterType->setItem(plugin->fCurrentSample->filterType, false);
 
                 source_display->setSelection(plugin->fCurrentSample->sourceStart, false);
                 if (plugin->fCurrentSample->saved)
@@ -456,25 +487,32 @@ Knob3D *createWAIVEKnob(
     return knob;
 }
 
-void createSampleSlots(
-    Widget *parent,
-    std::vector<SampleSlot *> *slots,
-    std::vector<SamplePlayer> *players,
-    int n,
-    VBox *container,
-    float height)
+void WAIVESamplerUI::createSampleSlots()
 {
-    float width = container->getWidth();
+    int n = 8;
+    float width = slots_container->getWidth();
     for (int i = 0; i < n; i++)
     {
-        SampleSlot *slot = new SampleSlot(parent);
-        slot->setSize(width, height);
-        slot->samplePlayer = &players->at(i);
+        DropDown *midi_number = new DropDown(this);
+        Button *trigger_btn = new Button(this);
+        SampleSlot *slot = new SampleSlot(this, midi_number, trigger_btn);
+        slot->setSize(width, 300.f / n - 5.f);
+        slot->setSamplePlayer(&plugin->samplePlayers.at(i));
 
-        float hue = ((float)n - i) / (n + 2);
+        float hue = ((float)8 - i) / (n + 2);
         slot->highlight_color = Color::fromHSL(hue, 0.8f, 0.7f);
-        container->addWidget(slot);
-        slots->push_back(slot);
+
+        slots_container->addWidget(slot);
+        sampleSlots.push_back(slot);
+
+        midi_number->setItem(60 + i, false);
+        midi_number->setId(kSlot1MidiNumber + i);
+        midi_number->setCallback(this);
+
+        sampleMidiDropdowns.push_back(midi_number);
+        sampleTriggerButtons.push_back(trigger_btn);
+
+        addIdleCallback(slot);
     }
 }
 

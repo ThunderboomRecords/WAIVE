@@ -9,13 +9,16 @@
 
 #include <fmt/core.h>
 
+#include "DropDown.hpp"
+#include "SimpleButton.hpp"
 #include "WAIVESampler.hpp"
 
 using namespace fmt::v10;
 
 START_NAMESPACE_DISTRHO
 
-class SampleSlot : public NanoSubWidget
+class SampleSlot : public NanoSubWidget,
+                   public IdleCallback
 {
 public:
     class Callback
@@ -25,20 +28,27 @@ public:
         virtual void sampleTriggered(int id) = 0;
         virtual void sampleRemoved(int id) = 0;
     };
-    explicit SampleSlot(Widget *widget) noexcept;
+    explicit SampleSlot(Widget *widget, DropDown *midiSelect, Button *trigger_btn) noexcept;
+    void setSamplePlayer(SamplePlayer *sp);
+    void updateWidgetPositions();
 
     Color background_color, highlight_color;
     bool active;
-
-    SamplePlayer *samplePlayer;
 
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
+    void idleCallback();
 
 private:
-        DISTRHO_LEAK_DETECTOR(SampleSlot);
+    SamplePlayer *samplePlayer;
+    DropDown *midi_number;
+    Button *trigger_btn;
+
+    DISTRHO_LEAK_DETECTOR(SampleSlot);
+
+    PlayState lastPlaying = PlayState::STOPPED;
 };
 
 END_NAMESPACE_DISTRHO

@@ -42,6 +42,14 @@ enum Parameters
     kFilterCutoff,
     kFilterResonance,
     kFilterType,
+    kSlot1MidiNumber,
+    kSlot2MidiNumber,
+    kSlot3MidiNumber,
+    kSlot4MidiNumber,
+    kSlot5MidiNumber,
+    kSlot6MidiNumber,
+    kSlot7MidiNumber,
+    kSlot8MidiNumber,
     kParameterCount
 };
 

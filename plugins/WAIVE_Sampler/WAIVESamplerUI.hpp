@@ -66,6 +66,8 @@ protected:
     void dropdownSelection(DropDown *widget, int item) override;
 
 private:
+    void createSampleSlots();
+
     float fScale;
     double fScaleFactor;
 
@@ -85,9 +87,11 @@ private:
     TextInput *sample_name;
 
     std::vector<SampleSlot *> sampleSlots;
+    std::vector<Button *> sampleTriggerButtons;
+    std::vector<DropDown *> sampleMidiDropdowns;
     HBox *ampADSRKnobs, *shapeKnobs, *filterKnobs;
     VBox *slots_container;
-    Menu *sample_map_menu;
+    Menu *sample_map_menu, *dropdown_menu;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 
@@ -102,14 +106,6 @@ Knob3D *createWAIVEKnob(
     float max,
     float value,
     UI::FontId font);
-
-void createSampleSlots(
-    Widget *parent,
-    std::vector<SampleSlot *> *slots,
-    std::vector<SamplePlayer> *players,
-    int n,
-    VBox *container,
-    float height);
 
 UI *createUI()
 {

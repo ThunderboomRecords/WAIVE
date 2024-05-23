@@ -3,7 +3,7 @@
 START_NAMESPACE_DISTRHO
 
 Waveform::Waveform(Widget *widget) noexcept
-    : NanoSubWidget(widget),
+    : NanoSubWidget(widget, 0), // No anti-aliasing to speed up rendering
       backgroundColor(Color(40, 40, 40)),
       lineColor(Color(200, 200, 200)),
       waveformCached(false),

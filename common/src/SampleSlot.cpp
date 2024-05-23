@@ -2,14 +2,43 @@
 
 START_NAMESPACE_DISTRHO
 
-SampleSlot::SampleSlot(Widget *parent) noexcept
+SampleSlot::SampleSlot(Widget *parent, DropDown *midi_select, Button *trigger_btn) noexcept
     : NanoSubWidget(parent),
       background_color(Color(200, 200, 200)),
       highlight_color(Color(30, 30, 30)),
       active(false),
-      samplePlayer(nullptr)
+      samplePlayer(nullptr),
+      midi_number(midi_select),
+      trigger_btn(trigger_btn)
 {
     loadSharedResources();
+
+    trigger_btn->fontSize(16.0f);
+    trigger_btn->setLabel(">");
+    trigger_btn->setSize(20, 20);
+
+    for (int i = 1; i < 128; i++)
+        midi_number->addItem(fmt::format("{:d}", i).c_str());
+
+    midi_number->setDisplayNumber(16);
+    midi_number->font_size = 16.0f;
+    midi_number->setSize(45, 20);
+}
+
+void SampleSlot::setSamplePlayer(SamplePlayer *sp)
+{
+    samplePlayer = sp;
+}
+
+void SampleSlot::updateWidgetPositions()
+{
+    const Rectangle<int> area = getAbsoluteArea();
+
+    trigger_btn->setAbsoluteX(area.getX() + 4);
+    trigger_btn->setAbsoluteY(area.getY() + (area.getHeight() - trigger_btn->getHeight()) / 2);
+
+    midi_number->setAbsoluteX(area.getX() + area.getWidth() - midi_number->getWidth() - 4);
+    midi_number->setAbsoluteY(area.getY() + (area.getHeight() - midi_number->getHeight()) / 2);
 }
 
 bool SampleSlot::onMouse(const MouseEvent &ev) { return false; }
@@ -19,12 +48,6 @@ void SampleSlot::onNanoDisplay()
 {
     const float width = getWidth();
     const float height = getHeight();
-
-    beginPath();
-    fillColor(background_color);
-    roundedRect(0, 0, width, height, 6);
-    fill();
-    closePath();
 
     beginPath();
     if (active)
@@ -54,6 +77,18 @@ void SampleSlot::onNanoDisplay()
         fontFaceId(0);
         text(0, height / 2, info.c_str(), nullptr);
         closePath();
+    }
+}
+
+void SampleSlot::idleCallback()
+{
+    if (samplePlayer == nullptr)
+        return;
+
+    if (lastPlaying != samplePlayer->state)
+    {
+        lastPlaying = samplePlayer->state;
+        repaint();
     }
 }
 
