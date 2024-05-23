@@ -45,10 +45,7 @@ void Waveform::setSelection(int start, bool sendCallback = false)
 void Waveform::waveformNew()
 {
     if (wf == nullptr)
-    {
-        std::cout << "waveform not set\n";
         return;
-    }
 
     if (waveformLength == 0)
         return;
@@ -342,9 +339,21 @@ bool Waveform::onScroll(const ScrollEvent &ev)
     newRange = std::max(newRange, (int)getWidth());
     int newCursorPos = visibleStart + newRange * p;
 
-    visibleStart -= (newCursorPos - cursorPos);
+    float dX = ev.delta.getX();
+    int dV = (int)(dX * (waveformLength / getWidth()));
 
+    if (visibleStart + dV <= 0)
+        dV = -visibleStart;
+
+    if (visibleEnd + dV >= waveformLength)
+        dV = waveformLength - visibleEnd;
+
+    visibleEnd += dV;
+    visibleStart += dV;
+
+    visibleStart -= (newCursorPos - cursorPos);
     visibleEnd = visibleStart + newRange;
+
     if (visibleEnd >= waveformLength)
     {
         int delta = visibleEnd - waveformLength;
