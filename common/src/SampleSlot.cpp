@@ -6,10 +6,10 @@ SampleSlot::SampleSlot(Widget *parent, DropDown *midi_select, Button *trigger_bt
     : NanoSubWidget(parent),
       background_color(Color(200, 200, 200)),
       highlight_color(Color(30, 30, 30)),
-      active(false),
       samplePlayer(nullptr),
       midi_number(midi_select),
-      trigger_btn(trigger_btn)
+      trigger_btn(trigger_btn),
+      animation_step(1.0f)
 {
     loadSharedResources();
 
@@ -50,11 +50,11 @@ void SampleSlot::onNanoDisplay()
     const float height = getHeight();
 
     beginPath();
-    if (active)
-        strokeColor(highlight_color);
+    if (samplePlayer->active)
+        strokeColor(Color(Color(120, 120, 120), highlight_color, animation_step));
     else
-        strokeColor(120, 120, 120);
-    strokeWidth(3.f);
+        strokeColor(180, 180, 180);
+    strokeWidth(1.f);
     roundedRect(1, 1, width - 2, height - 2, 3);
     stroke();
     closePath();
@@ -75,7 +75,7 @@ void SampleSlot::onNanoDisplay()
         fillColor(Color(30, 30, 30));
         textAlign(Align::ALIGN_MIDDLE);
         fontFaceId(0);
-        text(0, height / 2, info.c_str(), nullptr);
+        text(26, height / 2, info.c_str(), nullptr);
         closePath();
     }
 }
@@ -85,11 +85,25 @@ void SampleSlot::idleCallback()
     if (samplePlayer == nullptr)
         return;
 
+    bool needs_repaint = false;
+
+    if (animation_step > 0.0f)
+    {
+        animation_step = std::max(0.0f, animation_step - 0.05f);
+        needs_repaint = true;
+    }
+
     if (lastPlaying != samplePlayer->state)
     {
         lastPlaying = samplePlayer->state;
-        repaint();
+        if (lastPlaying == PlayState::PLAYING)
+            animation_step = 1.0f;
+
+        needs_repaint = true;
     }
+
+    if (needs_repaint)
+        repaint();
 }
 
 END_NAMESPACE_DISTRHO

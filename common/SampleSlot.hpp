@@ -28,12 +28,11 @@ public:
         virtual void sampleTriggered(int id) = 0;
         virtual void sampleRemoved(int id) = 0;
     };
-    explicit SampleSlot(Widget *widget, DropDown *midiSelect, Button *trigger_btn) noexcept;
+    explicit SampleSlot(Widget *widget, DropDown *midi_select, Button *trigger_btn) noexcept;
     void setSamplePlayer(SamplePlayer *sp);
     void updateWidgetPositions();
 
     Color background_color, highlight_color;
-    bool active;
 
 protected:
     void onNanoDisplay() override;
@@ -49,6 +48,8 @@ private:
     DISTRHO_LEAK_DETECTOR(SampleSlot);
 
     PlayState lastPlaying = PlayState::STOPPED;
+
+    float animation_step;
 };
 
 END_NAMESPACE_DISTRHO

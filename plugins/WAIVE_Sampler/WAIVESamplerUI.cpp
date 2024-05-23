@@ -310,6 +310,17 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->triggerPreview();
     else if (button == new_sample_btn)
         plugin->newSample();
+    else
+    {
+        for (int i = 0; i < sampleTriggerButtons.size(); i++)
+        {
+            if (sampleTriggerButtons[i] == button)
+            {
+                plugin->samplePlayers[i].state = PlayState::TRIGGERED;
+                break;
+            }
+        }
+    }
 
     repaint();
 }
@@ -508,6 +519,8 @@ void WAIVESamplerUI::createSampleSlots()
         midi_number->setItem(60 + i, false);
         midi_number->setId(kSlot1MidiNumber + i);
         midi_number->setCallback(this);
+
+        trigger_btn->setCallback(this);
 
         sampleMidiDropdowns.push_back(midi_number);
         sampleTriggerButtons.push_back(trigger_btn);
