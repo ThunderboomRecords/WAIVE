@@ -595,24 +595,21 @@ void WAIVESampler::loadSample(int id)
 
 void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
 {
-    // LOG_LOCATION
     if (s == nullptr)
         return;
 
     bool newSource = fCurrentSample->source.compare(s->source) != 0;
 
-    // save/update current sample?
+    std::cout << s->sampleLength << " " << fCurrentSample->sampleLength << std::endl;
 
     fCurrentSample = s;
     std::cout << s->name << std::endl;
     fSampleLoaded = false;
 
-    // load source (if avaliable)
     if (fCurrentSample->waive)
     {
         if (newSource)
             loadSource(fCurrentSample->source.c_str());
-        ampEnvGen.setADSR(fCurrentSample->adsr);
         setParameterValue(kSampleVolume, fCurrentSample->volume);
         setParameterValue(kSamplePitch, fCurrentSample->pitch);
         setParameterValue(kAmpAttack, fCurrentSample->adsr.attack);
@@ -620,11 +617,15 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
         setParameterValue(kAmpSustain, fCurrentSample->adsr.sustain);
         setParameterValue(kAmpRelease, fCurrentSample->adsr.release);
         setParameterValue(kSustainLength, fCurrentSample->sustainLength);
+        setParameterValue(kPercussiveBoost, fCurrentSample->percussiveBoost);
+        setParameterValue(kFilterCutoff, fCurrentSample->filterCutoff);
+        setParameterValue(kFilterResonance, fCurrentSample->filterResonance);
+        setParameterValue(kFilterType, fCurrentSample->filterType);
         selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
     }
     else
     {
-        // TODO: load sample directly (hide sample controls?)
+        // TODO: load sample directly (hide sample controls? set to values that don't alter original?)
         fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), editorPreviewWaveform);
     }
 
@@ -648,6 +649,7 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
     fSampleLoaded = true;
 
     renderSample();
+    triggerPreview();
     addToUpdateQueue(kSampleUpdated);
 }
 
@@ -659,12 +661,9 @@ void WAIVESampler::renderSample()
 
     samplePlayerMtx.lock();
 
-    fSampleLoaded = false;
+    std::cout << "renderSample old length: " << fCurrentSample->sampleLength << std::endl;
     fCurrentSample->sampleLength = ampEnvGen.getLength(fCurrentSample->sustainLength);
     fCurrentSample->sampleLength = std::min(fCurrentSample->sampleLength, fSourceLength - fCurrentSample->sourceStart);
-    editorPreviewPlayer->length = fCurrentSample->sampleLength;
-    editorPreviewPlayer->ptr = 0;
-    editorPreviewPlayer->active = true;
 
     auto minmax = std::minmax_element(
         &fSourceWaveform[fCurrentSample->sourceStart],
@@ -673,7 +672,10 @@ void WAIVESampler::renderSample()
     if (std::abs(normaliseRatio) <= 0.0001f)
         normaliseRatio = 1.0f;
 
-    editorPreviewWaveform->resize(fCurrentSample->sampleLength);
+    if (editorPreviewWaveform->size() < fCurrentSample->sampleLength)
+        editorPreviewWaveform->resize(fCurrentSample->sampleLength);
+
+    std::cout << "renderSample new length: " << fCurrentSample->sampleLength << std::endl;
 
     ampEnvGen.reset();
     ampEnvGen.trigger();
@@ -724,15 +726,23 @@ void WAIVESampler::renderSample()
         ampEnvGen.process();
 
         if (!ampEnvGen.active)
+        {
+            fCurrentSample->sampleLength = i;
+            editorPreviewPlayer->length = i;
             break;
+        }
 
         amp = ampEnvGen.getValue();
     }
 
+    editorPreviewPlayer->length = fCurrentSample->sampleLength;
+    editorPreviewPlayer->ptr = 0;
+    editorPreviewPlayer->active = true;
+
     getEmbedding();
     fSampleLoaded = true;
-    addToUpdateQueue(kSampleUpdated);
     samplePlayerMtx.unlock();
+    addToUpdateQueue(kSampleUpdated);
 }
 
 void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer)
@@ -774,6 +784,9 @@ void WAIVESampler::loadSlot(int slot, int id)
 
 void WAIVESampler::triggerPreview()
 {
+    if (!fSampleLoaded)
+        return;
+
     if (samplePlayers[8].state == PlayState::STOPPED)
     {
         samplePlayers[8].state = PlayState::TRIGGERED;
@@ -838,15 +851,14 @@ void WAIVESampler::getOnsets()
     {
         gist.processAudioFrame(std::vector<float>(fSourceWaveform.begin() + frame, fSourceWaveform.begin() + frame + gist.getAudioFrameSize()));
         float onset = gist.spectralDifferenceHWR();
-        if (onset > 100.0f)
+        if (onset > 150.0f)
         {
             fSourceFeatures.push_back({FeatureType::Onset,
                                        "onset",
                                        onset,
                                        frame,
                                        frame});
-
-            printf(" - Onset detected at %d (onset: %.2f)\n", frame, onset);
+            // printf(" - Onset detected at %d (onset: %.2f)\n", frame, onset);
         }
 
         frame += gist.getAudioFrameSize();

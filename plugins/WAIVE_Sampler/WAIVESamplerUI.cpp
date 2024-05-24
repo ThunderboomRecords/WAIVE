@@ -403,22 +403,28 @@ void WAIVESamplerUI::idleCallback()
         case kSourceLoading:
             break;
         case kSourceLoaded:
-            source_display->waveformLength = plugin->fSourceLength;
+            source_display->setWaveformLength(plugin->fSourceLength);
             source_display->waveformNew();
             break;
         case kSourceUpdated:
-            source_display->waveformLength = plugin->fSourceLength;
+            source_display->setWaveformLength(plugin->fSourceLength);
             source_display->waveformUpdated();
             break;
         case kSampleLoading:
             break;
         case kSampleLoaded:
+            printf("kSampleLoaded");
+            sample_display->setWaveformLength(plugin->fCurrentSample->sampleLength);
+            if (plugin->fCurrentSample->saved)
+                save_sample_btn->setLabel("update");
+            else
+                save_sample_btn->setLabel("add");
             sample_display->waveformNew();
             break;
         case kSampleUpdated:
             if (plugin->fCurrentSample != nullptr)
             {
-                sample_display->waveformLength = plugin->fCurrentSample->sampleLength;
+                sample_display->setWaveformLength(plugin->fCurrentSample->sampleLength);
                 sample_display->waveformUpdated();
                 if (plugin->fCurrentSample->saved)
                     save_sample_btn->setLabel("update");

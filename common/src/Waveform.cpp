@@ -42,6 +42,12 @@ void Waveform::setSelection(int start, bool sendCallback = false)
     repaint();
 }
 
+void Waveform::setWaveformLength(int length)
+{
+    waveformLength = length;
+    // calculateWaveform();
+}
+
 void Waveform::waveformNew()
 {
     if (wf == nullptr)

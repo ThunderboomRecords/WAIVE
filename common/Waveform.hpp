@@ -29,13 +29,13 @@ public:
     void setCallback(Callback *cb);
     void setWaveform(std::vector<float> *wf);
     void setWaveformFeatures(std::vector<WaveformFeature> *wfFeatures);
+    void setWaveformLength(int length);
     void setSelection(int start, bool sendCallback);
     void waveformNew();
     void waveformUpdated();
 
     Color backgroundColor, lineColor;
     bool selectable, zoomable;
-    int waveformLength;
 
 protected:
     void onNanoDisplay() override;
@@ -58,6 +58,7 @@ private:
     Callback *callback;
     std::vector<float> waveformMin, waveformMax;
     bool waveformCached, reduced;
+    int waveformLength;
     int waveformSelectStart, waveformSelectEnd;
 
     DragAction dragAction;
