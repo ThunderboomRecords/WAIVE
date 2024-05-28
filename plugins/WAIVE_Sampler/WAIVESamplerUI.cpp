@@ -60,14 +60,14 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     source_display->setWaveform(&plugin->fSourceWaveform);
     source_display->setWaveformFeatures(&plugin->fSourceFeatures);
 
-    open_btn = new Button(this);
-    open_btn->setLabel("import source");
-    open_btn->setFontScale(fScaleFactor);
-    open_btn->setBackgroundColor(Color(40, 40, 40));
-    open_btn->setLabelColor(Color(200, 200, 200));
-    open_btn->setSize(100, 20);
-    Layout::onTop(open_btn, source_display, Widget_Align::END, Widget_Align::START, 2);
-    open_btn->setCallback(this);
+    open_source_btn = new Button(this);
+    open_source_btn->setLabel("import source");
+    open_source_btn->setFontScale(fScaleFactor);
+    open_source_btn->setBackgroundColor(Color(40, 40, 40));
+    open_source_btn->setLabelColor(Color(200, 200, 200));
+    open_source_btn->setSize(100, 20);
+    Layout::onTop(open_source_btn, source_display, Widget_Align::END, Widget_Align::START, 2);
+    open_source_btn->setCallback(this);
 
     sample_display = new Waveform(this);
     sample_display->setSize(180, 80);
@@ -304,8 +304,26 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 
 void WAIVESamplerUI::buttonClicked(Button *button)
 {
-    if (button == open_btn)
-        requestStateFile("filename");
+    if (button == open_source_btn)
+    {
+        char const * filename;
+        char const * filterPatterns[2] = { "*.mp3", "*.wav" };
+        filename = tinyfd_openFileDialog(
+            "open source file",
+            "./",
+            2,
+            filterPatterns,
+            "Audio files",
+            0);
+
+        std::cout << filename << std::endl;
+        if(!filename)
+        {
+            std::cout << "No file selected" << std::endl;
+        }
+        setState("filename", filename);
+
+    }
     else if (button == save_sample_btn)
         plugin->addCurrentSampleToLibrary();
     else if (button == play_btn)

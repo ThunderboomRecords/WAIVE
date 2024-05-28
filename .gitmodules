@@ -22,3 +22,6 @@
 [submodule "external/tinyosc"]
 	path = external/tinyosc
 	url = https://github.com/mhroth/tinyosc.git
+[submodule "external/tinyfiledialogs-code"]
+	path = external/tinyfiledialogs-code
+	url = https://git.code.sf.net/p/tinyfiledialogs/code

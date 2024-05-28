@@ -17,6 +17,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/external/tinyosc/tinyosc.c
   FILES_UI
       WAIVESamplerUI.cpp
+      ${CMAKE_SOURCE_DIR}/external/tinyfiledialogs-code/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
@@ -68,7 +69,7 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/Gist/src
     ${CMAKE_SOURCE_DIR}/external/kissfft
     ${CMAKE_SOURCE_DIR}/external/kd-tree
-    # ${CMAKE_SOURCE_DIR}/external/oscpkt
+    ${CMAKE_SOURCE_DIR}/external/tinyfiledialogs-code
     ${CMAKE_SOURCE_DIR}/external/tinyosc
 )
 
@@ -84,6 +85,7 @@ target_link_libraries(
     Gist
     PRIVATE
     nlohmann_json::nlohmann_json
+    
 )
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")

@@ -88,3 +88,4 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 - [libsamplerate](https://github.com/libsndfile/libsamplerate) BSD-3-Clause
 - [nlohmann/json](https://github.com/nlohmann/json) MIT
 - [TinyOSC](https://github.com/mhroth/tinyosc/tree/master) ISC license
+- [tinyfiledialogs](https://sourceforge.net/projects/tinyfiledialogs/) zlib/libpng license

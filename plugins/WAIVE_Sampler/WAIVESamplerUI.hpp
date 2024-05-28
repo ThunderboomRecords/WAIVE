@@ -29,6 +29,8 @@
 #include "WAIVESampler.hpp"
 #include "WAIVESamplerParams.h"
 
+#include "tinyfiledialogs.h"
+
 START_NAMESPACE_DISTRHO
 
 const unsigned int UI_W = 840;
@@ -77,7 +79,7 @@ private:
 
     Label *logo, *map_label, *sample_controls_label;
     ValueIndicator *value_indicator;
-    Button *open_btn, *new_sample_btn, *save_sample_btn, *play_btn;
+    Button *open_source_btn, *new_sample_btn, *save_sample_btn, *play_btn;
     Waveform *source_display, *sample_display;
     Knob3D *pitch, *volume, *percussionBoost;
     Knob3D *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
