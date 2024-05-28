@@ -3,6 +3,8 @@
 
 #include <queue>
 #include <memory>
+#include <thread>
+#include <atomic>
 
 #include "DistrhoUI.hpp"
 #include "NanoVG.hpp"
@@ -67,6 +69,8 @@ protected:
     void textEntered(TextInput *textInput, std::string text) override;
     void dropdownSelection(DropDown *widget, int item) override;
 
+    void openFileBrowser(char *state, bool multiple);
+
 private:
     void createSampleSlots();
 
@@ -76,6 +80,9 @@ private:
     WAIVESampler *plugin;
 
     FontId logo_font;
+
+    std::thread open_dialog;
+    std::atomic<bool> filebrowserOpen;
 
     Label *logo, *map_label, *sample_controls_label;
     ValueIndicator *value_indicator;

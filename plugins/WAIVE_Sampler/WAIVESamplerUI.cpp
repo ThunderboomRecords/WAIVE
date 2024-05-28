@@ -3,7 +3,8 @@ START_NAMESPACE_DISTRHO
 
 WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
                                    fScaleFactor(getScaleFactor()),
-                                   fScale(1.0f)
+                                   fScale(1.0f),
+                                   filebrowserOpen(false)
 {
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
@@ -209,7 +210,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     std::cout << "WAIVESamplerUI initialised" << std::endl;
 }
 
-WAIVESamplerUI::~WAIVESamplerUI() {}
+WAIVESamplerUI::~WAIVESamplerUI()
+{
+    if (open_dialog.joinable())
+        open_dialog.join();
+}
 
 void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
 {
@@ -306,23 +311,11 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 {
     if (button == open_source_btn)
     {
-        char const * filename;
-        char const * filterPatterns[2] = { "*.mp3", "*.wav" };
-        filename = tinyfd_openFileDialog(
-            "open source file",
-            "./",
-            2,
-            filterPatterns,
-            "Audio files",
-            0);
-
-        std::cout << filename << std::endl;
-        if(!filename)
-        {
-            std::cout << "No file selected" << std::endl;
-        }
-        setState("filename", filename);
-
+        if (filebrowserOpen)
+            return;
+        if (open_dialog.joinable())
+            open_dialog.join();
+        open_dialog = std::thread(&WAIVESamplerUI::openFileBrowser, this, (char *)"filename", false);
     }
     else if (button == save_sample_btn)
         plugin->addCurrentSampleToLibrary();
@@ -343,6 +336,28 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
 
     repaint();
+}
+
+void WAIVESamplerUI::openFileBrowser(char *state, bool multiple)
+{
+    filebrowserOpen = true;
+    char const *filename;
+    char const *filterPatterns[2] = {"*.mp3", "*.wav"};
+    filename = tinyfd_openFileDialog(
+        "open source file",
+        "./",
+        2,
+        filterPatterns,
+        "Audio files",
+        multiple);
+
+    std::cout << filename << std::endl;
+    if (filename)
+        setState(state, filename);
+    else
+        std::cout << "No file selected" << std::endl;
+
+    filebrowserOpen = false;
 }
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
