@@ -129,11 +129,8 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
         s->embedY = data["embedding"]["y"];
         s->tags = data["tags"];
         s->sampleLength = data["sampleLength"];
-        if (s->waive)
-        {
-            s->source = data["source"];
-            s->sourceStart = data["sourceStart"];
-        }
+        s->source = data["source"];
+        s->sourceStart = data["sourceStart"];
         s->volume = data["parameters"]["volume"];
         s->pitch = data["parameters"]["pitch"];
         s->percussiveBoost = data["parameters"]["percussiveBoost"];

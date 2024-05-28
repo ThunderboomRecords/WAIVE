@@ -236,7 +236,10 @@ void SampleMap::onNanoDisplay()
         Point<double> pMap = embeddingToMap({embedX, embedY});
 
         if (!contains(pMap))
+        {
+            // printf("embedding not contained: %.2f %.2f\n", pMap.getX(), pMap.getY());
             continue;
+        }
 
         int sampleId = allSamples->at(i)->getId();
 

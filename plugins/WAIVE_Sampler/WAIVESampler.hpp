@@ -124,6 +124,7 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
 
     void newSample();
+    void importSample(const char *fp);
     void loadPreview(int id);
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);
@@ -136,7 +137,7 @@ protected:
     void renderSample();
     void loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer);
     void triggerPreview();
-    void getEmbedding();
+    std::pair<float, float> getEmbedding(int id);
     void analyseWaveform();
     void getOnsets();
 

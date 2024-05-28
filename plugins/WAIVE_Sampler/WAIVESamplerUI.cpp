@@ -31,7 +31,16 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     map_label->resizeToFit();
     Layout::above(map_label, sample_map, Widget_Align::START, 5);
 
-    sample_controls_label = new Label(this, "sample editor");
+    import_sample_btn = new Button(this);
+    import_sample_btn->setLabel("import sample");
+    import_sample_btn->setFontScale(fScaleFactor);
+    import_sample_btn->setBackgroundColor(Color(220, 220, 220));
+    import_sample_btn->setLabelColor(Color(10, 10, 10));
+    import_sample_btn->setSize(100, 20);
+    Layout::rightOf(import_sample_btn, map_label, Widget_Align::CENTER, 20);
+    import_sample_btn->setCallback(this);
+
+    sample_controls_label = new Label(this, "sample creator");
     sample_controls_label->setFont("VG5000", VG5000, VG5000_len);
     sample_controls_label->label_size = 16.0f;
     sample_controls_label->resizeToFit();
@@ -126,7 +135,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     ampRelease = createWAIVEKnob(this, kAmpRelease, "release", 0.0f, 500.0f, 100.0f, logo_font);
     ampRelease->format = "{:.0f}ms";
 
-    sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 500.0f, 100.f, logo_font);
+    sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 1000.0f, 100.f, logo_font);
     sustainLength->format = "{:.0f}ms";
 
     // Filter
@@ -309,13 +318,17 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 
 void WAIVESamplerUI::buttonClicked(Button *button)
 {
-    if (button == open_source_btn)
+    if (button == open_source_btn || button == import_sample_btn)
     {
         if (filebrowserOpen)
             return;
         if (open_dialog.joinable())
             open_dialog.join();
-        open_dialog = std::thread(&WAIVESamplerUI::openFileBrowser, this, (char *)"filename", false);
+
+        if (button == open_source_btn)
+            open_dialog = std::thread(&WAIVESamplerUI::openFileBrowser, this, (char *)"filename", false);
+        else if (button == import_sample_btn)
+            open_dialog = std::thread(&WAIVESamplerUI::openFileBrowser, this, (char *)"import", true);
     }
     else if (button == save_sample_btn)
         plugin->addCurrentSampleToLibrary();

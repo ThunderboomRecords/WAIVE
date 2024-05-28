@@ -111,7 +111,7 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.name = "Sustain Length";
         parameter.symbol = "sustainLength";
         parameter.ranges.min = 0.0f;
-        parameter.ranges.max = 500.0f;
+        parameter.ranges.max = 1000.0f;
         parameter.ranges.def = 100.0f;
         break;
     case kFilterCutoff:
@@ -302,6 +302,18 @@ void WAIVESampler::setState(const char *key, const char *value)
     {
         loadSource(value);
     }
+    else if (strcmp(key, "import") == 0)
+    {
+        std::stringstream filelist(value);
+        std::cout << "Importing files:" << std::endl;
+        std::string filename;
+        while (std::getline(filelist, filename, '|'))
+        {
+            std::cout << " - " << filename << std::endl;
+            importSample(filename.c_str());
+        }
+        addToUpdateQueue(kSampleAdded);
+    }
 }
 
 String WAIVESampler::getState(const char *key) const
@@ -432,7 +444,7 @@ void WAIVESampler::run(
 
 void WAIVESampler::loadSource(const char *fp)
 {
-    LOG_LOCATION
+    // LOG_LOCATION
     fSourceLoaded = false;
     addToUpdateQueue(kSourceLoading);
 
@@ -442,7 +454,7 @@ void WAIVESampler::loadSource(const char *fp)
     {
         fSourceLoaded = true;
         fCurrentSample->source = std::string(fp);
-        if(fCurrentSample->sourceStart >= fSourceLength)
+        if (fCurrentSample->sourceStart >= fSourceLength)
             selectWaveform(&fSourceWaveform, 0);
 
         getOnsets();
@@ -458,7 +470,7 @@ void WAIVESampler::loadSource(const char *fp)
 
 int WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
 {
-    // printf("WAIVESampler::loadWaveform %s\n", fp);
+    printf("WAIVESampler::loadWaveform %s\n", fp);
 
     SndfileHandle fileHandle(fp);
     int sampleLength = fileHandle.frames();
@@ -485,21 +497,25 @@ int WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
     // resample data
     if (fileSampleRate != sampleRate)
     {
-        int new_size = sampleLength * sampleRate / fileSampleRate;
+        int new_size = sampleChannels * (sampleLength * sampleRate / fileSampleRate + 1);
         sample_tmp.resize(new_size);
 
         SRC_DATA src_data;
-        src_data.data_in = &sample.at(0);
         src_data.input_frames = sampleLength;
         src_data.data_out = &sample_tmp.at(0);
+        src_data.data_in = &sample.at(0);
         src_data.output_frames = new_size;
         src_data.src_ratio = sampleRate / fileSampleRate;
+
+        // std::cout << "RESAMPLING WAVEFORM:\n";
+        // std::cout << " sample_channels: " << sampleChannels << std::endl;
+        // std::cout << "    input_frames: " << sampleLength << std::endl;
+        // std::cout << "   output_frames: " << new_size << std::endl;
+        // std::cout << "       src_ratio: " << src_data.src_ratio << std::endl;
 
         int result = src_simple(&src_data, SRC_SINC_BEST_QUALITY, sampleChannels);
         if (result != 0)
             std::cerr << "Failed to convert sample rate: " << src_strerror(result) << std::endl;
-        else
-            std::cout << "sample rate conversion complete. ratio: " << src_data.src_ratio << std::endl;
     }
     else
     {
@@ -519,6 +535,8 @@ int WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
         for (int i = 0; i < sampleLength; i++)
             buffer->operator[](i) = sample_tmp[i];
     }
+
+    printf("WAIVESampler::loadWaveform done, length %d\n", sampleLength);
 
     return sampleLength;
 }
@@ -570,16 +588,68 @@ void WAIVESampler::newSample()
 
     fCurrentSample = s;
 
-    getEmbedding();
+    auto embedding = getEmbedding(s->getId());
+    fCurrentSample->embedX = embedding.first;
+    fCurrentSample->embedY = embedding.second;
 
     std::cout << fCurrentSample->getId() << std::endl;
 
     addToUpdateQueue(kParametersChanged);
 }
 
+void WAIVESampler::importSample(const char *fp)
+{
+    unsigned int id = 5381;
+    int c;
+    std::string fpString(fp);
+
+    while ((c = *fp++))
+        id = ((id << 5) + id) + c;
+
+    id = id % 100000;
+
+    size_t pos = fpString.find_last_of("/\\");
+    std::string name, folder;
+    if (pos == std::string::npos)
+    {
+        name.assign(fp);
+        folder.assign("./");
+    }
+    else
+    {
+        name.assign(fpString.substr(pos + 1));
+        folder.assign(fpString.substr(0, pos + 1));
+    }
+    std::cout << "         id: " << id << std::endl;
+    std::cout << "     folder: " << folder << std::endl;
+    std::cout << "       name: " << name << std::endl;
+
+    std::shared_ptr<SampleInfo> info(new SampleInfo(id, name, folder, false));
+    info->adsr.attack = 0.0f;
+    info->adsr.decay = 0.0f;
+    info->adsr.sustain = 1.0f;
+    info->adsr.release = 0.0f;
+    info->sustainLength = 1000.0f;
+    info->percussiveBoost = 0.0f;
+    info->filterCutoff = 0.999f;
+    info->filterType = Filter::FILTER_LOWPASS;
+    info->filterResonance = 0;
+    info->pitch = 1.0f;
+    info->volume = 1.0f;
+    info->source = std::string(fpString);
+    info->sourceStart = 0;
+    info->saved = true;
+
+    auto embedding = getEmbedding(id);
+    info->embedX = embedding.first;
+    info->embedY = embedding.second;
+
+    sd.addToLibrary(info);
+}
+
 void WAIVESampler::addCurrentSampleToLibrary()
 {
-    if(fCurrentSample == nullptr || !fSampleLoaded)
+    if (fCurrentSample == nullptr || !fSampleLoaded)
         return;
     sd.addToLibrary(fCurrentSample);
     saveWaveform(sd.getSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength);
@@ -603,41 +673,44 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     if (s == nullptr)
         return;
 
-    bool newSource = fCurrentSample->source.compare(s->source) != 0;
+    bool newSource = true;
+    if (fCurrentSample != nullptr && fCurrentSample->source.compare(s->source) == 0)
+        newSource = false;
 
     std::cout << s->sampleLength << " " << fCurrentSample->sampleLength << std::endl;
+    std::cout << "sources: " << s->source << " " << fCurrentSample->source << " newSource " << newSource << std::endl;
 
     fCurrentSample = s;
     std::cout << s->name << std::endl;
     fSampleLoaded = false;
 
-    if (fCurrentSample->waive)
-    {
-        if (newSource)
-            loadSource(fCurrentSample->source.c_str());
-        setParameterValue(kSampleVolume, fCurrentSample->volume);
-        setParameterValue(kSamplePitch, fCurrentSample->pitch);
-        setParameterValue(kAmpAttack, fCurrentSample->adsr.attack);
-        setParameterValue(kAmpDecay, fCurrentSample->adsr.decay);
-        setParameterValue(kAmpSustain, fCurrentSample->adsr.sustain);
-        setParameterValue(kAmpRelease, fCurrentSample->adsr.release);
-        setParameterValue(kSustainLength, fCurrentSample->sustainLength);
-        setParameterValue(kPercussiveBoost, fCurrentSample->percussiveBoost);
-        setParameterValue(kFilterCutoff, fCurrentSample->filterCutoff);
-        setParameterValue(kFilterResonance, fCurrentSample->filterResonance);
-        setParameterValue(kFilterType, fCurrentSample->filterType);
-        selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
-    }
-    else
-    {
-        // TODO: load sample directly (hide sample controls? set to values that don't alter original?)
-        fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), editorPreviewWaveform);
-    }
+    // if (fCurrentSample->waive)
+    // {
+    if (newSource)
+        loadSource(fCurrentSample->source.c_str());
+    setParameterValue(kSampleVolume, fCurrentSample->volume);
+    setParameterValue(kSamplePitch, fCurrentSample->pitch);
+    setParameterValue(kAmpAttack, fCurrentSample->adsr.attack);
+    setParameterValue(kAmpDecay, fCurrentSample->adsr.decay);
+    setParameterValue(kAmpSustain, fCurrentSample->adsr.sustain);
+    setParameterValue(kAmpRelease, fCurrentSample->adsr.release);
+    setParameterValue(kSustainLength, fCurrentSample->sustainLength);
+    setParameterValue(kPercussiveBoost, fCurrentSample->percussiveBoost);
+    setParameterValue(kFilterCutoff, fCurrentSample->filterCutoff);
+    setParameterValue(kFilterResonance, fCurrentSample->filterResonance);
+    setParameterValue(kFilterType, fCurrentSample->filterType);
+    selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
+    // }
+    // else
+    // {
+    //     // TODO: load sample directly (hide sample controls? set to values that don't alter original?)
+    fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), editorPreviewWaveform);
+    // }
 
     fSampleLoaded = true;
+    addToUpdateQueue(kSampleLoaded);
     renderSample();
 
-    addToUpdateQueue(kSampleLoaded);
     addToUpdateQueue(kParametersChanged);
 }
 
@@ -741,7 +814,9 @@ void WAIVESampler::renderSample()
     editorPreviewPlayer->ptr = 0;
     editorPreviewPlayer->active = true;
 
-    getEmbedding();
+    auto embedding = getEmbedding(fCurrentSample->getId());
+    fCurrentSample->embedX = embedding.first;
+    fCurrentSample->embedY = embedding.second;
     fSampleLoaded = true;
     samplePlayerMtx.unlock();
     addToUpdateQueue(kSampleUpdated);
@@ -796,17 +871,16 @@ void WAIVESampler::triggerPreview()
     }
 }
 
-void WAIVESampler::getEmbedding()
+std::pair<float, float> WAIVESampler::getEmbedding(int id)
 {
     // TODO: placeholder is random for now
-    int x = ((long)fCurrentSample->getId() * 987) % 10000;
-    int y = ((long)fCurrentSample->getId() * 12345) % 10000;
+    unsigned int x = ((long)id * 87) % 10000;
+    unsigned int y = ((long)id * 123) % 10000;
 
     float embedX = (float)x / 5000.0f - 1.0f;
     float embedY = (float)y / 5000.0f - 1.0f;
-
-    fCurrentSample->embedX = embedX;
-    fCurrentSample->embedY = embedY;
+    // printf("embedding %.2f %.2f\n", embedX, embedY);
+    return std::pair<float, float>(embedX, embedY);
 }
 
 void WAIVESampler::analyseWaveform()

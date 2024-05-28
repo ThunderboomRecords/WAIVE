@@ -192,18 +192,28 @@ void EnvGen::process()
     switch (stage)
     {
     case ADSR_Stage::ATTACK:
-        p = (float)(step - startAttack) / (startDecay - startAttack);
-        value = interpolate(p, 0.0f, 1.0f, power);
-        break;
+        if (startDecay != startAttack)
+        {
+            p = (float)(step - startAttack) / (startDecay - startAttack);
+            value = interpolate(p, 0.0f, 1.0f, power);
+            break;
+        }
     case ADSR_Stage::DECAY:
-        p = (float)(step - startDecay) / (startSustain - startDecay);
-        value = interpolate(p, 1.0f, adsr.sustain, power);
-        break;
+        if (startSustain != startDecay)
+        {
+            p = (float)(step - startDecay) / (startSustain - startDecay);
+            value = interpolate(p, 1.0f, adsr.sustain, power);
+            break;
+        }
     case ADSR_Stage::RELEASE:
-        p = (float)(step - startRelease) / (endStep - startRelease);
-        value = interpolate(p, adsr.sustain, 0.0f, power);
-        break;
+        if (endStep != startRelease)
+        {
+            p = (float)(step - startRelease) / (endStep - startRelease);
+            value = interpolate(p, adsr.sustain, 0.0f, power);
+            break;
+        }
     default:
+        // value = 0.0f;
         break;
     }
 
