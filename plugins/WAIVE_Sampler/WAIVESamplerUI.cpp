@@ -82,6 +82,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     save_sample_btn->setSize(70, 20);
     Layout::below(save_sample_btn, sample_display, Widget_Align::END, 10.f);
     save_sample_btn->setCallback(this);
+    save_sample_btn->setEnabled(false);
 
     play_btn = new Button(this);
     play_btn->setLabel("preview");
@@ -91,6 +92,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     play_btn->setSize(70, 20);
     Layout::below(play_btn, sample_display, Widget_Align::START, 10.f);
     play_btn->setCallback(this);
+    play_btn->setEnabled(false);
 
     ampADSRKnobs = new HBox(this);
     ampADSRKnobs->setSize(300, 60);
@@ -405,6 +407,7 @@ void WAIVESamplerUI::idleCallback()
         case kSourceLoaded:
             source_display->setWaveformLength(plugin->fSourceLength);
             source_display->waveformNew();
+            save_sample_btn->setEnabled(true);
             break;
         case kSourceUpdated:
             source_display->setWaveformLength(plugin->fSourceLength);
@@ -413,13 +416,13 @@ void WAIVESamplerUI::idleCallback()
         case kSampleLoading:
             break;
         case kSampleLoaded:
-            printf("kSampleLoaded");
             sample_display->setWaveformLength(plugin->fCurrentSample->sampleLength);
             if (plugin->fCurrentSample->saved)
                 save_sample_btn->setLabel("update");
             else
                 save_sample_btn->setLabel("add");
             sample_display->waveformNew();
+            play_btn->setEnabled(true);
             break;
         case kSampleUpdated:
             if (plugin->fCurrentSample != nullptr)
@@ -431,6 +434,7 @@ void WAIVESamplerUI::idleCallback()
                 else
                     save_sample_btn->setLabel("add");
             }
+            play_btn->setEnabled(true);
             break;
         case kSampleAdded:
             sample_map->repaint();

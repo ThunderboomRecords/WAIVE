@@ -442,6 +442,8 @@ void WAIVESampler::loadSource(const char *fp)
     {
         fSourceLoaded = true;
         fCurrentSample->source = std::string(fp);
+        if(fCurrentSample->sourceStart >= fSourceLength)
+            selectWaveform(&fSourceWaveform, 0);
 
         getOnsets();
 
@@ -450,6 +452,7 @@ void WAIVESampler::loadSource(const char *fp)
     else
     {
         std::cerr << "Source failed to load\n";
+        fCurrentSample->source = "";
     }
 }
 
@@ -576,6 +579,8 @@ void WAIVESampler::newSample()
 
 void WAIVESampler::addCurrentSampleToLibrary()
 {
+    if(fCurrentSample == nullptr || !fSampleLoaded)
+        return;
     sd.addToLibrary(fCurrentSample);
     saveWaveform(sd.getSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength);
 }
@@ -656,12 +661,11 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
 void WAIVESampler::renderSample()
 {
     // LOG_LOCATION
-    if (!fSampleLoaded || fCurrentSample == nullptr)
+    if (!fSampleLoaded || fCurrentSample == nullptr || !fSourceLoaded)
         return;
 
     samplePlayerMtx.lock();
 
-    std::cout << "renderSample old length: " << fCurrentSample->sampleLength << std::endl;
     fCurrentSample->sampleLength = ampEnvGen.getLength(fCurrentSample->sustainLength);
     fCurrentSample->sampleLength = std::min(fCurrentSample->sampleLength, fSourceLength - fCurrentSample->sourceStart);
 
@@ -674,8 +678,6 @@ void WAIVESampler::renderSample()
 
     if (editorPreviewWaveform->size() < fCurrentSample->sampleLength)
         editorPreviewWaveform->resize(fCurrentSample->sampleLength);
-
-    std::cout << "renderSample new length: " << fCurrentSample->sampleLength << std::endl;
 
     ampEnvGen.reset();
     ampEnvGen.trigger();

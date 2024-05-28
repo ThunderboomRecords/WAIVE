@@ -10,7 +10,8 @@ Button::Button(Widget *parent)
       label("button"),
       fontScale(1.0f),
       fHasFocus(false),
-      callback(nullptr)
+      callback(nullptr),
+      fEnabled(true)
 {
 #ifdef DGL_NO_SHARED_RESOURCES
     createFontFromFile("sans", "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf");
@@ -43,17 +44,26 @@ void Button::setLabelColor(const Color color)
     labelColor = color;
 }
 
+void Button::setEnabled(bool enabled)
+{
+    fEnabled = enabled;
+    repaint();
+}
+
 void Button::onNanoDisplay()
 {
-    const uint w = getWidth();
-    const uint h = getHeight();
+    const uint width = getWidth();
+    const uint height = getHeight();
     const float margin = 1.0f;
 
     // Background
     beginPath();
-    fillColor(backgroundColor);
+    if (fHasFocus)
+        fillColor(Color(backgroundColor, Color(255, 255, 255), 0.5f));
+    else
+        fillColor(backgroundColor);
     strokeColor(labelColor);
-    rect(margin, margin, w - 2 * margin, h - 2 * margin);
+    rect(margin, margin, width - 2 * margin, height - 2 * margin);
     fill();
     stroke();
     closePath();
@@ -64,16 +74,30 @@ void Button::onNanoDisplay()
     fillColor(labelColor);
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
-    float tx = w / 2.0f;
-    float ty = h / 2.0f;
+    float tx = width / 2.0f;
+    float ty = height / 2.0f;
     textAlign(ALIGN_CENTER | ALIGN_MIDDLE);
     text(tx, ty, label.c_str(), NULL);
     closePath();
+
+    if (!fEnabled)
+    {
+        beginPath();
+        fillColor(0.f, 0.f, 0.f, 0.3f);
+        rect(0, 0, width, height);
+        fill();
+        closePath();
+    }
 }
 
 bool Button::onMouse(const MouseEvent &ev)
 {
-    if (callback != nullptr && ev.press && ev.button == 1 && contains(ev.pos))
+    if (
+        fEnabled &&
+        callback != nullptr &&
+        ev.press &&
+        ev.button == 1 &&
+        contains(ev.pos))
     {
         callback->buttonClicked(this);
         return true;
@@ -84,13 +108,13 @@ bool Button::onMouse(const MouseEvent &ev)
 
 bool Button::onMotion(const MotionEvent &ev)
 {
-    bool hover = contains(ev.pos);
-    if (hover)
+    if (contains(ev.pos))
     {
         if (!fHasFocus)
         {
             fHasFocus = true;
             getWindow().setCursor(kMouseCursorHand);
+            repaint();
         }
     }
     else
@@ -99,6 +123,7 @@ bool Button::onMotion(const MotionEvent &ev)
         {
             fHasFocus = false;
             getWindow().setCursor(kMouseCursorArrow);
+            repaint();
         }
     }
     return false;

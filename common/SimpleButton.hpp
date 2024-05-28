@@ -26,6 +26,7 @@ public:
     void setFontScale(float scale);
     void setLabel(const std::string& label);
     void setLabelColor(Color color);
+    void setEnabled(bool enabled);
 
 protected:
     void onNanoDisplay() override;
@@ -41,6 +42,7 @@ private:
     float fontScale;
 
     bool fHasFocus;
+    bool fEnabled;
 
     DISTRHO_LEAK_DETECTOR(Button)
 

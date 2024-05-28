@@ -76,7 +76,7 @@ void Waveform::calculateWaveform()
 
     waveformCached = false;
 
-    const int width = getWidth();
+    const int width = getWidth() - 2;
     double samples_per_pixel = (visibleEnd - visibleStart) / (double)(width);
     reduced = samples_per_pixel > 2.0f;
 
@@ -134,24 +134,12 @@ void Waveform::onNanoDisplay()
 
     for (int i = 0; i < waveformMin.size(); i++)
     {
-        lineTo(i, half - waveformMax[i] * half);
+        lineTo(i+1, half - waveformMax[i] * half);
         if (reduced)
-            lineTo(i, half - waveformMin[i] * half);
+            lineTo(i+1, half - waveformMin[i] * half);
     }
     stroke();
     closePath();
-
-    //  draw highlighted region
-    if (selectable)
-    {
-        float cursorPosStart = (float)(waveformSelectStart - visibleStart) / range;
-        float x1 = width * std::clamp(cursorPosStart, 0.0f, 1.0f);
-        beginPath();
-        fillColor(Color(255, 200, 0, 0.8f));
-        rect(x1, 0, 2, height);
-        fill();
-        closePath();
-    }
 
     if (wfFeatures != nullptr)
     {
@@ -171,12 +159,24 @@ void Waveform::onNanoDisplay()
                     strokeWidth(3.0f);
                 else
                     strokeWidth(1.0f);
-                moveTo(onsetStart * width, 0);
-                lineTo(onsetStart * width, height);
+                moveTo(onsetStart * width + 1, 0);
+                lineTo(onsetStart * width + 1, height);
                 stroke();
                 closePath();
             }
         }
+    }
+
+    //  draw highlighted region
+    if (selectable)
+    {
+        float cursorPosStart = (float)(waveformSelectStart - visibleStart) / range;
+        float x1 = width * std::clamp(cursorPosStart, 0.0f, 1.0f);
+        beginPath();
+        fillColor(Color(255, 200, 0, 0.8f));
+        rect(x1, 0, 2, height);
+        fill();
+        closePath();
     }
 
     // draw minimap if zoomed in
