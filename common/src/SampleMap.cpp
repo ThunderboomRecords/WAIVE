@@ -76,10 +76,8 @@ bool SampleMap::onMouse(const MouseEvent &ev)
         switch (dragAction)
         {
         case CLICKING:
-            if (highlightSample >= 0 && callback != nullptr)
-            {
+            if (callback != nullptr)
                 callback->mapSampleSelected(highlightSample);
-            }
             break;
         case SCROLLING:
             break;
@@ -236,10 +234,7 @@ void SampleMap::onNanoDisplay()
         Point<double> pMap = embeddingToMap({embedX, embedY});
 
         if (!contains(pMap))
-        {
-            // printf("embedding not contained: %.2f %.2f\n", pMap.getX(), pMap.getY());
             continue;
-        }
 
         int sampleId = allSamples->at(i)->getId();
 
@@ -253,7 +248,7 @@ void SampleMap::onNanoDisplay()
         fill();
         closePath();
 
-        if (selectedSample != nullptr && selectedSample->get()->getId() == sampleId)
+        if (selectedSample != nullptr && selectedSample->get() != nullptr && selectedSample->get()->getId() == sampleId)
         {
             beginPath();
             strokeWidth(2.0f);

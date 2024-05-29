@@ -39,6 +39,8 @@ public:
     void setWidgetAlignment(uint id, Align_Items align_self);
     void setWidgetJustify_Content(uint id, Justify_Content justify_content);
     void removeWidget(uint id);
+    void setVisible(bool visible);
+
     Color background_color;
     Color foreground_color;
     Color highlight_color;

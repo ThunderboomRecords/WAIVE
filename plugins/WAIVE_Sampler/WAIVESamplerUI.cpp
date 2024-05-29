@@ -56,7 +56,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     new_sample_btn->setCallback(this);
 
     sample_name = new TextInput(this);
-    sample_name->setText("testing");
     sample_name->setSize(200, 20);
     Layout::rightOf(sample_name, new_sample_btn, Widget_Align::CENTER, 20);
     sample_name->setCallback(this);
@@ -143,13 +142,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     filterResonance = createWAIVEKnob(this, kFilterResonance, "res.", 0.0, 1.0, 0.0, logo_font);
     filterType = new DropDown(this);
     filterType->font_size = 16.0f;
-    filterType->addItem("lowpass");
-    filterType->addItem("highpass");
-    filterType->addItem("bandpass");
+    filterType->addItem("LP");
+    filterType->addItem("HP");
+    filterType->addItem("BP");
     filterType->setId(kFilterType);
     filterType->setFont("VG5000", VG5000, VG5000_len);
     filterType->setDisplayNumber(3);
-    filterType->setSize(80, 20);
+    filterType->setSize(40, 20);
     filterType->setCallback(this);
 
     shapeKnobs->addWidget(pitch);
@@ -174,6 +173,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     filterKnobs->resizeToFit();
     Layout::leftOf(filterKnobs, ampADSRKnobs, Widget_Align::CENTER, 10.f);
     filterKnobs->positionWidgets();
+
+    sample_editor_controls = new WidgetGroup(this);
+    sample_editor_controls->addChildWidget(filterKnobs);
+    sample_editor_controls->addChildWidget(ampADSRKnobs);
+    sample_editor_controls->addChildWidget(shapeKnobs);
 
     sample_map_menu = new Menu(this);
     sample_map_menu->addItem("Add to slot 1");
@@ -208,6 +212,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     value_indicator->setSize(70, 20);
     value_indicator->fontId = logo_font;
     value_indicator->hide();
+
+    setSampleEditorVisible(false);
 
     addIdleCallback(this);
 
@@ -357,7 +363,7 @@ void WAIVESamplerUI::openFileBrowser(char *state, bool multiple)
     char const *filename;
     char const *filterPatterns[2] = {"*.mp3", "*.wav"};
     filename = tinyfd_openFileDialog(
-        "open source file",
+        "Open audio file...",
         "./",
         2,
         filterPatterns,
@@ -488,6 +494,7 @@ void WAIVESamplerUI::idleCallback()
         case kParametersChanged:
             if (plugin->fCurrentSample != nullptr)
             {
+                setSampleEditorVisible(true);
                 pitch->setValue(plugin->fCurrentSample->pitch, false);
                 percussionBoost->setValue(plugin->fCurrentSample->percussiveBoost, false);
                 volume->setValue(plugin->fCurrentSample->volume, false);
@@ -495,23 +502,31 @@ void WAIVESamplerUI::idleCallback()
                 filterCutoff->setValue(plugin->fCurrentSample->filterCutoff, false);
                 filterResonance->setValue(plugin->fCurrentSample->filterResonance, false);
                 filterType->setItem(plugin->fCurrentSample->filterType, false);
+                ampAttack->setValue(plugin->ampEnvGen.getAttack(), false);
+                ampDecay->setValue(plugin->ampEnvGen.getDecay(), false);
+                ampSustain->setValue(plugin->ampEnvGen.getSustain(), false);
+                ampRelease->setValue(plugin->ampEnvGen.getRelease(), false);
 
                 source_display->setSelection(plugin->fCurrentSample->sourceStart, false);
-                if (plugin->fCurrentSample->saved)
-                    save_sample_btn->setLabel("update");
+                if (plugin->fCurrentSample->waive)
+                {
+                    save_sample_btn->setVisible(true);
+                    if (plugin->fCurrentSample->saved)
+                        save_sample_btn->setLabel("update");
+                    else
+                        save_sample_btn->setLabel("add");
+                }
                 else
-                    save_sample_btn->setLabel("add");
+                    save_sample_btn->setVisible(false);
                 sample_name->setText(plugin->fCurrentSample->name.c_str(), false);
+                new_sample_btn->setLabel("duplicate");
             }
             else
             {
-                save_sample_btn->setLabel("add");
+                setSampleEditorVisible(false);
+                new_sample_btn->setLabel("new");
             }
 
-            ampAttack->setValue(plugin->ampEnvGen.getAttack(), false);
-            ampDecay->setValue(plugin->ampEnvGen.getDecay(), false);
-            ampSustain->setValue(plugin->ampEnvGen.getSustain(), false);
-            ampRelease->setValue(plugin->ampEnvGen.getRelease(), false);
             sample_map->repaint();
 
             break;
@@ -526,6 +541,19 @@ void WAIVESamplerUI::idleCallback()
             break;
         }
     }
+}
+
+void WAIVESamplerUI::setSampleEditorVisible(bool visible)
+{
+    source_display->setVisible(visible);
+    sample_display->setVisible(visible);
+    ampADSRKnobs->setVisible(visible);
+    filterKnobs->setVisible(visible);
+    shapeKnobs->setVisible(visible);
+    open_source_btn->setVisible(visible);
+    save_sample_btn->setVisible(visible);
+    play_btn->setVisible(visible);
+    sample_name->setVisible(visible);
 }
 
 // Helper functions to set up UI

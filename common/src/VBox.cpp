@@ -62,6 +62,14 @@ void VBox::removeWidget(uint id)
     }
 }
 
+void VBox::setVisible(bool visible)
+{
+    for (auto it = items_.begin(); it != items_.end(); it++)
+    {
+        it->widget->setVisible(visible);
+    }
+}
+
 void VBox::positionWidgets()
 {
     const uint width = getWidth();

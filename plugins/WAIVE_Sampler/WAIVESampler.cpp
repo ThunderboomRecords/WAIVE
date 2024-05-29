@@ -39,7 +39,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     for (int i = 0; i < 8; i++)
         samplePlayers[i].midi = defaultMidiMap[i];
 
-    newSample();
+    // newSample();
 
     // OSC Test
     int len = tosc_writeMessage(oscBuffer, sizeof(oscBuffer), "/WAIVE_Sampler", "s", "testing");
@@ -77,7 +77,7 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.symbol = "percussionBoost";
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 1.0f;
+        parameter.ranges.def = 0.3f;
         break;
     case kAmpAttack:
         parameter.name = "Amp Attack";
@@ -470,7 +470,7 @@ void WAIVESampler::loadSource(const char *fp)
 
 int WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
 {
-    printf("WAIVESampler::loadWaveform %s\n", fp);
+    // printf("WAIVESampler::loadWaveform %s\n", fp);
 
     SndfileHandle fileHandle(fp);
     int sampleLength = fileHandle.frames();
@@ -536,7 +536,7 @@ int WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
             buffer->operator[](i) = sample_tmp[i];
     }
 
-    printf("WAIVESampler::loadWaveform done, length %d\n", sampleLength);
+    // printf("WAIVESampler::loadWaveform done, length %d\n", sampleLength);
 
     return sampleLength;
 }
@@ -564,36 +564,50 @@ void WAIVESampler::newSample()
 
     // TODO: save current sample before creating a new one?
 
-    time_t current_time = time(NULL);
-    std::string name = fmt::format("Sample{:d}.wav", current_time % 10000);
-
-    std::shared_ptr<SampleInfo> s(new SampleInfo(current_time, name, SAMPLE_DIR, true));
     if (fCurrentSample != nullptr)
     {
-        s->pitch = fCurrentSample->pitch;
-        s->percussiveBoost = fCurrentSample->percussiveBoost;
-        s->volume = fCurrentSample->volume;
-        s->filterCutoff = fCurrentSample->filterCutoff;
-        s->filterResonance = fCurrentSample->filterResonance;
-        s->filterType = fCurrentSample->filterType;
-        s->sustainLength = fCurrentSample->sustainLength;
+        // duplicating..
+        std::shared_ptr<SampleInfo> s = sd.duplicateSampleInfo(fCurrentSample);
+        s->name = fmt::format("{:d}_{}", s->getId(), s->name);
+        s->adsr = ADSR_Params(ampEnvGen.getADSR());
+        s->saved = false;
+        s->waive = true;
 
-        s->source = fCurrentSample->source;
-        s->sourceStart = fCurrentSample->sourceStart;
-        s->embedX = fCurrentSample->embedX;
-        s->embedY = fCurrentSample->embedY;
+        fCurrentSample = s;
+        renderSample();
     }
-    s->adsr = ADSR_Params(ampEnvGen.getADSR());
-    s->saved = false;
+    else
+    {
+        // new default sample
+        fSourceLoaded = false;
+        fSampleLoaded = false;
+        fSourceLength = 0;
+        fSourceWaveform.clear();
 
-    fCurrentSample = s;
+        setParameterValue(kSampleVolume, 1.0f);
+        setParameterValue(kSamplePitch, 1.0f);
+        setParameterValue(kAmpAttack, 0.0f);
+        setParameterValue(kAmpDecay, 50.f);
+        setParameterValue(kAmpSustain, 0.7f);
+        setParameterValue(kAmpRelease, 100.f);
+        setParameterValue(kSustainLength, 100.f);
+        setParameterValue(kPercussiveBoost, 0.3f);
+        setParameterValue(kFilterCutoff, 0.999f);
+        setParameterValue(kFilterResonance, 0.0f);
+        setParameterValue(kFilterType, 0.0);
 
-    auto embedding = getEmbedding(s->getId());
-    fCurrentSample->embedX = embedding.first;
-    fCurrentSample->embedY = embedding.second;
+        time_t current_time = time(NULL);
+        std::string name = fmt::format("Sample{:d}.wav", current_time % 10000);
+        std::shared_ptr<SampleInfo> s(new SampleInfo(current_time, name, sd.getSampleFolder(), true));
+        s->adsr = ADSR_Params(ampEnvGen.getADSR());
+        s->saved = false;
+        fCurrentSample = s;
+    }
 
     std::cout << fCurrentSample->getId() << std::endl;
 
+    addToUpdateQueue(kSourceLoaded);
+    addToUpdateQueue(kSampleUpdated);
     addToUpdateQueue(kParametersChanged);
 }
 
@@ -624,7 +638,7 @@ void WAIVESampler::importSample(const char *fp)
     std::cout << "     folder: " << folder << std::endl;
     std::cout << "       name: " << name << std::endl;
 
-    std::shared_ptr<SampleInfo> info(new SampleInfo(id, name, folder, false));
+    std::shared_ptr<SampleInfo> info(new SampleInfo(id, name, sd.getSampleFolder(), false));
     info->adsr.attack = 0.0f;
     info->adsr.decay = 0.0f;
     info->adsr.sustain = 1.0f;
@@ -645,21 +659,42 @@ void WAIVESampler::importSample(const char *fp)
     info->embedY = embedding.second;
 
     sd.addToLibrary(info);
+
+    // TODO: render loaded sample...
+    std::vector<float> sampleCopy;
+    int sampleLength = loadWaveform(fpString.c_str(), &sampleCopy);
+
+    saveWaveform(sd.getSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength);
 }
 
 void WAIVESampler::addCurrentSampleToLibrary()
 {
     if (fCurrentSample == nullptr || !fSampleLoaded)
         return;
+
+    fCurrentSample->print();
+
+    // if (!fCurrentSample->waive)
+    // {
+    //     printf("duplicating current sample\n");
+    //     std::shared_ptr<SampleInfo> s = SampleDatabase::duplicateSampleInfo(fCurrentSample);
+    //     s->waive = true;
+    //     s->path = sd.getSampleFolder();
+    //     fCurrentSample = s;
+    //     renderSample();
+    //     fCurrentSample->print();
+    // }
+
     sd.addToLibrary(fCurrentSample);
     saveWaveform(sd.getSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength);
 }
 
 void WAIVESampler::loadPreview(int id)
 {
-    loadSlot(9, id);
+    if (samplePlayers[9].sampleInfo == nullptr || samplePlayers[9].sampleInfo->getId() != id)
+        loadSlot(9, id);
 
-    if (mapPreviewPlayer->state == PlayState::STOPPED && mapPreviewPlayer->active)
+    if (id >= 0 && mapPreviewPlayer->state == PlayState::STOPPED)
         mapPreviewPlayer->state = PlayState::TRIGGERED;
 }
 
@@ -671,18 +706,25 @@ void WAIVESampler::loadSample(int id)
 void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
 {
     if (s == nullptr)
+    {
+        fCurrentSample = nullptr;
+        addToUpdateQueue(kParametersChanged);
         return;
+    }
+
+    // if(!s->waive)
+    // {
+    //     newSample();
+    // }
 
     bool newSource = true;
     if (fCurrentSample != nullptr && fCurrentSample->source.compare(s->source) == 0)
         newSource = false;
 
-    std::cout << s->sampleLength << " " << fCurrentSample->sampleLength << std::endl;
-    std::cout << "sources: " << s->source << " " << fCurrentSample->source << " newSource " << newSource << std::endl;
-
     fCurrentSample = s;
-    std::cout << s->name << std::endl;
     fSampleLoaded = false;
+
+    fCurrentSample->print();
 
     // if (fCurrentSample->waive)
     // {
@@ -943,9 +985,10 @@ void WAIVESampler::getOnsets()
 
 void WAIVESampler::addToUpdateQueue(int ev)
 {
+    // if (updateQueue.back() != ev)
     updateQueue.push(ev);
 
-    while (updateQueue.size() > 64)
+    while (updateQueue.size() > 16)
         updateQueue.pop();
 }
 

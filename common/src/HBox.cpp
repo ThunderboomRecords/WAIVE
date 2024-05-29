@@ -62,6 +62,14 @@ void HBox::removeWidget(uint id)
     }
 }
 
+void HBox::setVisible(bool visible)
+{
+    for (auto it = items_.begin(); it != items_.end(); it++)
+    {
+        it->widget->setVisible(visible);
+    }
+}
+
 void HBox::positionWidgets()
 {
     const uint width = getWidth();

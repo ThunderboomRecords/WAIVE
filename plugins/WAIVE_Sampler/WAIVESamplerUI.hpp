@@ -10,6 +10,7 @@
 #include "NanoVG.hpp"
 #include "Window.hpp"
 
+#include "WidgetGroup.hpp"
 #include "HBox.hpp"
 #include "VBox.hpp"
 #include "Menu.hpp"
@@ -36,7 +37,7 @@
 START_NAMESPACE_DISTRHO
 
 const unsigned int UI_W = 840;
-const unsigned int UI_H = 640;
+const unsigned int UI_H = 582;
 
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
@@ -73,6 +74,7 @@ protected:
 
 private:
     void createSampleSlots();
+    void setSampleEditorVisible(bool visible);
 
     float fScale;
     double fScaleFactor;
@@ -100,6 +102,7 @@ private:
     std::vector<DropDown *> sampleMidiDropdowns;
     HBox *ampADSRKnobs, *shapeKnobs, *filterKnobs;
     VBox *slots_container;
+    WidgetGroup *sample_editor_controls;
     Menu *sample_map_menu, *dropdown_menu;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;

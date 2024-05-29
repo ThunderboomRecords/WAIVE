@@ -20,7 +20,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/external/tinyfiledialogs-code/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Menu.cpp

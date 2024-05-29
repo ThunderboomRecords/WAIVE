@@ -30,6 +30,35 @@ int SampleInfo::getId() const
     return id;
 }
 
+void SampleInfo::print() const
+{
+    std::string f_type;
+    switch (filterType)
+    {
+    case Filter::FILTER_LOWPASS:
+        f_type.assign("lowpass");
+        break;
+    case Filter::FILTER_HIGHPASS:
+        f_type.assign("highpass");
+        break;
+    case Filter::FILTER_BANDPASS:
+        f_type.assign("bandpass");
+        break;
+    default:
+        f_type.assign("<unknown>");
+        break;
+    }
+
+    printf("================\n");
+    printf("SampleInfo: %d (waive: %d)\n", id, waive);
+    printf(" - source: %s\n - sourceStart: %d\n - sampleLength: \n", source.c_str(), sourceStart, sampleLength);
+    printf(" - embedding: %.3f %.3f\n", embedX, embedY);
+    printf(" - Parameters:\n   volume: %.3f  percussiveBoost: %.3f  pitch: %.3f\n", volume, percussiveBoost, pitch);
+    printf(" - ADSR:\n    A: %.3fms  D: %.3fms  S:  %.3f (length %.1fms) R: %.3fms\n", adsr.attack, adsr.decay, adsr.sustain, sustainLength, adsr.release);
+    printf(" - Filter:\n    filterType: %s  cuffoff: %.3f  resonance: %.3f\n", f_type.c_str(), filterCutoff, filterResonance);
+    printf("================\n");
+}
+
 float SampleInfo::operator[](int index)
 {
     if (index == 0)
@@ -231,6 +260,8 @@ std::shared_ptr<SampleInfo> SampleDatabase::findSample(int id)
     // TODO: make more efficient
     // - caching?
     // - hash table/unordered map?
+    if (id < 0)
+        return nullptr;
 
     for (int i = 0; i < fAllSamples.size(); i++)
     {
@@ -262,7 +293,50 @@ std::vector<std::shared_ptr<SampleInfo>> SampleDatabase::findRadius(float x, flo
     return result;
 }
 
-std::string SampleDatabase::getSamplePath(std::shared_ptr<SampleInfo> sample)
+std::string SampleDatabase::getSamplePath(std::shared_ptr<SampleInfo> sample) const
 {
+    // std::string saveName = fmt::format("{:d}_{}", sample->getId(), sample->name);
     return (fCacheDir / sample->path / sample->name).string();
+}
+
+std::string SampleDatabase::getSampleFolder() const
+{
+    return (fCacheDir / SAMPLE_DIR).string();
+}
+
+std::string SampleDatabase::makeNewSamplePath(std::string name) const
+{
+    return (fCacheDir / SAMPLE_DIR / name).string();
+}
+
+std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<SampleInfo> sample)
+{
+    time_t current_time = time(NULL);
+
+    if (sample == nullptr)
+    {
+        std::cout << "duplucateSample: null input, initialising new.\n";
+        std::string name = fmt::format("Sample{:d}.wav", current_time % 10000);
+        return std::make_shared<SampleInfo>(current_time, name, SAMPLE_DIR, true);
+    }
+
+    std::shared_ptr<SampleInfo> s(new SampleInfo(current_time, sample->name, sample->path, sample->waive));
+    s->pitch = sample->pitch;
+    s->percussiveBoost = sample->percussiveBoost;
+    s->volume = sample->volume;
+    s->filterCutoff = sample->filterCutoff;
+    s->filterResonance = sample->filterResonance;
+    s->filterType = sample->filterType;
+    s->sustainLength = sample->sustainLength;
+    s->adsr.attack = sample->adsr.attack;
+    s->adsr.decay = sample->adsr.decay;
+    s->adsr.sustain = sample->adsr.sustain;
+    s->adsr.release = sample->adsr.release;
+
+    s->source = sample->source;
+    s->sourceStart = sample->sourceStart;
+    s->embedX = sample->embedX;
+    s->embedY = sample->embedY;
+
+    return s;
 }

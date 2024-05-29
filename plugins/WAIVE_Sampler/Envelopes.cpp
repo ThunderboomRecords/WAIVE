@@ -172,7 +172,7 @@ void EnvGen::process()
     switch (type)
     {
     case ADSR:
-        if (step >= startSustain && stage == ADSR_Stage::ATTACK)
+        if (step >= startSustain && stage == ADSR_Stage::DECAY)
             stage = ADSR_Stage::SUSTAIN;
         else if (step >= startDecay && stage == ADSR_Stage::ATTACK)
             stage = ADSR_Stage::DECAY;

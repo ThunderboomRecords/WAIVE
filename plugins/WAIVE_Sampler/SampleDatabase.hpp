@@ -15,6 +15,7 @@
 #include <sndfile.hh>
 #include "kdtree.h"
 #include <nlohmann/json.hpp>
+#include <fmt/core.h>
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
@@ -28,7 +29,7 @@ public:
 
     int getId() const;
     json toJson() const;
-
+    void print() const;
     float operator[](int index);
 
     static const int DIM = 2;
@@ -75,7 +76,10 @@ public:
     bool addToLibrary(std::shared_ptr<SampleInfo> sample);
     bool saveSamples();
     bool renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name);
-    std::string getSamplePath(std::shared_ptr<SampleInfo> sample);
+    static std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
+    std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
+    std::string getSampleFolder() const;
+    std::string makeNewSamplePath(std::string name) const;
 
     std::shared_ptr<SampleInfo> findSample(int id);
     std::vector<std::shared_ptr<SampleInfo>> findKNearest(float x, float y, int k);
