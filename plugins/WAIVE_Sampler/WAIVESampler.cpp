@@ -12,7 +12,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fCurrentSample(nullptr),
                                ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
                                gist({512, (int)getSampleRate()}),
-                               server(SimpleUDPServer("127.0.0.1", 8000))
+                               server(SimpleUDPServer((char *)"127.0.0.1", 8000))
 {
     if (isDummyInstance())
         std::cout << "** dummy instance" << std::endl;
@@ -39,7 +39,40 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     for (int i = 0; i < 8; i++)
         samplePlayers[i].midi = defaultMidiMap[i];
 
-    // newSample();
+    // Load models
+    std::cout << "Loading TSNE model...\n";
+    try
+    {
+        auto info = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
+
+        sessionOptions.SetIntraOpNumThreads(1);
+        sessionOptions.SetInterOpNumThreads(1);
+
+        mTSNE = std::make_unique<Ort::Session>(mEnv, (void *)tsne_model_onnx_start, tsne_model_onnx_size, sessionOptions);
+
+        assert(mTSNE);
+
+        mTSNEInputShape = GetInputShapes(mTSNE);
+        mTSNEOutputShape = GetOutputShapes(mTSNE);
+
+        mTSNEInputNames = GetInputNames(mTSNE);
+        mTSNEOutputNames = GetOutputNames(mTSNE);
+
+        mTSNEInput.resize(mTSNEInputShape[0][0]);
+        mTSNEOutput.resize(mTSNEOutputShape[0][0]);
+
+        std::fill(mTSNEInput.begin(), mTSNEInput.end(), 0.0f);
+        std::fill(mTSNEOutput.begin(), mTSNEOutput.end(), 0.0f);
+
+        mTSNEInputTensor.push_back(Ort::Value::CreateTensor<float>(info, mTSNEInput.data(), mTSNEInput.size(), mTSNEInputShape[0].data(), mTSNEInputShape[0].size()));
+        mTSNEOutputTensor.push_back(Ort::Value::CreateTensor<float>(info, mTSNEOutput.data(), mTSNEOutput.size(), mTSNEOutputShape[0].data(), mTSNEOutputShape[0].size()));
+
+        PrintModelDetails("TSNE model", mTSNEInputNames, mTSNEOutputNames, mTSNEInputShape, mTSNEOutputShape);
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+    }
 
     // OSC Test
     int len = tosc_writeMessage(oscBuffer, sizeof(oscBuffer), "/WAIVE_Sampler", "s", "testing");
@@ -543,7 +576,7 @@ int WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
 
 bool WAIVESampler::saveWaveform(const char *fp, float *buffer, sf_count_t size)
 {
-    std::cout << "WAIVESampler::saveWaveform" << std::endl;
+    // std::cout << "WAIVESampler::saveWaveform" << std::endl;
 
     SndfileHandle file = SndfileHandle(
         fp,
@@ -553,7 +586,6 @@ bool WAIVESampler::saveWaveform(const char *fp, float *buffer, sf_count_t size)
         sampleRate);
 
     file.write(buffer, size);
-    std::cout << "waveform saved to " << fp << std::endl;
 
     return true;
 }
@@ -654,15 +686,15 @@ void WAIVESampler::importSample(const char *fp)
     info->sourceStart = 0;
     info->saved = true;
 
-    auto embedding = getEmbedding(id);
-    info->embedX = embedding.first;
-    info->embedY = embedding.second;
-
     sd.addToLibrary(info);
 
     // TODO: render loaded sample...
     std::vector<float> sampleCopy;
     int sampleLength = loadWaveform(fpString.c_str(), &sampleCopy);
+
+    auto embedding = getEmbedding(&sampleCopy);
+    info->embedX = embedding.first;
+    info->embedY = embedding.second;
 
     saveWaveform(sd.getSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength);
 }
@@ -672,18 +704,10 @@ void WAIVESampler::addCurrentSampleToLibrary()
     if (fCurrentSample == nullptr || !fSampleLoaded)
         return;
 
-    fCurrentSample->print();
-
-    // if (!fCurrentSample->waive)
-    // {
-    //     printf("duplicating current sample\n");
-    //     std::shared_ptr<SampleInfo> s = SampleDatabase::duplicateSampleInfo(fCurrentSample);
-    //     s->waive = true;
-    //     s->path = sd.getSampleFolder();
-    //     fCurrentSample = s;
-    //     renderSample();
-    //     fCurrentSample->print();
-    // }
+    // fCurrentSample->print();
+    auto embedding = getEmbedding(editorPreviewWaveform);
+    fCurrentSample->embedX = embedding.first;
+    fCurrentSample->embedY = embedding.second;
 
     sd.addToLibrary(fCurrentSample);
     saveWaveform(sd.getSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength);
@@ -724,10 +748,8 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     fCurrentSample = s;
     fSampleLoaded = false;
 
-    fCurrentSample->print();
+    // fCurrentSample->print();
 
-    // if (fCurrentSample->waive)
-    // {
     if (newSource)
         loadSource(fCurrentSample->source.c_str());
     setParameterValue(kSampleVolume, fCurrentSample->volume);
@@ -742,12 +764,8 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     setParameterValue(kFilterResonance, fCurrentSample->filterResonance);
     setParameterValue(kFilterType, fCurrentSample->filterType);
     selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
-    // }
-    // else
-    // {
-    //     // TODO: load sample directly (hide sample controls? set to values that don't alter original?)
+
     fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), editorPreviewWaveform);
-    // }
 
     fSampleLoaded = true;
     addToUpdateQueue(kSampleLoaded);
@@ -856,9 +874,6 @@ void WAIVESampler::renderSample()
     editorPreviewPlayer->ptr = 0;
     editorPreviewPlayer->active = true;
 
-    auto embedding = getEmbedding(fCurrentSample->getId());
-    fCurrentSample->embedX = embedding.first;
-    fCurrentSample->embedY = embedding.second;
     fSampleLoaded = true;
     samplePlayerMtx.unlock();
     addToUpdateQueue(kSampleUpdated);
@@ -913,34 +928,49 @@ void WAIVESampler::triggerPreview()
     }
 }
 
-std::pair<float, float> WAIVESampler::getEmbedding(int id)
+std::pair<float, float> WAIVESampler::getEmbedding(std::vector<float> *wf)
 {
-    // TODO: placeholder is random for now
-    unsigned int x = ((long)id * 87) % 10000;
-    unsigned int y = ((long)id * 123) % 10000;
+    getFeatures(wf, &mTSNEInput);
 
-    float embedX = (float)x / 5000.0f - 1.0f;
-    float embedY = (float)y / 5000.0f - 1.0f;
-    // printf("embedding %.2f %.2f\n", embedX, embedY);
+    const char *inputNamesCstrs[] = {mTSNEInputNames[0].c_str()};
+    const char *outputNamesCstrs[] = {mTSNEOutputNames[0].c_str()};
+
+    mTSNE->Run(
+        mRunOptions,
+        inputNamesCstrs,
+        mTSNEInputTensor.data(),
+        mTSNEInputTensor.size(),
+        outputNamesCstrs,
+        mTSNEOutputTensor.data(),
+        mTSNEOutputTensor.size());
+
+    // printf("TSNE embedding: %.2f %.2f\n", mTSNEOutput[0], mTSNEOutput[1]);
+
+    float embedX = mTSNEOutput[0];
+    float embedY = mTSNEOutput[1];
     return std::pair<float, float>(embedX, embedY);
 }
 
-void WAIVESampler::analyseWaveform()
+void WAIVESampler::getFeatures(std::vector<float> *wf, std::vector<float> *feature)
 {
-
     int n_fft = 1024;
     int n_hop = 441;
     std::string window = "hann";
     bool center = true;
-    std::string pad_mode = "constant";
+    std::string pad_mode = "reflect";
     float power = 2.f;
     int n_mel = 64;
     int fmin = 0;
     int fmax = 22050;
+    int length = 64;
+
+    float epsilon = 0.000000001f;
+    float X_mean = -13.617876;
+    float X_std = 7.084826;
 
     std::vector<std::vector<float>> melspec = librosa::Feature::melspectrogram(
-        fSourceWaveform,
-        22050,
+        *wf,
+        sampleRate,
         n_fft,
         n_hop,
         window,
@@ -951,10 +981,39 @@ void WAIVESampler::analyseWaveform()
         fmin,
         fmax);
 
-    printf(" ** melspec:\n");
-    printf(" %.d rows, %d cols\n", melspec.size(), melspec[0].size());
-    printf(" value at (4, 5) = %.4f\n", melspec[4][5]);
-    std::cout << std::endl;
+    assert(length * n_mel <= feature->size());
+
+    // std::vector<std::vector<float>> feature(n_mel, std::vector<float>(length, -16.0f));
+    std::fill(feature->begin(), feature->end(), (std::log(epsilon) - X_mean) / X_std);
+    int width = std::min((int)melspec.size(), length);
+
+    // printf("n_mel: %d width: %d length: %d feature->size: %d \n", n_mel, width, length, feature->size());
+
+    // std::ofstream melofs("melspec.csv", std::ofstream::trunc);
+    for (int i = 0; i < width; i++)
+    {
+        for (int j = 0; j < n_mel; j++)
+        {
+            float val = std::log(epsilon + melspec[i][j]);
+            feature->at(j * length + i) = (val - X_mean) / X_std;
+            // melofs << val;
+            // if (j < n_mel - 1)
+            //     melofs << " ";
+        }
+        // if (i < width - 1)
+        //     melofs << "\n";
+    }
+    // melofs.close();
+
+    // std::ofstream ofs("features.csv", std::ofstream::trunc);
+    // for (int i = 0; i < 4096; i++)
+    // {
+    //     ofs << fmt::format("{:f}", feature->at(i));
+    //     if (i < 4095)
+    //         ofs << " ";
+    // }
+
+    // ofs.close();
 }
 
 void WAIVESampler::getOnsets()

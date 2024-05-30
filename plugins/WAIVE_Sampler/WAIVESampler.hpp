@@ -28,6 +28,10 @@
 #include "samplerate.h"
 #include "Gist.h"
 
+#include "model_utils.hpp"
+#include "onnxruntime_cxx_api.h"
+#include "tsne.c"
+
 #include "version_config.h"
 
 #include <tinyosc.h>
@@ -137,8 +141,8 @@ protected:
     void renderSample();
     void loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer);
     void triggerPreview();
-    std::pair<float, float> getEmbedding(int id);
-    void analyseWaveform();
+    std::pair<float, float> getEmbedding(std::vector<float> *wf);
+    void getFeatures(std::vector<float> *wf, std::vector<float> *feature);
     void getOnsets();
 
     EnvGen ampEnvGen;
@@ -147,6 +151,16 @@ private:
     void addToUpdateQueue(int ev);
 
     float sampleRate;
+
+    Ort::SessionOptions sessionOptions;
+    Ort::RunOptions mRunOptions{nullptr};
+    Ort::Env mEnv{};
+
+    std::unique_ptr<Ort::Session> mTSNE;
+    std::vector<std::string> mTSNEInputNames, mTSNEOutputNames;
+    std::vector<std::vector<int64_t>> mTSNEInputShape, mTSNEOutputShape;
+    std::vector<float> mTSNEInput, mTSNEOutput;
+    std::vector<Ort::Value> mTSNEInputTensor, mTSNEOutputTensor;
 
     Gist<float> gist;
 

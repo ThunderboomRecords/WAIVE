@@ -14,7 +14,9 @@ dpf_add_plugin(
       Envelopes.cpp
       SimpleUDP.cpp
       Filters.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/model_utils.cpp
       ${CMAKE_SOURCE_DIR}/external/tinyosc/tinyosc.c
+      ./models/tsne.c
   FILES_UI
       WAIVESamplerUI.cpp
       ${CMAKE_SOURCE_DIR}/external/tinyfiledialogs-code/tinyfiledialogs.c
@@ -62,6 +64,7 @@ target_include_directories(
   WAIVE_Sampler
   PUBLIC 
     .
+    ./models
     ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/external/LibrosaCpp/librosa
     ${CMAKE_SOURCE_DIR}/external/libsamplerate/include
@@ -71,6 +74,7 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/kd-tree
     ${CMAKE_SOURCE_DIR}/external/tinyfiledialogs-code
     ${CMAKE_SOURCE_DIR}/external/tinyosc
+    ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
 )
 
 target_link_libraries(
@@ -85,7 +89,7 @@ target_link_libraries(
     Gist
     PRIVATE
     nlohmann_json::nlohmann_json
-    
+    ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
 )
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
