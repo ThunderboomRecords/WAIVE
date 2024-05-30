@@ -17,13 +17,10 @@
 
 #include "WAIVEMidi.hpp"
 
-
 START_NAMESPACE_DISTRHO
-
 
 const unsigned int UI_W = 840;
 const unsigned int UI_H = 380;
-
 
 class WAIVEMidiUI : public UI,
                     public Slider::Callback,

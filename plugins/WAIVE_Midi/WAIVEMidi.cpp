@@ -1,8 +1,6 @@
 #include "WAIVEMidi.hpp"
 
-
 START_NAMESPACE_DISTRHO
-
 
 WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
                          fThreshold(0.7f),
@@ -14,9 +12,9 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
     sampleRate = getSampleRate();
 
     s_map[0] = 0;
-    for(int i=1; i<9; i++)
+    for (int i = 1; i < 9; i++)
     {
-        s_map[i] = s_map[i-1] + max_events[i-1];
+        s_map[i] = s_map[i - 1] + max_events[i - 1];
     }
 
     seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -26,20 +24,20 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
     distribution = std::normal_distribution<float>(0.0f, 1.0f);
 
     std::cout << "loading models...";
-    try 
+    try
     {
         auto info = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
 
         sessionOptions.SetIntraOpNumThreads(1);
         sessionOptions.SetInterOpNumThreads(1);
 
-        mScoreEncoder = std::make_unique<Ort::Session>(mEnv, (void*) score_encoder_onnx_start, score_encoder_onnx_size, sessionOptions);
-        mScoreDecoder = std::make_unique<Ort::Session>(mEnv, (void*) score_decoder_onnx_start, score_decoder_onnx_size, sessionOptions);
+        mScoreEncoder = std::make_unique<Ort::Session>(mEnv, (void *)score_encoder_onnx_start, score_encoder_onnx_size, sessionOptions);
+        mScoreDecoder = std::make_unique<Ort::Session>(mEnv, (void *)score_decoder_onnx_start, score_decoder_onnx_size, sessionOptions);
 
-        mGrooveEncoder = std::make_unique<Ort::Session>(mEnv, (void*) groove_encoder_onnx_start, groove_encoder_onnx_size, sessionOptions);
-        mGrooveDecoder = std::make_unique<Ort::Session>(mEnv, (void*) groove_decoder_onnx_start, groove_decoder_onnx_size, sessionOptions);
+        mGrooveEncoder = std::make_unique<Ort::Session>(mEnv, (void *)groove_encoder_onnx_start, groove_encoder_onnx_size, sessionOptions);
+        mGrooveDecoder = std::make_unique<Ort::Session>(mEnv, (void *)groove_decoder_onnx_start, groove_decoder_onnx_size, sessionOptions);
 
-        mFullDecoder = std::make_unique<Ort::Session>(mEnv, (void*) full_groove_model_onnx_start, full_groove_model_onnx_size, sessionOptions);
+        mFullDecoder = std::make_unique<Ort::Session>(mEnv, (void *)full_groove_model_onnx_start, full_groove_model_onnx_size, sessionOptions);
 
         assert(mScoreEncoder);
         assert(mScoreDecoder);
@@ -95,7 +93,6 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
         mGrooveInputTensor.push_back(Ort::Value::CreateTensor<float>(info, mGrooveInput.data(), mGrooveInput.size(), mGrooveEncoderInputShape[0].data(), mGrooveEncoderInputShape[0].size()));
         mGrooveOutputTensor.push_back(Ort::Value::CreateTensor<float>(info, mGrooveOutput.data(), mGrooveOutput.size(), mGrooveDecoderOutputShape[0].data(), mGrooveDecoderOutputShape[0].size()));
 
-
         // FULL DECODER Model
         mFullDecoderInputShape = GetInputShapes(mFullDecoder);
         mFullDecoderOutputShape = GetOutputShapes(mFullDecoder);
@@ -105,27 +102,26 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
         mFullZ.resize(mFullDecoderInputShape[0][0]);
         mFullOutput.resize(mFullDecoderOutputShape[0][0]);
-        
+
         std::fill(mFullZ.begin(), mFullZ.end(), 0.0f);
         std::fill(mFullOutput.begin(), mFullOutput.end(), 0.0f);
 
         mFullZTensor.push_back(Ort::Value::CreateTensor<float>(info, mFullZ.data(), mFullZ.size(), mFullDecoderInputShape[0].data(), mFullDecoderInputShape[0].size()));
         mFullOutputTensor.push_back(Ort::Value::CreateTensor<float>(info, mFullOutput.data(), mFullOutput.size(), mFullDecoderOutputShape[0].data(), mFullDecoderOutputShape[0].size()));
 
-
         std::cout << " done\n";
 
-        //PrintModelDetails("mScoreEncoder", mScoreEncoderInputNames, mScoreEncoderOutputNames, mScoreEncoderInputShape, mScoreEncoderOutputShape);
-        //PrintModelDetails("mScoreDecoder", mScoreDecoderInputNames, mScoreDecoderOutputNames, mScoreDecoderInputShape, mScoreDecoderOutputShape);
+        // PrintModelDetails("mScoreEncoder", mScoreEncoderInputNames, mScoreEncoderOutputNames, mScoreEncoderInputShape, mScoreEncoderOutputShape);
+        // PrintModelDetails("mScoreDecoder", mScoreDecoderInputNames, mScoreDecoderOutputNames, mScoreDecoderInputShape, mScoreDecoderOutputShape);
 
-        //PrintModelDetails("mGrooveEncoder", mGrooveEncoderInputNames, mGrooveEncoderOutputNames, mGrooveEncoderInputShape, mGrooveEncoderOutputShape);
-        //PrintModelDetails("mGrooveDecoder", mGrooveDecoderInputNames, mGrooveDecoderOutputNames, mGrooveDecoderInputShape, mGrooveDecoderOutputShape);
+        // PrintModelDetails("mGrooveEncoder", mGrooveEncoderInputNames, mGrooveEncoderOutputNames, mGrooveEncoderInputShape, mGrooveEncoderOutputShape);
+        // PrintModelDetails("mGrooveDecoder", mGrooveDecoderInputNames, mGrooveDecoderOutputNames, mGrooveDecoderInputShape, mGrooveDecoderOutputShape);
 
-        //PrintModelDetails("mFullDecoder", mFullDecoderInputNames, mFullDecoderOutputNames, mFullDecoderInputShape, mFullDecoderOutputShape);
+        // PrintModelDetails("mFullDecoder", mFullDecoderInputNames, mFullDecoderOutputNames, mFullDecoderInputShape, mFullDecoderOutputShape);
 
         std::cout << std::endl;
     }
-    catch (std::exception& e) 
+    catch (std::exception &e)
     {
         std::cerr << " error loading models\n";
         return;
@@ -133,7 +129,7 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
     notesPointer = notes.begin();
 
-    // generate 
+    // generate
     generateScore();
     generateGroove();
     generateFullPattern();
@@ -141,31 +137,31 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
 void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
 {
-    switch(index)
+    switch (index)
     {
-        case kThreshold:
-            parameter.name = "Threshold";
-            parameter.symbol = "threshold";
-            parameter.ranges.min = 0.0f;
-            parameter.ranges.max = 1.0f;
-            parameter.ranges.def = 0.7f;
-            parameter.hints = kParameterIsAutomatable;
-            break;
-        default:
-            break;
+    case kThreshold:
+        parameter.name = "Threshold";
+        parameter.symbol = "threshold";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.7f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
+    default:
+        break;
     }
 }
 
 float WAIVEMidi::getParameterValue(uint32_t index) const
 {
     float val = 0.0f;
-    switch(index)
+    switch (index)
     {
-        case kThreshold:
-            val = fThreshold;
-            break;
-        default:
-            break;
+    case kThreshold:
+        val = fThreshold;
+        break;
+    default:
+        break;
     }
 
     return val;
@@ -173,13 +169,13 @@ float WAIVEMidi::getParameterValue(uint32_t index) const
 
 void WAIVEMidi::setParameterValue(uint32_t index, float value)
 {
-    switch(index)
+    switch (index)
     {
-        case kThreshold:
-            fThreshold = value;
-            break;
-        default:
-            break;
+    case kThreshold:
+        fThreshold = value;
+        break;
+    default:
+        break;
     }
 }
 
@@ -187,7 +183,8 @@ void WAIVEMidi::setState(const char *key, const char *value)
 {
     printf("WAIVEMidi::setState\n");
     printf("  %s: %s\n", key, value);
-    if(std::strcmp(key, "score") == 0){
+    if (std::strcmp(key, "score") == 0)
+    {
         encodeScore();
     }
 }
@@ -200,9 +197,9 @@ String WAIVEMidi::getState(const char *key) const
 
 void WAIVEMidi::initState(unsigned int index, String &stateKey, String &defaultStateValue)
 {
-    switch(index)
+    switch (index)
     {
-        default:
+    default:
         break;
     }
 }
@@ -210,14 +207,14 @@ void WAIVEMidi::initState(unsigned int index, String &stateKey, String &defaultS
 void WAIVEMidi::allNotesOff(uint32_t frame)
 {
     std::set<uint8_t>::iterator it;
-    
+
     MidiEvent me;
-    me.size = 3;    
+    me.size = 3;
     me.frame = frame;
     me.data[0] = 0x80;
     me.data[2] = 0;
 
-    for(it = triggered.begin(); it != triggered.end(); it++)
+    for (it = triggered.begin(); it != triggered.end(); it++)
     {
         me.data[1] = *it;
         writeMidiEvent(me);
@@ -234,9 +231,9 @@ void WAIVEMidi::run(
     uint32_t midiEventCount      // Number of MIDI events in block
 )
 {
-    const TimePosition& timePos(getTimePosition());
+    const TimePosition &timePos(getTimePosition());
 
-    for(uint32_t i=0; i<midiEventCount; ++i) 
+    for (uint32_t i = 0; i < midiEventCount; ++i)
     {
         MidiEvent me = midiEvents[i];
         writeMidiEvent(me);
@@ -244,7 +241,7 @@ void WAIVEMidi::run(
 
     static bool wasPlaying = false;
 
-    if(wasPlaying && !timePos.playing)
+    if (wasPlaying && !timePos.playing)
     {
         notesPointer = notes.begin();
         loopTick = 0.0;
@@ -254,7 +251,7 @@ void WAIVEMidi::run(
 
     wasPlaying = timePos.playing;
 
-    if(!timePos.bbt.valid || !timePos.playing) 
+    if (!timePos.bbt.valid || !timePos.playing)
     {
         return;
     }
@@ -265,11 +262,12 @@ void WAIVEMidi::run(
     double ticksPerLoop = tpb * 4.0;
     double samplesPerBeat = (60.0f * sampleRate) / timePos.bbt.beatsPerMinute;
     double samplesPerTick = samplesPerBeat / tpb;
-    double ticksPerSample =  tpb / samplesPerBeat;
+    double ticksPerSample = tpb / samplesPerBeat;
 
     progress = loopTick / ticksPerLoop;
 
-    if(ticks_per_beat != tpb) {
+    if (ticks_per_beat != tpb)
+    {
         ticks_per_beat = tpb;
         computeNotes();
     }
@@ -277,16 +275,16 @@ void WAIVEMidi::run(
     MidiEvent me;
     me.size = 3;
 
-    for(uint32_t i=0; i < numFrames; i++)
+    for (uint32_t i = 0; i < numFrames; i++)
     {
         me.frame = i;
-        while(notesPointer != notes.end() && (double)(*notesPointer).tick <= loopTick)
+        while (notesPointer != notes.end() && (double)(*notesPointer).tick <= loopTick)
         {
             me.data[1] = (*notesPointer).midiNote;
 
-            if((*notesPointer).noteOn)
+            if ((*notesPointer).noteOn)
             {
-                if(triggered.count((*notesPointer).midiNote))
+                if (triggered.count((*notesPointer).midiNote))
                 {
                     // note still on, send noteOff first
                     me.data[0] = 0x80;
@@ -297,7 +295,9 @@ void WAIVEMidi::run(
                 me.data[0] = 0x90;
                 me.data[2] = (*notesPointer).velocity;
                 triggered.insert((*notesPointer).midiNote);
-            } else {
+            }
+            else
+            {
                 me.data[0] = 0x80;
                 me.data[2] = 0;
                 triggered.erase((*notesPointer).midiNote);
@@ -308,7 +308,7 @@ void WAIVEMidi::run(
         }
 
         loopTick += ticksPerSample;
-        if(loopTick >= ticksPerLoop)
+        if (loopTick >= ticksPerLoop)
         {
             loopTick = 0.0;
             notesPointer = notes.begin();
@@ -319,133 +319,140 @@ void WAIVEMidi::run(
 
 void WAIVEMidi::encodeScore()
 {
-    for(int i=0; i<16; i++){
-        for(int j=0; j<9; j++){
-            mScoreInput[j + i*9] = fScore[i][j];
+    for (int i = 0; i < 16; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            mScoreInput[j + i * 9] = fScore[i][j];
         }
     }
 
-    const char* inputNamesCstrs[] = {mScoreEncoderInputNames[0].c_str()};
-    const char* outputNamesCstrs[] = {mScoreEncoderOutputNames[0].c_str()};
+    const char *inputNamesCstrs[] = {mScoreEncoderInputNames[0].c_str()};
+    const char *outputNamesCstrs[] = {mScoreEncoderOutputNames[0].c_str()};
 
     mScoreEncoder->Run(
-        mRunOptions, 
-        inputNamesCstrs, 
-        mScoreInputTensor.data(), 
-        mScoreInputTensor.size(), 
-        outputNamesCstrs, 
-        mScoreZTensor.data(), 
-        mScoreZTensor.size()
-    );
-    
+        mRunOptions,
+        inputNamesCstrs,
+        mScoreInputTensor.data(),
+        mScoreInputTensor.size(),
+        outputNamesCstrs,
+        mScoreZTensor.data(),
+        mScoreZTensor.size());
+
     generateFullPattern();
 }
 
 void WAIVEMidi::generateScore()
 {
-    for(size_t i=0; i<mScoreZ.size(); i++){
+    for (size_t i = 0; i < mScoreZ.size(); i++)
+    {
         float z = distribution(generator);
         z = z * score_stds[i % 64] + score_means[i % 64];
         mScoreZ[i] = z;
     }
 
-    const char* inputNamesCstrs[] = {mScoreDecoderInputNames[0].c_str()};
-    const char* outputNamesCstrs[] = {mScoreDecoderOutputNames[0].c_str()};
+    const char *inputNamesCstrs[] = {mScoreDecoderInputNames[0].c_str()};
+    const char *outputNamesCstrs[] = {mScoreDecoderOutputNames[0].c_str()};
 
     mScoreDecoder->Run(
-        mRunOptions, 
-        inputNamesCstrs, 
-        mScoreZTensor.data(), 
-        mScoreZTensor.size(), 
-        outputNamesCstrs, 
-        mScoreOutputTensor.data(), 
-        mScoreOutputTensor.size()
-    );
+        mRunOptions,
+        inputNamesCstrs,
+        mScoreZTensor.data(),
+        mScoreZTensor.size(),
+        outputNamesCstrs,
+        mScoreOutputTensor.data(),
+        mScoreOutputTensor.size());
 
-    for(int i=0; i<16; i++){
-        for(int j=0; j<9; j++){
-            fScore[i][j] = mScoreOutput[j + i*9];
+    for (int i = 0; i < 16; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            fScore[i][j] = mScoreOutput[j + i * 9];
         }
     }
-
 }
 
 void WAIVEMidi::encodeGroove()
 {
     std::fill(mGrooveInput.begin(), mGrooveInput.end(), 0.0f);
     std::vector<GrooveEvent>::iterator grooveEvents = fGroove.begin();
-    for(; grooveEvents != fGroove.end(); grooveEvents++)
+    for (; grooveEvents != fGroove.end(); grooveEvents++)
     {
         float velocity = 2.0f * ((*grooveEvents).velocity - 0.5f);
         float position = (*grooveEvents).position;
         int sixteenth = (int)std::clamp(std::round(position * 16.0f), 0.0f, 15.0f);
-        float offset = position * 16.0f - (float) sixteenth;
+        float offset = position * 16.0f - (float)sixteenth;
 
         int index = sixteenth * 3 * 3;
         int j = 0;
-        if(mGrooveInput[index] == 0.0f) j = 0;
-        else if(mGrooveInput[index + 3] == 0.0f) j = 1;
-        else j = 2;
+        if (mGrooveInput[index] == 0.0f)
+            j = 0;
+        else if (mGrooveInput[index + 3] == 0.0f)
+            j = 1;
+        else
+            j = 2;
 
-        index += j*3;
+        index += j * 3;
 
         mGrooveInput[index + 0] = 1.0f;
         mGrooveInput[index + 1] = velocity;
         mGrooveInput[index + 2] = offset;
     }
 
-    const char* inputNamesCstrs[] = {mGrooveEncoderInputNames[0].c_str()};
-    const char* outputNamesCstrs[] = {mGrooveEncoderOutputNames[0].c_str()};
+    const char *inputNamesCstrs[] = {mGrooveEncoderInputNames[0].c_str()};
+    const char *outputNamesCstrs[] = {mGrooveEncoderOutputNames[0].c_str()};
 
     mGrooveEncoder->Run(
-        mRunOptions, 
-        inputNamesCstrs, 
-        mGrooveInputTensor.data(), 
+        mRunOptions,
+        inputNamesCstrs,
+        mGrooveInputTensor.data(),
         mGrooveInputTensor.size(),
-        outputNamesCstrs, 
-        mGrooveZTensor.data(), 
-        mGrooveZTensor.size()
-    );
+        outputNamesCstrs,
+        mGrooveZTensor.data(),
+        mGrooveZTensor.size());
 
     generateFullPattern();
 }
 
 void WAIVEMidi::generateGroove()
 {
-    //std::cout << "mGrooveZ: [";
-    for(size_t i=0; i<mGrooveZ.size(); i++){
+    // std::cout << "mGrooveZ: [";
+    for (size_t i = 0; i < mGrooveZ.size(); i++)
+    {
         float z = distribution(generator);
         z = z * groove_stds[i % 32] + groove_means[i % 32];
         mGrooveZ[i] = z;
-        //printf("%.3f, ", mGrooveZ[i]);
+        // printf("%.3f, ", mGrooveZ[i]);
     }
-    //std::cout << "]" << std::endl;
+    // std::cout << "]" << std::endl;
 
-    const char* inputNamesCstrs[] = {mGrooveDecoderInputNames[0].c_str()};
-    const char* outputNamesCstrs[] = {mGrooveDecoderOutputNames[0].c_str()};
+    const char *inputNamesCstrs[] = {mGrooveDecoderInputNames[0].c_str()};
+    const char *outputNamesCstrs[] = {mGrooveDecoderOutputNames[0].c_str()};
 
     mGrooveDecoder->Run(
-        mRunOptions, 
-        inputNamesCstrs, 
-        mGrooveZTensor.data(), 
-        mGrooveZTensor.size(), 
-        outputNamesCstrs, 
-        mGrooveOutputTensor.data(), 
-        mGrooveOutputTensor.size()
-    );
+        mRunOptions,
+        inputNamesCstrs,
+        mGrooveZTensor.data(),
+        mGrooveZTensor.size(),
+        outputNamesCstrs,
+        mGrooveOutputTensor.data(),
+        mGrooveOutputTensor.size());
 
     fGroove.clear();
     // [i, j, k]  ->  [(i*3 + j) * 3 + k]
-    for(int i=0; i<16; i++){
-        for(int j=0; j<3; j++){
-            int k = i*3 + j;
-            int index = k*3;
+    for (int i = 0; i < 16; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            int k = i * 3 + j;
+            int index = k * 3;
 
-            if(mGrooveOutput[index] < 0.3f) break;
+            if (mGrooveOutput[index] < 0.3f)
+                break;
 
-            float velocity = 0.5f * mGrooveOutput[index+1] + 0.5f;
-            float offset = mGrooveOutput[index+2];
-            float position = ((float) i + offset) / 16.0f;
+            float velocity = 0.5f * mGrooveOutput[index + 1] + 0.5f;
+            float offset = mGrooveOutput[index + 2];
+            float position = ((float)i + offset) / 16.0f;
             position = std::clamp(position, 0.0f, 1.0f);
 
             GrooveEvent g = {position, velocity};
@@ -458,37 +465,39 @@ void WAIVEMidi::generateGroove()
 
 void WAIVEMidi::generateFullPattern()
 {
-    
-    mFullZ.clear();
-    //std::cout << "mFullZ = [";
-    for(const float z : mScoreZ)
-    {
-        mFullZ.push_back(z);
-        //printf("%.2f, ", z);
-    }
-    for(const float z : mGrooveZ)
-    {
-        mFullZ.push_back(z);
-        //printf("%.2f, ", z);
-    }
-    //std::cout << "]" << std::endl;
 
-    const char* inputNamesCstrs[] = {mFullDecoderInputNames[0].c_str()};
-    const char* outputNamesCstrs[] = {mFullDecoderOutputNames[0].c_str()};
+    mFullZ.clear();
+    // std::cout << "mFullZ = [";
+    for (const float z : mScoreZ)
+    {
+        mFullZ.push_back(z);
+        // printf("%.2f, ", z);
+    }
+    for (const float z : mGrooveZ)
+    {
+        mFullZ.push_back(z);
+        // printf("%.2f, ", z);
+    }
+    // std::cout << "]" << std::endl;
+
+    const char *inputNamesCstrs[] = {mFullDecoderInputNames[0].c_str()};
+    const char *outputNamesCstrs[] = {mFullDecoderOutputNames[0].c_str()};
 
     mFullDecoder->Run(
-        mRunOptions, 
-        inputNamesCstrs, 
-        mFullZTensor.data(), 
-        mFullZTensor.size(), 
-        outputNamesCstrs, 
-        mFullOutputTensor.data(), 
-        mFullOutputTensor.size()
-    );
+        mRunOptions,
+        inputNamesCstrs,
+        mFullZTensor.data(),
+        mFullZTensor.size(),
+        outputNamesCstrs,
+        mFullOutputTensor.data(),
+        mFullOutputTensor.size());
 
-    for(int i=0; i<16; i++){
-        for(int j=0; j<30; j++){
-            for(int k=0; k<3; k++){
+    for (int i = 0; i < 16; i++)
+    {
+        for (int j = 0; j < 30; j++)
+        {
+            for (int k = 0; k < 3; k++)
+            {
 
                 int index = k + 3 * (j + 30 * i);
 
@@ -500,13 +509,12 @@ void WAIVEMidi::generateFullPattern()
     computeNotes();
 }
 
-
 void WAIVEMidi::computeNotes()
 {
     int tp16th = ticks_per_beat / 4;
 
     int nextTick = -1;
-    if(notesPointer != notes.end())
+    if (notesPointer != notes.end())
     {
         nextTick = (*notesPointer).tick;
     }
@@ -517,77 +525,78 @@ void WAIVEMidi::computeNotes()
 
     // Dim 0: Instrument
     // Dim 1: notes
-    std::vector< std::vector<Note> > newNotes;
+    std::vector<std::vector<Note>> newNotes;
     newNotes.resize(9);
 
-    for(int j=0; j<9; j++){
+    for (int j = 0; j < 9; j++)
+    {
         // first collect all the noteOn events:
-        for(int i=0; i<16; i++){
-            for(int k=0; k<max_events[j]; k++){
+        for (int i = 0; i < 16; i++)
+        {
+            for (int k = 0; k < max_events[j]; k++)
+            {
                 int index = s_map[j] + k;
 
-                if(fDrumPattern[i][index][0] < 0.3f) break;
+                if (fDrumPattern[i][index][0] < 0.3f)
+                    break;
 
                 float vel = fDrumPattern[i][index][1];
                 vel = 0.5f * (vel + 1.0f);
 
-                uint8_t velocity = (uint8_t) (vel * 255.0f);
+                uint8_t velocity = (uint8_t)(vel * 255.0f);
 
                 float offset = fDrumPattern[i][index][2];
 
-                int tickOn = (int) ((i + offset) * tp16th);
+                int tickOn = (int)((i + offset) * tp16th);
                 tickOn = std::max(tickOn, 0);
 
                 Note noteOn = {
-                    tickOn, velocity, midiMap[j], 9, true
-                };
+                    tickOn, velocity, midiMap[j], 9, true};
 
                 newNotes[j].push_back(noteOn);
             }
         }
 
-        if(newNotes[j].size() == 0) continue;
+        if (newNotes[j].size() == 0)
+            continue;
 
         // make sure noteOns are in temporal order
         std::sort(newNotes[j].begin(), newNotes[j].end(), compareNotes);
 
         // add all the noteOff events
         int nNotes = newNotes[j].size();
-        for(int i=0; i<nNotes - 1; i++)
+        for (int i = 0; i < nNotes - 1; i++)
         {
             int thisOnTick = newNotes[j][i].tick;
-            int nextOnTick = newNotes[j][i+1].tick;
-            int noteOffTick = std::min(thisOnTick+tp16th, nextOnTick);
+            int nextOnTick = newNotes[j][i + 1].tick;
+            int noteOffTick = std::min(thisOnTick + tp16th, nextOnTick);
 
             Note noteOff = {
-                noteOffTick, 0, newNotes[j][i].midiNote, 9, false
-            };
+                noteOffTick, 0, newNotes[j][i].midiNote, 9, false};
             newNotes[j].push_back(noteOff);
         }
 
         // add final noteOff
-        int noteOffTick = std::min(newNotes[j][nNotes-1].tick + tp16th, tp16th*16*4 - 1);
+        int noteOffTick = std::min(newNotes[j][nNotes - 1].tick + tp16th, tp16th * 16 * 4 - 1);
         Note noteOff = {
-            noteOffTick, 0, newNotes[j][nNotes-1].midiNote, 9, false
-        };
+            noteOffTick, 0, newNotes[j][nNotes - 1].midiNote, 9, false};
         newNotes[j].push_back(noteOff);
 
         // then reorder again
         std::sort(newNotes[j].begin(), newNotes[j].end(), compareNotes);
 
-        //std::cout << "Instrument " << j << std::endl;
-        for(int i=0; i<newNotes[j].size(); i++)
+        // std::cout << "Instrument " << j << std::endl;
+        for (int i = 0; i < newNotes[j].size(); i++)
         {
             Note n = newNotes[j][i];
-            //if(n.noteOn)
-            //    printf("  % 4d: %02d noteOn  velocity %d \n", n.tick, n.midiNote, n.velocity);
-            //else
-            //    printf("  % 4d: %02d noteOff velocity %d \n", n.tick, n.midiNote, n.velocity);
-
+            // if(n.noteOn)
+            //     printf("  % 4d: %02d noteOn  velocity %d \n", n.tick, n.midiNote, n.velocity);
+            // else
+            //     printf("  % 4d: %02d noteOff velocity %d \n", n.tick, n.midiNote, n.velocity);
 
             notes.push_back(n);
         }
-        //std::cout << std::endl;
+        // std::cout << std::endl;
     }
 
     std::sort(notes.begin(), notes.end(), compareNotes);
@@ -595,11 +604,10 @@ void WAIVEMidi::computeNotes()
 
     // advance pointer to reach time when computeNotes was called
     notesPointer = notes.begin();
-    while(notesPointer != notes.end() && (*notesPointer).tick <= nextTick)
+    while (notesPointer != notes.end() && (*notesPointer).tick <= nextTick)
     {
         notesPointer++;
     }
-
 }
 
 void WAIVEMidi::sampleRateChanged(double newSampleRate)
@@ -607,7 +615,6 @@ void WAIVEMidi::sampleRateChanged(double newSampleRate)
     std::cout << "sampleRateChanged: " << newSampleRate << std::endl;
     sampleRate = newSampleRate;
 }
-
 
 Plugin *createPlugin()
 {
