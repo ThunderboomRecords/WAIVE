@@ -57,11 +57,8 @@ Requires already installed:
 $ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git
 $ cd WAIVE/
 
-# fix LibrosaCpp:
-$ sed -i -e "s/sqrtf/sqrt/g" external/LibrosaCpp/librosa/librosa.h 
-
-# copy lib/ and include/ from static built onnxruntime into plugins/WAIVE_Midi,
-# then from project root:
+# copy `lib/` and `include/` from static built onnxruntime into a new folder 
+# `external/onnxruntime/`, then from project root:
 
 $ mkdir build
 $ cd build

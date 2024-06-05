@@ -10,9 +10,6 @@
 [submodule "external/tinyosc"]
 	path = external/tinyosc
 	url = https://github.com/mhroth/tinyosc.git
-[submodule "external/tinyfiledialogs-code"]
-	path = external/tinyfiledialogs-code
-	url = https://github.com/native-toolkit/libtinyfiledialogs.git
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git
@@ -25,3 +22,6 @@
 [submodule "external/LibrosaCpp"]
 	path = external/LibrosaCpp
 	url = https://github.com/ewan-xu/LibrosaCpp.git
+[submodule "external/libtinyfiledialogs"]
+	path = external/libtinyfiledialogs
+	url = https://github.com/native-toolkit/libtinyfiledialogs.git

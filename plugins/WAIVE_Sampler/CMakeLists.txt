@@ -72,7 +72,7 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/Gist/src
     ${CMAKE_SOURCE_DIR}/external/kissfft
     ${CMAKE_SOURCE_DIR}/external/kd-tree
-    ${CMAKE_SOURCE_DIR}/external/tinyfiledialogs-code
+    ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs
     ${CMAKE_SOURCE_DIR}/external/tinyosc
     ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
 )
