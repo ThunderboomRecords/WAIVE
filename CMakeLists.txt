@@ -11,6 +11,9 @@ include_directories(${CMAKE_BINARY_DIR}/generated/)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_compile_options(-DUSE_KISS_FFT)
+set(KISSFFT_TEST OFF)
+set(KISSFFT_TOOLS OFF)
+set(KISSFFT_STATIC ON)
 
 add_subdirectory(dpf)
 add_subdirectory(external/LibrosaCpp)
