@@ -1,21 +1,9 @@
 [submodule "dpf"]
 	path = dpf
 	url = https://github.com/DISTRHO/DPF.git
-[submodule "external/LibrosaCpp"]
-	path = external/LibrosaCpp
-	url = https://github.com/ewan-xu/LibrosaCpp.git
-[submodule "external/libsamplerate"]
-	path = external/libsamplerate
-	url = https://github.com/libsndfile/libsamplerate.git
-[submodule "external/nlohmann_json"]
-	path = external/nlohmann_json
-	url = https://github.com/nlohmann/json.git
 [submodule "external/Gist"]
 	path = external/Gist
 	url = https://github.com/adamstark/Gist.git
-[submodule "external/kissfft"]
-	path = external/kissfft
-	url = https://github.com/mborgerding/kissfft.git
 [submodule "external/kd-tree"]
 	path = external/kd-tree
 	url = https://github.com/gishi523/kd-tree.git
@@ -24,4 +12,16 @@
 	url = https://github.com/mhroth/tinyosc.git
 [submodule "external/tinyfiledialogs-code"]
 	path = external/tinyfiledialogs-code
-	url = https://git.code.sf.net/p/tinyfiledialogs/code
+	url = https://github.com/native-toolkit/libtinyfiledialogs.git
+[submodule "external/json"]
+	path = external/json
+	url = https://github.com/nlohmann/json.git
+[submodule "external/libsamplerate"]
+	path = external/libsamplerate
+	url = https://github.com/libsndfile/libsamplerate.git
+[submodule "external/kissfft"]
+	path = external/kissfft
+	url = https://github.com/mborgerding/kissfft.git
+[submodule "external/LibrosaCpp"]
+	path = external/LibrosaCpp
+	url = https://github.com/ewan-xu/LibrosaCpp.git

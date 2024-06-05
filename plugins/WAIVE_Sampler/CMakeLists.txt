@@ -68,7 +68,7 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/external/LibrosaCpp/librosa
     ${CMAKE_SOURCE_DIR}/external/libsamplerate/include
-    ${CMAKE_SOURCE_DIR}/external/nlohmann_json/single_include
+    ${CMAKE_SOURCE_DIR}/external/json/single_include
     ${CMAKE_SOURCE_DIR}/external/Gist/src
     ${CMAKE_SOURCE_DIR}/external/kissfft
     ${CMAKE_SOURCE_DIR}/external/kd-tree

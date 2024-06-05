@@ -14,7 +14,7 @@ add_compile_options(-DUSE_KISS_FFT)
 
 add_subdirectory(dpf)
 add_subdirectory(external/LibrosaCpp)
-add_subdirectory(external/nlohmann_json)
+add_subdirectory(external/json)
 add_subdirectory(external/kissfft)
 add_subdirectory(external/Gist)
 
