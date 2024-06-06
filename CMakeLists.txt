@@ -20,6 +20,7 @@ add_subdirectory(external/LibrosaCpp)
 add_subdirectory(external/json)
 add_subdirectory(external/kissfft)
 add_subdirectory(external/Gist)
+add_subdirectory(external/libsamplerate)
 
 add_subdirectory(plugins/WAIVE_Sampler)
 add_subdirectory(plugins/WAIVE_Midi)

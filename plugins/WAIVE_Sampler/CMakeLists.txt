@@ -19,7 +19,7 @@ dpf_add_plugin(
       ./models/tsne.c
   FILES_UI
       WAIVESamplerUI.cpp
-      ${CMAKE_SOURCE_DIR}/external/tinyfiledialogs-code/tinyfiledialogs.c
+      ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
