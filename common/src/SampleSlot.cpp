@@ -14,8 +14,10 @@ SampleSlot::SampleSlot(Widget *parent, DropDown *midi_select, Button *trigger_bt
     loadSharedResources();
 
     trigger_btn->fontSize(16.0f);
-    trigger_btn->setLabel(">");
+    trigger_btn->setLabel("▶");
     trigger_btn->setSize(20, 20);
+    trigger_btn->setLabelColor(Color(100, 100, 100));
+    trigger_btn->setBackgroundColor(Color(200, 200, 200));
 
     for (int i = 1; i < 128; i++)
         midi_number->addItem(fmt::format("{:d}", i).c_str());
