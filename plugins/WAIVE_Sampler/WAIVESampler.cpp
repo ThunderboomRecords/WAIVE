@@ -12,7 +12,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fCurrentSample(nullptr),
                                ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
                                gist({512, (int)getSampleRate()}),
-                               server(SimpleUDPServer((char *)"127.0.0.1", 8000))
+                               server(SimpleUDPServer((char *)"127.0.0.1", 8000)),
+                               sd()
 {
     if (isDummyInstance())
         std::cout << "** dummy instance" << std::endl;
@@ -21,7 +22,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
     srand(time(NULL));
 
-    sd = SampleDatabase();
+    // sd = SampleDatabase();
 
     samplePlayerWaveforms.resize(10);
     for (int i = 0; i < 10; i++)
@@ -75,7 +76,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     }
 
     // OSC Test
-    int len = tosc_writeMessage(oscBuffer, sizeof(oscBuffer), "/WAIVE_Sampler", "s", "testing");
+    int len = tosc_writeMessage(oscBuffer, sizeof(oscBuffer), "/WAIVE_Sampler", "s", "WAIVESampler started");
     tosc_printOscBuffer(oscBuffer, len);
     server.sendMessage(oscBuffer, len);
 }

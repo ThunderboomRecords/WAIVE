@@ -25,3 +25,6 @@
 [submodule "external/libtinyfiledialogs"]
 	path = external/libtinyfiledialogs
 	url = https://github.com/native-toolkit/libtinyfiledialogs.git
+[submodule "external/cpp-httplib"]
+	path = external/cpp-httplib
+	url = https://github.com/yhirose/cpp-httplib.git

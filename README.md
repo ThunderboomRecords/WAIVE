@@ -86,3 +86,4 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 - [nlohmann/json](https://github.com/nlohmann/json) MIT
 - [TinyOSC](https://github.com/mhroth/tinyosc/tree/master) ISC license
 - [tinyfiledialogs](https://sourceforge.net/projects/tinyfiledialogs/) zlib/libpng license
+- [cpp-httplib](https://github.com/yhirose/cpp-httplib) MIT

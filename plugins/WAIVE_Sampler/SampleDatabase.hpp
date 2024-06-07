@@ -16,6 +16,7 @@
 #include "kdtree.h"
 #include <nlohmann/json.hpp>
 #include <fmt/core.h>
+#include "httplib.h"
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
@@ -71,7 +72,7 @@ public:
         std::shared_ptr<SampleInfo> info;
     };
 
-    SampleDatabase();
+    explicit SampleDatabase();
 
     bool addToLibrary(std::shared_ptr<SampleInfo> sample);
     bool saveSamples();
@@ -93,6 +94,8 @@ private:
     fs::path fCacheDir;
     std::vector<SamplePoint> points;
     kdt::KDTree<SamplePoint> kdtree;
+
+    httplib::Client client;
 };
 
 #endif

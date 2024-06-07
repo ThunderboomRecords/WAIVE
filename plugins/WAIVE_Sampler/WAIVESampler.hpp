@@ -27,14 +27,13 @@
 #include <librosa.h>
 #include "samplerate.h"
 #include "Gist.h"
+#include <tinyosc.h>
 
 #include "model_utils.hpp"
 #include "onnxruntime_cxx_api.h"
 #include "tsne.c"
 
 #include "version_config.h"
-
-#include <tinyosc.h>
 
 #ifdef WAIVE_PLUGINS_VERSION_INFO
 const int V_MAJ = WAIVE_PLUGINS_VERSION_MAJOR;

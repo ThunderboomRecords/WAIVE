@@ -112,7 +112,7 @@ fs::path get_homedir()
     return fs::path(homedir);
 }
 
-SampleDatabase::SampleDatabase()
+SampleDatabase::SampleDatabase() : client("localhost:3000")
 {
     // Get and create the directory where samples and sound files will
     // be saved to
@@ -147,6 +147,19 @@ SampleDatabase::SampleDatabase()
     std::cout << "Number of samples found: " << fAllSamples.size() << std::endl;
 
     kdtree.build(points);
+
+    if (auto res = client.Get("/"))
+    {
+        if (res->status == httplib::StatusCode::OK_200)
+        {
+            std::cout << res->body << std::endl;
+        }
+    }
+    else
+    {
+        auto err = res.error();
+        std::cout << "HTTP error: " << httplib::to_string(err) << std::endl;
+    }
 }
 
 std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)

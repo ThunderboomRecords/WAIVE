@@ -76,6 +76,7 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs
     ${CMAKE_SOURCE_DIR}/external/tinyosc
     ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
+    ${CMAKE_SOURCE_DIR}/external/cpp-httplib
 )
 
 target_link_libraries(
