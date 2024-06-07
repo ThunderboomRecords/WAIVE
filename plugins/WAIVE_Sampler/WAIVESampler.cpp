@@ -13,7 +13,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
                                gist({512, (int)getSampleRate()}),
                                server(SimpleUDPServer((char *)"127.0.0.1", 8000)),
-                               sd()
+                               sd(),
+                               fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow)
 {
     if (isDummyInstance())
         std::cout << "** dummy instance" << std::endl;
@@ -21,8 +22,6 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     printf(" VERSION: %d.%d.%d\n", V_MAJ, V_MIN, V_PAT);
 
     srand(time(NULL));
-
-    // sd = SampleDatabase();
 
     samplePlayerWaveforms.resize(10);
     for (int i = 0; i < 10; i++)
@@ -954,37 +953,14 @@ std::pair<float, float> WAIVESampler::getEmbedding(std::vector<float> *wf)
 
 void WAIVESampler::getFeatures(std::vector<float> *wf, std::vector<float> *feature)
 {
-    int n_fft = 1024;
-    int n_hop = 441;
-    std::string window = "hann";
-    bool center = true;
-    std::string pad_mode = "reflect";
-    float power = 2.f;
-    int n_mel = 64;
-    int fmin = 0;
-    int fmax = 22050;
     int length = 64;
 
     float epsilon = 0.000000001f;
     float X_mean = -13.617876;
     float X_std = 7.084826;
 
-    std::vector<std::vector<float>> melspec = librosa::Feature::melspectrogram(
-        *wf,
-        sampleRate,
-        n_fft,
-        n_hop,
-        window,
-        center,
-        pad_mode,
-        power,
-        n_mel,
-        fmin,
-        fmax);
+    std::vector<std::vector<float>> melspec = fe.getMelSpectrogram(wf);
 
-    assert(length * n_mel <= feature->size());
-
-    // std::vector<std::vector<float>> feature(n_mel, std::vector<float>(length, -16.0f));
     std::fill(feature->begin(), feature->end(), (std::log(epsilon) - X_mean) / X_std);
     int width = std::min((int)melspec.size(), length);
 
@@ -993,28 +969,18 @@ void WAIVESampler::getFeatures(std::vector<float> *wf, std::vector<float> *featu
     // std::ofstream melofs("melspec.csv", std::ofstream::trunc);
     for (int i = 0; i < width; i++)
     {
-        for (int j = 0; j < n_mel; j++)
+        for (int j = 0; j < melspec[i].size(); j++)
         {
             float val = std::log(epsilon + melspec[i][j]);
             feature->at(j * length + i) = (val - X_mean) / X_std;
             // melofs << val;
-            // if (j < n_mel - 1)
+            // if (j < melspec[i].size() - 1)
             //     melofs << " ";
         }
         // if (i < width - 1)
         //     melofs << "\n";
     }
     // melofs.close();
-
-    // std::ofstream ofs("features.csv", std::ofstream::trunc);
-    // for (int i = 0; i < 4096; i++)
-    // {
-    //     ofs << fmt::format("{:f}", feature->at(i));
-    //     if (i < 4095)
-    //         ofs << " ";
-    // }
-
-    // ofs.close();
 }
 
 void WAIVESampler::getOnsets()

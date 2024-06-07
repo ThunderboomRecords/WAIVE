@@ -19,9 +19,6 @@
 [submodule "external/kissfft"]
 	path = external/kissfft
 	url = https://github.com/mborgerding/kissfft.git
-[submodule "external/LibrosaCpp"]
-	path = external/LibrosaCpp
-	url = https://github.com/ewan-xu/LibrosaCpp.git
 [submodule "external/libtinyfiledialogs"]
 	path = external/libtinyfiledialogs
 	url = https://github.com/native-toolkit/libtinyfiledialogs.git

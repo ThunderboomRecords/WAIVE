@@ -1,21 +1,26 @@
 set(CMAKE_CXX_STANDARD 17)
 
+set(USE_FFTW ON)
+
 dpf_add_plugin(
   WAIVE_Sampler
   TARGETS 
       jack
-      # lv2
+      lv2
       vst3
       vst2
       clap
   FILES_DSP
       WAIVESampler.cpp
       SampleDatabase.cpp
+      FeatureExtractor.cpp
       Envelopes.cpp
       SimpleUDP.cpp
       Filters.cpp
       ${CMAKE_SOURCE_DIR}/common/src/model_utils.cpp
       ${CMAKE_SOURCE_DIR}/external/tinyosc/tinyosc.c
+      ${CMAKE_SOURCE_DIR}/external/Gist/src/Gist.cpp
+      ${CMAKE_SOURCE_DIR}/external/Gist/libs/kiss_fft130/kiss_fft.c
       ./models/tsne.c
   FILES_UI
       WAIVESamplerUI.cpp
@@ -67,11 +72,9 @@ target_include_directories(
     .
     ./models
     ${CMAKE_SOURCE_DIR}/common
-    ${CMAKE_SOURCE_DIR}/external/LibrosaCpp/librosa
     ${CMAKE_SOURCE_DIR}/external/libsamplerate/include
     ${CMAKE_SOURCE_DIR}/external/json/single_include
     ${CMAKE_SOURCE_DIR}/external/Gist/src
-    ${CMAKE_SOURCE_DIR}/external/kissfft
     ${CMAKE_SOURCE_DIR}/external/kd-tree
     ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs
     ${CMAKE_SOURCE_DIR}/external/tinyosc
@@ -87,10 +90,8 @@ target_link_libraries(
     ${SNDFILE_LIBRARY}
     fmt::fmt
     samplerate
-    kissfft
     Gist
     PRIVATE
-    nlohmann_json::nlohmann_json
     ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
 )
 

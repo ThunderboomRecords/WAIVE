@@ -23,8 +23,8 @@
 #include "Envelopes.hpp"
 #include "WaveformFeatures.hpp"
 #include "SimpleUDP.hpp"
+#include "FeatureExtractor.hpp"
 
-#include <librosa.h>
 #include "samplerate.h"
 #include "Gist.h"
 #include <tinyosc.h>
@@ -150,6 +150,7 @@ private:
     void addToUpdateQueue(int ev);
 
     float sampleRate;
+    FeatureExtractor fe;
 
     Ort::SessionOptions sessionOptions;
     Ort::RunOptions mRunOptions{nullptr};

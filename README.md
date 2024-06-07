@@ -77,7 +77,6 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 
 - [DPF](https://github.com/DISTRHO/DPF?tab=ISC-1-ov-file) ISC license
 - [ONNX Runtime](https://github.com/microsoft/onnxruntime) MIT
-- [LibrosaCpp](https://github.com/ewan-xu/LibrosaCpp/tree/main) Apache-2.0
 - [libsndfile](https://github.com/libsndfile/libsndfile?tab=LGPL-2.1-1-ov-file) LGPL-2.1 
 - [VG5000 font](https://velvetyne.fr/fonts/vg5000/) SIL Open Font License, Version 1.1
 - [kissfft](https://github.com/mborgerding/kissfft) BSD-3-Clause
