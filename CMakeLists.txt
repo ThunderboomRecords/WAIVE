@@ -14,6 +14,8 @@ add_compile_options(-DUSE_KISS_FFT)
 set(KISSFFT_TEST OFF)
 set(KISSFFT_TOOLS OFF)
 set(KISSFFT_STATIC ON)
+# set(BUILD_TESTING OFF)
+set(LIBSAMPLERATE_EXAMPLES OFF)
 
 add_subdirectory(dpf)
 add_subdirectory(external/LibrosaCpp)

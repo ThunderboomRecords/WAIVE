@@ -33,7 +33,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     import_sample_btn = new Button(this);
     import_sample_btn->setLabel("import sample");
-    import_sample_btn->setFontScale(fScaleFactor);
     import_sample_btn->setBackgroundColor(Color(220, 220, 220));
     import_sample_btn->setLabelColor(Color(10, 10, 10));
     import_sample_btn->setSize(100, 20);
@@ -48,7 +47,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     new_sample_btn = new Button(this);
     new_sample_btn->setLabel("new");
-    new_sample_btn->setFontScale(fScaleFactor);
     new_sample_btn->setBackgroundColor(Color(220, 220, 220));
     new_sample_btn->setLabelColor(Color(10, 10, 10));
     new_sample_btn->setSize(70, 20);
@@ -71,7 +69,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     open_source_btn = new Button(this);
     open_source_btn->setLabel("import source");
-    open_source_btn->setFontScale(fScaleFactor);
     open_source_btn->setBackgroundColor(Color(40, 40, 40));
     open_source_btn->setLabelColor(Color(200, 200, 200));
     open_source_btn->setSize(100, 20);
@@ -85,7 +82,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     save_sample_btn = new Button(this);
     save_sample_btn->setLabel("add");
-    save_sample_btn->setFontScale(fScaleFactor);
     save_sample_btn->setBackgroundColor(Color(220, 220, 220));
     save_sample_btn->setLabelColor(Color(10, 10, 10));
     save_sample_btn->setSize(70, 20);
@@ -95,7 +91,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     play_btn = new Button(this);
     play_btn->setLabel("preview");
-    play_btn->setFontScale(fScaleFactor);
     play_btn->setBackgroundColor(Color(220, 220, 220));
     play_btn->setLabelColor(Color(10, 10, 10));
     play_btn->setSize(70, 20);

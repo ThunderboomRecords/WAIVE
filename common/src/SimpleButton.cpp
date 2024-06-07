@@ -4,11 +4,11 @@
 START_NAMESPACE_DGL
 
 Button::Button(Widget *parent)
-    : NanoSubWidget(parent),
+    : WAIVEWidget(parent),
       backgroundColor(32, 32, 32),
       labelColor(255, 255, 255),
       label("button"),
-      fontScale(1.0f),
+      //   fontScale(1.0f),
       fHasFocus(false),
       callback(nullptr),
       fEnabled(true)
@@ -29,10 +29,10 @@ void Button::setBackgroundColor(const Color color)
     backgroundColor = color;
 }
 
-void Button::setFontScale(const float scale)
-{
-    fontScale = scale;
-}
+// void Button::setFontScale(const float scale)
+// {
+//     fontScale = scale;
+// }
 
 void Button::setLabel(const std::string &label2)
 {
@@ -70,7 +70,7 @@ void Button::onNanoDisplay()
 
     // Label
     beginPath();
-    fontSize(14 * fontScale);
+    fontSize(14);
     fillColor(labelColor);
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);

@@ -34,6 +34,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/TextInput.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SampleMap.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SampleSlot.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
       ${CMAKE_SOURCE_DIR}/common/src/ValueIndicator.cpp
 )

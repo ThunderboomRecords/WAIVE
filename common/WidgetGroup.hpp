@@ -1,5 +1,5 @@
-#ifndef WAIVE_WIDGET_HPP_INCLUDED
-#define WAIVE_WIDGET_HPP_INCLUDED
+#ifndef WIDGET_GROUP_HPP_INCLUDED
+#define WIDGET_GROUP_HPP_INCLUDED
 
 #include <iostream>
 #include <vector>

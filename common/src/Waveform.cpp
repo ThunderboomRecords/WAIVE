@@ -3,7 +3,7 @@
 START_NAMESPACE_DISTRHO
 
 Waveform::Waveform(Widget *widget) noexcept
-    : NanoSubWidget(widget, 0), // No anti-aliasing to speed up rendering
+    : WAIVEWidget(widget, 0), // No anti-aliasing to speed up rendering
       backgroundColor(Color(40, 40, 40)),
       lineColor(Color(200, 200, 200)),
       waveformCached(false),
@@ -134,9 +134,9 @@ void Waveform::onNanoDisplay()
 
     for (int i = 0; i < waveformMin.size(); i++)
     {
-        lineTo(i+1, half - waveformMax[i] * half);
+        lineTo(i + 1, half - waveformMax[i] * half);
         if (reduced)
-            lineTo(i+1, half - waveformMin[i] * half);
+            lineTo(i + 1, half - waveformMin[i] * half);
     }
     stroke();
     closePath();

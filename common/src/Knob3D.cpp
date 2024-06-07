@@ -21,7 +21,7 @@ void Knob3D::setKnobColor(Color color)
 
 void Knob3D::onNanoDisplay()
 {
-    const float width = getWidth();
+    const float width = getWidth() * getWindow().getScaleFactor();
     const float height = getHeight();
 
     const float center_x = width / 2.0f;

@@ -5,7 +5,7 @@ START_NAMESPACE_DISTRHO
 using DGL_NAMESPACE::Color;
 
 Knob::Knob(Widget *parent) noexcept
-    : NanoSubWidget(parent),
+    : WAIVEWidget(parent),
       dragging_(false),
       dragStart(0.0f),
       value_(0.0f),
@@ -137,8 +137,8 @@ void Knob::onNanoDisplay()
 
 void Knob::drawIndicator()
 {
-    const float width = getWidth();
-    const float height = getHeight();
+    const float width = getWidth() * scale_factor;
+    const float height = getHeight() * scale_factor;
 
     const float center_x = width / 2.0f;
     const float center_y = height / 2.0f;
@@ -181,7 +181,7 @@ void Knob::drawLabel()
     fillColor(label_color);
     fontFaceId(font);
     textAlign(Align::ALIGN_CENTER | Align::ALIGN_TOP);
-    fontSize(label_size);
+    fontSize(label_size * scale_factor);
     text(getWidth() / 2.0f, getHeight() - label_size, label.c_str(), nullptr);
 
     closePath();

@@ -1,14 +1,15 @@
 #ifndef KNOB_HPP_INCLUDED
 #define KNOB_HPP_INCLUDED
 
-#include "Window.hpp"
-#include "Widget.hpp"
+// #include "Window.hpp"
+// #include "Widget.hpp"
 #include "NanoVG.hpp"
 #include <iostream>
+#include "WAIVEWidget.hpp"
 
 START_NAMESPACE_DISTRHO
 
-class Knob : public NanoSubWidget,
+class Knob : public WAIVEWidget,
              public IdleCallback
 {
 public:

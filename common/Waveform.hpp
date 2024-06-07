@@ -4,9 +4,7 @@
 #include <iostream>
 #include <vector>
 
-#include "Window.hpp"
-#include "Widget.hpp"
-#include "NanoVG.hpp"
+#include "WAIVEWidget.hpp"
 #include "WaveformFeatures.hpp"
 
 #ifndef LOG_LOCATION
@@ -15,7 +13,7 @@
 
 START_NAMESPACE_DISTRHO
 
-class Waveform : public NanoSubWidget
+class Waveform : public WAIVEWidget
 {
 public:
     class Callback
