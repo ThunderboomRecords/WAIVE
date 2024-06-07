@@ -67,7 +67,6 @@ private:
 
     std::map<int, Color> colorCache;
 
-    // bool dragging;
     DragAction dragAction;
 };
 

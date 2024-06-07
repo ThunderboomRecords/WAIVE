@@ -59,7 +59,7 @@ void Button::onNanoDisplay()
     // Background
     beginPath();
     if (fHasFocus)
-        fillColor(Color(backgroundColor, Color(255, 255, 255), 0.5f));
+        fillColor(Color(backgroundColor.red + 0.1f, backgroundColor.green + 0.1f, backgroundColor.blue + 0.1f, backgroundColor.alpha));
     else
         fillColor(backgroundColor);
     strokeColor(labelColor);

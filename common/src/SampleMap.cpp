@@ -66,6 +66,7 @@ bool SampleMap::onMouse(const MouseEvent &ev)
                 menu->setAbsolutePos(
                     ev.pos.getX() + getAbsoluteX() - 2,
                     ev.pos.getY() + getAbsoluteY() - 2);
+                menu->toFront();
                 menu->show();
             }
         }

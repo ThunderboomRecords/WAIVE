@@ -52,6 +52,7 @@ void Menu::onNanoDisplay()
 {
     if (!isVisible())
         return;
+
     const float width = getWidth();
     const float height = getHeight();
     const float item_height = height / display_number;

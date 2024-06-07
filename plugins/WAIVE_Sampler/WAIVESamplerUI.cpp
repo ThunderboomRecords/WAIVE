@@ -4,7 +4,8 @@ START_NAMESPACE_DISTRHO
 WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
                                    fScaleFactor(getScaleFactor()),
                                    fScale(1.0f),
-                                   filebrowserOpen(false)
+                                   filebrowserOpen(false),
+                                   map_full(false)
 {
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
@@ -15,7 +16,16 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_map->setAbsolutePos(10, 46);
     sample_map->allSamples = &plugin->sd.fAllSamples;
     sample_map->selectedSample = &plugin->fCurrentSample;
+    sample_map->background_color = Color(40, 40, 40);
     sample_map->setCallback(this);
+
+    expand_map_btn = new Button(this);
+    expand_map_btn->setSize(26, 26);
+    expand_map_btn->setLabel("↘");
+    expand_map_btn->setBackgroundColor(Color(40, 40, 40));
+    expand_map_btn->setLabelColor(Color(100, 100, 100));
+    expand_map_btn->setCallback(this);
+    Layout::onTop(expand_map_btn, sample_map, Widget_Align::END, Widget_Align::END, 5);
 
     slots_container = new VBox(this);
     slots_container->setSize(UI_W - sample_map->getWidth() - 30, sample_map->getHeight());
@@ -300,6 +310,7 @@ void WAIVESamplerUI::knobDragStarted(Knob *knob)
     value_indicator->setAbsoluteY(knob->getAbsoluteY() + knob->getHeight());
     value_indicator->setFormatString(knob->getFormat());
     value_indicator->setValue(knob->getValue());
+    value_indicator->toFront();
     value_indicator->show();
 }
 
@@ -337,6 +348,29 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->triggerPreview();
     else if (button == new_sample_btn)
         plugin->newSample();
+    else if (button == expand_map_btn)
+    {
+        if (map_full)
+        {
+            sample_map->toFront();
+            sample_map->setSize(520, 300);
+
+            expand_map_btn->setLabel("↘");
+            expand_map_btn->toFront();
+            Layout::onTop(expand_map_btn, sample_map, Widget_Align::END, Widget_Align::END, 5);
+            map_full = false;
+        }
+        else
+        {
+            sample_map->toFront();
+            sample_map->setSize(UI_W - 20, UI_H - 60);
+
+            expand_map_btn->setLabel("↖");
+            expand_map_btn->toFront();
+            Layout::onTop(expand_map_btn, sample_map, Widget_Align::END, Widget_Align::END, 5);
+            map_full = true;
+        }
+    }
     else
     {
         for (int i = 0; i < sampleTriggerButtons.size(); i++)
