@@ -85,6 +85,14 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     Layout::onTop(open_source_btn, source_display, Widget_Align::END, Widget_Align::START, 2);
     open_source_btn->setCallback(this);
 
+    browser_sources_btn = new Button(this);
+    browser_sources_btn->setLabel("browse...");
+    browser_sources_btn->setBackgroundColor(Color(40, 40, 40));
+    browser_sources_btn->setLabelColor(Color(200, 200, 200));
+    browser_sources_btn->setSize(100, 20);
+    Layout::leftOf(browser_sources_btn, open_source_btn, Widget_Align::CENTER, 5);
+    browser_sources_btn->setCallback(this);
+
     sample_display = new Waveform(this);
     sample_display->setSize(180, 80);
     Layout::below(sample_display, source_display, Widget_Align::END, 10.0f);
@@ -580,6 +588,7 @@ void WAIVESamplerUI::setSampleEditorVisible(bool visible)
     filterKnobs->setVisible(visible);
     shapeKnobs->setVisible(visible);
     open_source_btn->setVisible(visible);
+    browser_sources_btn->setVisible(visible);
     save_sample_btn->setVisible(visible);
     play_btn->setVisible(visible);
     sample_name->setVisible(visible);

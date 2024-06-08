@@ -88,7 +88,8 @@ private:
 
     Label *logo, *map_label, *sample_controls_label;
     ValueIndicator *value_indicator;
-    Button *import_sample_btn, *open_source_btn, *new_sample_btn, *save_sample_btn, *play_btn, *expand_map_btn;
+    Button *import_sample_btn, *open_source_btn, *new_sample_btn, *save_sample_btn, *play_btn,
+        *expand_map_btn, *browser_sources_btn;
     Waveform *source_display, *sample_display;
     Knob3D *pitch, *volume, *percussionBoost;
     Knob3D *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;

@@ -22,12 +22,13 @@
 #include "SampleDatabase.hpp"
 #include "Envelopes.hpp"
 #include "WaveformFeatures.hpp"
-#include "SimpleUDP.hpp"
+// #include "SimpleUDP.hpp"
 #include "FeatureExtractor.hpp"
 
 #include "samplerate.h"
 #include "Gist.h"
-#include <tinyosc.h>
+// #include <tinyosc.h>
+#include "OSCClient.hpp"
 
 #include "model_utils.hpp"
 #include "onnxruntime_cxx_api.h"
@@ -165,7 +166,8 @@ private:
     Gist<float> gist;
 
     SampleDatabase sd;
-    SimpleUDPServer server;
+    OSCClient oscClient;
+    // SimpleUDPServer server;
     char oscBuffer[2048];
 
     std::shared_ptr<SampleInfo> fCurrentSample;

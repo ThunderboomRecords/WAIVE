@@ -1,12 +1,10 @@
 set(CMAKE_CXX_STANDARD 17)
 
-set(USE_FFTW ON)
-
 dpf_add_plugin(
   WAIVE_Sampler
   TARGETS 
       jack
-      lv2
+    #   lv2
       vst3
       vst2
       clap
@@ -15,10 +13,9 @@ dpf_add_plugin(
       SampleDatabase.cpp
       FeatureExtractor.cpp
       Envelopes.cpp
-      SimpleUDP.cpp
       Filters.cpp
+      OSCClient.cpp
       ${CMAKE_SOURCE_DIR}/common/src/model_utils.cpp
-      ${CMAKE_SOURCE_DIR}/external/tinyosc/tinyosc.c
       ${CMAKE_SOURCE_DIR}/external/Gist/src/Gist.cpp
       ${CMAKE_SOURCE_DIR}/external/Gist/libs/kiss_fft130/kiss_fft.c
       ./models/tsne.c
@@ -66,6 +63,8 @@ endif()
 
 find_package(fmt REQUIRED)
 
+find_package(Poco REQUIRED COMPONENTS Net Foundation)
+
 target_include_directories(
   WAIVE_Sampler
   PUBLIC 
@@ -77,9 +76,9 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/Gist/src
     ${CMAKE_SOURCE_DIR}/external/kd-tree
     ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs
-    ${CMAKE_SOURCE_DIR}/external/tinyosc
     ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
     ${CMAKE_SOURCE_DIR}/external/cpp-httplib
+    ${Poco_INCLUDE_DIRS}
 )
 
 target_link_libraries(
@@ -89,6 +88,7 @@ target_link_libraries(
     ${Foundation}
     ${SNDFILE_LIBRARY}
     fmt::fmt
+    ${Poco_LIBRARIES}
     samplerate
     Gist
     PRIVATE

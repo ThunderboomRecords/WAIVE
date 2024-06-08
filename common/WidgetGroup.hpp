@@ -15,6 +15,8 @@ public:
 
     void addChildWidget(NanoSubWidget *widget);
     void setVisible(bool visible);
+    void toFront();
+    void toBottom();
 
 protected:
     void onNanoDisplay() override;

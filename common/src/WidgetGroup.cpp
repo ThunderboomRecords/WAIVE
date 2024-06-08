@@ -14,9 +14,20 @@ void WidgetGroup::addChildWidget(NanoSubWidget *widget)
 
 void WidgetGroup::setVisible(bool visible)
 {
-    printf("WidgetGroup::setVisible, numChildren: %d\n", children.size());
     for (int i = 0; i < children.size(); i++)
         children[i]->setVisible(visible);
+}
+
+void WidgetGroup::toFront()
+{
+    for (int i = 0; i < children.size(); i++)
+        children[i]->toFront();
+}
+
+void WidgetGroup::toBottom()
+{
+    for (int i = 0; i < children.size(); i++)
+        children[i]->toBottom();
 }
 
 void WidgetGroup::onNanoDisplay() {}

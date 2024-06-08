@@ -18,6 +18,9 @@
 #include <fmt/core.h>
 #include "httplib.h"
 
+// #include <Poco/Net/HTTPClientSession.h>
+// #include <Poco/Task.h>
+
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
@@ -73,6 +76,7 @@ public:
     };
 
     explicit SampleDatabase();
+    ~SampleDatabase();
 
     bool addToLibrary(std::shared_ptr<SampleInfo> sample);
     bool saveSamples();
@@ -89,6 +93,10 @@ public:
     bool saveJson(json data, std::string fp);
     std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
+
+    // std::thread nwThread;
+    bool sourceDatabaseConnected;
+    std::string sourceDatabaseStatus;
 
 private:
     fs::path fCacheDir;

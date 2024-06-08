@@ -7,9 +7,6 @@
 [submodule "external/kd-tree"]
 	path = external/kd-tree
 	url = https://github.com/gishi523/kd-tree.git
-[submodule "external/tinyosc"]
-	path = external/tinyosc
-	url = https://github.com/mhroth/tinyosc.git
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git
@@ -25,3 +22,6 @@
 [submodule "external/cpp-httplib"]
 	path = external/cpp-httplib
 	url = https://github.com/yhirose/cpp-httplib.git
+[submodule "external/poco"]
+	path = external/poco
+	url = https://github.com/pocoproject/poco.git
