@@ -16,10 +16,8 @@
 #include "kdtree.h"
 #include <nlohmann/json.hpp>
 #include <fmt/core.h>
-#include "httplib.h"
-
-// #include <Poco/Net/HTTPClientSession.h>
-// #include <Poco/Task.h>
+// #include "httplib.h"
+#include "HTTPClient.hpp"
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
@@ -103,7 +101,8 @@ private:
     std::vector<SamplePoint> points;
     kdt::KDTree<SamplePoint> kdtree;
 
-    httplib::Client client;
+    // httplib::Client client;
+    HTTPClient httpClient;
 };
 
 #endif

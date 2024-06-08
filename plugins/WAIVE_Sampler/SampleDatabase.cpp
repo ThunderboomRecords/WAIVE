@@ -112,8 +112,7 @@ fs::path get_homedir()
     return fs::path(homedir);
 }
 
-SampleDatabase::SampleDatabase() : client("localhost:3000"),
-                                   sourceDatabaseConnected(false)
+SampleDatabase::SampleDatabase() : sourceDatabaseConnected(false)
 {
     // Get and create the directory where samples and sound files will
     // be saved to
@@ -150,38 +149,17 @@ SampleDatabase::SampleDatabase() : client("localhost:3000"),
     kdtree.build(points);
 
     // Testing HTTP networking
-
-    // std::cout << "making request..." << std::endl;
-    // // nwThread = std::thread(makeRequest);
-    // auto res = client.Get("/");
-
-    // std::cout << "request made" << std::endl;
-
-    // if (res)
-    // {
-    //     if (res->status == httplib::StatusCode::OK_200)
-    //     {
-    //         std::cout << res->body << std::endl;
-    //         sourceDatabaseConnected = true;
-    //         sourceDatabaseStatus = "Connected";
-    //     }
-    //     else
-    //         sourceDatabaseStatus = fmt::format("HTTP Status code: {:d}", res->status);
-    // }
-    // else
-    // {
-    //     auto err = res.error();
-    //     sourceDatabaseConnected = false;
-    //     sourceDatabaseStatus = fmt::format("HTTP Error: {}", httplib::to_string(err));
-    // }
-    // std::cout << "sourceDatabaseStatus: " << sourceDatabaseStatus << std::endl;
+    std::cout << "making request..." << std::endl;
+    httpClient.sendRequest("127.0.0.1", 3000, "/", [](const std::string &response)
+                           { std::cout << "Recieved response:\n  " << response << std::endl; });
+    std::cout << "request made" << std::endl;
 
     std::cout << "SampleDatabase initialised\n";
 }
 
 SampleDatabase::~SampleDatabase()
 {
-    client.stop();
+    // client.stop();
     // if (nwThread.joinable())
     //     nwThread.join();
 }

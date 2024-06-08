@@ -3,7 +3,7 @@ set(CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED OFF)
 
 project(
-    WAIVE_Plugins VERSION 0.6.2
+    WAIVE_Plugins VERSION 0.7.0
 )
 
 configure_file(version_config.h.in ${CMAKE_BINARY_DIR}/generated/version_config.h)

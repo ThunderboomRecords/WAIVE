@@ -15,6 +15,7 @@ dpf_add_plugin(
       Envelopes.cpp
       Filters.cpp
       OSCClient.cpp
+      HTTPClient.cpp
       ${CMAKE_SOURCE_DIR}/common/src/model_utils.cpp
       ${CMAKE_SOURCE_DIR}/external/Gist/src/Gist.cpp
       ${CMAKE_SOURCE_DIR}/external/Gist/libs/kiss_fft130/kiss_fft.c
