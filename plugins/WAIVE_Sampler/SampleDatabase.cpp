@@ -112,7 +112,10 @@ fs::path get_homedir()
     return fs::path(homedir);
 }
 
-SampleDatabase::SampleDatabase(HTTPClient *_httpClient) : sourceDatabaseConnected(false), httpClient(_httpClient)
+SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
+    : sourceDatabaseConnected(false),
+      httpClient(_httpClient),
+      sourcesLoaded(false)
 {
     // Get and create the directory where samples and sound files will
     // be saved to
@@ -149,18 +152,10 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient) : sourceDatabaseConnecte
     kdtree.build(points);
 
     // Testing HTTP networking
-    std::cout << "making request..." << std::endl;
-    httpClient->sendRequest("127.0.0.1", 3000, "/", [](const std::string &response)
-                            { std::cout << "Recieved response:\n  " << response << std::endl; });
-
-    httpClient->sendRequest("127.0.0.1", 3000, "/json",
-                            [](const std::string &response)
-                            {
-                                // std::cout << "Recieved response:\n  " << response << std::endl;
-                                json j = json::parse(response);
-                                std::cout << j.dump(4) << std::endl;
-                            });
-    std::cout << "request made" << std::endl;
+    httpClient->sendRequest(
+        "127.0.0.1", 3000, "/", [](const std::string &response)
+        { std::cout << "Recieved response:\n  " << response << std::endl; },
+        []() {});
 
     std::cout << "SampleDatabase initialised\n";
 }
@@ -360,4 +355,18 @@ std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<
     s->embedY = sample->embedY;
 
     return s;
+}
+
+void SampleDatabase::getSourcesList()
+{
+    if (sourcesLoaded)
+        return;
+
+    httpClient->sendRequest(
+        "127.0.0.1", 3000, "/sources", [this](const std::string &response)
+        {
+            this->sourcesLoaded = true;
+            this->sourcesData = json::parse(response);
+            std::cout << sourcesData.dump(2) << std::endl; },
+        []() {});
 }

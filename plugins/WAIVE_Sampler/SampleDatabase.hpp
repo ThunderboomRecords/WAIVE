@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <fstream>
 #include <filesystem>
+#include <functional>
 
 #include "Filters.hpp"
 #include "Envelopes.hpp"
@@ -89,12 +90,17 @@ public:
     std::vector<std::shared_ptr<SampleInfo>> findKNearest(float x, float y, int k);
     std::vector<std::shared_ptr<SampleInfo>> findRadius(float x, float y, float r);
 
+    void getSourcesList();
+
     bool saveJson(json data, std::string fp);
     std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
 
     bool sourceDatabaseConnected;
     std::string sourceDatabaseStatus;
+
+    json sourcesData;
+    bool sourcesLoaded;
 
 private:
     fs::path fCacheDir;

@@ -1,10 +1,19 @@
 #include "HTTPClient.hpp"
 
-HTTPRequestTask::HTTPRequestTask(const std::string &host, const std::string &path, std::function<void(const std::string &)> callback)
-    : Poco::Task("HTTPRequestTask"), _host(host), _port(-1), _path(path), _callback(callback) {}
+HTTPRequestTask::HTTPRequestTask(
+    const std::string &host,
+    const std::string &path,
+    std::function<void(const std::string &)> callback,
+    std::function<void()> failCallback)
+    : Poco::Task("HTTPRequestTask"), _host(host), _port(-1), _path(path), _callback(callback), _failCallback(failCallback) {}
 
-HTTPRequestTask::HTTPRequestTask(const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback)
-    : Poco::Task("HTTPRequestTask"), _host(host), _port(port), _path(path), _callback(callback) {}
+HTTPRequestTask::HTTPRequestTask(
+    const std::string &host,
+    int port,
+    const std::string &path,
+    std::function<void(const std::string &)> callback,
+    std::function<void()> failCallback)
+    : Poco::Task("HTTPRequestTask"), _host(host), _port(port), _path(path), _callback(callback), _failCallback(failCallback) {}
 
 void HTTPRequestTask::runTask()
 {
@@ -28,31 +37,23 @@ void HTTPRequestTask::runTask()
     catch (const Poco::Exception &ex)
     {
         std::cerr << "HTTP Request failed: " << ex.displayText() << std::endl;
+        _failCallback();
     }
 }
 
-HTTPClient::HTTPClient(Poco::TaskManager *tm) : _taskManager(tm)
-{
-    // _taskManager->addObserver(Poco::Observer<HTTPClient, Poco::TaskFinishedNotification>(*this, &HTTPClient::onTaskFinished));
-}
-
+HTTPClient::HTTPClient(Poco::TaskManager *tm) : _taskManager(tm) {}
 HTTPClient::~HTTPClient() {}
 
-void HTTPClient::sendRequest(const std::string &host, const std::string &path, std::function<void(const std::string &)> callback)
+void HTTPClient::sendRequest(const std::string &host, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback)
 {
-    HTTPRequestTask *task = new HTTPRequestTask(host, path, callback);
+    HTTPRequestTask *task = new HTTPRequestTask(host, path, callback, failCallback);
     _taskManager->start(task);
 }
 
-void HTTPClient::sendRequest(const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback)
+void HTTPClient::sendRequest(const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback)
 {
-    HTTPRequestTask *task = new HTTPRequestTask(host, port, path, callback);
+    HTTPRequestTask *task = new HTTPRequestTask(host, port, path, callback, failCallback);
     _taskManager->start(task);
 }
 
-void HTTPClient::onTaskFinished(Poco::TaskFinishedNotification *pNf)
-{
-    // Poco::Task *pTask = pNf->task();
-    // std::cout << "Task finished: " << pTask->name() << std::endl;
-    // pTask->release();
-}
+void HTTPClient::onTaskFinished(Poco::TaskFinishedNotification *pNf) {}
