@@ -32,6 +32,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/Knob.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Knob3D.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Label.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Spinner.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Waveform.cpp
       ${CMAKE_SOURCE_DIR}/common/src/DropDown.cpp
       ${CMAKE_SOURCE_DIR}/common/src/TextInput.cpp

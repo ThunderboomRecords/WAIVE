@@ -62,6 +62,8 @@ enum PlayState
     PLAYING
 };
 
+class ImporterTask;
+
 struct SamplePlayer
 {
     std::vector<float> *waveform = nullptr;
@@ -136,7 +138,6 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
 
     void newSample();
-    void importSample(const char *fp);
     void loadPreview(int id);
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);
@@ -150,6 +151,7 @@ protected:
     std::pair<float, float> getEmbedding(std::vector<float> *wf);
     void getFeatures(std::vector<float> *wf, std::vector<float> *feature);
     void getOnsets();
+    void onTaskFinished(Poco::TaskFinishedNotification *pNf);
 
     EnvGen ampEnvGen;
 
@@ -157,6 +159,7 @@ private:
     void addToUpdateQueue(int ev);
 
     Poco::TaskManager taskManager;
+    ImporterTask *importerTask;
     ThreadsafeQueue<std::string> import_queue;
 
     float sampleRate;
@@ -203,7 +206,7 @@ private:
 class ImporterTask : public Poco::Task
 {
 public:
-    ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *import_queue);
+    ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *queue);
     void runTask() override;
 
 private:

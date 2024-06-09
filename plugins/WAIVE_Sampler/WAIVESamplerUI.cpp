@@ -9,6 +9,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 {
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
+    // register notifications
+    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
 
     sample_map = new SampleMap(this);
@@ -48,6 +52,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     import_sample_btn->setSize(100, 20);
     Layout::rightOf(import_sample_btn, map_label, Widget_Align::CENTER, 20);
     import_sample_btn->setCallback(this);
+
+    import_spinner = new Spinner(this);
+    import_spinner->setSize(20, 20);
+    Layout::rightOf(import_spinner, import_sample_btn, Widget_Align::CENTER, 5);
+    addIdleCallback(import_spinner);
 
     sample_controls_label = new Label(this, "sample creator");
     sample_controls_label->setFont("VG5000", VG5000, VG5000_len);
@@ -578,6 +587,28 @@ void WAIVESamplerUI::idleCallback()
             break;
         }
     }
+}
+
+void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
+{
+    Poco::Task *pTask = pNf->task();
+    std::cout << "WAIVESamplerUI::onTaskStarted: " << pTask->name() << std::endl;
+    if (pTask->name().compare("ImporterTask") == 0)
+    {
+        import_spinner->show();
+    }
+    pTask->release();
+}
+
+void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
+{
+    Poco::Task *pTask = pNf->task();
+    std::cout << "WAIVESamplerUI::onTaskFinished: " << pTask->name() << std::endl;
+    if (pTask->name().compare("ImporterTask") == 0)
+    {
+        import_spinner->hide();
+    }
+    pTask->release();
 }
 
 void WAIVESamplerUI::setSampleEditorVisible(bool visible)

@@ -17,6 +17,7 @@
 #include "Knob.hpp"
 #include "Knob3D.hpp"
 #include "Label.hpp"
+#include "Spinner.hpp"
 #include "DropDown.hpp"
 #include "Waveform.hpp"
 #include "TextInput.hpp"
@@ -33,6 +34,9 @@
 #include "WAIVESamplerParams.h"
 
 #include "tinyfiledialogs.h"
+
+#include <Poco/TaskNotification.h>
+#include <Poco/Observer.h>
 
 START_NAMESPACE_DISTRHO
 
@@ -51,6 +55,12 @@ class WAIVESamplerUI : public UI,
 public:
     WAIVESamplerUI();
     ~WAIVESamplerUI();
+
+    void onTaskStarted(Poco::TaskStartedNotification *pNf);
+    void onTaskFinished(Poco::TaskFinishedNotification *pNf);
+    void onTaskFailed(Poco::TaskFailedNotification *pNf);
+    void onTaskCancelled(Poco::TaskCancelledNotification *pNf);
+    void onTaskProgress(Poco::TaskProgressNotification *pNf);
 
 protected:
     void parameterChanged(uint32_t index, float value) override;
@@ -97,6 +107,7 @@ private:
     DropDown *filterType;
     SampleMap *sample_map;
     TextInput *sample_name;
+    Spinner *import_spinner;
 
     bool map_full;
 

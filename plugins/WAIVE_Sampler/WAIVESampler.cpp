@@ -4,28 +4,21 @@ START_NAMESPACE_DISTRHO
 
 uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 
-ImporterTask::ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *import_queue) : Poco::Task("ImporterTask"), _ws(ws), _queue(import_queue){};
+ImporterTask::ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *queue) : Poco::Task("ImporterTask"), _ws(ws), _queue(queue){};
 
 void ImporterTask::runTask()
 {
-    setState(Poco::Task::TaskState::TASK_RUNNING);
-
-    std::cout << "ImporterTask::runTask()\n";
     while (true)
     {
         std::optional<std::string> fp = _queue->pop();
         if (fp.has_value())
-            ImporterTask::import(fp.value());
-        else
         {
-            std::cout << "queue is empty\n";
-            break;
+            ImporterTask::import(fp.value());
+            _ws->addToUpdateQueue(kSampleAdded);
         }
+        else
+            break;
     }
-
-    setState(Poco::Task::TaskState::TASK_FINISHED);
-
-    std::cout << "ImporterTask::runTask() finished\n";
 }
 
 void ImporterTask::import(const std::string &fp)
@@ -76,15 +69,15 @@ void ImporterTask::import(const std::string &fp)
     info->sourceStart = 0;
     info->saved = true;
 
-    _ws->sd.addToLibrary(info);
-
     // TODO: render loaded sample...
-
     auto embedding = _ws->getEmbedding(&sampleCopy);
     info->embedX = embedding.first;
     info->embedY = embedding.second;
 
+    _ws->sd.addToLibrary(info);
+
     saveWaveform(_ws->sd.getSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength, _ws->getSampleRate());
+    std::cout << " - import done\n";
 };
 
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
@@ -98,7 +91,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                oscClient("localhost", 8000),
                                sd(),
                                taskManager("import manager", 1, 1, 60, 0),
-                               fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow)
+                               fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow),
+                               importerTask(new ImporterTask(this, &import_queue))
 {
     if (isDummyInstance())
     {
@@ -109,6 +103,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     printf(" VERSION: %d.%d.%d\n", V_MAJ, V_MIN, V_PAT);
 
     srand(time(NULL));
+
+    // Register notifications
+    taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
 
     samplePlayerWaveforms.resize(10);
     for (int i = 0; i < 10; i++)
@@ -428,11 +425,15 @@ void WAIVESampler::setState(const char *key, const char *value)
         while (std::getline(filelist, filename, '|'))
         {
             std::cout << " - " << filename << std::endl;
-            // importSample(filename.c_str());
             import_queue.push(filename);
         }
-        bool status = taskManager.start(new ImporterTask(this, &import_queue));
-        addToUpdateQueue(kSampleAdded);
+
+        if (importerTask->state() != Poco::Task::TASK_RUNNING)
+        {
+            importerTask->release();
+            importerTask = new ImporterTask(this, &import_queue);
+            taskManager.start(importerTask);
+        }
     }
 }
 
@@ -633,64 +634,6 @@ void WAIVESampler::newSample()
     addToUpdateQueue(kSourceLoaded);
     addToUpdateQueue(kSampleUpdated);
     addToUpdateQueue(kParametersChanged);
-}
-
-void WAIVESampler::importSample(const char *fp)
-{
-    // _taskManager.start(new ImporterTask(this, fp));
-
-    // unsigned int id = 5381;
-    // int c;
-    // std::string fpString(fp);
-
-    // while ((c = *fp++))
-    //     id = ((id << 5) + id) + c;
-
-    // id = id % 100000;
-
-    // size_t pos = fpString.find_last_of("/\\");
-    // std::string name, folder;
-    // if (pos == std::string::npos)
-    // {
-    //     name.assign(fp);
-    //     folder.assign("./");
-    // }
-    // else
-    // {
-    //     name.assign(fpString.substr(pos + 1));
-    //     folder.assign(fpString.substr(0, pos + 1));
-    // }
-    // std::cout << "         id: " << id << std::endl;
-    // std::cout << "     folder: " << folder << std::endl;
-    // std::cout << "       name: " << name << std::endl;
-
-    // std::shared_ptr<SampleInfo> info(new SampleInfo(id, name, sd.getSampleFolder(), false));
-    // info->adsr.attack = 0.0f;
-    // info->adsr.decay = 0.0f;
-    // info->adsr.sustain = 1.0f;
-    // info->adsr.release = 0.0f;
-    // info->sustainLength = 1000.0f;
-    // info->percussiveBoost = 0.0f;
-    // info->filterCutoff = 0.999f;
-    // info->filterType = Filter::FILTER_LOWPASS;
-    // info->filterResonance = 0;
-    // info->pitch = 1.0f;
-    // info->volume = 1.0f;
-    // info->source = std::string(fpString);
-    // info->sourceStart = 0;
-    // info->saved = true;
-
-    // sd.addToLibrary(info);
-
-    // // TODO: render loaded sample...
-    // std::vector<float> sampleCopy;
-    // int sampleLength = loadWaveform(fpString.c_str(), &sampleCopy);
-
-    // auto embedding = getEmbedding(&sampleCopy);
-    // info->embedX = embedding.first;
-    // info->embedY = embedding.second;
-
-    // saveWaveform(sd.getSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength);
 }
 
 void WAIVESampler::addCurrentSampleToLibrary()
@@ -1018,6 +961,13 @@ void WAIVESampler::sampleRateChanged(double newSampleRate)
     ampEnvGen.sampleRate = newSampleRate;
 }
 
+void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
+{
+    Poco::Task *pTask = pNf->task();
+    std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << std::endl;
+    pTask->release();
+}
+
 Plugin *createPlugin()
 {
     return new WAIVESampler();
@@ -1040,6 +990,7 @@ int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate)
     int fileSampleRate = fileHandle.samplerate();
 
     // std::cout << "sampleChannels: " << sampleChannels << " "
+    //           << " sampleLength: " << sampleLength
     //           << " fileSampleRate: " << fileSampleRate
     //           << " (sampleRate: " << sampleRate << ")\n";
 
@@ -1052,7 +1003,7 @@ int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate)
     // resample data
     if (fileSampleRate != sampleRate)
     {
-        int new_size = sampleChannels * (sampleLength * sampleRate / fileSampleRate + 1);
+        int new_size = sampleChannels * (int)((float)sampleLength * sampleRate / fileSampleRate + 1);
         sample_tmp.resize(new_size);
 
         SRC_DATA src_data;
@@ -1060,7 +1011,7 @@ int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate)
         src_data.data_out = &sample_tmp.at(0);
         src_data.data_in = &sample.at(0);
         src_data.output_frames = new_size;
-        src_data.src_ratio = sampleRate / fileSampleRate;
+        src_data.src_ratio = (float)sampleRate / fileSampleRate;
 
         // std::cout << "RESAMPLING WAVEFORM:\n";
         // std::cout << " sample_channels: " << sampleChannels << std::endl;
