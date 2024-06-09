@@ -31,32 +31,28 @@ void HTTPRequestTask::runTask()
     }
 }
 
-HTTPClient::HTTPClient()
+HTTPClient::HTTPClient(Poco::TaskManager *tm) : _taskManager(tm)
 {
-    _taskManager.addObserver(Poco::Observer<HTTPClient, Poco::TaskFinishedNotification>(*this, &HTTPClient::onTaskFinished));
+    // _taskManager->addObserver(Poco::Observer<HTTPClient, Poco::TaskFinishedNotification>(*this, &HTTPClient::onTaskFinished));
 }
 
-HTTPClient::~HTTPClient()
-{
-    _taskManager.cancelAll();
-    _taskManager.joinAll();
-}
+HTTPClient::~HTTPClient() {}
 
 void HTTPClient::sendRequest(const std::string &host, const std::string &path, std::function<void(const std::string &)> callback)
 {
     HTTPRequestTask *task = new HTTPRequestTask(host, path, callback);
-    _taskManager.start(task);
+    _taskManager->start(task);
 }
 
 void HTTPClient::sendRequest(const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback)
 {
     HTTPRequestTask *task = new HTTPRequestTask(host, port, path, callback);
-    _taskManager.start(task);
+    _taskManager->start(task);
 }
 
 void HTTPClient::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
-    Poco::Task *pTask = pNf->task();
-    std::cout << "Task finished: " << pTask->name() << std::endl;
-    pTask->release();
+    // Poco::Task *pTask = pNf->task();
+    // std::cout << "Task finished: " << pTask->name() << std::endl;
+    // pTask->release();
 }

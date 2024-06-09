@@ -74,7 +74,7 @@ public:
         std::shared_ptr<SampleInfo> info;
     };
 
-    explicit SampleDatabase();
+    explicit SampleDatabase(HTTPClient *httpClient);
     ~SampleDatabase();
 
     bool addToLibrary(std::shared_ptr<SampleInfo> sample);
@@ -101,7 +101,7 @@ private:
     std::vector<SamplePoint> points;
     kdt::KDTree<SamplePoint> kdtree;
 
-    HTTPClient httpClient;
+    HTTPClient *httpClient;
 
     Poco::TaskManager tm;
 };

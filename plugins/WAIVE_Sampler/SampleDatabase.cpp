@@ -112,7 +112,7 @@ fs::path get_homedir()
     return fs::path(homedir);
 }
 
-SampleDatabase::SampleDatabase() : sourceDatabaseConnected(false)
+SampleDatabase::SampleDatabase(HTTPClient *_httpClient) : sourceDatabaseConnected(false), httpClient(_httpClient)
 {
     // Get and create the directory where samples and sound files will
     // be saved to
@@ -150,16 +150,16 @@ SampleDatabase::SampleDatabase() : sourceDatabaseConnected(false)
 
     // Testing HTTP networking
     std::cout << "making request..." << std::endl;
-    httpClient.sendRequest("127.0.0.1", 3000, "/", [](const std::string &response)
-                           { std::cout << "Recieved response:\n  " << response << std::endl; });
+    httpClient->sendRequest("127.0.0.1", 3000, "/", [](const std::string &response)
+                            { std::cout << "Recieved response:\n  " << response << std::endl; });
 
-    httpClient.sendRequest("127.0.0.1", 3000, "/json",
-                           [](const std::string &response)
-                           {
-                               std::cout << "Recieved response:\n  " << response << std::endl;
-                               json j = json::parse(response);
-                               std::cout << j.dump(4) << std::endl;
-                           });
+    httpClient->sendRequest("127.0.0.1", 3000, "/json",
+                            [](const std::string &response)
+                            {
+                                // std::cout << "Recieved response:\n  " << response << std::endl;
+                                json j = json::parse(response);
+                                std::cout << j.dump(4) << std::endl;
+                            });
     std::cout << "request made" << std::endl;
 
     std::cout << "SampleDatabase initialised\n";

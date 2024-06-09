@@ -3,11 +3,20 @@
 START_NAMESPACE_DISTRHO
 
 Spinner::Spinner(Widget *widget) noexcept
-    : WAIVEWidget(widget), angle(0.0f), foreground_color(Color(80, 80, 80)) {}
+    : WAIVEWidget(widget), loading(false), angle(0.0f), foreground_color(Color(80, 80, 80)) {}
+
+void Spinner::setLoading(bool l)
+{
+    if (!loading && l)
+        angle = 0.0f;
+
+    loading = l;
+    repaint();
+}
 
 void Spinner::idleCallback()
 {
-    if (!isVisible())
+    if (!isVisible() || !loading)
         return;
     angle += 0.02f;
     repaint();
@@ -15,6 +24,9 @@ void Spinner::idleCallback()
 
 void Spinner::onNanoDisplay()
 {
+    if (!loading)
+        return;
+
     const float width = getWidth() * scale_factor;
     const float height = getHeight() * scale_factor;
 

@@ -595,7 +595,7 @@ void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
     std::cout << "WAIVESamplerUI::onTaskStarted: " << pTask->name() << std::endl;
     if (pTask->name().compare("ImporterTask") == 0)
     {
-        import_spinner->show();
+        import_spinner->setLoading(true);
     }
     pTask->release();
 }
@@ -606,7 +606,7 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     std::cout << "WAIVESamplerUI::onTaskFinished: " << pTask->name() << std::endl;
     if (pTask->name().compare("ImporterTask") == 0)
     {
-        import_spinner->hide();
+        import_spinner->setLoading(false);
     }
     pTask->release();
 }

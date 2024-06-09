@@ -162,6 +162,8 @@ private:
     ImporterTask *importerTask;
     ThreadsafeQueue<std::string> import_queue;
 
+    HTTPClient httpClient;
+
     float sampleRate;
     FeatureExtractor fe;
 

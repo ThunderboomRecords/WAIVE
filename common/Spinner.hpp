@@ -10,6 +10,8 @@ class Spinner : public WAIVEWidget, public IdleCallback
 public:
     explicit Spinner(Widget *widget) noexcept;
 
+    void setLoading(bool l);
+    bool getLoading() const;
     void idleCallback() override;
 
     Color foreground_color;
@@ -18,6 +20,7 @@ protected:
     void onNanoDisplay() override;
 
 private:
+    bool loading;
     float angle;
 };
 

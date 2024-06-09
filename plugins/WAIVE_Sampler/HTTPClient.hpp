@@ -32,7 +32,7 @@ private:
 class HTTPClient
 {
 public:
-    HTTPClient();
+    HTTPClient(Poco::TaskManager *tm);
     ~HTTPClient();
 
     void sendRequest(const std::string &host, const std::string &path, std::function<void(const std::string &)> callback);
@@ -40,7 +40,7 @@ public:
     void onTaskFinished(Poco::TaskFinishedNotification *pNf);
 
 private:
-    Poco::TaskManager _taskManager;
+    Poco::TaskManager *_taskManager;
 };
 
 #endif

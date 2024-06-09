@@ -89,8 +89,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
                                gist({512, (int)getSampleRate()}),
                                oscClient("localhost", 8000),
-                               sd(),
-                               taskManager("import manager", 1, 1, 60, 0),
+                               taskManager("import manager", 1, 8, 60, 0),
+                               httpClient(&taskManager),
+                               sd(&httpClient),
                                fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow),
                                importerTask(new ImporterTask(this, &import_queue))
 {
