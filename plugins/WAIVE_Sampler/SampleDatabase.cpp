@@ -152,6 +152,14 @@ SampleDatabase::SampleDatabase() : sourceDatabaseConnected(false)
     std::cout << "making request..." << std::endl;
     httpClient.sendRequest("127.0.0.1", 3000, "/", [](const std::string &response)
                            { std::cout << "Recieved response:\n  " << response << std::endl; });
+
+    httpClient.sendRequest("127.0.0.1", 3000, "/json",
+                           [](const std::string &response)
+                           {
+                               std::cout << "Recieved response:\n  " << response << std::endl;
+                               json j = json::parse(response);
+                               std::cout << j.dump(4) << std::endl;
+                           });
     std::cout << "request made" << std::endl;
 
     std::cout << "SampleDatabase initialised\n";
@@ -159,9 +167,7 @@ SampleDatabase::SampleDatabase() : sourceDatabaseConnected(false)
 
 SampleDatabase::~SampleDatabase()
 {
-    // client.stop();
-    // if (nwThread.joinable())
-    //     nwThread.join();
+    tm.cancelAll();
 }
 
 std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)

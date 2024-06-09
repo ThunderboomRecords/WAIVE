@@ -12,11 +12,12 @@
 #include "Envelopes.hpp"
 #include "WAIVESamplerParams.h"
 
+#include "Poco/TaskManager.h"
+
 #include <sndfile.hh>
 #include "kdtree.h"
 #include <nlohmann/json.hpp>
 #include <fmt/core.h>
-// #include "httplib.h"
 #include "HTTPClient.hpp"
 
 using json = nlohmann::json;
@@ -92,7 +93,6 @@ public:
     std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
 
-    // std::thread nwThread;
     bool sourceDatabaseConnected;
     std::string sourceDatabaseStatus;
 
@@ -101,8 +101,9 @@ private:
     std::vector<SamplePoint> points;
     kdt::KDTree<SamplePoint> kdtree;
 
-    // httplib::Client client;
     HTTPClient httpClient;
+
+    Poco::TaskManager tm;
 };
 
 #endif

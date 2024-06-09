@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <queue>
+#include <optional>
 
 #include <mutex>
 #include <stdlib.h>
@@ -16,19 +17,23 @@
 #include <fmt/core.h>
 #include <sndfile.hh>
 
+#include "ThreadsafeQueue.cpp"
 #include "DistrhoPluginInfo.h"
 #include "DistrhoPlugin.hpp"
 #include "WAIVESamplerParams.h"
 #include "SampleDatabase.hpp"
 #include "Envelopes.hpp"
 #include "WaveformFeatures.hpp"
-// #include "SimpleUDP.hpp"
 #include "FeatureExtractor.hpp"
 
 #include "samplerate.h"
 #include "Gist.h"
-// #include <tinyosc.h>
 #include "OSCClient.hpp"
+
+#include <Poco/Task.h>
+#include <Poco/TaskManager.h>
+#include <Poco/TaskNotification.h>
+#include <Poco/Observer.h>
 
 #include "model_utils.hpp"
 #include "onnxruntime_cxx_api.h"
@@ -71,6 +76,9 @@ struct SamplePlayer
     bool active = false;
     std::shared_ptr<SampleInfo> sampleInfo = nullptr;
 };
+
+int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate);
+bool saveWaveform(const char *fp, float *buffer, sf_count_t size, int sampleRate);
 
 class WAIVESampler : public Plugin
 {
@@ -134,8 +142,6 @@ protected:
     void loadSample(std::shared_ptr<SampleInfo> s);
     void loadSource(const char *fp);
     void loadSlot(int slot, int id);
-    int loadWaveform(const char *fp, std::vector<float> *buffer);
-    bool saveWaveform(const char *fp, float *buffer, sf_count_t size);
     void selectWaveform(std::vector<float> *source, int start);
     void addCurrentSampleToLibrary();
     void renderSample();
@@ -149,6 +155,9 @@ protected:
 
 private:
     void addToUpdateQueue(int ev);
+
+    Poco::TaskManager taskManager;
+    ThreadsafeQueue<std::string> import_queue;
 
     float sampleRate;
     FeatureExtractor fe;
@@ -167,8 +176,6 @@ private:
 
     SampleDatabase sd;
     OSCClient oscClient;
-    // SimpleUDPServer server;
-    char oscBuffer[2048];
 
     std::shared_ptr<SampleInfo> fCurrentSample;
 
@@ -190,6 +197,20 @@ private:
 
     friend class WAIVESamplerUI;
     friend class SampleEditorControls;
+    friend class ImporterTask;
+};
+
+class ImporterTask : public Poco::Task
+{
+public:
+    ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *import_queue);
+    void runTask() override;
+
+private:
+    WAIVESampler *_ws;
+    ThreadsafeQueue<std::string> *_queue;
+
+    void import(const std::string &fp);
 };
 
 END_NAMESPACE_DISTRHO

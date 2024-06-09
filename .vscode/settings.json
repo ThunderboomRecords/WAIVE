@@ -145,7 +145,10 @@
         "__nullptr": "cpp",
         "locale": "cpp",
         "*.in": "c",
-        "text_encoding": "cpp"
+        "text_encoding": "cpp",
+        "filesystem": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/gcc",
     "C_Cpp.errorSquiggles": "enabledIfIncludesResolve"

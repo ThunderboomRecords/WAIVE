@@ -4,6 +4,89 @@ START_NAMESPACE_DISTRHO
 
 uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 
+ImporterTask::ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *import_queue) : Poco::Task("ImporterTask"), _ws(ws), _queue(import_queue){};
+
+void ImporterTask::runTask()
+{
+    setState(Poco::Task::TaskState::TASK_RUNNING);
+
+    std::cout << "ImporterTask::runTask()\n";
+    while (true)
+    {
+        std::optional<std::string> fp = _queue->pop();
+        if (fp.has_value())
+            ImporterTask::import(fp.value());
+        else
+        {
+            std::cout << "queue is empty\n";
+            break;
+        }
+    }
+
+    setState(Poco::Task::TaskState::TASK_FINISHED);
+
+    std::cout << "ImporterTask::runTask() finished\n";
+}
+
+void ImporterTask::import(const std::string &fp)
+{
+    int id = rand() % 10000;
+
+    size_t pos = fp.find_last_of("/\\");
+
+    std::string name, folder;
+
+    if (pos == std::string::npos)
+    {
+        name.assign(fp);
+        folder.assign("./");
+    }
+    else
+    {
+        name.assign(fp.substr(pos + 1));
+        folder.assign(fp.substr(0, pos + 1));
+    }
+
+    std::cout << "         id: " << id << std::endl;
+    std::cout << "     folder: " << folder << std::endl;
+    std::cout << "       name: " << name << std::endl;
+
+    std::vector<float> sampleCopy;
+    int sampleLength = loadWaveform(fp.c_str(), &sampleCopy, _ws->getSampleRate());
+
+    if (sampleLength == 0)
+    {
+        std::cout << "sampleLength is 0\n";
+        return;
+    }
+
+    std::shared_ptr<SampleInfo> info(new SampleInfo(id, name, _ws->sd.getSampleFolder(), false));
+    info->adsr.attack = 0.0f;
+    info->adsr.decay = 0.0f;
+    info->adsr.sustain = 1.0f;
+    info->adsr.release = 0.0f;
+    info->sustainLength = 1000.0f;
+    info->percussiveBoost = 0.0f;
+    info->filterCutoff = 0.999f;
+    info->filterType = Filter::FILTER_LOWPASS;
+    info->filterResonance = 0;
+    info->pitch = 1.0f;
+    info->volume = 1.0f;
+    info->source = fp;
+    info->sourceStart = 0;
+    info->saved = true;
+
+    _ws->sd.addToLibrary(info);
+
+    // TODO: render loaded sample...
+
+    auto embedding = _ws->getEmbedding(&sampleCopy);
+    info->embedX = embedding.first;
+    info->embedY = embedding.second;
+
+    saveWaveform(_ws->sd.getSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength, _ws->getSampleRate());
+};
+
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                sampleRate(getSampleRate()),
                                fSampleLoaded(false),
@@ -12,13 +95,16 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fCurrentSample(nullptr),
                                ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
                                gist({512, (int)getSampleRate()}),
-                               //    server(SimpleUDPServer((char *)"127.0.0.1", 8000)),
                                oscClient("localhost", 8000),
                                sd(),
+                               taskManager("import manager", 1, 1, 60, 0),
                                fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow)
 {
     if (isDummyInstance())
+    {
         std::cout << "** dummy instance" << std::endl;
+        return;
+    }
 
     printf(" VERSION: %d.%d.%d\n", V_MAJ, V_MIN, V_PAT);
 
@@ -342,8 +428,10 @@ void WAIVESampler::setState(const char *key, const char *value)
         while (std::getline(filelist, filename, '|'))
         {
             std::cout << " - " << filename << std::endl;
-            importSample(filename.c_str());
+            // importSample(filename.c_str());
+            import_queue.push(filename);
         }
+        bool status = taskManager.start(new ImporterTask(this, &import_queue));
         addToUpdateQueue(kSampleAdded);
     }
 }
@@ -417,16 +505,6 @@ void WAIVESampler::run(
                         samplePlayers[j].state = PlayState::TRIGGERED;
                         samplePlayers[j].velocity = (float)velocity / 128;
 
-                        // send OSC
-                        // bundle_length += tosc_writeNextMessage(
-                        //     &bundle,
-                        //     "/WAIVE_Sampler",
-                        //     "si",
-                        //     samplePlayers[j].sampleInfo->name.c_str(),
-                        //     note);
-
-                        // std::cout << std::to_string(samplePlayers[j].midi) << std::endl;
-
                         oscClient.sendMessage("/WAIVE_Sampler", {samplePlayers[j].sampleInfo->name, samplePlayers[j].midi});
                     }
                 }
@@ -484,7 +562,7 @@ void WAIVESampler::loadSource(const char *fp)
     fSourceLoaded = false;
     addToUpdateQueue(kSourceLoading);
 
-    fSourceLength = loadWaveform(fp, &fSourceWaveform);
+    fSourceLength = loadWaveform(fp, &fSourceWaveform, sampleRate);
 
     if (fSourceLength > 0)
     {
@@ -502,95 +580,6 @@ void WAIVESampler::loadSource(const char *fp)
         std::cerr << "Source failed to load\n";
         fCurrentSample->source = "";
     }
-}
-
-int WAIVESampler::loadWaveform(const char *fp, std::vector<float> *buffer)
-{
-    // printf("WAIVESampler::loadWaveform %s\n", fp);
-
-    SndfileHandle fileHandle(fp);
-    int sampleLength = fileHandle.frames();
-
-    if (sampleLength == 0)
-    {
-        std::cerr << "Error: Unable to open input file " << fp << std::endl;
-        return 0;
-    }
-
-    int sampleChannels = fileHandle.channels();
-    int fileSampleRate = fileHandle.samplerate();
-
-    // std::cout << "sampleChannels: " << sampleChannels << " "
-    //           << " fileSampleRate: " << fileSampleRate
-    //           << " (sampleRate: " << sampleRate << ")\n";
-
-    std::vector<float> sample;
-    sample.resize(sampleLength * sampleChannels);
-    fileHandle.read(&sample.at(0), sampleLength * sampleChannels);
-
-    std::vector<float> sample_tmp;
-
-    // resample data
-    if (fileSampleRate != sampleRate)
-    {
-        int new_size = sampleChannels * (sampleLength * sampleRate / fileSampleRate + 1);
-        sample_tmp.resize(new_size);
-
-        SRC_DATA src_data;
-        src_data.input_frames = sampleLength;
-        src_data.data_out = &sample_tmp.at(0);
-        src_data.data_in = &sample.at(0);
-        src_data.output_frames = new_size;
-        src_data.src_ratio = sampleRate / fileSampleRate;
-
-        // std::cout << "RESAMPLING WAVEFORM:\n";
-        // std::cout << " sample_channels: " << sampleChannels << std::endl;
-        // std::cout << "    input_frames: " << sampleLength << std::endl;
-        // std::cout << "   output_frames: " << new_size << std::endl;
-        // std::cout << "       src_ratio: " << src_data.src_ratio << std::endl;
-
-        int result = src_simple(&src_data, SRC_SINC_BEST_QUALITY, sampleChannels);
-        if (result != 0)
-            std::cerr << "Failed to convert sample rate: " << src_strerror(result) << std::endl;
-    }
-    else
-    {
-        sample_tmp = sample;
-    }
-
-    if (buffer->size() < sampleLength)
-        buffer->resize(sampleLength);
-
-    if (sampleChannels > 1)
-    {
-        for (int i = 0; i < sampleLength; i++)
-            buffer->operator[](i) = (sample_tmp[i * sampleChannels] + sample_tmp[i * sampleChannels + 1]) * 0.5f;
-    }
-    else
-    {
-        for (int i = 0; i < sampleLength; i++)
-            buffer->operator[](i) = sample_tmp[i];
-    }
-
-    // printf("WAIVESampler::loadWaveform done, length %d\n", sampleLength);
-
-    return sampleLength;
-}
-
-bool WAIVESampler::saveWaveform(const char *fp, float *buffer, sf_count_t size)
-{
-    // std::cout << "WAIVESampler::saveWaveform" << std::endl;
-
-    SndfileHandle file = SndfileHandle(
-        fp,
-        SFM_WRITE,
-        SF_FORMAT_WAV | SF_FORMAT_PCM_16,
-        1,
-        sampleRate);
-
-    file.write(buffer, size);
-
-    return true;
 }
 
 void WAIVESampler::newSample()
@@ -648,58 +637,60 @@ void WAIVESampler::newSample()
 
 void WAIVESampler::importSample(const char *fp)
 {
-    unsigned int id = 5381;
-    int c;
-    std::string fpString(fp);
+    // _taskManager.start(new ImporterTask(this, fp));
 
-    while ((c = *fp++))
-        id = ((id << 5) + id) + c;
+    // unsigned int id = 5381;
+    // int c;
+    // std::string fpString(fp);
 
-    id = id % 100000;
+    // while ((c = *fp++))
+    //     id = ((id << 5) + id) + c;
 
-    size_t pos = fpString.find_last_of("/\\");
-    std::string name, folder;
-    if (pos == std::string::npos)
-    {
-        name.assign(fp);
-        folder.assign("./");
-    }
-    else
-    {
-        name.assign(fpString.substr(pos + 1));
-        folder.assign(fpString.substr(0, pos + 1));
-    }
-    std::cout << "         id: " << id << std::endl;
-    std::cout << "     folder: " << folder << std::endl;
-    std::cout << "       name: " << name << std::endl;
+    // id = id % 100000;
 
-    std::shared_ptr<SampleInfo> info(new SampleInfo(id, name, sd.getSampleFolder(), false));
-    info->adsr.attack = 0.0f;
-    info->adsr.decay = 0.0f;
-    info->adsr.sustain = 1.0f;
-    info->adsr.release = 0.0f;
-    info->sustainLength = 1000.0f;
-    info->percussiveBoost = 0.0f;
-    info->filterCutoff = 0.999f;
-    info->filterType = Filter::FILTER_LOWPASS;
-    info->filterResonance = 0;
-    info->pitch = 1.0f;
-    info->volume = 1.0f;
-    info->source = std::string(fpString);
-    info->sourceStart = 0;
-    info->saved = true;
+    // size_t pos = fpString.find_last_of("/\\");
+    // std::string name, folder;
+    // if (pos == std::string::npos)
+    // {
+    //     name.assign(fp);
+    //     folder.assign("./");
+    // }
+    // else
+    // {
+    //     name.assign(fpString.substr(pos + 1));
+    //     folder.assign(fpString.substr(0, pos + 1));
+    // }
+    // std::cout << "         id: " << id << std::endl;
+    // std::cout << "     folder: " << folder << std::endl;
+    // std::cout << "       name: " << name << std::endl;
 
-    sd.addToLibrary(info);
+    // std::shared_ptr<SampleInfo> info(new SampleInfo(id, name, sd.getSampleFolder(), false));
+    // info->adsr.attack = 0.0f;
+    // info->adsr.decay = 0.0f;
+    // info->adsr.sustain = 1.0f;
+    // info->adsr.release = 0.0f;
+    // info->sustainLength = 1000.0f;
+    // info->percussiveBoost = 0.0f;
+    // info->filterCutoff = 0.999f;
+    // info->filterType = Filter::FILTER_LOWPASS;
+    // info->filterResonance = 0;
+    // info->pitch = 1.0f;
+    // info->volume = 1.0f;
+    // info->source = std::string(fpString);
+    // info->sourceStart = 0;
+    // info->saved = true;
 
-    // TODO: render loaded sample...
-    std::vector<float> sampleCopy;
-    int sampleLength = loadWaveform(fpString.c_str(), &sampleCopy);
+    // sd.addToLibrary(info);
 
-    auto embedding = getEmbedding(&sampleCopy);
-    info->embedX = embedding.first;
-    info->embedY = embedding.second;
+    // // TODO: render loaded sample...
+    // std::vector<float> sampleCopy;
+    // int sampleLength = loadWaveform(fpString.c_str(), &sampleCopy);
 
-    saveWaveform(sd.getSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength);
+    // auto embedding = getEmbedding(&sampleCopy);
+    // info->embedX = embedding.first;
+    // info->embedY = embedding.second;
+
+    // saveWaveform(sd.getSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength);
 }
 
 void WAIVESampler::addCurrentSampleToLibrary()
@@ -713,7 +704,7 @@ void WAIVESampler::addCurrentSampleToLibrary()
     fCurrentSample->embedY = embedding.second;
 
     sd.addToLibrary(fCurrentSample);
-    saveWaveform(sd.getSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength);
+    saveWaveform(sd.getSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength, sampleRate);
 }
 
 void WAIVESampler::loadPreview(int id)
@@ -768,7 +759,7 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     setParameterValue(kFilterType, fCurrentSample->filterType);
     selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
 
-    fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), editorPreviewWaveform);
+    fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), editorPreviewWaveform, sampleRate);
 
     fSampleLoaded = true;
     addToUpdateQueue(kSampleLoaded);
@@ -895,7 +886,7 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
 
     sp.state = PlayState::STOPPED;
     sp.ptr = 0;
-    int length = loadWaveform(sd.getSamplePath(info).c_str(), &buffer);
+    int length = loadWaveform(sd.getSamplePath(info).c_str(), &buffer, sampleRate);
 
     if (length == 0)
     {
@@ -1030,6 +1021,93 @@ void WAIVESampler::sampleRateChanged(double newSampleRate)
 Plugin *createPlugin()
 {
     return new WAIVESampler();
+}
+
+int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate)
+{
+    // printf("WAIVESampler::loadWaveform %s\n", fp);
+
+    SndfileHandle fileHandle(fp);
+    int sampleLength = fileHandle.frames();
+
+    if (sampleLength == 0)
+    {
+        std::cerr << "Error: Unable to open input file " << fp << std::endl;
+        return 0;
+    }
+
+    int sampleChannels = fileHandle.channels();
+    int fileSampleRate = fileHandle.samplerate();
+
+    // std::cout << "sampleChannels: " << sampleChannels << " "
+    //           << " fileSampleRate: " << fileSampleRate
+    //           << " (sampleRate: " << sampleRate << ")\n";
+
+    std::vector<float> sample;
+    sample.resize(sampleLength * sampleChannels);
+    fileHandle.read(&sample.at(0), sampleLength * sampleChannels);
+
+    std::vector<float> sample_tmp;
+
+    // resample data
+    if (fileSampleRate != sampleRate)
+    {
+        int new_size = sampleChannels * (sampleLength * sampleRate / fileSampleRate + 1);
+        sample_tmp.resize(new_size);
+
+        SRC_DATA src_data;
+        src_data.input_frames = sampleLength;
+        src_data.data_out = &sample_tmp.at(0);
+        src_data.data_in = &sample.at(0);
+        src_data.output_frames = new_size;
+        src_data.src_ratio = sampleRate / fileSampleRate;
+
+        // std::cout << "RESAMPLING WAVEFORM:\n";
+        // std::cout << " sample_channels: " << sampleChannels << std::endl;
+        // std::cout << "    input_frames: " << sampleLength << std::endl;
+        // std::cout << "   output_frames: " << new_size << std::endl;
+        // std::cout << "       src_ratio: " << src_data.src_ratio << std::endl;
+
+        int result = src_simple(&src_data, SRC_SINC_BEST_QUALITY, sampleChannels);
+        if (result != 0)
+            std::cerr << "Failed to convert sample rate: " << src_strerror(result) << std::endl;
+    }
+    else
+    {
+        sample_tmp = sample;
+    }
+
+    if (buffer->size() < sampleLength)
+        buffer->resize(sampleLength);
+
+    if (sampleChannels > 1)
+    {
+        for (int i = 0; i < sampleLength; i++)
+            buffer->operator[](i) = (sample_tmp[i * sampleChannels] + sample_tmp[i * sampleChannels + 1]) * 0.5f;
+    }
+    else
+    {
+        for (int i = 0; i < sampleLength; i++)
+            buffer->operator[](i) = sample_tmp[i];
+    }
+
+    return sampleLength;
+}
+
+bool saveWaveform(const char *fp, float *buffer, sf_count_t size, int sampleRate)
+{
+    // std::cout << "WAIVESampler::saveWaveform" << std::endl;
+
+    SndfileHandle file = SndfileHandle(
+        fp,
+        SFM_WRITE,
+        SF_FORMAT_WAV | SF_FORMAT_PCM_16,
+        1,
+        sampleRate);
+
+    file.write(buffer, size);
+
+    return true;
 }
 
 END_NAMESPACE_DISTRHO
