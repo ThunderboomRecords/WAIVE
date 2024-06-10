@@ -68,6 +68,7 @@ void ImporterTask::import(const std::string &fp)
     info->source = fp;
     info->sourceStart = 0;
     info->saved = true;
+    info->tags.push_back({"imported"});
 
     // TODO: render loaded sample...
     auto embedding = _ws->getEmbedding(&sampleCopy);

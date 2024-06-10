@@ -1,5 +1,31 @@
 #include "SampleDatabase.hpp"
 
+fs::path get_homedir()
+{
+    std::string homedir = "";
+#ifdef WIN32
+    homedir += getenv("HOMEDRIVE") + getenv("HOMEPATH");
+#else
+    homedir += getenv("HOME");
+#endif
+    return fs::path(homedir);
+}
+
+bool saveJson(json data, std::string fp)
+{
+    std::ofstream ofs(fp, std::ofstream::trunc);
+
+    if (!ofs.is_open())
+    {
+        std::cerr << "Failed to open " << fp << std::endl;
+        return false;
+    }
+
+    ofs << data;
+    ofs.close();
+    return true;
+}
+
 SampleInfo::SampleInfo(
     int id,
     std::string name,
@@ -8,7 +34,6 @@ SampleInfo::SampleInfo(
                   source(""),
                   embedX(0.0f),
                   embedY(0.0f),
-                  tags(""),
                   volume(1.0f),
                   pitch(1.0f),
                   percussiveBoost(1.0f),
@@ -59,22 +84,14 @@ void SampleInfo::print() const
     printf("================\n");
 }
 
-float SampleInfo::operator[](int index)
-{
-    if (index == 0)
-        return embedX;
-    else
-        return embedY;
-}
-
 json SampleInfo::toJson() const
 {
     json data;
-    // data["id"] = id;
-    // data["name"] = name;
-    // data["path"] = path;
+    data["id"] = id;
+    data["name"] = name;
+    data["path"] = path;
     data["waive"] = waive;
-    // data["source"] = source;
+    data["source"] = source;
     data["sourceStart"] = sourceStart;
     data["sampleLength"] = sampleLength;
     data["embedding"] = {{"x", embedX}, {"y", embedY}};
@@ -95,21 +112,13 @@ json SampleInfo::toJson() const
         {"filterResonance", filterResonance},
         {"filterType", filterType},
     };
-    data["tags"] = tags;
+    data["tags"] = json::array();
+    for (const Tag t : tags)
+        data["tags"].push_back(t.name);
+
     data["saved"] = saved;
 
     return data;
-}
-
-fs::path get_homedir()
-{
-    std::string homedir = "";
-#ifdef WIN32
-    homedir += getenv("HOMEDRIVE") + getenv("HOMEPATH");
-#else
-    homedir += getenv("HOME");
-#endif
-    return fs::path(homedir);
 }
 
 SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
@@ -127,23 +136,60 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     fs::create_directory(fCacheDir / SOURCE_DIR);
     fs::create_directory(fCacheDir / SAMPLE_DIR);
 
+    // SAMPLES Database
     Poco::Data::SQLite::Connector::registerConnector();
     session = new Poco::Data::Session("SQLite", fCacheDir / "samples.db");
+    *session << "CREATE TABLE IF NOT EXISTS Samples ("
+                "id INTEGER PRIMARY KEY, "
+                "name TEXT, "
+                "path TEXT, "
+                "source TEXT, "
+                "parameters TEXT)",
+        Poco::Data::Keywords::now;
 
-    *session << "CREATE TABLE IF NOT EXISTS Samples (id INT PRIMARY KEY, name TEXT, path TEXT, source TEXT, parameters TEXT)", Poco::Data::Keywords::now;
+    // SOURCES Database
+    *session << "CREATE TABLE IF NOT EXISTS Sources ("
+                "id INTEGER, "
+                "name TEXT, "
+                "archive TEXT, "
+                "folder TEXT, "
+                "tags TEXT, "
+                "downloaded INT, "
+                "PRIMARY KEY (name, archive, folder))",
+        Poco::Data::Keywords::now;
 
-    loadSampleDatabase();
-    std::cout << "Number of samples found: " << fAllSamples.size() << std::endl;
+    // TAGS Databases
+    *session << "CREATE TABLE IF NOT EXISTS Tags ("
+                "id INTEGER PRIMARY KEY, "
+                "tag TEXT UNIQUE)",
+        Poco::Data::Keywords::now;
 
-    kdtree.build(points);
+    *session << "CREATE TABLE IF NOT EXISTS SourcesTags ("
+                "source_id INT, "
+                "tag_id INT, "
+                "FOREIGN KEY (source_id) REFERENCES Sources(id), "
+                "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
+                "PRIMARY KEY (source_id, tag_id))",
+        Poco::Data::Keywords::now;
 
-    // Testing HTTP networking
+    *session << "CREATE TABLE IF NOT EXISTS SamplesTags ("
+                "sample_id INT, "
+                "tag_id INT, "
+                "FOREIGN KEY (sample_id) REFERENCES Samples(id), "
+                "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
+                "PRIMARY KEY (sample_id, tag_id))",
+        Poco::Data::Keywords::now;
+
+    // HTTP networking
     httpClient->sendRequest(
         "127.0.0.1", 3000, "/", [](const std::string &response)
         { std::cout << "Recieved response:\n  " << response << std::endl; },
         []() {});
 
     std::cout << "SampleDatabase initialised\n";
+
+    loadSampleDatabase();
+    getSourcesList();
 }
 
 SampleDatabase::~SampleDatabase()
@@ -158,6 +204,9 @@ void SampleDatabase::loadSampleDatabase()
 
     Poco::Data::RecordSet rs(select);
     std::size_t cols = rs.columnCount();
+
+    fAllSamples.clear();
+    points.clear();
 
     for (Poco::Data::RecordSet::Iterator it = rs.begin(); it != rs.end(); ++it)
     {
@@ -181,7 +230,13 @@ void SampleDatabase::loadSampleDatabase()
         }
 
         fAllSamples.push_back(s);
+        SamplePoint point(data["embedding"]["x"], data["embedding"]["y"]);
+        point.info = s;
+        points.push_back(point);
     }
+
+    kdtree.build(points);
+    std::cout << "Number of samples found: " << fAllSamples.size() << std::endl;
 }
 
 std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
@@ -191,7 +246,9 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
         std::shared_ptr<SampleInfo> s(new SampleInfo(data["id"], data["name"], data["path"], data["waive"]));
         s->embedX = data["embedding"]["x"];
         s->embedY = data["embedding"]["y"];
-        s->tags = data["tags"];
+        // s->tags = data["tags"];
+        for (auto &el : data["tags"])
+            s->tags.push_back({el});
         s->sampleLength = data["sampleLength"];
         s->source = data["source"];
         s->sourceStart = data["sourceStart"];
@@ -222,21 +279,6 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
     return nullptr;
 }
 
-bool SampleDatabase::saveJson(json data, std::string fp)
-{
-    std::ofstream ofs(fp, std::ofstream::trunc);
-
-    if (!ofs.is_open())
-    {
-        std::cerr << "Failed to open " << fp << std::endl;
-        return false;
-    }
-
-    ofs << data;
-    ofs.close();
-    return true;
-}
-
 bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
 {
     if (sample == nullptr)
@@ -247,9 +289,9 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     int id = sample->getId();
     std::string parameters = sample->toJson().dump();
 
+    std::cout << "addToLibrary id " << id << std::endl;
     Poco::Data::Statement insert(*session);
-    insert << "INSERT INTO Samples VALUES(?, ?, ?, ?, ?)",
-        Poco::Data::Keywords::use(id),
+    insert << "INSERT INTO Samples(name, path, source, parameters) VALUES(?, ?, ?, ?)",
         Poco::Data::Keywords::use(sample->name),
         Poco::Data::Keywords::use(sample->path),
         Poco::Data::Keywords::use(sample->source),
@@ -257,8 +299,22 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
         Poco::Data::Keywords::now;
     insert.execute();
 
+    // TODO: update Tags and Sample<->Tags database
+    for (Tag t : sample->tags)
+        newTag(t.name);
+
+    std::cout << "done\n";
+
     fAllSamples.push_back(sample);
     return true;
+}
+
+void SampleDatabase::newTag(std::string &tag)
+{
+    Poco::Data::Statement insertTag(*session);
+    insertTag << "INSERT OR IGNORE INTO Tags (tag) VALUES (?)",
+        Poco::Data::Keywords::use(tag);
+    insertTag.execute();
 }
 
 bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name)
@@ -398,7 +454,66 @@ void SampleDatabase::getSourcesList()
         "127.0.0.1", 3000, "/sources", [this](const std::string &response)
         {
             this->sourcesLoaded = true;
-            this->sourcesData = json::parse(response);
-            std::cout << sourcesData.dump(2) << std::endl; },
-        []() {});
+            this->sourcesData = json::parse(response); 
+            try
+            {
+                this->updateSourcesDatabase();
+            } catch (const std::exception &e) {
+                std::cerr << e.what() << '\n';
+            } },
+        []()
+        {
+            std::cout << "/sources not avaliable" << std::endl;
+        });
+}
+
+void SampleDatabase::updateSourcesDatabase()
+{
+    // prepare statement for inserting Sources
+    Poco::Data::Statement insert(*session);
+    std::string name, archive, folder;
+    int sourceId;
+
+    insert << "INSERT OR IGNORE INTO Sources(name, archive, folder, downloaded) VALUES (?, ?, ?, 0)",
+        Poco::Data::Keywords::use(name),
+        Poco::Data::Keywords::use(archive),
+        Poco::Data::Keywords::use(folder);
+
+    // prepare statement for adding tags
+    // Poco::Data::Statement insertTag(*session);
+    std::string tag;
+    // insertTag << "INSERT OR IGNORE INTO Tags (tag) VALUES (?)",
+    //     Poco::Data::Keywords::use(tag);
+    Poco::Data::Statement selectTag(*session);
+    int tagId;
+    selectTag << "SELECT id FROM Tags WHERE tag = ?",
+        Poco::Data::Keywords::into(tagId),
+        Poco::Data::Keywords::use(tag);
+
+    // updating the Sources<->Tags table
+    Poco::Data::Statement insertTagSource(*session);
+    insertTagSource << "INSERT INTO SourcesTags(source_id, tag_id) VALUES (?, ?)",
+        Poco::Data::Keywords::use(sourceId),
+        Poco::Data::Keywords::use(tagId);
+
+    for (json::iterator it = sourcesData.begin(); it != sourcesData.end(); ++it)
+    {
+        name.assign(it.value()["name"]);
+        archive.assign(it.value()["archive"]);
+        folder.assign(it.value()["folder"]);
+
+        size_t num = insert.execute();
+        if (num)
+        {
+            *session << "SELECT last_insert_rowid()", Poco::Data::Keywords::into(sourceId), Poco::Data::Keywords::now;
+            std::stringstream taglist(std::string(it.value()["tags"]));
+            while (std::getline(taglist, tag, '|'))
+            {
+                // int tagAdded = insertTag.execute();
+                newTag(tag);
+                selectTag.execute();
+                insertTagSource.execute();
+            }
+        }
+    }
 }

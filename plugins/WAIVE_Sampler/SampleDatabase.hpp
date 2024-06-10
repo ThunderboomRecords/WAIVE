@@ -29,6 +29,11 @@ namespace fs = std::filesystem;
 
 fs::path get_homedir();
 
+struct Tag
+{
+    std::string name;
+};
+
 class SampleInfo
 {
 public:
@@ -37,16 +42,13 @@ public:
     int getId() const;
     json toJson() const;
     void print() const;
-    float operator[](int index);
-
-    static const int DIM = 2;
 
     std::string name;
     std::string path;
     float embedX;
     float embedY;
     bool waive;
-    std::string tags;
+    std::vector<Tag> tags;
     std::string source;
     float volume;
     float pitch;
@@ -63,6 +65,15 @@ public:
 
 private:
     const int id;
+};
+
+struct SourceInfo
+{
+    std::string name;
+    std::string archive;
+    std::string folder;
+    std::vector<Tag> tags;
+    bool downloaded;
 };
 
 class SampleDatabase
@@ -82,6 +93,7 @@ public:
     ~SampleDatabase();
 
     void loadSampleDatabase();
+    void newTag(std::string &tag);
     bool addToLibrary(std::shared_ptr<SampleInfo> sample);
     bool renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name);
     static std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
@@ -94,10 +106,12 @@ public:
     std::vector<std::shared_ptr<SampleInfo>> findRadius(float x, float y, float r);
 
     void getSourcesList();
+    void updateSourcesDatabase();
 
     bool saveJson(json data, std::string fp);
     std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
+    std::vector<SourceInfo> fAllSources;
 
     bool sourceDatabaseConnected;
     std::string sourceDatabaseStatus;
