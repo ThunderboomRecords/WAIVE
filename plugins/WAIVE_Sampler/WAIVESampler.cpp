@@ -166,7 +166,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 WAIVESampler::~WAIVESampler()
 {
     std::cout << "closing WAIVESampler..." << std::endl;
-    sd.saveSamples();
+    // sd.saveSamples();
+    taskManager.cancelAll();
+    taskManager.joinAll();
 }
 
 void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)

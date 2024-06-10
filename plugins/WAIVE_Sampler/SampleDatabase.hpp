@@ -14,6 +14,9 @@
 #include "WAIVESamplerParams.h"
 
 #include "Poco/TaskManager.h"
+#include "Poco/Data/Session.h"
+#include "Poco/Data/RecordSet.h"
+#include "Poco/Data/SQLite/Connector.h"
 
 #include <sndfile.hh>
 #include "kdtree.h"
@@ -78,8 +81,8 @@ public:
     explicit SampleDatabase(HTTPClient *httpClient);
     ~SampleDatabase();
 
+    void loadSampleDatabase();
     bool addToLibrary(std::shared_ptr<SampleInfo> sample);
-    bool saveSamples();
     bool renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name);
     static std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
     std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
@@ -104,12 +107,12 @@ public:
 
 private:
     fs::path fCacheDir;
+    Poco::Data::Session *session;
+
     std::vector<SamplePoint> points;
     kdt::KDTree<SamplePoint> kdtree;
 
     HTTPClient *httpClient;
-
-    Poco::TaskManager tm;
 };
 
 #endif

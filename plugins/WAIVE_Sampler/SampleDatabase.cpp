@@ -70,11 +70,11 @@ float SampleInfo::operator[](int index)
 json SampleInfo::toJson() const
 {
     json data;
-    data["id"] = id;
-    data["name"] = name;
-    data["path"] = path;
+    // data["id"] = id;
+    // data["name"] = name;
+    // data["path"] = path;
     data["waive"] = waive;
-    data["source"] = source;
+    // data["source"] = source;
     data["sourceStart"] = sourceStart;
     data["sampleLength"] = sampleLength;
     data["embedding"] = {{"x", embedX}, {"y", embedY}};
@@ -127,26 +127,12 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     fs::create_directory(fCacheDir / SOURCE_DIR);
     fs::create_directory(fCacheDir / SAMPLE_DIR);
 
-    std::ifstream f(fCacheDir / "waive_samples.json");
-    if (f.is_open())
-    {
-        json data = json::parse(f);
-        auto samples = data["samples"];
-        for (int i = 0; i < samples.size(); i++)
-        {
-            std::shared_ptr<SampleInfo> s = deserialiseSampleInfo(samples.at(i));
-            if (s != nullptr)
-            {
-                fAllSamples.push_back(s);
+    Poco::Data::SQLite::Connector::registerConnector();
+    session = new Poco::Data::Session("SQLite", fCacheDir / "samples.db");
 
-                SamplePoint p = {0.0f, 0.0f};
-                p.info = s;
-            }
-        }
-    }
-    else
-        std::cout << "error reading waive_samples.json\n";
+    *session << "CREATE TABLE IF NOT EXISTS Samples (id INT PRIMARY KEY, name TEXT, path TEXT, source TEXT, parameters TEXT)", Poco::Data::Keywords::now;
 
+    loadSampleDatabase();
     std::cout << "Number of samples found: " << fAllSamples.size() << std::endl;
 
     kdtree.build(points);
@@ -162,7 +148,40 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
 
 SampleDatabase::~SampleDatabase()
 {
-    tm.cancelAll();
+    session->close();
+}
+
+void SampleDatabase::loadSampleDatabase()
+{
+    Poco::Data::Statement select(*session);
+    select << "SELECT * FROM Samples", Poco::Data::Keywords::now;
+
+    Poco::Data::RecordSet rs(select);
+    std::size_t cols = rs.columnCount();
+
+    for (Poco::Data::RecordSet::Iterator it = rs.begin(); it != rs.end(); ++it)
+    {
+        int id = it->get(0);
+        std::string name = it->get(1);
+        std::string path = it->get(2);
+        std::string source = it->get(3);
+        std::string parameters = it->get(4);
+        json data = json::parse(parameters);
+        data["id"] = id;
+        data["name"] = name;
+        data["path"] = path;
+        data["source"] = source;
+
+        std::shared_ptr<SampleInfo> s = deserialiseSampleInfo(data);
+        if (s == nullptr)
+        {
+            std::cout << "Could not parse row:\n"
+                      << *it << std::endl;
+            continue;
+        }
+
+        fAllSamples.push_back(s);
+    }
 }
 
 std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
@@ -218,18 +237,6 @@ bool SampleDatabase::saveJson(json data, std::string fp)
     return true;
 }
 
-bool SampleDatabase::saveSamples()
-{
-    json data;
-    data["samples"] = {};
-    for (int i = 0; i < fAllSamples.size(); i++)
-    {
-        data["samples"].push_back(fAllSamples.at(i)->toJson());
-    }
-
-    return saveJson(data, fCacheDir / "waive_samples.json");
-}
-
 bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
 {
     if (sample == nullptr)
@@ -237,9 +244,21 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
 
     sample->saved = true;
 
-    fAllSamples.push_back(sample);
+    int id = sample->getId();
+    std::string parameters = sample->toJson().dump();
 
-    return saveSamples();
+    Poco::Data::Statement insert(*session);
+    insert << "INSERT INTO Samples VALUES(?, ?, ?, ?, ?)",
+        Poco::Data::Keywords::use(id),
+        Poco::Data::Keywords::use(sample->name),
+        Poco::Data::Keywords::use(sample->path),
+        Poco::Data::Keywords::use(sample->source),
+        Poco::Data::Keywords::use(parameters),
+        Poco::Data::Keywords::now;
+    insert.execute();
+
+    fAllSamples.push_back(sample);
+    return true;
 }
 
 bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name)
@@ -263,10 +282,23 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
     {
         std::cerr << "Failed to rename sample to " << fCacheDir / sample->path / new_name << std::endl;
         std::cerr << e.what() << std::endl;
+
+        return false;
     }
 
     // updated SampleInfo
     sample->name.assign(new_name);
+    int id = sample->getId();
+
+    Poco::Data::Statement update(*session);
+    update << "UPDATE Samples SET name = ? WHERE id = ?",
+        Poco::Data::Keywords::use(new_name),
+        Poco::Data::Keywords::use(id),
+        Poco::Data::Keywords::now;
+
+    std::cout << update.toString() << std::endl;
+
+    update.execute();
 
     return true;
 }
