@@ -28,7 +28,6 @@ using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 fs::path get_homedir();
-
 struct Tag
 {
     std::string name;
@@ -79,6 +78,17 @@ struct SourceInfo
 class SampleDatabase
 {
 public:
+    enum DatabaseUpdate
+    {
+        SAMPLE_LIST_LOADED = 0,
+        SAMPLE_ADDED,
+        SAMPLE_UPDATED,
+        SAMPLE_DELETED,
+        SOURCE_LIST_DOWNLOADING,
+        SOURCE_LIST_DOWNLOADED,
+        SOURCE_LIST_DOWNLOAD_ERROR,
+        SOURCE_LIST_UPDATED,
+    };
     class SamplePoint : public std::array<float, 2>
     {
     public:
@@ -91,6 +101,8 @@ public:
 
     explicit SampleDatabase(HTTPClient *httpClient);
     ~SampleDatabase();
+
+    Poco::BasicEvent<const DatabaseUpdate &> databaseUpdate;
 
     void loadSampleDatabase();
     void newTag(std::string &tag);
@@ -105,13 +117,17 @@ public:
     std::vector<std::shared_ptr<SampleInfo>> findKNearest(float x, float y, int k);
     std::vector<std::shared_ptr<SampleInfo>> findRadius(float x, float y, float r);
 
-    void getSourcesList();
+    void downloadSourcesList();
+    std::vector<Tag> getTagList() const;
     void updateSourcesDatabase();
+    void rebuildSourceTree();
+    void filterSources(const std::string &tagNotIn = "");
+    std::map<std::string, std::map<std::string, std::vector<SourceInfo *>>> sourceTree;
 
     bool saveJson(json data, std::string fp);
     std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
-    std::vector<SourceInfo> fAllSources;
+    std::vector<SourceInfo> sourcesList;
 
     bool sourceDatabaseConnected;
     std::string sourceDatabaseStatus;

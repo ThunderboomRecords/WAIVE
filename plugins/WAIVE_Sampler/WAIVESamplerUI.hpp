@@ -17,6 +17,7 @@
 #include "Knob.hpp"
 #include "Knob3D.hpp"
 #include "Label.hpp"
+#include "Popup.hpp"
 #include "Spinner.hpp"
 #include "DropDown.hpp"
 #include "Waveform.hpp"
@@ -118,6 +119,7 @@ private:
     VBox *slots_container;
     WidgetGroup *sample_editor_controls;
     Menu *sample_map_menu, *dropdown_menu;
+    Popup *source_browser;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 

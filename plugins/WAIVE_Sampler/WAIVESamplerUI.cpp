@@ -202,14 +202,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_editor_controls->addChildWidget(shapeKnobs);
 
     sample_map_menu = new Menu(this);
-    sample_map_menu->addItem("Add to slot 1");
-    sample_map_menu->addItem("Add to slot 2");
-    sample_map_menu->addItem("Add to slot 3");
-    sample_map_menu->addItem("Add to slot 4");
-    sample_map_menu->addItem("Add to slot 5");
-    sample_map_menu->addItem("Add to slot 6");
-    sample_map_menu->addItem("Add to slot 7");
-    sample_map_menu->addItem("Add to slot 8");
+    for (int i = 1; i < 9; i++)
+        sample_map_menu->addItem(fmt::format("Add to slot {:d}", i).c_str());
 
     sample_map_menu->setWidth(100);
     sample_map_menu->setFont("VG5000", VG5000, VG5000_len);
@@ -236,6 +230,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     value_indicator->hide();
 
     setSampleEditorVisible(false);
+
+    source_browser = new Popup(this);
+    source_browser->setAbsolutePos(20, 20);
+    source_browser->setSize(UI_W - 40, UI_H - 40);
+    source_browser->close();
 
     addIdleCallback(this);
 
@@ -366,7 +365,9 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     else if (button == new_sample_btn)
         plugin->newSample();
     else if (button == browser_sources_btn)
-        plugin->sd.getSourcesList();
+    {
+        source_browser->open();
+    }
     else if (button == expand_map_btn)
     {
         if (map_full)

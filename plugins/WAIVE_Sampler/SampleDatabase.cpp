@@ -149,13 +149,12 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
 
     // SOURCES Database
     *session << "CREATE TABLE IF NOT EXISTS Sources ("
-                "id INTEGER, "
+                "id INTEGER PRIMARY KEY, "
                 "name TEXT, "
                 "archive TEXT, "
                 "folder TEXT, "
-                "tags TEXT, "
                 "downloaded INT, "
-                "PRIMARY KEY (name, archive, folder))",
+                "UNIQUE(name, archive, folder))",
         Poco::Data::Keywords::now;
 
     // TAGS Databases
@@ -189,7 +188,7 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     std::cout << "SampleDatabase initialised\n";
 
     loadSampleDatabase();
-    getSourcesList();
+    downloadSourcesList();
 }
 
 SampleDatabase::~SampleDatabase()
@@ -237,6 +236,8 @@ void SampleDatabase::loadSampleDatabase()
 
     kdtree.build(points);
     std::cout << "Number of samples found: " << fAllSamples.size() << std::endl;
+
+    databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_LIST_LOADED);
 }
 
 std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
@@ -246,7 +247,6 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
         std::shared_ptr<SampleInfo> s(new SampleInfo(data["id"], data["name"], data["path"], data["waive"]));
         s->embedX = data["embedding"]["x"];
         s->embedY = data["embedding"]["y"];
-        // s->tags = data["tags"];
         for (auto &el : data["tags"])
             s->tags.push_back({el});
         s->sampleLength = data["sampleLength"];
@@ -306,6 +306,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     std::cout << "done\n";
 
     fAllSamples.push_back(sample);
+    databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_ADDED);
     return true;
 }
 
@@ -313,7 +314,8 @@ void SampleDatabase::newTag(std::string &tag)
 {
     Poco::Data::Statement insertTag(*session);
     insertTag << "INSERT OR IGNORE INTO Tags (tag) VALUES (?)",
-        Poco::Data::Keywords::use(tag);
+        Poco::Data::Keywords::use(tag),
+        Poco::Data::Keywords::now;
     insertTag.execute();
 }
 
@@ -355,6 +357,7 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
     std::cout << update.toString() << std::endl;
 
     update.execute();
+    databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_UPDATED);
 
     return true;
 }
@@ -445,10 +448,12 @@ std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<
     return s;
 }
 
-void SampleDatabase::getSourcesList()
+void SampleDatabase::downloadSourcesList()
 {
     if (sourcesLoaded)
         return;
+
+    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
 
     httpClient->sendRequest(
         "127.0.0.1", 3000, "/sources", [this](const std::string &response)
@@ -458,17 +463,22 @@ void SampleDatabase::getSourcesList()
             try
             {
                 this->updateSourcesDatabase();
+                databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED);
             } catch (const std::exception &e) {
                 std::cerr << e.what() << '\n';
+                databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
+
             } },
-        []()
+        [this]()
         {
             std::cout << "/sources not avaliable" << std::endl;
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
         });
 }
 
 void SampleDatabase::updateSourcesDatabase()
 {
+    sourcesLoaded = false;
     // prepare statement for inserting Sources
     Poco::Data::Statement insert(*session);
     std::string name, archive, folder;
@@ -479,12 +489,9 @@ void SampleDatabase::updateSourcesDatabase()
         Poco::Data::Keywords::use(archive),
         Poco::Data::Keywords::use(folder);
 
-    // prepare statement for adding tags
-    // Poco::Data::Statement insertTag(*session);
-    std::string tag;
-    // insertTag << "INSERT OR IGNORE INTO Tags (tag) VALUES (?)",
-    //     Poco::Data::Keywords::use(tag);
+    // prepare statement for selecting tags
     Poco::Data::Statement selectTag(*session);
+    std::string tag;
     int tagId;
     selectTag << "SELECT id FROM Tags WHERE tag = ?",
         Poco::Data::Keywords::into(tagId),
@@ -509,11 +516,82 @@ void SampleDatabase::updateSourcesDatabase()
             std::stringstream taglist(std::string(it.value()["tags"]));
             while (std::getline(taglist, tag, '|'))
             {
-                // int tagAdded = insertTag.execute();
                 newTag(tag);
                 selectTag.execute();
                 insertTagSource.execute();
             }
         }
     }
+
+    sourcesLoaded = true;
+}
+
+std::vector<Tag> SampleDatabase::getTagList() const
+{
+    if (!sourcesLoaded)
+        return {};
+
+    std::vector<Tag> tags;
+    Poco::Data::Statement select(*session);
+    std::string tag;
+    select << "SELECT tag FROM Tags", Poco::Data::Keywords::into(tag);
+
+    while (!select.done())
+        tags.push_back({std::string(tag)});
+
+    return tags;
+}
+
+void SampleDatabase::filterSources(const std::string &tagNotIn)
+{
+    sourcesList.clear();
+
+    Poco::Data::Statement select(*session);
+    std::string name, archive, folder;
+    int id, downloaded;
+    select << "SELECT Sources.id, Sources.name, Sources.archive, Sources.folder, Sources.downloaded "
+              "FROM Sources "
+              "JOIN SourcesTags ON Sources.id = SourcesTags.source_id"
+              "JOIN Tags ON Tags.id = SourcesTags.tag_id"
+              "WHERE Tags.tag NOT IN ("
+           << tagNotIn << ")",
+        Poco::Data::Keywords::into(id),
+        Poco::Data::Keywords::into(name),
+        Poco::Data::Keywords::into(archive),
+        Poco::Data::Keywords::into(folder),
+        Poco::Data::Keywords::into(downloaded),
+        // Poco::Data::Keywords::use(tagNotIn),
+        Poco::Data::Keywords::range(0, 1);
+
+    Poco::Data::Statement selectSourcesTag(*session);
+    int tagId;
+    selectSourcesTag << "SELECT tag_id FROM SourcesTags WHERE source_id = ?",
+        Poco::Data::Keywords::into(tagId),
+        Poco::Data::Keywords::use(id),
+        Poco::Data::Keywords::range(0, 1);
+
+    Poco::Data::Statement selectTag(*session);
+    std::string tag;
+    selectTag << "SELECT tag FROM Tags WHERE id = ?",
+        Poco::Data::Keywords::into(tag),
+        Poco::Data::Keywords::use(tagId);
+
+    while (!select.done())
+    {
+        SourceInfo source;
+        source.archive = archive;
+        source.folder = folder;
+        source.name = name;
+        source.downloaded = (bool)downloaded;
+
+        while (!selectSourcesTag.done())
+        {
+            selectTag.execute();
+            source.tags.push_back({std::string(tag)});
+        }
+
+        sourcesList.push_back(source);
+    }
+
+    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_UPDATED);
 }
