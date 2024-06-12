@@ -11,10 +11,6 @@ Knob::Knob(Widget *parent) noexcept
       value_(0.0f),
       min(0.0f),
       max(1.0f),
-      foreground_color(Color(200, 200, 200)),
-      background_color(Color(40, 40, 40)),
-      label_color(Color(40, 40, 40)),
-      label_size(14.0f),
       gauge_width(10.0f),
       sensitive(false),
       callback(nullptr),
@@ -39,7 +35,7 @@ std::string Knob::getFormat() noexcept
 
 void Knob::setRadius(float r)
 {
-    fontSize(label_size);
+    fontSize(font_size);
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
@@ -150,7 +146,7 @@ void Knob::drawIndicator()
 
     beginPath();
     strokeWidth(gauge_width);
-    strokeColor(background_color);
+    strokeColor(foreground_color);
     arc(center_x, center_y, radius - gauge_width / 2, 0.75f * M_PI, 0.25f * M_PI, NanoVG::Winding::CW);
     stroke();
     closePath();
@@ -158,10 +154,10 @@ void Knob::drawIndicator()
     beginPath();
     strokeWidth(gauge_width);
     if (enabled)
-        strokeColor(foreground_color);
+        strokeColor(accent_color);
     else
     {
-        float gray = (foreground_color.red + foreground_color.green + foreground_color.blue) / 3.0f;
+        float gray = 0.7f * (foreground_color.red + foreground_color.green + foreground_color.blue) / 3.0f;
         strokeColor(gray, gray, gray);
     }
     arc(
@@ -178,11 +174,11 @@ void Knob::drawIndicator()
 void Knob::drawLabel()
 {
     beginPath();
-    fillColor(label_color);
+    fillColor(text_color);
     fontFaceId(font);
     textAlign(Align::ALIGN_CENTER | Align::ALIGN_TOP);
-    fontSize(label_size * scale_factor);
-    text(getWidth() / 2.0f, getHeight() - label_size, label.c_str(), nullptr);
+    fontSize(font_size * scale_factor);
+    text(getWidth() / 2.0f, getHeight() - font_size, label.c_str(), nullptr);
 
     closePath();
 }

@@ -18,13 +18,10 @@ public:
         virtual void buttonClicked(Button *button) = 0;
     };
     explicit Button(Widget *parent);
-    ~Button() override;
 
     void setCallback(Callback *cb);
 
-    void setBackgroundColor(Color color);
     void setLabel(const std::string &label);
-    void setLabelColor(Color color);
     void setEnabled(bool enabled);
 
 protected:
@@ -35,8 +32,6 @@ protected:
 private:
     Callback *callback;
 
-    Color backgroundColor;
-    Color labelColor;
     std::string label;
 
     bool fHasFocus;

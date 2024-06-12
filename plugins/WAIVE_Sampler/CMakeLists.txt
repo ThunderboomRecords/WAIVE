@@ -22,10 +22,13 @@ dpf_add_plugin(
       ./models/tsne.c
   FILES_UI
       WAIVESamplerUI.cpp
+      ./components/SourceBrowser.cpp
       ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/GridLayout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/CheckboxGroup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Menu.cpp
@@ -33,7 +36,9 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/Knob3D.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Label.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Popup.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Panel.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Spinner.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Checkbox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Waveform.cpp
       ${CMAKE_SOURCE_DIR}/common/src/DropDown.cpp
       ${CMAKE_SOURCE_DIR}/common/src/TextInput.cpp
@@ -73,6 +78,7 @@ target_include_directories(
   PUBLIC 
     .
     ./models
+    ./components
     ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/external/libsamplerate/include
     ${CMAKE_SOURCE_DIR}/external/json/single_include

@@ -1,7 +1,7 @@
 #include "Menu.hpp"
 
 Menu::Menu(Widget *parent) noexcept
-    : NanoSubWidget(parent),
+    : WAIVEWidget(parent),
       highlighted_item(-1),
       scroll_index(0),
       display_number(4),

@@ -1,14 +1,10 @@
 #include "SimpleButton.hpp"
-#include "Window.hpp"
 
 START_NAMESPACE_DGL
 
 Button::Button(Widget *parent)
     : WAIVEWidget(parent),
-      backgroundColor(32, 32, 32),
-      labelColor(255, 255, 255),
       label("button"),
-      //   fontScale(1.0f),
       fHasFocus(false),
       callback(nullptr),
       fEnabled(true)
@@ -20,28 +16,10 @@ Button::Button(Widget *parent)
 #endif
 }
 
-Button::~Button()
+void Button::setLabel(const std::string &label_)
 {
-}
-
-void Button::setBackgroundColor(const Color color)
-{
-    backgroundColor = color;
-}
-
-// void Button::setFontScale(const float scale)
-// {
-//     fontScale = scale;
-// }
-
-void Button::setLabel(const std::string &label2)
-{
-    label = label2;
-}
-
-void Button::setLabelColor(const Color color)
-{
-    labelColor = color;
+    label = label_;
+    repaint();
 }
 
 void Button::setEnabled(bool enabled)
@@ -59,10 +37,10 @@ void Button::onNanoDisplay()
     // Background
     beginPath();
     if (fHasFocus)
-        fillColor(Color(backgroundColor.red + 0.1f, backgroundColor.green + 0.1f, backgroundColor.blue + 0.1f, backgroundColor.alpha));
+        fillColor(Color(background_color.red + 0.1f, background_color.green + 0.1f, background_color.blue + 0.1f, background_color.alpha));
     else
-        fillColor(backgroundColor);
-    strokeColor(labelColor);
+        fillColor(background_color);
+    strokeColor(text_color);
     rect(margin, margin, width - 2 * margin, height - 2 * margin);
     fill();
     stroke();
@@ -71,7 +49,7 @@ void Button::onNanoDisplay()
     // Label
     beginPath();
     fontSize(14);
-    fillColor(labelColor);
+    fillColor(text_color);
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
     float tx = width / 2.0f;
@@ -99,6 +77,7 @@ bool Button::onMouse(const MouseEvent &ev)
         ev.button == 1 &&
         contains(ev.pos))
     {
+        std::cout << "Button::onMouse\n";
         callback->buttonClicked(this);
         return true;
     }
@@ -116,6 +95,7 @@ bool Button::onMotion(const MotionEvent &ev)
             getWindow().setCursor(kMouseCursorHand);
             repaint();
         }
+        return true;
     }
     else
     {

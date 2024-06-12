@@ -73,7 +73,7 @@ void Knob3D::onNanoDisplay()
     float y2 = -sin(-angle) * radius + center_y;
 
     beginPath();
-    strokeColor(foreground_color);
+    strokeColor(accent_color);
     strokeWidth(4.0f);
     moveTo(x1, y1);
     lineTo(x2, y2);

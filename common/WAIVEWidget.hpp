@@ -29,8 +29,12 @@ public:
     // Drawing
     void fontSize(float size);
 
+    // Color values
+    Color background_color, foreground_color, highlight_color, stroke_color, accent_color;
+    Color text_color;
+
 protected:
-    float scale_factor;
+    float scale_factor, font_size;
 };
 
 END_NAMESPACE_DISTRHO

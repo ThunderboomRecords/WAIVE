@@ -34,9 +34,7 @@ public:
     float radius;
     float min, max;
     float gauge_width;
-    Color foreground_color, background_color, label_color;
     std::string format;
-    float label_size;
 
     bool enabled;
     bool integer;

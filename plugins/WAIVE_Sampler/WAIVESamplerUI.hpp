@@ -11,6 +11,7 @@
 #include "Window.hpp"
 
 #include "WidgetGroup.hpp"
+#include "SourceBrowser.hpp"
 #include "HBox.hpp"
 #include "VBox.hpp"
 #include "Menu.hpp"
@@ -119,7 +120,9 @@ private:
     VBox *slots_container;
     WidgetGroup *sample_editor_controls;
     Menu *sample_map_menu, *dropdown_menu;
-    Popup *source_browser;
+
+    SourceBrowser *source_browser;
+    NanoStandaloneWindow *source_browser_window;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 

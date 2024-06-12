@@ -2,15 +2,15 @@
 
 START_NAMESPACE_DISTRHO
 
-Popup::Popup(Widget *widget) : WidgetGroup(widget),
-                               background_color(Color(200, 200, 200)),
-                               border_color(Color(30, 30, 30)),
-                               border_radius(4.0f)
+Popup::Popup(Widget *widget, float x, float y, float width, float height)
+    : WidgetGroup(widget, x, y, width, height),
+      border_radius(7.0f)
 {
     close_btn = new Button(widget);
     close_btn->setLabel("x");
     close_btn->setSize(20, 20);
     close_btn->setCallback(this);
+    Layout::onTop(close_btn, this, Widget_Align::END, Widget_Align::START, 10);
 
     addChildWidget(close_btn);
 }
@@ -22,7 +22,7 @@ void Popup::onNanoDisplay()
 
     beginPath();
     fillColor(background_color);
-    strokeColor(border_color);
+    strokeColor(stroke_color);
     roundedRect(0, 0, width, height, border_radius);
     fill();
     stroke();
@@ -39,7 +39,7 @@ bool Popup::onMouse(const MouseEvent &ev)
         close();
         return true;
     }
-    return false;
+    return true;
 }
 
 void Popup::buttonClicked(Button *button)
@@ -50,16 +50,14 @@ void Popup::buttonClicked(Button *button)
 
 void Popup::open()
 {
-    std::cout << "Popup::open\n";
+    NanoSubWidget::toFront();
     toFront();
-    Layout::onTop(close_btn, this, Widget_Align::END, Widget_Align::START, 10);
     NanoSubWidget::setVisible(true);
     setVisible(true);
 }
 
 void Popup::close()
 {
-    std::cout << "Popup::close\n";
     setVisible(false);
     NanoSubWidget::setVisible(false);
     toBottom();

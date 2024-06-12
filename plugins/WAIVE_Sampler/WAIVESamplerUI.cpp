@@ -26,8 +26,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     expand_map_btn = new Button(this);
     expand_map_btn->setSize(26, 26);
     expand_map_btn->setLabel("↘");
-    expand_map_btn->setBackgroundColor(Color(40, 40, 40));
-    expand_map_btn->setLabelColor(Color(100, 100, 100));
+    expand_map_btn->background_color = Color(40, 40, 40);
+    expand_map_btn->text_color = Color(100, 100, 100);
     expand_map_btn->setCallback(this);
     Layout::onTop(expand_map_btn, sample_map, Widget_Align::END, Widget_Align::END, 5);
 
@@ -47,8 +47,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     import_sample_btn = new Button(this);
     import_sample_btn->setLabel("import sample");
-    import_sample_btn->setBackgroundColor(Color(220, 220, 220));
-    import_sample_btn->setLabelColor(Color(10, 10, 10));
     import_sample_btn->setSize(100, 20);
     Layout::rightOf(import_sample_btn, map_label, Widget_Align::CENTER, 20);
     import_sample_btn->setCallback(this);
@@ -66,8 +64,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     new_sample_btn = new Button(this);
     new_sample_btn->setLabel("new");
-    new_sample_btn->setBackgroundColor(Color(220, 220, 220));
-    new_sample_btn->setLabelColor(Color(10, 10, 10));
     new_sample_btn->setSize(70, 20);
     Layout::rightOf(new_sample_btn, sample_controls_label, Widget_Align::CENTER, 20);
     new_sample_btn->setCallback(this);
@@ -88,16 +84,16 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     open_source_btn = new Button(this);
     open_source_btn->setLabel("import source");
-    open_source_btn->setBackgroundColor(Color(40, 40, 40));
-    open_source_btn->setLabelColor(Color(200, 200, 200));
+    open_source_btn->background_color = Color(40, 40, 40);
+    open_source_btn->text_color = Color(100, 100, 100);
     open_source_btn->setSize(100, 20);
     Layout::onTop(open_source_btn, source_display, Widget_Align::END, Widget_Align::START, 2);
     open_source_btn->setCallback(this);
 
     browser_sources_btn = new Button(this);
     browser_sources_btn->setLabel("browse...");
-    browser_sources_btn->setBackgroundColor(Color(40, 40, 40));
-    browser_sources_btn->setLabelColor(Color(200, 200, 200));
+    browser_sources_btn->background_color = Color(40, 40, 40);
+    browser_sources_btn->text_color = Color(100, 100, 100);
     browser_sources_btn->setSize(100, 20);
     Layout::leftOf(browser_sources_btn, open_source_btn, Widget_Align::CENTER, 5);
     browser_sources_btn->setCallback(this);
@@ -109,8 +105,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     save_sample_btn = new Button(this);
     save_sample_btn->setLabel("add");
-    save_sample_btn->setBackgroundColor(Color(220, 220, 220));
-    save_sample_btn->setLabelColor(Color(10, 10, 10));
     save_sample_btn->setSize(70, 20);
     Layout::below(save_sample_btn, sample_display, Widget_Align::END, 10.f);
     save_sample_btn->setCallback(this);
@@ -118,8 +112,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     play_btn = new Button(this);
     play_btn->setLabel("preview");
-    play_btn->setBackgroundColor(Color(220, 220, 220));
-    play_btn->setLabelColor(Color(10, 10, 10));
     play_btn->setSize(70, 20);
     Layout::below(play_btn, sample_display, Widget_Align::START, 10.f);
     play_btn->setCallback(this);
@@ -231,10 +223,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     setSampleEditorVisible(false);
 
-    source_browser = new Popup(this);
-    source_browser->setAbsolutePos(20, 20);
-    source_browser->setSize(UI_W - 40, UI_H - 40);
-    source_browser->close();
+    source_browser = new SourceBrowser(getApp(), UI_W - 40, UI_H - 40);
+    source_browser->setTitle("Browse archives...");
 
     addIdleCallback(this);
 
@@ -366,7 +356,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->newSample();
     else if (button == browser_sources_btn)
     {
-        source_browser->open();
+        source_browser->show();
     }
     else if (button == expand_map_btn)
     {
@@ -646,8 +636,6 @@ Knob3D *createWAIVEKnob(
     knob->max = max;
     knob->setValue(value);
     knob->gauge_width = 6.0f;
-    knob->background_color = Color(190, 190, 190);
-    knob->foreground_color = Color(0, 160, 245);
     knob->setCallback(parent);
     knob->font = font;
 

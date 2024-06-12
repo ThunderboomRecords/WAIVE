@@ -4,13 +4,11 @@
 #include <string>
 #include <iostream>
 
-#include "Widget.hpp"
-#include "Window.hpp"
-#include "NanoVG.hpp"
+#include "WAIVEWidget.hpp"
 
 START_NAMESPACE_DISTRHO
 
-class Menu : public NanoSubWidget
+class Menu : public WAIVEWidget
 {
 public:
     class Callback

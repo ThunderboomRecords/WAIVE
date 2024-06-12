@@ -560,7 +560,6 @@ void SampleDatabase::filterSources(const std::string &tagNotIn)
         Poco::Data::Keywords::into(archive),
         Poco::Data::Keywords::into(folder),
         Poco::Data::Keywords::into(downloaded),
-        // Poco::Data::Keywords::use(tagNotIn),
         Poco::Data::Keywords::range(0, 1);
 
     Poco::Data::Statement selectSourcesTag(*session);

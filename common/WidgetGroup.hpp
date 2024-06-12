@@ -4,14 +4,14 @@
 #include <iostream>
 #include <vector>
 
-#include "NanoVG.hpp"
+#include "WAIVEWidget.hpp"
 
 START_NAMESPACE_DISTRHO
 
-class WidgetGroup : public NanoSubWidget
+class WidgetGroup : public WAIVEWidget
 {
 public:
-    explicit WidgetGroup(Widget *widget) noexcept;
+    explicit WidgetGroup(Widget *widget, float x = 100.f, float y = 100.f, float width = 100.f, float height = 120.f) noexcept;
 
     void addChildWidget(NanoSubWidget *widget);
     void setVisible(bool visible);
@@ -20,8 +20,6 @@ public:
 
 protected:
     void onNanoDisplay() override;
-
-private:
     std::vector<NanoSubWidget *> children;
 };
 
