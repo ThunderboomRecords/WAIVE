@@ -34,6 +34,8 @@
 #include <Poco/TaskManager.h>
 #include <Poco/TaskNotification.h>
 #include <Poco/Observer.h>
+#include "Poco/BasicEvent.h"
+#include "Poco/Delegate.h"
 
 #include "model_utils.hpp"
 #include "onnxruntime_cxx_api.h"

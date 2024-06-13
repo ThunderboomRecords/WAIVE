@@ -22,6 +22,7 @@ dpf_add_plugin(
       ./models/tsne.c
   FILES_UI
       WAIVESamplerUI.cpp
+      ./components/SourceList.cpp
       ./components/SourceBrowser.cpp
       ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts.h
@@ -29,6 +30,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/GridLayout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/CheckboxGroup.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/CheckboxList.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Menu.cpp

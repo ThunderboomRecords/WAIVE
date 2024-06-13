@@ -14,6 +14,7 @@ include_directories(
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_compile_options(-DUSE_KISS_FFT)
+set(CMAKE_CXX_FLAGS -fdiagnostics-color=always)
 set(BUILD_TESTING OFF)
 set(LIBSAMPLERATE_EXAMPLES OFF)
 

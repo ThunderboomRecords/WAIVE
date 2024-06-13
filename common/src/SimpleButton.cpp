@@ -77,7 +77,6 @@ bool Button::onMouse(const MouseEvent &ev)
         ev.button == 1 &&
         contains(ev.pos))
     {
-        std::cout << "Button::onMouse\n";
         callback->buttonClicked(this);
         return true;
     }

@@ -188,7 +188,6 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     std::cout << "SampleDatabase initialised\n";
 
     loadSampleDatabase();
-    downloadSourcesList();
 }
 
 SampleDatabase::~SampleDatabase()
@@ -528,18 +527,46 @@ void SampleDatabase::updateSourcesDatabase()
 
 std::vector<Tag> SampleDatabase::getTagList() const
 {
+    std::cout << "SampleDatabase::getTagList()\n";
+
     if (!sourcesLoaded)
         return {};
 
     std::vector<Tag> tags;
     Poco::Data::Statement select(*session);
     std::string tag;
-    select << "SELECT tag FROM Tags", Poco::Data::Keywords::into(tag);
+    select << "SELECT tag FROM Tags",
+        Poco::Data::Keywords::into(tag),
+        Poco::Data::Keywords::range(0, 1);
 
     while (!select.done())
+    {
+        select.execute();
         tags.push_back({std::string(tag)});
+    }
 
     return tags;
+}
+
+std::vector<std::string> SampleDatabase::getArchiveList() const
+{
+    if (!sourcesLoaded)
+        return {};
+
+    std::vector<std::string> archives;
+    Poco::Data::Statement select(*session);
+    std::string archive;
+    select << "SELECT DISTINCT archive from Sources",
+        Poco::Data::Keywords::into(archive),
+        Poco::Data::Keywords::range(0, 1);
+
+    while (!select.done())
+    {
+        select.execute();
+        archives.push_back(std::string(archive));
+    }
+
+    return archives;
 }
 
 void SampleDatabase::filterSources(const std::string &tagNotIn)
@@ -551,8 +578,8 @@ void SampleDatabase::filterSources(const std::string &tagNotIn)
     int id, downloaded;
     select << "SELECT Sources.id, Sources.name, Sources.archive, Sources.folder, Sources.downloaded "
               "FROM Sources "
-              "JOIN SourcesTags ON Sources.id = SourcesTags.source_id"
-              "JOIN Tags ON Tags.id = SourcesTags.tag_id"
+              "JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
+              "JOIN Tags ON Tags.id = SourcesTags.tag_id "
               "WHERE Tags.tag NOT IN ("
            << tagNotIn << ")",
         Poco::Data::Keywords::into(id),
@@ -561,6 +588,9 @@ void SampleDatabase::filterSources(const std::string &tagNotIn)
         Poco::Data::Keywords::into(folder),
         Poco::Data::Keywords::into(downloaded),
         Poco::Data::Keywords::range(0, 1);
+
+    std::cout << "SampleDatabase::filterSources select:\n"
+              << select.toString() << std::endl;
 
     Poco::Data::Statement selectSourcesTag(*session);
     int tagId;
@@ -577,6 +607,7 @@ void SampleDatabase::filterSources(const std::string &tagNotIn)
 
     while (!select.done())
     {
+        select.execute();
         SourceInfo source;
         source.archive = archive;
         source.folder = folder;
@@ -585,6 +616,7 @@ void SampleDatabase::filterSources(const std::string &tagNotIn)
 
         while (!selectSourcesTag.done())
         {
+            selectSourcesTag.execute();
             selectTag.execute();
             source.tags.push_back({std::string(tag)});
         }

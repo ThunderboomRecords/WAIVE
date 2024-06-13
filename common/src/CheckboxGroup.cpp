@@ -50,10 +50,14 @@ void CheckboxGroup::checkboxUpdated(Checkbox *checkbox, bool value)
     }
 }
 
-void CheckboxGroup::addCheckbox(Checkbox *checkbox, std::string data)
+void CheckboxGroup::addCheckbox(Checkbox *checkbox, const std::string &data)
 {
+    // Checkbox *checkbox = new Checkbox(getParentWidget());
+    checkbox->setSize(100, 20);
     checkbox->setCallback(this);
+    checkbox->label = data;
     grid->addChildWidget(checkbox);
+    grid->positionWidgets();
     checkboxes.push_back(checkbox);
     checkboxData[checkbox] = {data, checkbox->getChecked()};
 }

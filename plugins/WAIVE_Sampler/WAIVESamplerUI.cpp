@@ -13,6 +13,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
 
+    plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
+
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
 
     sample_map = new SampleMap(this);
@@ -223,7 +225,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     setSampleEditorVisible(false);
 
-    source_browser = new SourceBrowser(getApp(), UI_W - 40, UI_H - 40);
+    source_browser = new SourceBrowser(getApp(), UI_W, UI_H - 40, &plugin->sd);
     source_browser->setTitle("Browse archives...");
 
     addIdleCallback(this);
@@ -238,6 +240,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
 WAIVESamplerUI::~WAIVESamplerUI()
 {
+    plugin->sd.databaseUpdate -= Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
+    source_browser->close();
+
     if (open_dialog.joinable())
         open_dialog.join();
 }
@@ -355,9 +360,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     else if (button == new_sample_btn)
         plugin->newSample();
     else if (button == browser_sources_btn)
-    {
         source_browser->show();
-    }
     else if (button == expand_map_btn)
     {
         if (map_full)
@@ -602,6 +605,11 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         import_spinner->setLoading(false);
     }
     pTask->release();
+}
+
+void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
+{
+    std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
 }
 
 void WAIVESamplerUI::setSampleEditorVisible(bool visible)

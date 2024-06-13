@@ -1,28 +1,38 @@
 #ifndef SOURCE_BROWSER_HPP_INCLUDED
 #define SOURCE_BROWSER_HPP_INCLUDED
 
-// #include "Popup.hpp"
 #include "NanoVG.hpp"
 #include "Window.hpp"
-#include "CheckboxGroup.hpp"
+#include "Spinner.hpp"
+#include "SourceList.hpp"
+#include "CheckboxList.hpp"
+#include "SampleDatabase.hpp"
 
 START_NAMESPACE_DISTRHO
 
 class SourceBrowser
-    // : public NanoTopLevelWidget,
     : public NanoStandaloneWindow,
-      CheckboxGroup::Callback
+      CheckboxList::Callback
 {
 public:
-    // explicit SourceBrowser(Widget *widget, float x, float y, float width, float height) noexcept;
-    explicit SourceBrowser(Application &app, float width, float height);
+    explicit SourceBrowser(Application &app, float width, float height, SampleDatabase *sd_);
+
+    void setTagList(std::vector<Tag> tags);
+    void setArchiveList(std::vector<std::string> archives);
+    void setSourceList();
+
+    void show();
+    void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
 
 protected:
-    void checkboxesUpdated(CheckboxGroup *group);
+    void checkboxesUpdated(CheckboxList *group);
     void onNanoDisplay() override;
 
 private:
-    CheckboxGroup *tags, *archives;
+    CheckboxList *tags, *archives;
+    SourceList *source_list;
+    SampleDatabase *sd;
+    Spinner *loading;
 };
 
 END_NAMESPACE_DISTRHO

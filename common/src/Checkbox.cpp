@@ -33,7 +33,7 @@ void Checkbox::onNanoDisplay()
         fillColor(accent_color);
     else
         fillColor(background_color);
-    circle(r, r, r);
+    circle(r, r, r - 2.f);
     fill();
     stroke();
     closePath();
@@ -42,8 +42,8 @@ void Checkbox::onNanoDisplay()
     beginPath();
     fillColor(text_color);
     fontSize(font_size);
-    textAlign(Align::ALIGN_CENTER | Align::ALIGN_LEFT);
-    text(r + 4.0f, height / 2.0f, label.c_str(), nullptr);
+    textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
+    text(2 * r + 4.0f, height / 2.0f, label.c_str(), nullptr);
     closePath();
 }
 
@@ -52,12 +52,17 @@ bool Checkbox::onMouse(const MouseEvent &ev)
     if (!isVisible() || !contains(ev.pos))
         return false;
 
-    checked = !checked;
-    if (callback != nullptr)
-        callback->checkboxUpdated(this, checked);
+    if (ev.press && ev.button == kMouseButtonLeft)
+    {
+        checked = !checked;
+        if (callback != nullptr)
+            callback->checkboxUpdated(this, checked);
 
-    repaint();
-    return true;
+        repaint();
+        return true;
+    }
+
+    return false;
 }
 
 bool Checkbox::onMotion(const MotionEvent &ev)

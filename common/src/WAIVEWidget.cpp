@@ -11,7 +11,7 @@ WAIVEWidget::WAIVEWidget(Widget *widget, int flags) noexcept
       stroke_color(Color(30, 30, 30)),
       accent_color(Color(0, 160, 245)),
       text_color(Color(10, 10, 10)),
-      font_size(12.0f)
+      font_size(16.0f)
 {
     scale_factor = getWindow().getScaleFactor();
 }

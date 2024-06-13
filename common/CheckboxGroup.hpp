@@ -31,7 +31,7 @@ public:
     CheckboxGroup(Widget *widget, float x, float y, float width, float height);
     void setCallback(Callback *cb);
 
-    void addCheckbox(Checkbox *checkbox, std::string data);
+    void addCheckbox(Checkbox *checkbox, const std::string &data);
     void checkAll(bool check, bool sendCallback);
     std::map<Checkbox *, CheckboxData> getCheckboxData();
 

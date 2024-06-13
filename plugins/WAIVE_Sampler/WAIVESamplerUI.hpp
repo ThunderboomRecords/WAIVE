@@ -39,6 +39,8 @@
 
 #include <Poco/TaskNotification.h>
 #include <Poco/Observer.h>
+#include "Poco/BasicEvent.h"
+#include "Poco/Delegate.h"
 
 START_NAMESPACE_DISTRHO
 
@@ -63,6 +65,7 @@ public:
     void onTaskFailed(Poco::TaskFailedNotification *pNf);
     void onTaskCancelled(Poco::TaskCancelledNotification *pNf);
     void onTaskProgress(Poco::TaskProgressNotification *pNf);
+    void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
 
 protected:
     void parameterChanged(uint32_t index, float value) override;
@@ -122,7 +125,6 @@ private:
     Menu *sample_map_menu, *dropdown_menu;
 
     SourceBrowser *source_browser;
-    NanoStandaloneWindow *source_browser_window;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 

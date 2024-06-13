@@ -17,6 +17,8 @@
 #include "Poco/Data/Session.h"
 #include "Poco/Data/RecordSet.h"
 #include "Poco/Data/SQLite/Connector.h"
+#include "Poco/BasicEvent.h"
+#include "Poco/Delegate.h"
 
 #include <sndfile.hh>
 #include "kdtree.h"
@@ -102,7 +104,7 @@ public:
     explicit SampleDatabase(HTTPClient *httpClient);
     ~SampleDatabase();
 
-    Poco::BasicEvent<const DatabaseUpdate &> databaseUpdate;
+    Poco::BasicEvent<const DatabaseUpdate> databaseUpdate;
 
     void loadSampleDatabase();
     void newTag(std::string &tag);
@@ -119,6 +121,7 @@ public:
 
     void downloadSourcesList();
     std::vector<Tag> getTagList() const;
+    std::vector<std::string> getArchiveList() const;
     void updateSourcesDatabase();
     void rebuildSourceTree();
     void filterSources(const std::string &tagNotIn = "");
