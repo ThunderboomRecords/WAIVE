@@ -14,7 +14,7 @@ void ImporterTask::runTask()
         if (fp.has_value())
         {
             ImporterTask::import(fp.value());
-            _ws->addToUpdateQueue(kSampleAdded);
+            _ws->pluginUpdate.notify(&_ws, WAIVESampler::PluginUpdate::kSampleAdded);
         }
         else
             break;
@@ -167,7 +167,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 WAIVESampler::~WAIVESampler()
 {
     std::cout << "closing WAIVESampler..." << std::endl;
-    // sd.saveSamples();
+
     taskManager.cancelAll();
     taskManager.joinAll();
 }
@@ -343,7 +343,6 @@ float WAIVESampler::getParameterValue(uint32_t index) const
 
 void WAIVESampler::setParameterValue(uint32_t index, float value)
 {
-    // std::cout << "WAIVESampler::setParameterValue : " << index << " -> " << value << std::endl;
     int slot = 0;
     switch (index)
     {
@@ -466,15 +465,12 @@ void WAIVESampler::run(
 {
     samplePlayerMtx.lock();
 
-    // tosc_bundle bundle;
-    // tosc_writeBundle(&bundle, 1, oscBuffer, sizeof(oscBuffer));
     int bundle_length = 0;
 
     int midiIndex = 0;
     float y;
     for (uint32_t i = 0; i < numFrames; i++)
     {
-
         // Parse Midi Messages
         while (midiIndex < midiEventCount && midiEvents[midiIndex].frame == i)
         {
@@ -490,8 +486,6 @@ void WAIVESampler::run(
 
             uint8_t note = data1;
             uint8_t velocity = data2;
-            // std::cout << "noteOn: " << type << " " << note << ":" << velocity << std::endl;
-            // printf("type: %02X data1: %02X (%d) data2: %02X (%d) \n", type, note, note, velocity, velocity);
 
             if (type == 0x8 || (type == 0x9 && velocity == 0))
             {
@@ -502,7 +496,6 @@ void WAIVESampler::run(
             else if (type == 0x9)
             {
                 /* NoteOn */
-
                 for (int j = 0; j < samplePlayers.size(); j++)
                 {
                     if (samplePlayers[j].active && samplePlayers[j].midi == note)
@@ -555,9 +548,6 @@ void WAIVESampler::run(
         outputs[1][i] = y;
     }
 
-    // if (bundle_length)
-    // server.sendMessage(oscBuffer, tosc_getBundleLength(&bundle));
-
     samplePlayerMtx.unlock();
 }
 
@@ -565,7 +555,7 @@ void WAIVESampler::loadSource(const char *fp)
 {
     // LOG_LOCATION
     fSourceLoaded = false;
-    addToUpdateQueue(kSourceLoading);
+    pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
 
     fSourceLength = loadWaveform(fp, &fSourceWaveform, sampleRate);
 
@@ -578,7 +568,7 @@ void WAIVESampler::loadSource(const char *fp)
 
         getOnsets();
 
-        addToUpdateQueue(kSourceLoaded);
+        pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
     }
     else
     {
@@ -635,9 +625,9 @@ void WAIVESampler::newSample()
 
     std::cout << fCurrentSample->getId() << std::endl;
 
-    addToUpdateQueue(kSourceLoaded);
-    addToUpdateQueue(kSampleUpdated);
-    addToUpdateQueue(kParametersChanged);
+    pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
+    pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
+    pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
 }
 
 void WAIVESampler::addCurrentSampleToLibrary()
@@ -645,7 +635,6 @@ void WAIVESampler::addCurrentSampleToLibrary()
     if (fCurrentSample == nullptr || !fSampleLoaded)
         return;
 
-    // fCurrentSample->print();
     auto embedding = getEmbedding(editorPreviewWaveform);
     fCurrentSample->embedX = embedding.first;
     fCurrentSample->embedY = embedding.second;
@@ -673,14 +662,10 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     if (s == nullptr)
     {
         fCurrentSample = nullptr;
-        addToUpdateQueue(kParametersChanged);
+        pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
+
         return;
     }
-
-    // if(!s->waive)
-    // {
-    //     newSample();
-    // }
 
     bool newSource = true;
     if (fCurrentSample != nullptr && fCurrentSample->source.compare(s->source) == 0)
@@ -688,8 +673,6 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
 
     fCurrentSample = s;
     fSampleLoaded = false;
-
-    // fCurrentSample->print();
 
     if (newSource)
         loadSource(fCurrentSample->source.c_str());
@@ -709,10 +692,11 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), editorPreviewWaveform, sampleRate);
 
     fSampleLoaded = true;
-    addToUpdateQueue(kSampleLoaded);
+    pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
+
     renderSample();
 
-    addToUpdateQueue(kParametersChanged);
+    pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
 }
 
 void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
@@ -729,7 +713,7 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
 
     renderSample();
     triggerPreview();
-    addToUpdateQueue(kSampleUpdated);
+    pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
 void WAIVESampler::renderSample()
@@ -817,7 +801,7 @@ void WAIVESampler::renderSample()
 
     fSampleLoaded = true;
     samplePlayerMtx.unlock();
-    addToUpdateQueue(kSampleUpdated);
+    pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
 void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer)
@@ -847,7 +831,7 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
     sp.active = true;
     sp.sampleInfo = info;
 
-    addToUpdateQueue(kSlotLoaded);
+    pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
     samplePlayerMtx.unlock();
 }
 
@@ -884,8 +868,6 @@ std::pair<float, float> WAIVESampler::getEmbedding(std::vector<float> *wf)
         outputNamesCstrs,
         mTSNEOutputTensor.data(),
         mTSNEOutputTensor.size());
-
-    // printf("TSNE embedding: %.2f %.2f\n", mTSNEOutput[0], mTSNEOutput[1]);
 
     float embedX = mTSNEOutput[0];
     float embedY = mTSNEOutput[1];
@@ -943,20 +925,10 @@ void WAIVESampler::getOnsets()
                                        onset,
                                        frame,
                                        frame});
-            // printf(" - Onset detected at %d (onset: %.2f)\n", frame, onset);
         }
 
         frame += gist.getAudioFrameSize();
     }
-}
-
-void WAIVESampler::addToUpdateQueue(int ev)
-{
-    // if (updateQueue.back() != ev)
-    updateQueue.push(ev);
-
-    while (updateQueue.size() > 16)
-        updateQueue.pop();
 }
 
 void WAIVESampler::sampleRateChanged(double newSampleRate)

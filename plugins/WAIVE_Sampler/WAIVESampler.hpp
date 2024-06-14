@@ -87,6 +87,19 @@ bool saveWaveform(const char *fp, float *buffer, sf_count_t size, int sampleRate
 class WAIVESampler : public Plugin
 {
 public:
+    enum PluginUpdate
+    {
+        kSourceLoading = 0,
+        kSourceLoaded,
+        kSourceUpdated,
+        kSampleLoading,
+        kSampleLoaded,
+        kSampleUpdated,
+        kSampleAdded,
+        kSlotLoaded,
+        kParametersChanged,
+    };
+
     WAIVESampler();
     ~WAIVESampler();
 
@@ -158,11 +171,10 @@ protected:
     EnvGen ampEnvGen;
 
 private:
-    void addToUpdateQueue(int ev);
-
     Poco::TaskManager taskManager;
     ImporterTask *importerTask;
     ThreadsafeQueue<std::string> import_queue;
+    Poco::BasicEvent<const PluginUpdate> pluginUpdate;
 
     HTTPClient httpClient;
 
@@ -199,8 +211,6 @@ private:
     std::vector<float> *editorPreviewWaveform, *mapPreviewWaveform;
     std::vector<SamplePlayer> samplePlayers;
     std::vector<std::vector<float>> samplePlayerWaveforms;
-
-    std::queue<int> updateQueue;
 
     friend class WAIVESamplerUI;
     friend class SampleEditorControls;

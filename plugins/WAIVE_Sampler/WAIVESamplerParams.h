@@ -53,17 +53,4 @@ enum Parameters
     kParameterCount
 };
 
-enum Updates
-{
-    kSourceLoading = 1000,
-    kSourceLoaded,
-    kSourceUpdated,
-    kSampleLoading,
-    kSampleLoaded,
-    kSampleUpdated,
-    kSampleAdded,
-    kSlotLoaded,
-    kParametersChanged,
-};
-
 #endif

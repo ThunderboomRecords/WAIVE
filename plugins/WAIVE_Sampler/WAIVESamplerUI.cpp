@@ -14,6 +14,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
 
     plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
+    plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
 
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
 
@@ -229,8 +230,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     source_browser_root->setTitle("Browse archives...");
 
     source_browser = new SourceBrowser(*source_browser_root, &plugin->sd);
-
-    addIdleCallback(this);
 
     setGeometryConstraints(UI_W * fScaleFactor, UI_H * fScaleFactor, false, false);
 
@@ -498,103 +497,95 @@ void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
     fScaleFactor = scaleFactor;
 }
 
-void WAIVESamplerUI::idleCallback()
+void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg)
 {
-    std::queue<int> *updateQueue = &plugin->updateQueue;
-    for (; !updateQueue->empty(); updateQueue->pop())
+    switch (arg)
     {
-        int msg = updateQueue->front();
-
-        // std::cout << " - new msg: " << msg << std::endl;
-
-        switch (msg)
+    case WAIVESampler::kSourceLoading:
+        break;
+    case WAIVESampler::kSourceLoaded:
+        source_display->setWaveformLength(plugin->fSourceLength);
+        source_display->waveformNew();
+        save_sample_btn->setEnabled(true);
+        break;
+    case WAIVESampler::kSourceUpdated:
+        source_display->setWaveformLength(plugin->fSourceLength);
+        source_display->waveformUpdated();
+        break;
+    case WAIVESampler::kSampleLoading:
+        break;
+    case WAIVESampler::kSampleLoaded:
+        sample_display->setWaveformLength(plugin->fCurrentSample->sampleLength);
+        if (plugin->fCurrentSample->saved)
+            save_sample_btn->setLabel("update");
+        else
+            save_sample_btn->setLabel("add");
+        sample_display->waveformNew();
+        play_btn->setEnabled(true);
+        break;
+    case WAIVESampler::kSampleUpdated:
+        if (plugin->fCurrentSample != nullptr)
         {
-        case kSourceLoading:
-            break;
-        case kSourceLoaded:
-            source_display->setWaveformLength(plugin->fSourceLength);
-            source_display->waveformNew();
-            save_sample_btn->setEnabled(true);
-            break;
-        case kSourceUpdated:
-            source_display->setWaveformLength(plugin->fSourceLength);
-            source_display->waveformUpdated();
-            break;
-        case kSampleLoading:
-            break;
-        case kSampleLoaded:
             sample_display->setWaveformLength(plugin->fCurrentSample->sampleLength);
+            sample_display->waveformUpdated();
             if (plugin->fCurrentSample->saved)
                 save_sample_btn->setLabel("update");
             else
                 save_sample_btn->setLabel("add");
-            sample_display->waveformNew();
-            play_btn->setEnabled(true);
-            break;
-        case kSampleUpdated:
-            if (plugin->fCurrentSample != nullptr)
+        }
+        play_btn->setEnabled(true);
+        break;
+    case WAIVESampler::kSampleAdded:
+        sample_map->repaint();
+        break;
+    case WAIVESampler::kParametersChanged:
+        if (plugin->fCurrentSample != nullptr)
+        {
+            setSampleEditorVisible(true);
+            pitch->setValue(plugin->fCurrentSample->pitch, false);
+            percussionBoost->setValue(plugin->fCurrentSample->percussiveBoost, false);
+            volume->setValue(plugin->fCurrentSample->volume, false);
+            sustainLength->setValue(plugin->fCurrentSample->sustainLength, false);
+            filterCutoff->setValue(plugin->fCurrentSample->filterCutoff, false);
+            filterResonance->setValue(plugin->fCurrentSample->filterResonance, false);
+            filterType->setItem(plugin->fCurrentSample->filterType, false);
+            ampAttack->setValue(plugin->ampEnvGen.getAttack(), false);
+            ampDecay->setValue(plugin->ampEnvGen.getDecay(), false);
+            ampSustain->setValue(plugin->ampEnvGen.getSustain(), false);
+            ampRelease->setValue(plugin->ampEnvGen.getRelease(), false);
+
+            source_display->setSelection(plugin->fCurrentSample->sourceStart, false);
+            if (plugin->fCurrentSample->waive)
             {
-                sample_display->setWaveformLength(plugin->fCurrentSample->sampleLength);
-                sample_display->waveformUpdated();
+                save_sample_btn->setVisible(true);
                 if (plugin->fCurrentSample->saved)
                     save_sample_btn->setLabel("update");
                 else
                     save_sample_btn->setLabel("add");
             }
-            play_btn->setEnabled(true);
-            break;
-        case kSampleAdded:
-            sample_map->repaint();
-            break;
-        case kParametersChanged:
-            if (plugin->fCurrentSample != nullptr)
-            {
-                setSampleEditorVisible(true);
-                pitch->setValue(plugin->fCurrentSample->pitch, false);
-                percussionBoost->setValue(plugin->fCurrentSample->percussiveBoost, false);
-                volume->setValue(plugin->fCurrentSample->volume, false);
-                sustainLength->setValue(plugin->fCurrentSample->sustainLength, false);
-                filterCutoff->setValue(plugin->fCurrentSample->filterCutoff, false);
-                filterResonance->setValue(plugin->fCurrentSample->filterResonance, false);
-                filterType->setItem(plugin->fCurrentSample->filterType, false);
-                ampAttack->setValue(plugin->ampEnvGen.getAttack(), false);
-                ampDecay->setValue(plugin->ampEnvGen.getDecay(), false);
-                ampSustain->setValue(plugin->ampEnvGen.getSustain(), false);
-                ampRelease->setValue(plugin->ampEnvGen.getRelease(), false);
-
-                source_display->setSelection(plugin->fCurrentSample->sourceStart, false);
-                if (plugin->fCurrentSample->waive)
-                {
-                    save_sample_btn->setVisible(true);
-                    if (plugin->fCurrentSample->saved)
-                        save_sample_btn->setLabel("update");
-                    else
-                        save_sample_btn->setLabel("add");
-                }
-                else
-                    save_sample_btn->setVisible(false);
-                sample_name->setText(plugin->fCurrentSample->name.c_str(), false);
-                new_sample_btn->setLabel("duplicate");
-            }
             else
-            {
-                setSampleEditorVisible(false);
-                new_sample_btn->setLabel("new");
-            }
-
-            sample_map->repaint();
-
-            break;
-        case kSlotLoaded:
-            for (int i = 0; i < sampleSlots.size(); i++)
-            {
-                sampleSlots[i]->repaint();
-            }
-            break;
-        default:
-            std::cout << "Unknown update: " << msg << std::endl;
-            break;
+                save_sample_btn->setVisible(false);
+            sample_name->setText(plugin->fCurrentSample->name.c_str(), false);
+            new_sample_btn->setLabel("duplicate");
         }
+        else
+        {
+            setSampleEditorVisible(false);
+            new_sample_btn->setLabel("new");
+        }
+
+        sample_map->repaint();
+
+        break;
+    case WAIVESampler::kSlotLoaded:
+        for (int i = 0; i < sampleSlots.size(); i++)
+        {
+            sampleSlots[i]->repaint();
+        }
+        break;
+    default:
+        std::cout << "Unknown update: " << arg << std::endl;
+        break;
     }
 }
 

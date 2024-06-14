@@ -50,7 +50,6 @@ const unsigned int UI_H = 582;
 
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
-                       public IdleCallback,
                        public Waveform::Callback,
                        public Knob::Callback,
                        public SampleMap::Callback,
@@ -67,6 +66,7 @@ public:
     void onTaskCancelled(Poco::TaskCancelledNotification *pNf);
     void onTaskProgress(Poco::TaskProgressNotification *pNf);
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
+    void onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg);
 
 protected:
     void parameterChanged(uint32_t index, float value) override;
@@ -75,7 +75,7 @@ protected:
     void uiScaleFactorChanged(const double scaleFactor) override;
 
     void buttonClicked(Button *button) override;
-    void idleCallback() override;
+    // void idleCallback() override;
     void waveformSelection(Waveform *waveform, uint selectionStart) override;
     void knobDragStarted(Knob *knob) override;
     void knobDragFinished(Knob *knob, float value) override;
