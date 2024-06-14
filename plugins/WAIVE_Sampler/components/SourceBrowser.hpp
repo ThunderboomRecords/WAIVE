@@ -11,11 +11,11 @@
 START_NAMESPACE_DISTRHO
 
 class SourceBrowser
-    : public NanoStandaloneWindow,
+    : public NanoTopLevelWidget,
       CheckboxList::Callback
 {
 public:
-    explicit SourceBrowser(Application &app, float width, float height, SampleDatabase *sd_);
+    explicit SourceBrowser(Window &window, SampleDatabase *sd_);
 
     void setTagList(std::vector<Tag> tags);
     void setArchiveList(std::vector<std::string> archives);

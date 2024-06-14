@@ -12,6 +12,7 @@
 
 #include "WidgetGroup.hpp"
 #include "SourceBrowser.hpp"
+#include "SourceBrowserRoot.hpp"
 #include "HBox.hpp"
 #include "VBox.hpp"
 #include "Menu.hpp"
@@ -124,6 +125,7 @@ private:
     WidgetGroup *sample_editor_controls;
     Menu *sample_map_menu, *dropdown_menu;
 
+    SourceBrowserRoot *source_browser_root;
     SourceBrowser *source_browser;
 
     DGL_NAMESPACE::FileBrowserOptions filebrowseropts;

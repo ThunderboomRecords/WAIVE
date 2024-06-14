@@ -66,8 +66,6 @@ bool SourceList::onScroll(const ScrollEvent &ev)
     scrollPos += ev.delta.getY() * 10;
     scrollPos = std::max(scrollPos, 0.f);
 
-    std::cout << scrollPos << std::endl;
-
     repaint();
 
     return true;

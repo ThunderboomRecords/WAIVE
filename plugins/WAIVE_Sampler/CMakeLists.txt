@@ -24,6 +24,7 @@ dpf_add_plugin(
       WAIVESamplerUI.cpp
       ./components/SourceList.cpp
       ./components/SourceBrowser.cpp
+      ./components/SourceBrowserRoot.cpp
       ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp

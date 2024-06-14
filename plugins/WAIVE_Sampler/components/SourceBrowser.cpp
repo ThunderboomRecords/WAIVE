@@ -1,13 +1,13 @@
 #include "SourceBrowser.hpp"
 
-SourceBrowser::SourceBrowser(Application &app, float width, float height, SampleDatabase *sd_)
-    : NanoStandaloneWindow(app), sd(sd_)
+SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
+    : NanoTopLevelWidget(window), sd(sd_)
 {
-    setGeometryConstraints(width, height, true, false);
-
-    std::cout << "width: " << width << " height: " << height << std::endl;
 
     sd->databaseUpdate += Poco::delegate(this, &SourceBrowser::onDatabaseChanged);
+
+    float width = window.getWidth();
+    float height = window.getHeight();
 
     tags = new CheckboxList(this);
     tags->setAbsolutePos(10, 10);
@@ -64,6 +64,9 @@ void SourceBrowser::checkboxesUpdated(CheckboxList *group)
 
 void SourceBrowser::onNanoDisplay()
 {
+    // printf("SourceBrowser::onNanoDisplay(): isVisible %d\n", isVisible());
+    // TODO: why is this trying to render when window is closed?
+
     const float width = getWidth();
     const float height = getHeight();
 
@@ -133,7 +136,7 @@ void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
 
 void SourceBrowser::show()
 {
-    NanoStandaloneWindow::show();
+    NanoTopLevelWidget::show();
     if (sd == nullptr)
         return;
 

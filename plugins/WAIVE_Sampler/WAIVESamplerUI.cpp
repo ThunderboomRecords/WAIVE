@@ -225,8 +225,12 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     setSampleEditorVisible(false);
 
-    source_browser = new SourceBrowser(getApp(), UI_W, UI_H - 40, &plugin->sd);
-    source_browser->setTitle("Browse archives...");
+    source_browser_root = new SourceBrowserRoot(getApp(), UI_W, UI_H - 40);
+    source_browser_root->setTitle("Browse archives...");
+    // source_browser_root->setVisible(false);
+    // source_browser_root;
+
+    source_browser = new SourceBrowser(*source_browser_root, &plugin->sd);
 
     addIdleCallback(this);
 
@@ -241,7 +245,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 WAIVESamplerUI::~WAIVESamplerUI()
 {
     plugin->sd.databaseUpdate -= Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
-    source_browser->close();
+    source_browser_root->close();
 
     if (open_dialog.joinable())
         open_dialog.join();
@@ -360,7 +364,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     else if (button == new_sample_btn)
         plugin->newSample();
     else if (button == browser_sources_btn)
-        source_browser->show();
+        source_browser_root->show();
     else if (button == expand_map_btn)
     {
         if (map_full)
