@@ -31,6 +31,7 @@ public:
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &) override;
+    bool onMotion(const MotionEvent &) override;
     bool onCharacterInput(const CharacterInputEvent &) override;
     bool onKeyboard(const KeyboardEvent &) override;
 
@@ -38,7 +39,7 @@ private:
     Callback *callback;
 
     std::string fText, fTextStart;
-    bool hasKeyFocus;
+    bool hasKeyFocus, hover;
     int position;
 };
 

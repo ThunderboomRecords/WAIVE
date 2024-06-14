@@ -7,6 +7,7 @@ using DGL_NAMESPACE::Color;
 TextInput::TextInput(Widget *parent) noexcept
     : NanoSubWidget(parent),
       hasKeyFocus(false),
+      hover(false),
       fText(""),
       position(0),
       background_color(Color(230, 230, 230)),
@@ -32,6 +33,8 @@ void TextInput::undo()
     // In case the text is invalid by reciever of callback,
     // can revert the text back to it's original
     fText.assign(fTextStart);
+    if (callback != nullptr)
+        callback->textInputChanged(this, fText);
     repaint();
 }
 
@@ -100,7 +103,6 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
     if (!hasKeyFocus || !isVisible())
         return false;
 
-    // std::cout << "TextInput::onCharacterInput: " << ev.string << " " << ev.keycode << std::endl;
     switch (ev.keycode)
     {
     case 36:
@@ -111,6 +113,7 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
         hasKeyFocus = false;
         break;
     case 22:
+        // backspace
         if (position > 0)
         {
             fText.erase(fText.begin() + position - 1, fText.begin() + position);
@@ -125,9 +128,7 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
     case 119:
         // delete key
         if (position < fText.size())
-        {
             fText.erase(fText.begin() + position, fText.begin() + position + 1);
-        }
         break;
     case 23:
         // tab key
@@ -170,6 +171,8 @@ bool TextInput::onKeyboard(const KeyboardEvent &ev)
     case kKeyEscape:
         hasKeyFocus = false;
         fText.assign(fTextStart);
+        if (callback != nullptr)
+            callback->textInputChanged(this, fText);
         break;
     default:
         return false;
@@ -205,6 +208,28 @@ bool TextInput::onMouse(const MouseEvent &ev)
             repaint();
             return true;
         }
+    }
+
+    return false;
+}
+
+bool TextInput::onMotion(const MotionEvent &ev)
+{
+    if (!isVisible())
+        return false;
+
+    bool over = contains(ev.pos);
+    if (!hover && over)
+    {
+        getWindow().setCursor(kMouseCursorCaret);
+        hover = true;
+        return true;
+    }
+    else if (hover && !over)
+    {
+        getWindow().setCursor(kMouseCursorArrow);
+        hover = false;
+        return false;
     }
 
     return false;
