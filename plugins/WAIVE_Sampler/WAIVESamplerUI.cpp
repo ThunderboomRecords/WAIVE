@@ -364,7 +364,10 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     else if (button == new_sample_btn)
         plugin->newSample();
     else if (button == browser_sources_btn)
+    {
         source_browser_root->show();
+        source_browser->updateSourceDatabase();
+    }
     else if (button == expand_map_btn)
     {
         if (map_full)

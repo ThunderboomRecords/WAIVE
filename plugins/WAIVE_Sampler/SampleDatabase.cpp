@@ -452,6 +452,8 @@ void SampleDatabase::downloadSourcesList()
     if (sourcesLoaded)
         return;
 
+    printf("SampleDatabase::downloadSourcesList()\n");
+
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
 
     httpClient->sendRequest(
@@ -529,9 +531,6 @@ std::vector<Tag> SampleDatabase::getTagList() const
 {
     std::cout << "SampleDatabase::getTagList()\n";
 
-    if (!sourcesLoaded)
-        return {};
-
     std::vector<Tag> tags;
     Poco::Data::Statement select(*session);
     std::string tag;
@@ -550,9 +549,6 @@ std::vector<Tag> SampleDatabase::getTagList() const
 
 std::vector<std::string> SampleDatabase::getArchiveList() const
 {
-    if (!sourcesLoaded)
-        return {};
-
     std::vector<std::string> archives;
     Poco::Data::Statement select(*session);
     std::string archive;
@@ -569,7 +565,7 @@ std::vector<std::string> SampleDatabase::getArchiveList() const
     return archives;
 }
 
-void SampleDatabase::filterSources(const std::string &tagNotIn)
+void SampleDatabase::filterSources(const std::string &tagNotIn, const std::string &archiveNotIn)
 {
     sourcesList.clear();
 
@@ -581,7 +577,9 @@ void SampleDatabase::filterSources(const std::string &tagNotIn)
               "JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
               "JOIN Tags ON Tags.id = SourcesTags.tag_id "
               "WHERE Tags.tag NOT IN ("
-           << tagNotIn << ")",
+           << tagNotIn << ")"
+           << "AND Sources.archive NOT IN ("
+           << archiveNotIn << ")",
         Poco::Data::Keywords::into(id),
         Poco::Data::Keywords::into(name),
         Poco::Data::Keywords::into(archive),

@@ -3,7 +3,6 @@
 SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
     : NanoTopLevelWidget(window), sd(sd_)
 {
-
     sd->databaseUpdate += Poco::delegate(this, &SourceBrowser::onDatabaseChanged);
 
     float width = window.getWidth();
@@ -37,13 +36,15 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
     loading->toFront();
     loading->setLoading(true);
     addIdleCallback(loading);
+
+    setTagList(sd->getTagList());
+    setArchiveList(sd->getArchiveList());
+    sd->filterSources(tagNotIn, archiveNotIn);
 }
 
 void SourceBrowser::checkboxesUpdated(CheckboxList *group)
 {
-    std::cout << "SourceBrowser::checkboxesUpdated" << std::endl;
-
-    std::string tagNotIn = "";
+    tagNotIn = "";
     std::vector<CheckboxList::CheckboxData> *tagList = tags->getData();
     int count = 0;
     for (int i = 0; i < tagList->size(); i++)
@@ -57,9 +58,21 @@ void SourceBrowser::checkboxesUpdated(CheckboxList *group)
         count++;
     }
 
-    std::cout << tagNotIn << std::endl;
+    archiveNotIn = "";
+    std::vector<CheckboxList::CheckboxData> *archiveList = archives->getData();
+    count = 0;
+    for (int i = 0; i < archiveList->size(); i++)
+    {
+        if (archiveList->at(i).checked)
+            continue;
 
-    sd->filterSources(tagNotIn);
+        if (count > 0)
+            archiveNotIn += ", ";
+        archiveNotIn += "'" + archiveList->at(i).data + "'";
+        count++;
+    }
+
+    sd->filterSources(tagNotIn, archiveNotIn);
 }
 
 void SourceBrowser::onNanoDisplay()
@@ -104,14 +117,8 @@ void SourceBrowser::setSourceList()
 {
     source_list->source_list.clear();
     for (int i = 0; i < sd->sourcesList.size(); i++)
-    {
-        std::cout << " - " << sd->sourcesList[i].archive
-                  << ": " << sd->sourcesList[i].folder
-                  << ": " << sd->sourcesList[i].name
-                  << std::endl;
-
         source_list->source_list.push_back(sd->sourcesList[i].folder + " " + sd->sourcesList[i].name);
-    }
+    source_list->repaint();
 }
 
 void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
@@ -120,6 +127,9 @@ void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
     {
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
         loading->setLoading(true);
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
+        loading->setLoading(false);
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
         loading->setLoading(false);
@@ -134,14 +144,11 @@ void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
     }
 }
 
-void SourceBrowser::show()
+void SourceBrowser::updateSourceDatabase()
 {
-    NanoTopLevelWidget::show();
     if (sd == nullptr)
         return;
 
     if (!sd->sourcesLoaded)
-    {
         sd->downloadSourcesList();
-    }
 }

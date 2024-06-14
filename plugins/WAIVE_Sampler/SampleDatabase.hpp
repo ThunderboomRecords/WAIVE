@@ -124,7 +124,7 @@ public:
     std::vector<std::string> getArchiveList() const;
     void updateSourcesDatabase();
     void rebuildSourceTree();
-    void filterSources(const std::string &tagNotIn = "");
+    void filterSources(const std::string &tagNotIn = "", const std::string &archiveNotIn = "");
     std::map<std::string, std::map<std::string, std::vector<SourceInfo *>>> sourceTree;
 
     bool saveJson(json data, std::string fp);

@@ -21,7 +21,7 @@ public:
     void setArchiveList(std::vector<std::string> archives);
     void setSourceList();
 
-    void show();
+    void updateSourceDatabase();
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
 
 protected:
@@ -33,6 +33,8 @@ private:
     SourceList *source_list;
     SampleDatabase *sd;
     Spinner *loading;
+
+    std::string tagNotIn, archiveNotIn;
 };
 
 END_NAMESPACE_DISTRHO
