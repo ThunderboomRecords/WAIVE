@@ -90,7 +90,17 @@ public:
         SOURCE_LIST_DOWNLOADED,
         SOURCE_LIST_DOWNLOAD_ERROR,
         SOURCE_LIST_UPDATED,
+        SOURCE_LIST_QUERY_ERROR,
     };
+
+    struct WhereConditions
+    {
+        std::string tagNotIn = "";
+        std::string archiveNotIn = "";
+        std::string searchString = "";
+        bool downloadsOnly = false;
+    };
+
     class SamplePoint : public std::array<float, 2>
     {
     public:
@@ -123,11 +133,9 @@ public:
     std::vector<Tag> getTagList() const;
     std::vector<std::string> getArchiveList() const;
     void updateSourcesDatabase();
-    void rebuildSourceTree();
-    void filterSources(const std::string &tagNotIn = "", const std::string &archiveNotIn = "");
+    void filterSources();
     std::map<std::string, std::map<std::string, std::vector<SourceInfo *>>> sourceTree;
 
-    bool saveJson(json data, std::string fp);
     std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
     std::vector<SourceInfo> sourcesList;
@@ -137,6 +145,8 @@ public:
 
     json sourcesData;
     bool sourcesLoaded;
+
+    WhereConditions filterConditions;
 
 private:
     fs::path fCacheDir;

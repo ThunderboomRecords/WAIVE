@@ -84,6 +84,7 @@ protected:
     void mapSampleSelected(int id) override;
     void mapSampleLoadSlot(int index, int slot) override;
     void textEntered(TextInput *textInput, std::string text) override;
+    void textInputChanged(TextInput *textInput, std::string text) override;
     void dropdownSelection(DropDown *widget, int item) override;
 
     void openFileBrowser(char *state, bool multiple);

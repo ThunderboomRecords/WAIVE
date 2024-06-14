@@ -453,10 +453,18 @@ void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
     std::cout << "WAIVESamplerUI::textEntered " << text << std::endl;
     if (textInput == sample_name)
     {
+        if (text.length() == 0)
+        {
+            textInput->undo();
+            return;
+        }
+
         if (plugin->fCurrentSample != nullptr)
             plugin->sd.renameSample(plugin->fCurrentSample, text);
     }
 }
+
+void WAIVESamplerUI::textInputChanged(TextInput *textInput, std::string text) {}
 
 void WAIVESamplerUI::dropdownSelection(DropDown *widget, int item)
 {

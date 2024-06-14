@@ -6,7 +6,8 @@ CheckboxList::CheckboxList(Widget *widget)
     : WAIVEWidget(widget),
       columns(2),
       margin(5.0f),
-      padding(5.0f)
+      padding(5.0f),
+      label("")
 {
     loadSharedResources();
 
@@ -23,7 +24,6 @@ CheckboxList::CheckboxList(Widget *widget)
 
 void CheckboxList::addItem(const std::string &name, bool checked = false)
 {
-    std::cout << "CheckboxList::addItem " << name << std::endl;
     data.push_back({std::string(name), checked});
 }
 
@@ -88,7 +88,7 @@ void CheckboxList::onNanoDisplay()
 
     float x, y;
 
-    for (int i = 0; i < data.size(); i++)
+    for (int i = 0; i < data.size(); ++i)
     {
         col = i % columns;
         row = i / columns;

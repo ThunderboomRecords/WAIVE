@@ -155,6 +155,7 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
                 "folder TEXT, "
                 "downloaded INT, "
                 "license INT, "
+                "description TEXT, "
                 "UNIQUE(name, archive, folder))",
         Poco::Data::Keywords::now;
 
@@ -536,7 +537,6 @@ void SampleDatabase::updateSourcesDatabase()
 
 std::vector<Tag> SampleDatabase::getTagList() const
 {
-    std::cout << "SampleDatabase::getTagList()\n";
 
     std::vector<Tag> tags;
     Poco::Data::Statement select(*session);
@@ -547,8 +547,8 @@ std::vector<Tag> SampleDatabase::getTagList() const
 
     while (!select.done())
     {
-        select.execute();
-        tags.push_back({std::string(tag)});
+        if (select.execute())
+            tags.push_back({std::string(tag)});
     }
 
     return tags;
@@ -565,68 +565,103 @@ std::vector<std::string> SampleDatabase::getArchiveList() const
 
     while (!select.done())
     {
-        select.execute();
-        archives.push_back(std::string(archive));
+        if (select.execute())
+            archives.push_back(std::string(archive));
     }
 
     return archives;
 }
 
-void SampleDatabase::filterSources(const std::string &tagNotIn, const std::string &archiveNotIn)
+void SampleDatabase::filterSources()
 {
     sourcesList.clear();
 
-    Poco::Data::Statement select(*session);
-    std::string name, archive, folder;
-    int id, downloaded;
-    select << "SELECT Sources.id, Sources.name, Sources.archive, Sources.folder, Sources.downloaded "
-              "FROM Sources "
-              "JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
-              "JOIN Tags ON Tags.id = SourcesTags.tag_id "
-              "WHERE Tags.tag NOT IN ("
-           << tagNotIn << ") "
-           << "AND Sources.archive NOT IN ("
-           << archiveNotIn << ")",
-        Poco::Data::Keywords::into(id),
-        Poco::Data::Keywords::into(name),
-        Poco::Data::Keywords::into(archive),
-        Poco::Data::Keywords::into(folder),
-        Poco::Data::Keywords::into(downloaded),
-        Poco::Data::Keywords::range(0, 1);
+    std::vector<std::string> conditions = {};
+    if (filterConditions.tagNotIn.length() > 0)
+        conditions.push_back("Tags.tag NOT IN (" + filterConditions.tagNotIn + ")");
 
-    std::cout << "SampleDatabase::filterSources select:\n"
-              << select.toString() << std::endl;
+    if (filterConditions.archiveNotIn.length() > 0)
+        conditions.push_back("Tags.tag NOT IN (" + filterConditions.tagNotIn + ")");
 
-    Poco::Data::Statement selectSourcesTag(*session);
-    int tagId;
-    selectSourcesTag << "SELECT tag_id FROM SourcesTags WHERE source_id = ?",
-        Poco::Data::Keywords::into(tagId),
-        Poco::Data::Keywords::use(id),
-        Poco::Data::Keywords::range(0, 1);
+    if (filterConditions.downloadsOnly)
+        conditions.push_back("Sources.downloaded = 1");
 
-    Poco::Data::Statement selectTag(*session);
-    std::string tag;
-    selectTag << "SELECT tag FROM Tags WHERE id = ?",
-        Poco::Data::Keywords::into(tag),
-        Poco::Data::Keywords::use(tagId);
-
-    while (!select.done())
+    if (filterConditions.searchString.length() > 0)
     {
-        select.execute();
-        SourceInfo source;
-        source.archive = archive;
-        source.folder = folder;
-        source.name = name;
-        source.downloaded = (bool)downloaded;
+        conditions.push_back(
+            fmt::format("(Sources.name LIKE \"%{0}%\" OR Sources.description LIKE \"%{0}%\" OR Sources.folder LIKE \"%{0}%\")",
+                        filterConditions.searchString));
+    }
 
-        while (!selectSourcesTag.done())
+    std::string where = "";
+    for (int i = 0; i < conditions.size(); i++)
+    {
+        if (i == 0)
+            where += "WHERE ";
+        else
+            where += " AND ";
+        where += conditions[i];
+    }
+
+    try
+    {
+        Poco ::Data::Statement select(*session);
+        std::string name, archive, folder;
+        int id, downloaded;
+        select << "SELECT Sources.id, Sources.name, Sources.archive, Sources.folder, Sources.downloaded "
+                  "FROM Sources "
+                  "JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
+                  "JOIN Tags ON Tags.id = SourcesTags.tag_id "
+               << where,
+            Poco::Data::Keywords::into(id),
+            Poco::Data::Keywords::into(name),
+            Poco::Data::Keywords::into(archive),
+            Poco::Data::Keywords::into(folder),
+            Poco::Data::Keywords::into(downloaded),
+            Poco::Data::Keywords::range(0, 1);
+
+        std::cout << "\nSampleDatabase::filterSources select:\n  \""
+                  << select.toString() << "\"\n"
+                  << std::endl;
+
+        Poco::Data::Statement selectSourcesTag(*session);
+        int tagId;
+        selectSourcesTag << "SELECT tag_id FROM SourcesTags WHERE source_id = ?",
+            Poco::Data::Keywords::into(tagId),
+            Poco::Data::Keywords::use(id),
+            Poco::Data::Keywords::range(0, 1);
+
+        Poco::Data::Statement selectTag(*session);
+        std::string tag;
+        selectTag << "SELECT tag FROM Tags WHERE id = ?",
+            Poco::Data::Keywords::into(tag),
+            Poco::Data::Keywords::use(tagId);
+
+        while (!select.done())
         {
-            selectSourcesTag.execute();
-            selectTag.execute();
-            source.tags.push_back({std::string(tag)});
-        }
+            if (!select.execute())
+                continue;
+            SourceInfo source;
+            source.archive = archive;
+            source.folder = folder;
+            source.name = name;
+            source.downloaded = (bool)downloaded;
 
-        sourcesList.push_back(source);
+            while (!selectSourcesTag.done())
+            {
+                selectSourcesTag.execute();
+                selectTag.execute();
+                source.tags.push_back({std::string(tag)});
+            }
+
+            sourcesList.push_back(source);
+        }
+    }
+    catch (const Poco::DataException &e)
+    {
+        databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_QUERY_ERROR);
+        std::cerr << e.displayText() << std::endl;
+        return;
     }
 
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_UPDATED);

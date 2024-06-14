@@ -25,9 +25,21 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
     archives->accent_color = Color(30, 30, 30);
     archives->reposition();
 
+    searchbox = new TextInput(this);
+    searchbox->setSize(160, 20);
+    searchbox->setCallback(this);
+    Layout::below(searchbox, tags, Widget_Align::START, 5);
+
+    downloaded = new Checkbox(this);
+    downloaded->setSize(160, 20);
+    downloaded->label = "downloaded only";
+    downloaded->setChecked(false, false);
+    downloaded->setCallback(this);
+    Layout::below(downloaded, archives, Widget_Align::END, 5);
+
     source_list = new SourceList(this);
     source_list->setSize(width - 20, height - height / 3 - 30);
-    Layout::below(source_list, tags, Widget_Align::START, 10);
+    Layout::below(source_list, searchbox, Widget_Align::START, 10);
 
     loading = new Spinner(this);
     loading->setSize(100, 100);
@@ -38,7 +50,7 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
 
     setTagList(sd->getTagList());
     setArchiveList(sd->getArchiveList());
-    sd->filterSources(tagNotIn, archiveNotIn);
+    sd->filterSources();
 }
 
 void SourceBrowser::checkboxesUpdated(CheckboxList *group)
@@ -56,6 +68,7 @@ void SourceBrowser::checkboxesUpdated(CheckboxList *group)
         tagNotIn += "'" + tagList->at(i).data + "'";
         count++;
     }
+    sd->filterConditions.tagNotIn.assign(tagNotIn);
 
     archiveNotIn = "";
     std::vector<CheckboxList::CheckboxData> *archiveList = archives->getData();
@@ -70,8 +83,44 @@ void SourceBrowser::checkboxesUpdated(CheckboxList *group)
         archiveNotIn += "'" + archiveList->at(i).data + "'";
         count++;
     }
+    sd->filterConditions.archiveNotIn.assign(archiveNotIn);
 
-    sd->filterSources(tagNotIn, archiveNotIn);
+    sd->filterSources();
+}
+
+void SourceBrowser::checkboxUpdated(Checkbox *checkbox, bool value)
+{
+    sd->filterConditions.downloadsOnly = value;
+    sd->filterSources();
+}
+
+void SourceBrowser::textEntered(TextInput *textInput, std::string text)
+{
+    updateSearchString(text);
+}
+
+void SourceBrowser::textInputChanged(TextInput *textInput, std::string text)
+{
+    updateSearchString(text);
+}
+
+void SourceBrowser::updateSearchString(std::string text)
+{
+    // text.replace("/")
+    std::string search = "";
+    search.reserve(text.size());
+
+    for (int i = 0; i < text.size(); i++)
+    {
+        if (text[i] != '"')
+            search += text[i];
+    }
+
+    if (text.compare(sd->filterConditions.searchString) != 0)
+    {
+        sd->filterConditions.searchString.assign(search);
+        sd->filterSources();
+    }
 }
 
 void SourceBrowser::onNanoDisplay()
