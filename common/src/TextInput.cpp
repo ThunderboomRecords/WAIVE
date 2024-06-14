@@ -10,7 +10,8 @@ TextInput::TextInput(Widget *parent) noexcept
       fText(""),
       position(0),
       background_color(Color(230, 230, 230)),
-      text_color(Color(30, 30, 30))
+      text_color(Color(30, 30, 30)),
+      callback(nullptr)
 {
     loadSharedResources();
 }
@@ -23,6 +24,14 @@ void TextInput::setText(const char *newText, bool sendCallback)
     if (sendCallback && callback != nullptr)
         callback->textEntered(this, fText);
 
+    repaint();
+}
+
+void TextInput::undo()
+{
+    // In case the text is invalid by reciever of callback,
+    // can revert the text back to it's original
+    fText.assign(fTextStart);
     repaint();
 }
 
@@ -96,10 +105,9 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
     {
     case 36:
         // enter
-        if (callback != nullptr && fText.size() > 0 && fText.compare(fTextStart) != 0)
+        if (callback != nullptr && fText.compare(fTextStart) != 0)
             callback->textEntered(this, fText);
-        else if (fText.size() == 0)
-            fText.assign(fTextStart);
+
         hasKeyFocus = false;
         break;
     case 22:
@@ -131,13 +139,16 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
         break;
     }
 
+    if (callback != nullptr)
+        callback->textInputChanged(this, fText);
+
     repaint();
     return true;
 }
 
 bool TextInput::onKeyboard(const KeyboardEvent &ev)
 {
-    if (!hasKeyFocus)
+    if (!hasKeyFocus || !ev.press)
         return false;
 
     switch (ev.key)

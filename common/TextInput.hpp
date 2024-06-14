@@ -16,12 +16,14 @@ public:
     public:
         virtual ~Callback(){};
         virtual void textEntered(TextInput *textInput, std::string text) = 0;
+        virtual void textInputChanged(TextInput *textInput, std::string text) = 0;
     };
 
     explicit TextInput(Widget *widget) noexcept;
 
     void setCallback(Callback *cb);
     void setText(const char *text, bool sendCallback = false);
+    void undo();
 
     float font_size;
     Color background_color, text_color;
