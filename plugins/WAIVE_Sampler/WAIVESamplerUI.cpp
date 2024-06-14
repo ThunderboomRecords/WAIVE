@@ -197,7 +197,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     sample_map_menu = new Menu(this);
     for (int i = 1; i < 9; i++)
-        sample_map_menu->addItem(fmt::format("Add to slot {:d}", i).c_str());
+        sample_map_menu->addItem(fmt::format("Add to slot {:d}", i));
 
     sample_map_menu->setWidth(100);
     sample_map_menu->setFont("VG5000", VG5000, VG5000_len);
@@ -227,8 +227,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     source_browser_root = new SourceBrowserRoot(getApp(), UI_W, UI_H - 40);
     source_browser_root->setTitle("Browse archives...");
-    // source_browser_root->setVisible(false);
-    // source_browser_root;
 
     source_browser = new SourceBrowser(*source_browser_root, &plugin->sd);
 

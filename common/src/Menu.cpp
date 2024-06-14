@@ -5,11 +5,6 @@ Menu::Menu(Widget *parent) noexcept
       highlighted_item(-1),
       scroll_index(0),
       display_number(4),
-      font_size(12.0f),
-      background_color(Color(200, 200, 200)),
-      text_color(Color(30, 30, 30)),
-      highlight_color(Color(180, 180, 180)),
-      border_color(Color(120, 120, 120)),
       has_focus(false)
 {
     loadSharedResources();
@@ -28,7 +23,7 @@ void Menu::clear()
     scroll_index = 0;
 }
 
-void Menu::addItem(const char *item)
+void Menu::addItem(const std::string &item)
 {
     items.push_back(item);
     if (items.size() == 1)
@@ -76,7 +71,7 @@ void Menu::onNanoDisplay()
     }
 
     beginPath();
-    strokeColor(border_color);
+    strokeColor(stroke_color);
     strokeWidth(1);
     rect(1, 1, width - 2, height - 2);
     stroke();
@@ -89,7 +84,7 @@ void Menu::onNanoDisplay()
         fontFaceId(font);
         fillColor(text_color);
         textAlign(Align::ALIGN_LEFT | Align::ALIGN_TOP);
-        text(2, i * item_height + 2, items[scroll_index + i], nullptr);
+        text(2, i * item_height + 2, items[scroll_index + i].c_str(), NULL);
         closePath();
     }
 
@@ -97,7 +92,7 @@ void Menu::onNanoDisplay()
     {
         float steps = height / items.size();
         beginPath();
-        fillColor(border_color);
+        fillColor(stroke_color);
         rect(width - 4, scroll_index * steps, 4, steps * display_number);
         fill();
         closePath();
@@ -237,7 +232,7 @@ void Menu::setItem(int item, bool sendCallback = false)
         callback->onMenuItemSelection(this, highlighted_item, items[highlighted_item]);
 }
 
-const char *Menu::getItem(int item) const
+const std::string &Menu::getItem(int item) const
 {
     try
     {

@@ -15,24 +15,21 @@ public:
     {
     public:
         virtual ~Callback(){};
-        virtual void onMenuItemSelection(Menu *menu, int item, const char *value) = 0;
+        virtual void onMenuItemSelection(Menu *menu, int item, const std::string &value) = 0;
     };
 
     explicit Menu(Widget *parent) noexcept;
 
     void setFont(const char *name, const uchar *data, uint dataSize);
     void setCallback(Callback *cb);
-    void addItem(const char *item);
+    void addItem(const std::string &item);
     void clear();
     void setDisplayNumber(int number);
     void setItem(int item, bool sendCallback);
     int getNumberItems() const;
-    const char *getItem(int item) const;
+    const std::string &getItem(int item) const;
     void calculateHeight();
     void positionTo(NanoSubWidget *widget);
-
-    Color background_color, text_color, highlight_color, border_color;
-    float font_size;
 
 protected:
     void onNanoDisplay() override;
@@ -45,7 +42,7 @@ private:
     Callback *callback;
 
     FontId font;
-    std::vector<const char *> items;
+    std::vector<std::string> items;
     int highlighted_item;
     int scroll_index;
     int display_number;

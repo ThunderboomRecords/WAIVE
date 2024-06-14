@@ -1,17 +1,14 @@
 #ifndef DROPDOWN_HPP_INCLUDED
 #define DROPDOWN_HPP_INCLUDED
 
-#include "Window.hpp"
-#include "Widget.hpp"
-#include "NanoVG.hpp"
-#include <iostream>
+#include "WAIVEWidget.hpp"
 
 #include "Menu.hpp"
 
 START_NAMESPACE_DISTRHO
 
-class DropDown : public NanoSubWidget,
-                 public Menu::Callback
+class DropDown : public WAIVEWidget,
+                 Menu::Callback
 {
 public:
     class Callback
@@ -30,13 +27,12 @@ public:
     void setItem(int item, bool sendCallback);
 
     Menu *menu;
-    Color background_color, text_color, highlight_color, border_color;
-    float font_size;
 
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &ev) override;
-    void onMenuItemSelection(Menu *menu, int item, const char *value) override;
+    bool onMotion(const MotionEvent &ev) override;
+    void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
 
 private:
     Callback *callback;
@@ -46,6 +42,7 @@ private:
     std::string currentItem;
     std::vector<std::string> items;
     int selected_item, display_number;
+    bool hover;
 
     DISTRHO_LEAK_DETECTOR(DropDown);
 };

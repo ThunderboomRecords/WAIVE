@@ -43,7 +43,7 @@ protected:
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
     bool onScroll(const ScrollEvent &) override;
-    void onMenuItemSelection(Menu *menu, int item, const char *value) override;
+    void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
 
 private:
     enum DragAction

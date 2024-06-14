@@ -32,9 +32,10 @@ public:
     // Color values
     Color background_color, foreground_color, highlight_color, stroke_color, accent_color;
     Color text_color;
+    float font_size;
 
 protected:
-    float scale_factor, font_size;
+    float scale_factor;
 };
 
 END_NAMESPACE_DISTRHO

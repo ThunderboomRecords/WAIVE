@@ -1,13 +1,8 @@
 #include "DropDown.hpp"
 
 DropDown::DropDown(Widget *parent) noexcept
-    : NanoSubWidget(parent),
-      font_size(12.0f),
+    : WAIVEWidget(parent),
       font(0),
-      background_color(Color(200, 200, 200)),
-      text_color(Color(30, 30, 30)),
-      highlight_color(Color(180, 180, 180)),
-      border_color(Color(120, 120, 120)),
       selected_item(0),
       menu(nullptr),
       callback(nullptr)
@@ -25,7 +20,7 @@ void DropDown::setDisplayNumber(int number)
     display_number = number;
 }
 
-void DropDown::onMenuItemSelection(Menu *menu, int item, const char *value)
+void DropDown::onMenuItemSelection(Menu *menu, int item, const std::string &value)
 {
     currentItem.assign(value);
     selected_item = item;
@@ -96,6 +91,29 @@ bool DropDown::onMouse(const MouseEvent &ev)
         return true;
     }
 
+    return false;
+}
+
+bool DropDown::onMotion(const MotionEvent &ev)
+{
+    if (contains(ev.pos))
+    {
+        if (!hover)
+        {
+            getWindow().setCursor(kMouseCursorHand);
+            hover = true;
+        }
+        return true;
+    }
+    else
+    {
+        if (hover)
+        {
+            getWindow().setCursor(kMouseCursorArrow);
+            hover = false;
+        }
+        return false;
+    }
     return false;
 }
 
