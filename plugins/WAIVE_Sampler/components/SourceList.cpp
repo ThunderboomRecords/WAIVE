@@ -5,7 +5,10 @@ START_NAMESPACE_DISTRHO
 SourceList::SourceList(Widget *widget)
     : WAIVEWidget(widget),
       margin(5.0f),
-      padding(5.f)
+      padding(5.f),
+      rowHeight(30.f),
+      scrollBarWidth(8),
+      scrolling(false)
 {
     loadSharedResources();
 }
@@ -15,8 +18,14 @@ void SourceList::onNanoDisplay()
     const float width = getWidth();
     const float height = getHeight();
 
-    float rowWidth = width - 2.f * padding;
-    float rowHeight = 2.f * font_size;
+    float rowWidth = width - 2.f * padding - scrollBarWidth;
+    rowHeight = 2.f * font_size;
+
+    int maxDisplay = height / (rowHeight + margin);
+    int n = source_list.size();
+
+    // update scrollPos incase number of items has changed
+    clampScrollPos();
 
     beginPath();
     fillColor(background_color);
@@ -28,13 +37,28 @@ void SourceList::onNanoDisplay()
     float y = 0.f;
     float x = padding;
 
-    for (int i = 0; i < source_list.size(); i++)
+    for (int i = 0; i < n; i++)
     {
         y = i * (rowHeight + margin) + padding - scrollPos;
 
         if (y > height || y < -rowHeight)
             continue;
         drawSourceInfo(source_list[i], x, y, rowWidth, rowHeight);
+    }
+
+    // scroll bar
+    if (n > maxDisplay)
+    {
+        float steps = height / n;
+        beginPath();
+        fillColor(stroke_color);
+        rect(
+            width - scrollBarWidth,
+            (1 + scrollPos / rowHeight) * steps,
+            scrollBarWidth,
+            steps * maxDisplay);
+        fill();
+        closePath();
     }
 }
 
@@ -63,21 +87,54 @@ bool SourceList::onScroll(const ScrollEvent &ev)
     if (!contains(ev.pos))
         return false;
 
-    scrollPos += ev.delta.getY() * 10;
-    scrollPos = std::max(scrollPos, 0.f);
+    scrollPos -= ev.delta.getY() * 10;
+    clampScrollPos();
 
     repaint();
 
     return true;
 }
 
+void SourceList::clampScrollPos()
+{
+    scrollPos = std::max(scrollPos, 0.f);
+    scrollPos = std::min(scrollPos, (source_list.size() + 2) * rowHeight - getHeight());
+}
+
 bool SourceList::onMotion(const MotionEvent &ev)
 {
+    if (!isVisible())
+        return false;
+
+    if (scrolling)
+    {
+        scrollPos = (source_list.size() * rowHeight) * ev.pos.getY() / getHeight();
+        clampScrollPos();
+
+        repaint();
+
+        return true;
+    }
+
     return false;
 }
 
 bool SourceList::onMouse(const MouseEvent &ev)
 {
+    if (!isVisible())
+        return false;
+
+    if (!scrolling && ev.press && contains(ev.pos))
+    {
+        if (ev.pos.getX() > getWidth() - scrollBarWidth)
+        {
+            scrolling = true;
+            return true;
+        }
+    }
+    else if (scrolling && !ev.press)
+        scrolling = false;
+
     return false;
 }
 

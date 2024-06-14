@@ -10,14 +10,14 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
 
     tags = new CheckboxList(this);
     tags->setAbsolutePos(10, 10);
-    tags->setSize(width / 3, height / 3);
+    tags->setSize((width - 30) / 2, height / 3);
     tags->setCallback(this);
     tags->label = "categories";
     tags->accent_color = Color(30, 30, 30);
     tags->reposition();
 
     archives = new CheckboxList(this);
-    archives->setSize(width / 4, height / 3);
+    archives->setSize((width - 30) / 2, height / 3);
     Layout::rightOf(archives, tags, Widget_Align::START, 10);
     archives->setColumnCount(1);
     archives->setCallback(this);
@@ -26,9 +26,8 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
     archives->reposition();
 
     source_list = new SourceList(this);
-    source_list->setSize(width / 3 + width / 4 + 10, 200);
+    source_list->setSize(width - 20, height - height / 3 - 30);
     Layout::below(source_list, tags, Widget_Align::START, 10);
-    // source_list->source_list = &sd->sourcesList;
 
     loading = new Spinner(this);
     loading->setSize(100, 100);

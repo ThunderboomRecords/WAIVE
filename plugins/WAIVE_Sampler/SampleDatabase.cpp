@@ -154,6 +154,7 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
                 "archive TEXT, "
                 "folder TEXT, "
                 "downloaded INT, "
+                "license INT, "
                 "UNIQUE(name, archive, folder))",
         Poco::Data::Keywords::now;
 
@@ -177,6 +178,12 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
                 "FOREIGN KEY (sample_id) REFERENCES Samples(id), "
                 "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
                 "PRIMARY KEY (sample_id, tag_id))",
+        Poco::Data::Keywords::now;
+
+    // License database
+    *session << "CREATE TABLE IF NOT EXISTS License ("
+                "id INTEGER PRIMARY KEY, "
+                "tag TEXT UNIQUE)",
         Poco::Data::Keywords::now;
 
     // HTTP networking
@@ -577,7 +584,7 @@ void SampleDatabase::filterSources(const std::string &tagNotIn, const std::strin
               "JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
               "JOIN Tags ON Tags.id = SourcesTags.tag_id "
               "WHERE Tags.tag NOT IN ("
-           << tagNotIn << ")"
+           << tagNotIn << ") "
            << "AND Sources.archive NOT IN ("
            << archiveNotIn << ")",
         Poco::Data::Keywords::into(id),
