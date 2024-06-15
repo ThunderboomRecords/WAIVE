@@ -12,6 +12,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     // register notifications
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
 
     plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
     plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
@@ -597,6 +600,29 @@ void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
     {
         import_spinner->setLoading(true);
     }
+    pTask->release();
+}
+
+void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
+{
+    Poco::Task *pTask = pNf->task();
+    std::cout << "WAIVESamplerUI::onTaskProgress: " << pTask->name() << " " << pTask->progress() << std::endl;
+    if (pTask->name().compare("FeatureExtractorTask") == 0)
+        source_display->repaint();
+    pTask->release();
+}
+
+void WAIVESamplerUI::onTaskCancelled(Poco::TaskCancelledNotification *pNf)
+{
+    Poco::Task *pTask = pNf->task();
+    std::cout << "WAIVESamplerUI::onTaskCancelled: " << pTask->name() << std::endl;
+    pTask->release();
+}
+
+void WAIVESamplerUI::onTaskFailed(Poco::TaskFailedNotification *pNf)
+{
+    Poco::Task *pTask = pNf->task();
+    std::cout << "WAIVESamplerUI::onTaskFailed: " << pTask->name() << std::endl;
     pTask->release();
 }
 

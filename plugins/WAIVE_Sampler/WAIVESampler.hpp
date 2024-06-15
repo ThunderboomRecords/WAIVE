@@ -65,6 +65,7 @@ enum PlayState
 };
 
 class ImporterTask;
+class FeatureExtractorTask;
 
 struct SamplePlayer
 {
@@ -173,6 +174,7 @@ protected:
 private:
     Poco::TaskManager taskManager;
     ImporterTask *importerTask;
+    FeatureExtractorTask *sourceFeatureTask;
     ThreadsafeQueue<std::string> import_queue;
     Poco::BasicEvent<const PluginUpdate> pluginUpdate;
 
@@ -190,8 +192,6 @@ private:
     std::vector<std::vector<int64_t>> mTSNEInputShape, mTSNEOutputShape;
     std::vector<float> mTSNEInput, mTSNEOutput;
     std::vector<Ort::Value> mTSNEInputTensor, mTSNEOutputTensor;
-
-    Gist<float> gist;
 
     SampleDatabase sd;
     OSCClient oscClient;
@@ -215,6 +215,7 @@ private:
     friend class WAIVESamplerUI;
     friend class SampleEditorControls;
     friend class ImporterTask;
+    friend class FeatureExtractorTask;
 };
 
 class ImporterTask : public Poco::Task
@@ -228,6 +229,16 @@ private:
     ThreadsafeQueue<std::string> *_queue;
 
     void import(const std::string &fp);
+};
+
+class FeatureExtractorTask : public Poco::Task
+{
+public:
+    FeatureExtractorTask(WAIVESampler *ws);
+    void runTask() override;
+
+private:
+    WAIVESampler *_ws;
 };
 
 END_NAMESPACE_DISTRHO

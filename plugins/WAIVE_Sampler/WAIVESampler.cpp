@@ -81,6 +81,43 @@ void ImporterTask::import(const std::string &fp)
     std::cout << " - import done\n";
 };
 
+FeatureExtractorTask::FeatureExtractorTask(WAIVESampler *ws) : Poco::Task("FeatureExtractorTask"), _ws(ws) {}
+
+void FeatureExtractorTask::runTask()
+{
+    if (_ws->fSourceLength == 0)
+        return;
+
+    int frame = 0;
+    int length = _ws->fSourceLength;
+    Gist<float> gist(512, (int)_ws->getSampleRate());
+    _ws->fSourceFeatures.clear();
+
+    float pStep = (float)gist.getAudioFrameSize() / length;
+    float p = 0.0f;
+
+    while (frame < length - gist.getAudioFrameSize() && !isCancelled())
+    {
+        gist.processAudioFrame(std::vector<float>(_ws->fSourceWaveform.begin() + frame, _ws->fSourceWaveform.begin() + frame + gist.getAudioFrameSize()));
+        float onset = gist.spectralDifferenceHWR();
+        if (onset > 150.0f)
+        {
+            // TODO: use mutex to reserve vector operation
+            _ws->fSourceFeatures.push_back({FeatureType::Onset,
+                                            "onset",
+                                            onset,
+                                            frame,
+                                            frame});
+        }
+        p += pStep;
+        setProgress(p);
+
+        frame += gist.getAudioFrameSize();
+    }
+
+    setProgress(1.0f);
+}
+
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                sampleRate(getSampleRate()),
                                fSampleLoaded(false),
@@ -88,13 +125,13 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                fSourceLoaded(false),
                                fCurrentSample(nullptr),
                                ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
-                               gist({512, (int)getSampleRate()}),
                                oscClient("localhost", 8000),
-                               taskManager("import manager", 1, 8, 60, 0),
+                               taskManager("plugin manager", 1, 8, 60, 0),
                                httpClient(&taskManager),
                                sd(&httpClient),
                                fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow),
-                               importerTask(new ImporterTask(this, &import_queue))
+                               importerTask(new ImporterTask(this, &import_queue)),
+                               sourceFeatureTask(new FeatureExtractorTask(this))
 {
     if (isDummyInstance())
     {
@@ -456,7 +493,8 @@ void WAIVESampler::initState(unsigned int index, String &stateKey, String &defau
 }
 
 void WAIVESampler::run(
-    const float **,              // incoming audio
+    const float **, // incoming audio        sourceFeatureTask = new FeatureExtractorTask(this);
+
     float **outputs,             // outgoing audio
     uint32_t numFrames,          // size of block to process
     const MidiEvent *midiEvents, // MIDI pointer
@@ -553,7 +591,19 @@ void WAIVESampler::run(
 
 void WAIVESampler::loadSource(const char *fp)
 {
-    // LOG_LOCATION
+    std::cout << "WAIVESampler::loadSource" << std::endl;
+    std::cout << "taskState: " << sourceFeatureTask->state() << std::endl;
+
+    if (sourceFeatureTask->state() != Poco::Task::TASK_FINISHED)
+    {
+        std::cout << "Waiting for sourceFeatureTask to stop running..." << std::endl;
+        sourceFeatureTask->cancel();
+        while (sourceFeatureTask->state() == Poco::Task::TASK_RUNNING)
+        {
+        }
+        std::cout << "sourceFeatureTask stopped\n";
+    }
+
     fSourceLoaded = false;
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
 
@@ -566,7 +616,11 @@ void WAIVESampler::loadSource(const char *fp)
         if (fCurrentSample->sourceStart >= fSourceLength)
             selectWaveform(&fSourceWaveform, 0);
 
-        getOnsets();
+        if (sourceFeatureTask != NULL)
+            sourceFeatureTask->release();
+
+        sourceFeatureTask = new FeatureExtractorTask(this);
+        taskManager.start(sourceFeatureTask);
 
         pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
     }
@@ -904,31 +958,6 @@ void WAIVESampler::getFeatures(std::vector<float> *wf, std::vector<float> *featu
         //     melofs << "\n";
     }
     // melofs.close();
-}
-
-void WAIVESampler::getOnsets()
-{
-    if (fSourceLength == 0)
-        return;
-
-    int frame = 0;
-    fSourceFeatures.clear();
-
-    while (frame < fSourceLength - gist.getAudioFrameSize())
-    {
-        gist.processAudioFrame(std::vector<float>(fSourceWaveform.begin() + frame, fSourceWaveform.begin() + frame + gist.getAudioFrameSize()));
-        float onset = gist.spectralDifferenceHWR();
-        if (onset > 150.0f)
-        {
-            fSourceFeatures.push_back({FeatureType::Onset,
-                                       "onset",
-                                       onset,
-                                       frame,
-                                       frame});
-        }
-
-        frame += gist.getAudioFrameSize();
-    }
 }
 
 void WAIVESampler::sampleRateChanged(double newSampleRate)
