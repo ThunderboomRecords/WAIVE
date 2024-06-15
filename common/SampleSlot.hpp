@@ -20,7 +20,7 @@ public:
     {
     public:
         virtual ~Callback(){};
-        virtual void sampleTriggered(SampleSlot *slot) = 0;
+        virtual void sampleSelected(SampleSlot *slot) = 0;
         virtual void sampleSlotCleared(SampleSlot *slot) = 0;
     };
     explicit SampleSlot(Widget *widget) noexcept;

@@ -32,7 +32,10 @@ SamplePlayer *SampleSlot::getSamplePlayer() const
 
 bool SampleSlot::onMouse(const MouseEvent &ev)
 {
-    if (ev.press && ev.button == kMouseButtonRight && contains(ev.pos))
+    if (!ev.press || !contains(ev.pos))
+        return false;
+
+    if (ev.button == kMouseButtonRight)
     {
         contextMenu->setAbsolutePos(
             ev.pos.getX() + getAbsoluteX() - 2,
@@ -41,6 +44,11 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
         contextMenu->show();
 
         return true;
+    }
+    else if (ev.button == kMouseButtonLeft)
+    {
+        if (callback != nullptr)
+            callback->sampleSelected(this);
     }
 
     return false;

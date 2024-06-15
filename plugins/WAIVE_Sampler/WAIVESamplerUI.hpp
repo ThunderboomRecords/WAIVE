@@ -86,7 +86,7 @@ protected:
     void textEntered(TextInput *textInput, std::string text) override;
     void textInputChanged(TextInput *textInput, std::string text) override;
     void dropdownSelection(DropDown *widget, int item) override;
-    void sampleTriggered(SampleSlot *slot) override;
+    void sampleSelected(SampleSlot *slot) override;
     void sampleSlotCleared(SampleSlot *slot) override;
 
     void openFileBrowser(char *state, bool multiple);

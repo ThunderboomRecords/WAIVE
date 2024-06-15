@@ -477,11 +477,20 @@ void WAIVESamplerUI::dropdownSelection(DropDown *widget, int item)
     }
 }
 
-void WAIVESamplerUI::sampleTriggered(SampleSlot *slot){};
+void WAIVESamplerUI::sampleSelected(SampleSlot *slot)
+{
+    for (int i = 0; i < sampleSlots.size(); i++)
+    {
+        if (sampleSlots[i] != slot)
+            continue;
+
+        plugin->loadSample(sampleSlots[i]->getSamplePlayer()->sampleInfo);
+        return;
+    }
+};
 
 void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot)
 {
-    std::cout << "WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot)\n";
     for (int i = 0; i < sampleSlots.size(); i++)
     {
         if (sampleSlots[i] != slot)
@@ -490,7 +499,6 @@ void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot)
         plugin->clearSamplePlayer(*sampleSlots[i]->getSamplePlayer());
         return;
     }
-    std::cout << "not found\n";
 };
 
 void WAIVESamplerUI::onNanoDisplay()
