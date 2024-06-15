@@ -104,15 +104,14 @@ bool Menu::onMouse(const MouseEvent &ev)
     if (!isVisible() || items.size() == 0)
         return false;
 
+    if (!contains(ev.pos))
+    {
+        hide();
+        return false;
+    }
+
     if (ev.press && ev.button == MouseButton::kMouseButtonLeft && has_focus)
     {
-        if (!contains(ev.pos))
-        {
-            hide();
-            repaint();
-            return false;
-        }
-
         if (highlighted_item < 0)
             return false;
 
@@ -120,7 +119,7 @@ bool Menu::onMouse(const MouseEvent &ev)
             callback->onMenuItemSelection(this, highlighted_item, items[highlighted_item]);
 
         hide();
-        repaint();
+        getParentWidget()->repaint();
         return true;
     }
 
@@ -132,14 +131,17 @@ bool Menu::onMotion(const MotionEvent &ev)
     if (!isVisible() || items.size() == 0)
         return false;
 
-    if (!contains(ev.pos) && has_focus)
+    bool hover = contains(ev.pos);
+
+    if (!hover && has_focus)
     {
         hide(); // maybe not?
-        repaint();
         has_focus = false;
+        getParentWidget()->repaint();
+
         return false;
     }
-    else if (contains(ev.pos))
+    else if (hover)
     {
         has_focus = true;
         const float height = getHeight();
@@ -149,6 +151,7 @@ bool Menu::onMotion(const MotionEvent &ev)
         repaint();
         return true;
     }
+
     return false;
 }
 
@@ -158,10 +161,7 @@ bool Menu::onScroll(const ScrollEvent &ev)
         return false;
 
     if (!contains(ev.pos))
-    {
-        hide();
         return false;
-    }
 
     int delta = 0;
     if (ev.delta.getY() >= 0.5f)
@@ -191,12 +191,14 @@ bool Menu::onKeyboard(const KeyboardEvent &ev)
     case kKeyEscape:
         has_focus = false;
         hide();
+        getParentWidget()->repaint();
         return true;
         break;
     case kKeyEnter:
         if (callback != nullptr)
             callback->onMenuItemSelection(this, highlighted_item, items[highlighted_item]);
         hide();
+        getParentWidget()->repaint();
         return true;
     case kKeyUp:
         if (highlighted_item > 0)
@@ -232,7 +234,7 @@ void Menu::setItem(int item, bool sendCallback = false)
         callback->onMenuItemSelection(this, highlighted_item, items[highlighted_item]);
 }
 
-const std::string &Menu::getItem(int item) const
+const std::string Menu::getItem(int item) const
 {
     try
     {
@@ -240,7 +242,7 @@ const std::string &Menu::getItem(int item) const
     }
     catch (const std::exception &e)
     {
-        return "";
+        return std::string();
     }
 }
 

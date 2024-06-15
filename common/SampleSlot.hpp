@@ -1,38 +1,34 @@
 #ifndef SAMPLE_SLOT_HPP_INCLUDED
 #define SAMPLE_SLOT_HPP_INCLUDED
 
-#include <iostream>
-
-#include "Window.hpp"
-#include "Widget.hpp"
-#include "NanoVG.hpp"
-
 #include <fmt/core.h>
 
-#include "DropDown.hpp"
-#include "SimpleButton.hpp"
+#include "Menu.hpp"
 #include "WAIVESampler.hpp"
+#include "WidgetGroup.hpp"
 
 using namespace fmt::v10;
 
 START_NAMESPACE_DISTRHO
 
-class SampleSlot : public NanoSubWidget,
-                   public IdleCallback
+class SampleSlot : public WidgetGroup,
+                   public IdleCallback,
+                   public Menu::Callback
 {
 public:
     class Callback
     {
     public:
         virtual ~Callback(){};
-        virtual void sampleTriggered(int id) = 0;
-        virtual void sampleRemoved(int id) = 0;
+        virtual void sampleTriggered(SampleSlot *slot) = 0;
+        virtual void sampleSlotCleared(SampleSlot *slot) = 0;
     };
-    explicit SampleSlot(Widget *widget, DropDown *midi_select, Button *trigger_btn) noexcept;
-    void setSamplePlayer(SamplePlayer *sp);
-    void updateWidgetPositions();
+    explicit SampleSlot(Widget *widget) noexcept;
 
-    Color background_color, highlight_color;
+    void setCallback(Callback *cb);
+    void setSamplePlayer(SamplePlayer *sp);
+    SamplePlayer *getSamplePlayer() const;
+    int slotId;
 
 protected:
     void onNanoDisplay() override;
@@ -40,16 +36,19 @@ protected:
     bool onMotion(const MotionEvent &) override;
     void idleCallback();
 
+    void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
+
 private:
+    Callback *callback;
+
     SamplePlayer *samplePlayer;
-    DropDown *midi_number;
-    Button *trigger_btn;
+    PlayState lastPlaying;
 
-    DISTRHO_LEAK_DETECTOR(SampleSlot);
-
-    PlayState lastPlaying = PlayState::STOPPED;
+    Menu *contextMenu;
 
     float animation_step;
+
+    DISTRHO_LEAK_DETECTOR(SampleSlot);
 };
 
 END_NAMESPACE_DISTRHO

@@ -2,27 +2,22 @@
 
 START_NAMESPACE_DISTRHO
 
-SampleSlot::SampleSlot(Widget *parent, DropDown *midi_select, Button *trigger_btn) noexcept
-    : NanoSubWidget(parent),
-      background_color(Color(200, 200, 200)),
-      highlight_color(Color(30, 30, 30)),
+SampleSlot::SampleSlot(Widget *parent) noexcept
+    : WidgetGroup(parent),
       samplePlayer(nullptr),
-      midi_number(midi_select),
-      trigger_btn(trigger_btn),
-      animation_step(1.0f)
+      animation_step(1.0f),
+      lastPlaying(PlayState::STOPPED),
+      callback(nullptr)
 {
     loadSharedResources();
-
-    trigger_btn->fontSize(16.0f);
-    trigger_btn->setLabel("▶");
-    trigger_btn->setSize(20, 20);
-
-    for (int i = 1; i < 128; i++)
-        midi_number->addItem(fmt::format("{:d}", i).c_str());
-
-    midi_number->setDisplayNumber(16);
-    midi_number->font_size = 16.0f;
-    midi_number->setSize(45, 20);
+    contextMenu = new Menu(parent);
+    contextMenu->addItem("Clear");
+    contextMenu->setCallback(this);
+    contextMenu->setDisplayNumber(1);
+    contextMenu->setSize(100, 30);
+    contextMenu->setFont("VG5000", VG5000, VG5000_len);
+    contextMenu->hide();
+    contextMenu->calculateHeight();
 }
 
 void SampleSlot::setSamplePlayer(SamplePlayer *sp)
@@ -30,19 +25,40 @@ void SampleSlot::setSamplePlayer(SamplePlayer *sp)
     samplePlayer = sp;
 }
 
-void SampleSlot::updateWidgetPositions()
+SamplePlayer *SampleSlot::getSamplePlayer() const
 {
-    const Rectangle<int> area = getAbsoluteArea();
-
-    trigger_btn->setAbsoluteX(area.getX() + 4);
-    trigger_btn->setAbsoluteY(area.getY() + (area.getHeight() - trigger_btn->getHeight()) / 2);
-
-    midi_number->setAbsoluteX(area.getX() + area.getWidth() - midi_number->getWidth() - 4);
-    midi_number->setAbsoluteY(area.getY() + (area.getHeight() - midi_number->getHeight()) / 2);
+    return samplePlayer;
 }
 
-bool SampleSlot::onMouse(const MouseEvent &ev) { return false; }
+bool SampleSlot::onMouse(const MouseEvent &ev)
+{
+    if (ev.press && ev.button == kMouseButtonRight && contains(ev.pos))
+    {
+        contextMenu->setAbsolutePos(
+            ev.pos.getX() + getAbsoluteX() - 2,
+            ev.pos.getY() + getAbsoluteY() - 8);
+        contextMenu->toFront();
+        contextMenu->show();
+
+        return true;
+    }
+
+    return false;
+}
+
 bool SampleSlot::onMotion(const MotionEvent &ev) { return false; }
+
+void SampleSlot::onMenuItemSelection(Menu *menu, int item, const std::string &value)
+{
+    if (menu == contextMenu)
+    {
+        if (item == 0)
+        {
+            if (callback != nullptr)
+                callback->sampleSlotCleared(this);
+        }
+    }
+}
 
 void SampleSlot::onNanoDisplay()
 {
@@ -104,6 +120,11 @@ void SampleSlot::idleCallback()
 
     if (needs_repaint)
         repaint();
+}
+
+void SampleSlot::setCallback(Callback *cb)
+{
+    callback = cb;
 }
 
 END_NAMESPACE_DISTRHO

@@ -4,17 +4,27 @@
 #include "NanoVG.hpp"
 #include "Widget.hpp"
 
-enum class Widget_Align
+enum Widget_Align
 {
     START = 0,
     CENTER,
     END
 };
 
+enum Position
+{
+    ON_TOP = 0,
+    RIGHT_OF,
+    LEFT_OF,
+    ABOVE,
+    BELOW
+};
+
 START_NAMESPACE_DISTRHO
 
 namespace Layout
 {
+    void position(Position p, NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, int padding);
 
     void rightOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, int padding);
 

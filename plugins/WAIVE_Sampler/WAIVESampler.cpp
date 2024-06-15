@@ -118,6 +118,21 @@ void FeatureExtractorTask::runTask()
     setProgress(1.0f);
 }
 
+void SamplePlayer::clear()
+{
+    this->waveform = nullptr;
+    this->length = 0;
+    this->ptr = 0;
+    this->midi = -1;
+    this->gain = 1.0f;
+    this->velocity = 0.8f;
+    this->pitch = 60.f;
+    this->pan = 0.0f;
+    this->state = PlayState::STOPPED;
+    this->active = false;
+    this->sampleInfo = nullptr;
+}
+
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                sampleRate(getSampleRate()),
                                fSampleLoaded(false),
@@ -592,16 +607,13 @@ void WAIVESampler::run(
 void WAIVESampler::loadSource(const char *fp)
 {
     std::cout << "WAIVESampler::loadSource" << std::endl;
-    std::cout << "taskState: " << sourceFeatureTask->state() << std::endl;
 
     if (sourceFeatureTask->state() != Poco::Task::TASK_FINISHED)
     {
-        std::cout << "Waiting for sourceFeatureTask to stop running..." << std::endl;
         sourceFeatureTask->cancel();
         while (sourceFeatureTask->state() == Poco::Task::TASK_RUNNING)
         {
         }
-        std::cout << "sourceFeatureTask stopped\n";
     }
 
     fSourceLoaded = false;
@@ -885,6 +897,18 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
     sp.active = true;
     sp.sampleInfo = info;
 
+    pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
+    samplePlayerMtx.unlock();
+}
+
+void WAIVESampler::clearSamplePlayer(SamplePlayer &sp)
+{
+    std::cout << "WAIVESampler::clearSamplePlayer\n";
+    samplePlayerMtx.lock();
+    sp.state = PlayState::STOPPED;
+    sp.active = false;
+    sp.sampleInfo = nullptr;
+    sp.length = 0;
     pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
     samplePlayerMtx.unlock();
 }

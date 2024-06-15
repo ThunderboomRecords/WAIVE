@@ -80,6 +80,7 @@ struct SamplePlayer
     PlayState state = PlayState::STOPPED;
     bool active = false;
     std::shared_ptr<SampleInfo> sampleInfo = nullptr;
+    void clear();
 };
 
 int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate);
@@ -163,6 +164,7 @@ protected:
     void addCurrentSampleToLibrary();
     void renderSample();
     void loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer);
+    void clearSamplePlayer(SamplePlayer &sp);
     void triggerPreview();
     std::pair<float, float> getEmbedding(std::vector<float> *wf);
     void getFeatures(std::vector<float> *wf, std::vector<float> *feature);

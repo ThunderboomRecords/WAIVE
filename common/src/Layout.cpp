@@ -2,6 +2,30 @@
 
 START_NAMESPACE_DISTRHO
 
+void Layout::position(Position p, NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, int padding)
+{
+    switch (p)
+    {
+    case Position::ON_TOP:
+        Layout::onTop(w1, w2, h_align, v_align, padding);
+        break;
+    case Position::ABOVE:
+        Layout::above(w1, w2, h_align, padding);
+        break;
+    case Position::BELOW:
+        Layout::below(w1, w2, h_align, padding);
+        break;
+    case Position::LEFT_OF:
+        Layout::below(w1, w2, v_align, padding);
+        break;
+    case Position::RIGHT_OF:
+        Layout::below(w1, w2, v_align, padding);
+        break;
+    default:
+        break;
+    }
+}
+
 void Layout::rightOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, int padding)
 {
     float targetY;

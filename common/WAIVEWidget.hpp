@@ -4,6 +4,7 @@
 #include "Window.hpp"
 #include "Widget.hpp"
 #include "NanoVG.hpp"
+#include "fonts.h"
 
 #include <iostream>
 
@@ -33,6 +34,7 @@ public:
     Color background_color, foreground_color, highlight_color, stroke_color, accent_color;
     Color text_color;
     float font_size;
+    FontId font;
 
 protected:
     float scale_factor;

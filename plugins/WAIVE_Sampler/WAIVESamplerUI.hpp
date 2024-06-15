@@ -54,7 +54,8 @@ class WAIVESamplerUI : public UI,
                        public Knob::Callback,
                        public SampleMap::Callback,
                        public TextInput::Callback,
-                       public DropDown::Callback
+                       public DropDown::Callback,
+                       public SampleSlot::Callback
 {
 public:
     WAIVESamplerUI();
@@ -75,7 +76,6 @@ protected:
     void uiScaleFactorChanged(const double scaleFactor) override;
 
     void buttonClicked(Button *button) override;
-    // void idleCallback() override;
     void waveformSelection(Waveform *waveform, uint selectionStart) override;
     void knobDragStarted(Knob *knob) override;
     void knobDragFinished(Knob *knob, float value) override;
@@ -86,6 +86,8 @@ protected:
     void textEntered(TextInput *textInput, std::string text) override;
     void textInputChanged(TextInput *textInput, std::string text) override;
     void dropdownSelection(DropDown *widget, int item) override;
+    void sampleTriggered(SampleSlot *slot) override;
+    void sampleSlotCleared(SampleSlot *slot) override;
 
     void openFileBrowser(char *state, bool multiple);
 

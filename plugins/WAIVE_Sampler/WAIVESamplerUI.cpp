@@ -198,6 +198,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_editor_controls->addChildWidget(filterKnobs);
     sample_editor_controls->addChildWidget(ampADSRKnobs);
     sample_editor_controls->addChildWidget(shapeKnobs);
+    sample_editor_controls->computeSize();
+    sample_editor_controls->setSkipDrawing(true);
 
     sample_map_menu = new Menu(this);
     for (int i = 1; i < 9; i++)
@@ -217,9 +219,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     for (int i = 0; i < sampleSlots.size(); i++)
     {
-        sampleSlots[i]->updateWidgetPositions();
         sampleMidiDropdowns[i]->menu = dropdown_menu;
+        sampleSlots[i]->repositionWidgets();
     }
+
     filterType->menu = dropdown_menu;
 
     value_indicator = new ValueIndicator(this);
@@ -474,6 +477,22 @@ void WAIVESamplerUI::dropdownSelection(DropDown *widget, int item)
     }
 }
 
+void WAIVESamplerUI::sampleTriggered(SampleSlot *slot){};
+
+void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot)
+{
+    std::cout << "WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot)\n";
+    for (int i = 0; i < sampleSlots.size(); i++)
+    {
+        if (sampleSlots[i] != slot)
+            continue;
+
+        plugin->clearSamplePlayer(*sampleSlots[i]->getSamplePlayer());
+        return;
+    }
+    std::cout << "not found\n";
+};
+
 void WAIVESamplerUI::onNanoDisplay()
 {
     float width = getWidth();
@@ -688,7 +707,23 @@ void WAIVESamplerUI::createSampleSlots()
     {
         DropDown *midi_number = new DropDown(this);
         Button *trigger_btn = new Button(this);
-        SampleSlot *slot = new SampleSlot(this, midi_number, trigger_btn);
+
+        trigger_btn->fontSize(16.0f);
+        trigger_btn->setLabel("▶");
+        trigger_btn->setSize(20, 20);
+
+        for (int i = 1; i < 128; i++)
+            midi_number->addItem(fmt::format("{:d}", i).c_str());
+
+        midi_number->setDisplayNumber(16);
+        midi_number->font_size = 16.0f;
+        midi_number->setSize(45, 20);
+
+        SampleSlot *slot = new SampleSlot(this);
+        slot->setCallback(this);
+        slot->addChildWidget(trigger_btn, {trigger_btn, slot, Position::ON_TOP, Widget_Align::START, Widget_Align::CENTER, 5});
+        slot->addChildWidget(midi_number, {midi_number, slot, Position::ON_TOP, Widget_Align::END, Widget_Align::CENTER, 5});
+
         slot->setSize(width, 300.f / n - 5.f);
         slot->setSamplePlayer(&plugin->samplePlayers.at(i));
 

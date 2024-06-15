@@ -27,7 +27,7 @@ public:
     void setDisplayNumber(int number);
     void setItem(int item, bool sendCallback);
     int getNumberItems() const;
-    const std::string &getItem(int item) const;
+    const std::string getItem(int item) const;
     void calculateHeight();
     void positionTo(NanoSubWidget *widget);
 
@@ -41,7 +41,6 @@ protected:
 private:
     Callback *callback;
 
-    FontId font;
     std::vector<std::string> items;
     int highlighted_item;
     int scroll_index;

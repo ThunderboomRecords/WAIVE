@@ -74,9 +74,6 @@ bool DropDown::onMouse(const MouseEvent &ev)
 
     if (ev.press && ev.button == kMouseButtonLeft && menu != nullptr && contains(ev.pos))
     {
-        std::cout << "DropDown::onMouse clicked" << std::endl;
-        std::cout << items.size() << std::endl;
-
         menu->positionTo(this);
         menu->clear();
         for (int i = 0; i < items.size(); i++)
