@@ -34,6 +34,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/CheckboxList.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Link.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Menu.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Knob.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Knob3D.cpp

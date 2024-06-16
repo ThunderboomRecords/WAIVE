@@ -9,6 +9,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 {
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
+    waive_link = new Link(this);
+    waive_link->url = "https://waive.studio";
+    waive_link->setAbsolutePos(UI_W - 240, 4);
+    waive_link->setSize(230, 32);
+
+    // text(width - 10 * fScale * fScaleFactor, 4 * fScale * fScaleFactor, "waive sampler", nullptr);
+
     // register notifications
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));

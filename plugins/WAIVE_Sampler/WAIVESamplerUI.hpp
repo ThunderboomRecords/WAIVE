@@ -15,6 +15,7 @@
 #include "SourceBrowserRoot.hpp"
 #include "HBox.hpp"
 #include "VBox.hpp"
+#include "Link.hpp"
 #include "Menu.hpp"
 #include "Knob.hpp"
 #include "Knob3D.hpp"
@@ -127,6 +128,7 @@ private:
     VBox *slots_container;
     WidgetGroup *sample_editor_controls;
     Menu *sample_map_menu, *dropdown_menu;
+    Link *waive_link;
 
     SourceBrowserRoot *source_browser_root;
     SourceBrowser *source_browser;
