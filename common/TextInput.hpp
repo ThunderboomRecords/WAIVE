@@ -1,14 +1,12 @@
 #ifndef TEXT_INPUT_HPP_INCLUDED
 #define TEXT_INPUT_HPP_INCLUDED
 
-#include "Window.hpp"
-#include "Widget.hpp"
-#include "NanoVG.hpp"
+#include "WAIVEWidget.hpp"
 #include <iostream>
 
 START_NAMESPACE_DISTRHO
 
-class TextInput : public NanoSubWidget
+class TextInput : public WAIVEWidget
 {
 public:
     class Callback
@@ -25,8 +23,7 @@ public:
     void setText(const char *text, bool sendCallback = false);
     void undo();
 
-    float font_size;
-    Color background_color, text_color;
+    std::string placeholder;
 
 protected:
     void onNanoDisplay() override;
@@ -38,7 +35,7 @@ protected:
 private:
     Callback *callback;
 
-    std::string fText, fTextStart;
+    std::string textValue, lastTextValue;
     bool hasKeyFocus, hover;
     int position;
 };

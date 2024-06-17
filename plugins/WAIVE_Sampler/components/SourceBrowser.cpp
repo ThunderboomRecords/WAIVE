@@ -28,6 +28,8 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
     searchbox = new TextInput(this);
     searchbox->setSize(160, 20);
     searchbox->setCallback(this);
+    searchbox->background_color = Color(220, 220, 220);
+    searchbox->placeholder = "Search...";
     Layout::below(searchbox, tags, Widget_Align::START, 5);
 
     downloaded = new Checkbox(this);

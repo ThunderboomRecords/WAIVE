@@ -5,13 +5,12 @@ START_NAMESPACE_DISTRHO
 using DGL_NAMESPACE::Color;
 
 TextInput::TextInput(Widget *parent) noexcept
-    : NanoSubWidget(parent),
+    : WAIVEWidget(parent),
       hasKeyFocus(false),
       hover(false),
-      fText(""),
+      textValue(""),
       position(0),
-      background_color(Color(230, 230, 230)),
-      text_color(Color(30, 30, 30)),
+      placeholder(""),
       callback(nullptr)
 {
     loadSharedResources();
@@ -19,11 +18,11 @@ TextInput::TextInput(Widget *parent) noexcept
 
 void TextInput::setText(const char *newText, bool sendCallback)
 {
-    fText.assign(newText);
-    position = fText.size();
+    textValue.assign(newText);
+    position = textValue.size();
 
     if (sendCallback && callback != nullptr)
-        callback->textEntered(this, fText);
+        callback->textEntered(this, textValue);
 
     repaint();
 }
@@ -32,9 +31,9 @@ void TextInput::undo()
 {
     // In case the text is invalid by reciever of callback,
     // can revert the text back to it's original
-    fText.assign(fTextStart);
+    textValue.assign(lastTextValue);
     if (callback != nullptr)
-        callback->textInputChanged(this, fText);
+        callback->textInputChanged(this, textValue);
     repaint();
 }
 
@@ -52,20 +51,29 @@ void TextInput::onNanoDisplay()
     if (hasKeyFocus)
     {
         beginPath();
-        strokeColor(text_color);
+        strokeColor(accent_color);
         strokeWidth(1);
         rect(1, 1, width - 2, height - 2);
         stroke();
         closePath();
     }
+    else if (textValue.size() == 0 && placeholder.length() > 0)
+    {
+        beginPath();
+        fillColor(foreground_color);
+        textAlign(ALIGN_TOP);
+        fontFaceId(0);
+        text(4, 2, placeholder.c_str(), nullptr);
+        closePath();
+    }
 
-    if (fText.size() > 0)
+    if (textValue.size() > 0)
     {
         beginPath();
         fillColor(text_color);
         textAlign(ALIGN_TOP);
         fontFaceId(0);
-        text(4, 2, fText.c_str(), nullptr);
+        text(4, 2, textValue.c_str(), nullptr);
         closePath();
     }
 
@@ -73,13 +81,13 @@ void TextInput::onNanoDisplay()
         return;
 
     // draw cursor
-    if (fText.size() > 0 && position > 0)
+    if (textValue.size() > 0 && position > 0)
     {
         Rectangle<float> bounds;
         beginPath();
         textAlign(ALIGN_TOP);
         fontFaceId(0);
-        textBounds(4, 2, fText.substr(0, position).c_str(), nullptr, bounds);
+        textBounds(4, 2, textValue.substr(0, position).c_str(), nullptr, bounds);
         strokeColor(text_color);
         float x = bounds.getX() + bounds.getWidth();
         moveTo(x, 0);
@@ -107,8 +115,8 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
     {
     case 36:
         // enter
-        if (callback != nullptr && fText.compare(fTextStart) != 0)
-            callback->textEntered(this, fText);
+        if (callback != nullptr && textValue.compare(lastTextValue) != 0)
+            callback->textEntered(this, textValue);
 
         hasKeyFocus = false;
         break;
@@ -116,32 +124,32 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
         // backspace
         if (position > 0)
         {
-            fText.erase(fText.begin() + position - 1, fText.begin() + position);
+            textValue.erase(textValue.begin() + position - 1, textValue.begin() + position);
             position = position - 1;
         }
         break;
     case 65:
         // space
-        fText.insert(fText.begin() + position, ev.string[0]);
+        textValue.insert(textValue.begin() + position, ev.string[0]);
         position += 1;
         break;
     case 119:
         // delete key
-        if (position < fText.size())
-            fText.erase(fText.begin() + position, fText.begin() + position + 1);
+        if (position < textValue.size())
+            textValue.erase(textValue.begin() + position, textValue.begin() + position + 1);
         break;
     case 23:
         // tab key
         break;
     default:
         // other characters
-        fText.insert(fText.begin() + position, ev.string[0]);
+        textValue.insert(textValue.begin() + position, ev.string[0]);
         position += 1;
         break;
     }
 
     if (callback != nullptr)
-        callback->textInputChanged(this, fText);
+        callback->textInputChanged(this, textValue);
 
     repaint();
     return true;
@@ -159,20 +167,20 @@ bool TextInput::onKeyboard(const KeyboardEvent &ev)
             position -= 1;
         break;
     case kKeyRight:
-        if (position < fText.size())
+        if (position < textValue.size())
             position += 1;
         break;
     case kKeyHome:
         position = 0;
         break;
     case kKeyEnd:
-        position = fText.size();
+        position = textValue.size();
         break;
     case kKeyEscape:
         hasKeyFocus = false;
-        fText.assign(fTextStart);
+        textValue.assign(lastTextValue);
         if (callback != nullptr)
-            callback->textInputChanged(this, fText);
+            callback->textInputChanged(this, textValue);
         break;
     default:
         return false;
@@ -193,17 +201,17 @@ bool TextInput::onMouse(const MouseEvent &ev)
         if (contains(ev.pos) && !hasKeyFocus)
         {
             hasKeyFocus = true;
-            fTextStart.assign(fText);
-            position = fText.size();
+            lastTextValue.assign(textValue);
+            position = textValue.size();
             repaint();
             return true;
         }
         else if (!contains(ev.pos) && hasKeyFocus)
         {
-            if (callback != nullptr && fText.size() > 0 && fText.compare(fTextStart) != 0)
-                callback->textEntered(this, fText);
-            else if (fText.size() == 0)
-                fText.assign(fTextStart);
+            if (callback != nullptr && textValue.size() > 0 && textValue.compare(lastTextValue) != 0)
+                callback->textEntered(this, textValue);
+            else if (textValue.size() == 0)
+                textValue.assign(lastTextValue);
             hasKeyFocus = false;
             repaint();
             return true;
