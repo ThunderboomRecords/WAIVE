@@ -2,7 +2,10 @@
 #define SOURCE_LIST_HPP_INCLUDED
 
 #include "WAIVEWidget.hpp"
+#include "WAIVEImage.hpp"
 #include "SampleDatabase.hpp"
+
+#include "download_icon.h"
 
 START_NAMESPACE_DISTRHO
 
@@ -28,6 +31,10 @@ private:
     float scrollPos;
     float rowHeight;
     void drawSourceInfo(const std::string &info, float x, float y, float width, float height);
+
+    WAIVEImage *download;
+    // NanoImage *download;
+    // Paint download_paint;
 
     bool scrolling;
 };

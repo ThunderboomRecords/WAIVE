@@ -18,7 +18,7 @@ dpf_add_plugin(
       ./models/full_groove_model.onnx.c
   FILES_UI
       WAIVEMidiUI.cpp
-      ${CMAKE_SOURCE_DIR}/common/fonts.h
+      ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Notes.cpp
@@ -48,5 +48,7 @@ target_include_directories(
     .
     ./models
     ${CMAKE_SOURCE_DIR}/common
+    ${CMAKE_SOURCE_DIR}/common/fonts
+    ${CMAKE_SOURCE_DIR}/common/icons
     ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
 )

@@ -11,6 +11,8 @@ SourceList::SourceList(Widget *widget)
       scrolling(false)
 {
     loadSharedResources();
+
+    download = new WAIVEImage(this, download_icon, download_icon_len, 512, 344, IMAGE_GENERATE_MIPMAPS);
 }
 
 void SourceList::onNanoDisplay()
@@ -79,6 +81,8 @@ void SourceList::onNanoDisplay()
         fill();
         closePath();
     }
+
+    // download->drawAt(0, 0, 100);
 }
 
 void SourceList::drawSourceInfo(const std::string &info, float x, float y, float width, float height)
@@ -105,6 +109,10 @@ void SourceList::drawSourceInfo(const std::string &info, float x, float y, float
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
     text(30.f, height / 2.0f, info.c_str(), nullptr);
     closePath();
+
+    globalTint(Color(0, 0, 0));
+    download->align = Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE;
+    download->drawAt(width - 5, height / 2.f, 26);
 
     resetTransform();
 }

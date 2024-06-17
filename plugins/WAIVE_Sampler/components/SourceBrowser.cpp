@@ -50,7 +50,6 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
     loading->setSize(20, 20);
     Layout::below(loading, source_list, Widget_Align::END, 5);
     loading->toFront();
-    loading->setLoading(true);
 
     connectionStatus = new Label(this, "text");
     connectionStatus->setSize(10, 10);
@@ -133,9 +132,6 @@ void SourceBrowser::updateSearchString(std::string text)
 
 void SourceBrowser::onNanoDisplay()
 {
-    // printf("SourceBrowser::onNanoDisplay(): isVisible %d\n", isVisible());
-    // TODO: why is this trying to render when window is closed?
-
     const float width = getWidth();
     const float height = getHeight();
 

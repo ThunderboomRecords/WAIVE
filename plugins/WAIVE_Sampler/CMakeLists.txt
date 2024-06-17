@@ -26,7 +26,8 @@ dpf_add_plugin(
       ./components/SourceBrowser.cpp
       ./components/SourceBrowserRoot.cpp
       ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
-      ${CMAKE_SOURCE_DIR}/common/fonts.h
+      ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
+      ${CMAKE_SOURCE_DIR}/common/icons/download_icon.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/GridLayout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
@@ -48,6 +49,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/TextInput.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SampleMap.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SampleSlot.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/WAIVEImage.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
       ${CMAKE_SOURCE_DIR}/common/src/ValueIndicator.cpp
@@ -84,6 +86,8 @@ target_include_directories(
     ./models
     ./components
     ${CMAKE_SOURCE_DIR}/common
+    ${CMAKE_SOURCE_DIR}/common/fonts
+    ${CMAKE_SOURCE_DIR}/common/icons
     ${CMAKE_SOURCE_DIR}/external/libsamplerate/include
     ${CMAKE_SOURCE_DIR}/external/json/single_include
     ${CMAKE_SOURCE_DIR}/external/Gist/src
