@@ -24,8 +24,10 @@ void SourceList::onNanoDisplay()
     int maxDisplay = height / (rowHeight + margin);
     int n = source_list.size();
 
-    // update scrollPos incase number of items has changed
-    clampScrollPos();
+    if (n < maxDisplay)
+        scrollPos = 0.f;
+    else
+        clampScrollPos();
 
     beginPath();
     fillColor(background_color);
@@ -34,15 +36,31 @@ void SourceList::onNanoDisplay()
     stroke();
     closePath();
 
+    if (n == 0)
+    {
+        beginPath();
+        fillColor(text_color);
+        fontSize(font_size);
+        textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_CENTER);
+        text(width / 2.f, height / 2.f, "no results found", nullptr);
+        closePath();
+        return;
+    }
+
     float y = 0.f;
     float x = padding;
 
-    for (int i = 0; i < n; i++)
+    int startIndex = scrollPos / (rowHeight + margin);
+
+    for (int i = startIndex; i < startIndex + maxDisplay + 2; i++)
     {
         y = i * (rowHeight + margin) + padding - scrollPos;
 
-        if (y > height || y < -rowHeight)
+        if (y < -rowHeight)
             continue;
+        if (y > height || i >= n)
+            break;
+
         drawSourceInfo(source_list[i], x, y, rowWidth, rowHeight);
     }
 
@@ -50,11 +68,12 @@ void SourceList::onNanoDisplay()
     if (n > maxDisplay)
     {
         float steps = height / n;
+
         beginPath();
         fillColor(stroke_color);
         rect(
             width - scrollBarWidth,
-            (1 + scrollPos / rowHeight) * steps,
+            (scrollPos / (rowHeight + margin)) * steps,
             scrollBarWidth,
             steps * maxDisplay);
         fill();
@@ -73,10 +92,18 @@ void SourceList::drawSourceInfo(const std::string &info, float x, float y, float
     closePath();
 
     beginPath();
-    fillColor(Color(30, 30, 30));
+    fillColor(text_color);
+    moveTo(8, 10);
+    lineTo(8, height - 10);
+    lineTo(23, height / 2);
+    fill();
+    closePath();
+
+    beginPath();
+    fillColor(text_color);
     fontSize(font_size);
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
-    text(10.f, height / 2.0f, info.c_str(), nullptr);
+    text(30.f, height / 2.0f, info.c_str(), nullptr);
     closePath();
 
     resetTransform();
@@ -97,8 +124,8 @@ bool SourceList::onScroll(const ScrollEvent &ev)
 
 void SourceList::clampScrollPos()
 {
+    scrollPos = std::min(scrollPos, (source_list.size()) * (rowHeight + margin) + 2 * padding - getHeight());
     scrollPos = std::max(scrollPos, 0.f);
-    scrollPos = std::min(scrollPos, (source_list.size() + 2) * rowHeight - getHeight());
 }
 
 bool SourceList::onMotion(const MotionEvent &ev)

@@ -481,6 +481,8 @@ void SampleDatabase::downloadSourcesList()
         [this]()
         {
             std::cout << "/sources not avaliable" << std::endl;
+            // wait 1 second before reporting connection error...
+            sleep(1);
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
         });
 }
@@ -581,7 +583,7 @@ void SampleDatabase::filterSources()
         conditions.push_back("Tags.tag NOT IN (" + filterConditions.tagNotIn + ")");
 
     if (filterConditions.archiveNotIn.length() > 0)
-        conditions.push_back("Tags.tag NOT IN (" + filterConditions.tagNotIn + ")");
+        conditions.push_back("Sources.archive NOT IN (" + filterConditions.archiveNotIn + ")");
 
     if (filterConditions.downloadsOnly)
         conditions.push_back("Sources.downloaded = 1");

@@ -11,6 +11,12 @@ void Spinner::setLoading(bool l)
         angle = 0.0f;
 
     loading = l;
+
+    if (l)
+        getWindow().addIdleCallback(this);
+    else
+        getWindow().removeIdleCallback(this);
+
     repaint();
 }
 

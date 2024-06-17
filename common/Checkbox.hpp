@@ -20,6 +20,7 @@ public:
     void setCallback(Callback *cb);
     void setChecked(bool checked, bool sendCallback);
     bool getChecked() const;
+    void resize();
 
     std::string label;
 

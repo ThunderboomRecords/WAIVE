@@ -103,4 +103,19 @@ void Checkbox::setCallback(Callback *cb)
     callback = cb;
 }
 
+void Checkbox::resize()
+{
+    float height = font_size * 1.5f;
+    float r = height / 2.0f - 1.0f;
+
+    Rectangle<float> bounds;
+    fontSize(font_size);
+    textBounds(0, 0, label.c_str(), nullptr, bounds);
+    printf("%.2f %.2f\n", bounds.getWidth(), bounds.getHeight());
+
+    float width = bounds.getWidth() + 2 * r + 4.0f;
+    setWidth(width);
+    setHeight(height);
+}
+
 END_NAMESPACE_DISTRHO

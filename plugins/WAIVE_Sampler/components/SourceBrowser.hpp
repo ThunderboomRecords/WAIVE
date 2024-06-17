@@ -3,6 +3,8 @@
 
 #include "NanoVG.hpp"
 #include "Window.hpp"
+
+#include "Label.hpp"
 #include "Spinner.hpp"
 #include "Checkbox.hpp"
 #include "TextInput.hpp"
@@ -16,7 +18,8 @@ class SourceBrowser
     : public NanoTopLevelWidget,
       CheckboxList::Callback,
       TextInput::Callback,
-      Checkbox::Callback
+      Checkbox::Callback,
+      Label::Callback
 {
 public:
     explicit SourceBrowser(Window &window, SampleDatabase *sd_);
@@ -35,6 +38,7 @@ protected:
     void checkboxesUpdated(CheckboxList *group) override;
     void textEntered(TextInput *textInput, std::string text) override;
     void textInputChanged(TextInput *textInput, std::string text) override;
+    void labelClicked(Label *label) override;
 
 private:
     CheckboxList *tags, *archives;
@@ -43,8 +47,19 @@ private:
     Spinner *loading;
     Checkbox *downloaded;
     TextInput *searchbox;
+    Label *connectionStatus;
 
     std::string tagNotIn, archiveNotIn;
+
+    enum ConnectionStatus
+    {
+        CONNECTING,
+        CONNECTED,
+        DOWNLOADING,
+        FAILED
+    };
+
+    ConnectionStatus status;
 };
 
 END_NAMESPACE_DISTRHO

@@ -3,12 +3,12 @@
 START_NAMESPACE_DISTRHO
 
 Label::Label(Widget *parent, std::string text) noexcept
-    : NanoSubWidget(parent),
-      text_color(Color(40, 40, 40)),
+    : WAIVEWidget(parent),
       text_align(Align::ALIGN_BOTTOM),
-      label_size(12.0f),
-      label(text)
+      label(text),
+      callback(nullptr)
 {
+    loadSharedResources();
 }
 
 void Label::setText(std::string text)
@@ -25,8 +25,7 @@ void Label::setFont(const char *name, const uchar *data, uint size)
 
 void Label::resizeToFit()
 {
-    textAlign(text_align);
-    fontSize(label_size);
+    fontSize(font_size);
     fontFaceId(font);
 
     Rectangle<float> bounds;
@@ -36,15 +35,29 @@ void Label::resizeToFit()
     setHeight(bounds.getHeight());
 }
 
+void Label::setCallback(Callback *cb)
+{
+    callback = cb;
+}
+
 void Label::onNanoDisplay()
 {
     beginPath();
     fillColor(text_color);
     textAlign(text_align);
-    fontSize(label_size);
+    fontSize(font_size);
     fontFaceId(font);
     text(0, getHeight(), label.c_str(), NULL);
     closePath();
+}
+
+bool Label::onMouse(const MouseEvent &ev)
+{
+    if (!ev.press || ev.button != kMouseButtonLeft || callback == nullptr || !contains(ev.pos))
+        return false;
+
+    callback->labelClicked(this);
+    return true;
 }
 
 END_NAMESPACE_DISTRHO

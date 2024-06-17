@@ -1,8 +1,10 @@
 #include "SourceBrowser.hpp"
 
 SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
-    : NanoTopLevelWidget(window), sd(sd_)
+    : NanoTopLevelWidget(window), sd(sd_), status(ConnectionStatus::CONNECTING)
 {
+    loadSharedResources();
+
     sd->databaseUpdate += Poco::delegate(this, &SourceBrowser::onDatabaseChanged);
 
     float width = window.getWidth();
@@ -34,21 +36,26 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
 
     downloaded = new Checkbox(this);
     downloaded->setSize(160, 20);
-    downloaded->label = "downloaded only";
+    downloaded->label = "saved only";
+    downloaded->resize();
     downloaded->setChecked(false, false);
     downloaded->setCallback(this);
     Layout::below(downloaded, archives, Widget_Align::END, 5);
 
     source_list = new SourceList(this);
-    source_list->setSize(width - 20, height - height / 3 - 30);
-    Layout::below(source_list, searchbox, Widget_Align::START, 10);
+    source_list->setSize(width - 20, height - height / 3 - 70);
+    Layout::below(source_list, searchbox, Widget_Align::START, 5);
 
     loading = new Spinner(this);
-    loading->setSize(100, 100);
-    loading->setAbsolutePos(200, 200);
+    loading->setSize(20, 20);
+    Layout::below(loading, source_list, Widget_Align::END, 5);
     loading->toFront();
     loading->setLoading(true);
-    addIdleCallback(loading);
+
+    connectionStatus = new Label(this, "text");
+    connectionStatus->setSize(10, 10);
+    connectionStatus->setCallback(this);
+    Layout::leftOf(connectionStatus, loading, Widget_Align::CENTER, 5);
 
     setTagList(sd->getTagList());
     setArchiveList(sd->getArchiveList());
@@ -108,7 +115,6 @@ void SourceBrowser::textInputChanged(TextInput *textInput, std::string text)
 
 void SourceBrowser::updateSearchString(std::string text)
 {
-    // text.replace("/")
     std::string search = "";
     search.reserve(text.size());
 
@@ -137,9 +143,14 @@ void SourceBrowser::onNanoDisplay()
     fillColor(Color(200, 200, 200));
     rect(0, 0, width, height);
     fill();
-    stroke();
     closePath();
 }
+
+void SourceBrowser::labelClicked(Label *label)
+{
+    if (status == ConnectionStatus::FAILED)
+        updateSourceDatabase();
+};
 
 void SourceBrowser::setTagList(std::vector<Tag> tagList)
 {
@@ -177,25 +188,39 @@ void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
     {
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
         loading->setLoading(true);
+        status = ConnectionStatus::DOWNLOADING;
+        connectionStatus->setText("downloading list...");
+        connectionStatus->resizeToFit();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
         loading->setLoading(false);
+        status = ConnectionStatus::FAILED;
+        connectionStatus->setText("connection failed, click to retry");
+        connectionStatus->resizeToFit();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
         loading->setLoading(false);
         setTagList(sd->getTagList());
         setArchiveList(sd->getArchiveList());
+        status = ConnectionStatus::CONNECTED;
+        connectionStatus->setText("source list downloaded");
+        connectionStatus->resizeToFit();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
         setSourceList();
+        status = ConnectionStatus::CONNECTED;
         break;
     default:
         break;
     }
+
+    Layout::leftOf(connectionStatus, loading, Widget_Align::CENTER, 5);
+    repaint();
 }
 
 void SourceBrowser::updateSourceDatabase()
 {
+    std::cout << "SourceBrowser::updateSourceDatabase()\n";
     if (sd == nullptr)
         return;
 

@@ -54,7 +54,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     map_label = new Label(this, "sample map");
     map_label->setFont("VG5000", VG5000, VG5000_len);
-    map_label->label_size = 16.0f;
+    map_label->font_size = 16.0f;
     map_label->resizeToFit();
     Layout::above(map_label, sample_map, Widget_Align::START, 5);
 
@@ -71,7 +71,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     sample_controls_label = new Label(this, "sample creator");
     sample_controls_label->setFont("VG5000", VG5000, VG5000_len);
-    sample_controls_label->label_size = 16.0f;
+    sample_controls_label->font_size = 16.0f;
     sample_controls_label->resizeToFit();
     Layout::below(sample_controls_label, sample_map, Widget_Align::START, 5);
 
