@@ -12,7 +12,15 @@ START_NAMESPACE_DISTRHO
 class SourceList : public WAIVEWidget
 {
 public:
+    class Callback
+    {
+    public:
+        virtual ~Callback(){};
+        virtual void sourceDownload(int index) = 0;
+    };
+
     SourceList(Widget *widget);
+    void setCallback(Callback *cb);
 
     std::vector<SourceInfo> *source_info;
     std::mutex *source_info_mtx;
@@ -28,6 +36,7 @@ protected:
     float margin, padding;
 
 private:
+    Callback *callback;
     void clampScrollPos();
     float scrollPos;
     float rowHeight;

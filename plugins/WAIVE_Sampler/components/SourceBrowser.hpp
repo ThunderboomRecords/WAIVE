@@ -19,7 +19,8 @@ class SourceBrowser
       CheckboxList::Callback,
       TextInput::Callback,
       Checkbox::Callback,
-      Label::Callback
+      Label::Callback,
+      SourceList::Callback
 {
 public:
     explicit SourceBrowser(Window &window, SampleDatabase *sd_);
@@ -38,6 +39,7 @@ protected:
     void textEntered(TextInput *textInput, std::string text) override;
     void textInputChanged(TextInput *textInput, std::string text) override;
     void labelClicked(Label *label) override;
+    void sourceDownload(int index) override;
 
 private:
     CheckboxList *tags, *archives;

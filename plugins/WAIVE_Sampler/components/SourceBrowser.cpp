@@ -46,6 +46,7 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
     source_list->setSize(width - 20, height - height / 3 - 70);
     source_list->source_info = &(sd->sourcesList);
     source_list->source_info_mtx = &(sd->sourceListMutex);
+    source_list->setCallback(this);
     Layout::below(source_list, searchbox, Widget_Align::START, 5);
 
     loading = new Spinner(this);
@@ -114,6 +115,11 @@ void SourceBrowser::textInputChanged(TextInput *textInput, std::string text)
     updateSearchString(text);
 }
 
+void SourceBrowser::sourceDownload(int index)
+{
+    sd->downloadSourceFile(index);
+}
+
 void SourceBrowser::updateSearchString(std::string text)
 {
     std::string search = "";
@@ -146,14 +152,12 @@ void SourceBrowser::onNanoDisplay()
 
 void SourceBrowser::labelClicked(Label *label)
 {
-    printf("SourceBrowser::labelClicked, %d\n", status);
     if (status == ConnectionStatus::FAILED)
         updateSourceDatabase();
 };
 
 void SourceBrowser::setTagList(std::vector<Tag> tagList)
 {
-    printf("SourceBrowser::setTagList %d\n", tagList.size());
     tags->clear();
 
     for (int i = 0; i < tagList.size(); i++)
@@ -164,7 +168,6 @@ void SourceBrowser::setTagList(std::vector<Tag> tagList)
 
 void SourceBrowser::setArchiveList(std::vector<std::string> archiveList)
 {
-    printf("SourceBrowser::setArchiveList %d\n", archiveList.size());
     archives->clear();
 
     for (int i = 0; i < archiveList.size(); i++)
@@ -198,6 +201,9 @@ void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
         connectionStatus->resizeToFit();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADING:
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOAD_FAILED:
         source_list->repaint();
         break;
     default:

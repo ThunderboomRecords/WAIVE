@@ -8,7 +8,8 @@ SourceList::SourceList(Widget *widget)
       padding(5.f),
       rowHeight(30.f),
       scrollBarWidth(8),
-      scrolling(false)
+      scrolling(false),
+      callback(nullptr)
 {
     loadSharedResources();
 
@@ -139,6 +140,8 @@ bool SourceList::onScroll(const ScrollEvent &ev)
     scrollPos -= ev.delta.getY() * 10;
     clampScrollPos();
 
+    highlighting = (scrollPos + ev.pos.getY()) / (rowHeight + margin);
+
     repaint();
 
     return true;
@@ -197,11 +200,30 @@ bool SourceList::onMouse(const MouseEvent &ev)
             scrolling = true;
             return true;
         }
+
+        if (ev.pos.getX() > getWidth() - 26 - scrollBarWidth)
+        {
+            std::cout << "download " << highlighting << std::endl;
+            if (callback != nullptr)
+                callback->sourceDownload(highlighting);
+            return true;
+        }
+
+        if (ev.pos.getX() < 30)
+        {
+            std::cout << "play " << highlighting << std::endl;
+            return true;
+        }
     }
     else if (scrolling && !ev.press)
         scrolling = false;
 
     return false;
+}
+
+void SourceList::setCallback(Callback *cb)
+{
+    callback = cb;
 }
 
 END_NAMESPACE_DISTRHO

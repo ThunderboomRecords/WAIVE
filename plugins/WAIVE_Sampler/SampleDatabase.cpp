@@ -187,12 +187,6 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
                 "tag TEXT UNIQUE)",
         Poco::Data::Keywords::now;
 
-    // HTTP networking
-    httpClient->sendRequest(
-        "127.0.0.1", 3000, "/", [](const std::string &response)
-        { std::cout << "Recieved response:\n  " << response << std::endl; },
-        []() {});
-
     std::cout << "SampleDatabase initialised\n";
 
     loadSampleDatabase();
@@ -418,6 +412,11 @@ std::string SampleDatabase::getSampleFolder() const
     return (fCacheDir / SAMPLE_DIR).string();
 }
 
+std::string SampleDatabase::getSourceFolder() const
+{
+    return (fCacheDir / SOURCE_DIR).string();
+}
+
 std::string SampleDatabase::makeNewSamplePath(std::string name) const
 {
     return (fCacheDir / SAMPLE_DIR / name).string();
@@ -484,6 +483,58 @@ void SampleDatabase::downloadSourcesList()
             // wait 1 second before reporting connection error...
             sleep(1);
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
+        });
+}
+
+void SampleDatabase::downloadSourceFile(int i)
+{
+    if (i < 0 || i > sourcesList.size())
+        return;
+
+    databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADING);
+
+    SourceInfo *si = &sourcesList[i];
+    if (si->downloaded)
+        return;
+
+    std::string location = "/" + si->archive + "/" + si->folder;
+    std::string endpoint = std::string("/file") + location + "/" + si->name;
+
+    httpClient->sendRequest(
+        "127.0.0.1", 3000, endpoint, [this, endpoint, si, location](const std::string &response)
+        {
+            // save file...
+            std::string save_location = getSourceFolder() + location;
+            fs::create_directories(save_location);
+
+            std::ofstream fileStream(save_location + "/" + si->name, std::ios::binary);
+            if(fileStream.is_open())
+            {
+                fileStream << response;
+                fileStream.close();
+                std::cout << "File downloaded successfully." << std::endl;
+            }
+            else{
+                std::cerr << "FAILED to open filestream\n";
+                databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
+                return;
+            }
+
+            // update database
+            int id = si->id;
+            Poco::Data::Statement update(*session);
+            update << "UPDATE Sources SET downloaded = 1 WHERE id == ?", 
+                Poco::Data::Keywords::use(id);
+            update.execute();
+
+            si->downloaded = true;
+
+            databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED); },
+        [this, endpoint]()
+        {
+            sleep(1);
+            std::cout << endpoint << " not avaliable" << std::endl;
+            databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
         });
 }
 
@@ -645,6 +696,7 @@ void SampleDatabase::filterSources()
             if (!select.execute())
                 continue;
             SourceInfo source;
+            source.id = id;
             source.archive = archive;
             source.folder = folder;
             source.name = name;

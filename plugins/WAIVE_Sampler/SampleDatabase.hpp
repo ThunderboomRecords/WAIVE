@@ -71,6 +71,7 @@ private:
 
 struct SourceInfo
 {
+    int id;
     std::string name;
     std::string archive;
     std::string folder;
@@ -92,6 +93,9 @@ public:
         SOURCE_LIST_DOWNLOAD_ERROR,
         SOURCE_LIST_UPDATED,
         SOURCE_LIST_QUERY_ERROR,
+        FILE_DOWNLOADING,
+        FILE_DOWNLOADED,
+        FILE_DOWNLOAD_FAILED,
     };
 
     struct WhereConditions
@@ -124,6 +128,7 @@ public:
     static std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
     std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
     std::string getSampleFolder() const;
+    std::string getSourceFolder() const;
     std::string makeNewSamplePath(std::string name) const;
 
     std::shared_ptr<SampleInfo> findSample(int id);
@@ -131,6 +136,7 @@ public:
     std::vector<std::shared_ptr<SampleInfo>> findRadius(float x, float y, float r);
 
     void downloadSourcesList();
+    void downloadSourceFile(int index);
     std::vector<Tag> getTagList() const;
     std::vector<std::string> getArchiveList() const;
     void updateSourcesDatabase();
