@@ -20,23 +20,28 @@ void SourceList::onNanoDisplay()
     const float width = getWidth();
     const float height = getHeight();
 
-    float rowWidth = width - 2.f * padding - scrollBarWidth;
-    rowHeight = 2.f * font_size;
-
-    int maxDisplay = height / (rowHeight + margin);
-    int n = source_list.size();
-
-    if (n < maxDisplay)
-        scrollPos = 0.f;
-    else
-        clampScrollPos();
-
     beginPath();
     fillColor(background_color);
     rect(0, 0, width, height);
     fill();
     stroke();
     closePath();
+
+    if (source_info == nullptr || source_info_mtx == nullptr)
+        return;
+
+    float rowWidth = width - 2.f * padding - scrollBarWidth;
+    rowHeight = 2.f * font_size;
+
+    int maxDisplay = height / (rowHeight + margin);
+
+    source_info_mtx->lock();
+    int n = source_info->size();
+
+    if (n < maxDisplay)
+        scrollPos = 0.f;
+    else
+        clampScrollPos();
 
     if (n == 0)
     {
@@ -46,6 +51,9 @@ void SourceList::onNanoDisplay()
         textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_CENTER);
         text(width / 2.f, height / 2.f, "no results found", nullptr);
         closePath();
+
+        source_info_mtx->unlock();
+
         return;
     }
 
@@ -62,8 +70,7 @@ void SourceList::onNanoDisplay()
             continue;
         if (y > height || i >= n)
             break;
-
-        drawSourceInfo(source_list[i], x, y, rowWidth, rowHeight);
+        drawSourceInfo((source_info->at(i)), x, y, rowWidth, rowHeight, highlighting == i);
     }
 
     // scroll bar
@@ -82,15 +89,16 @@ void SourceList::onNanoDisplay()
         closePath();
     }
 
-    // download->drawAt(0, 0, 100);
+    source_info_mtx->unlock();
 }
 
-void SourceList::drawSourceInfo(const std::string &info, float x, float y, float width, float height)
+void SourceList::drawSourceInfo(
+    const SourceInfo &info, float x, float y, float width, float height, bool highlight)
 {
     translate(x, y);
 
     beginPath();
-    strokeColor(stroke_color);
+    strokeColor(highlight ? accent_color : stroke_color);
     roundedRect(0, 0, width, height, 4.f);
     stroke();
     closePath();
@@ -103,16 +111,22 @@ void SourceList::drawSourceInfo(const std::string &info, float x, float y, float
     fill();
     closePath();
 
+    std::string infoString = info.archive + ": " + info.name;
+
     beginPath();
     fillColor(text_color);
     fontSize(font_size);
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
-    text(30.f, height / 2.0f, info.c_str(), nullptr);
+    text(30.f, height / 2.0f, infoString.c_str(), nullptr);
     closePath();
 
-    globalTint(Color(0, 0, 0));
-    download->align = Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE;
-    download->drawAt(width - 5, height / 2.f, 26);
+    if (!info.downloaded)
+    {
+        globalTint(Color(0, 0, 0));
+        download->align = Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE;
+        download->drawAt(width - 5, height / 2.f, 26);
+        globalTint(Color(255, 255, 255));
+    }
 
     resetTransform();
 }
@@ -132,7 +146,7 @@ bool SourceList::onScroll(const ScrollEvent &ev)
 
 void SourceList::clampScrollPos()
 {
-    scrollPos = std::min(scrollPos, (source_list.size()) * (rowHeight + margin) + 2 * padding - getHeight());
+    scrollPos = std::min(scrollPos, (source_info->size()) * (rowHeight + margin) + 2 * padding - getHeight());
     scrollPos = std::max(scrollPos, 0.f);
 }
 
@@ -143,12 +157,29 @@ bool SourceList::onMotion(const MotionEvent &ev)
 
     if (scrolling)
     {
-        scrollPos = (source_list.size() * rowHeight) * ev.pos.getY() / getHeight();
+        scrollPos = (source_info->size() * rowHeight) * ev.pos.getY() / getHeight();
         clampScrollPos();
 
         repaint();
 
         return true;
+    }
+    else if (contains(ev.pos))
+    {
+        int hl = (scrollPos + ev.pos.getY()) / (rowHeight + margin);
+        if (highlighting != hl)
+        {
+            highlighting = hl;
+            repaint();
+        }
+    }
+    else
+    {
+        if (highlighting != -1)
+        {
+            highlighting = -1;
+            repaint();
+        }
     }
 
     return false;

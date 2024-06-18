@@ -26,7 +26,6 @@ public:
 
     void setTagList(std::vector<Tag> tags);
     void setArchiveList(std::vector<std::string> archives);
-    void setSourceList();
     void updateSearchString(std::string text);
 
     void updateSourceDatabase();

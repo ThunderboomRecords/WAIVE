@@ -8,6 +8,7 @@
 #include <fstream>
 #include <filesystem>
 #include <functional>
+#include <mutex>
 
 #include "Filters.hpp"
 #include "Envelopes.hpp"
@@ -134,8 +135,8 @@ public:
     std::vector<std::string> getArchiveList() const;
     void updateSourcesDatabase();
     void filterSources();
-    std::map<std::string, std::map<std::string, std::vector<SourceInfo *>>> sourceTree;
 
+    std::mutex sourceListMutex;
     std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
     std::vector<SourceInfo> sourcesList;

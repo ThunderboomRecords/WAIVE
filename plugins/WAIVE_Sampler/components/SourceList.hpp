@@ -14,7 +14,8 @@ class SourceList : public WAIVEWidget
 public:
     SourceList(Widget *widget);
 
-    std::vector<std::string> source_list;
+    std::vector<SourceInfo> *source_info;
+    std::mutex *source_info_mtx;
 
     int scrollBarWidth;
 
@@ -30,13 +31,12 @@ private:
     void clampScrollPos();
     float scrollPos;
     float rowHeight;
-    void drawSourceInfo(const std::string &info, float x, float y, float width, float height);
+    void drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight);
 
     WAIVEImage *download;
-    // NanoImage *download;
-    // Paint download_paint;
 
     bool scrolling;
+    int highlighting;
 };
 
 END_NAMESPACE_DISTRHO

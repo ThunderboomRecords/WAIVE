@@ -576,6 +576,7 @@ std::vector<std::string> SampleDatabase::getArchiveList() const
 
 void SampleDatabase::filterSources()
 {
+    sourceListMutex.lock();
     sourcesList.clear();
 
     std::vector<std::string> conditions = {};
@@ -661,10 +662,12 @@ void SampleDatabase::filterSources()
     }
     catch (const Poco::DataException &e)
     {
+        sourceListMutex.unlock();
         databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_QUERY_ERROR);
         std::cerr << e.displayText() << std::endl;
         return;
     }
 
+    sourceListMutex.unlock();
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_UPDATED);
 }

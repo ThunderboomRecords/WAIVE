@@ -44,6 +44,8 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
 
     source_list = new SourceList(this);
     source_list->setSize(width - 20, height - height / 3 - 70);
+    source_list->source_info = &(sd->sourcesList);
+    source_list->source_info_mtx = &(sd->sourceListMutex);
     Layout::below(source_list, searchbox, Widget_Align::START, 5);
 
     loading = new Spinner(this);
@@ -144,6 +146,7 @@ void SourceBrowser::onNanoDisplay()
 
 void SourceBrowser::labelClicked(Label *label)
 {
+    printf("SourceBrowser::labelClicked, %d\n", status);
     if (status == ConnectionStatus::FAILED)
         updateSourceDatabase();
 };
@@ -168,14 +171,6 @@ void SourceBrowser::setArchiveList(std::vector<std::string> archiveList)
         archives->addItem(archiveList[i], true);
 
     archives->repaint();
-}
-
-void SourceBrowser::setSourceList()
-{
-    source_list->source_list.clear();
-    for (int i = 0; i < sd->sourcesList.size(); i++)
-        source_list->source_list.push_back(sd->sourcesList[i].folder + " " + sd->sourcesList[i].name);
-    source_list->repaint();
 }
 
 void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
@@ -203,8 +198,7 @@ void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
         connectionStatus->resizeToFit();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
-        setSourceList();
-        status = ConnectionStatus::CONNECTED;
+        source_list->repaint();
         break;
     default:
         break;
