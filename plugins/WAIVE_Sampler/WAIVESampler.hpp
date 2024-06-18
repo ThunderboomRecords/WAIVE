@@ -83,7 +83,7 @@ struct SamplePlayer
     void clear();
 };
 
-int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate, int flags = 0);
+int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags = 0);
 bool saveWaveform(const char *fp, float *buffer, sf_count_t size, int sampleRate);
 
 class WAIVESampler : public Plugin

@@ -45,7 +45,7 @@ void ImporterTask::import(const std::string &fp)
     std::cout << "       name: " << name << std::endl;
 
     std::vector<float> sampleCopy;
-    int sampleLength = loadWaveform(fp.c_str(), &sampleCopy, _ws->getSampleRate());
+    int sampleLength = loadWaveform(fp.c_str(), sampleCopy, _ws->getSampleRate());
 
     if (sampleLength == 0)
     {
@@ -622,7 +622,7 @@ void WAIVESampler::loadSource(const char *fp)
     fSourceLoaded = false;
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
 
-    fSourceLength = loadWaveform(fp, &fSourceWaveform, sampleRate);
+    fSourceLength = loadWaveform(fp, fSourceWaveform, sampleRate);
 
     if (fSourceLength > 0)
     {
@@ -725,10 +725,11 @@ void WAIVESampler::loadSourcePreview(const std::string &fp)
 {
     stopSourcePreview();
     samplePlayerMtx.lock();
-    int size = loadWaveform(fp.c_str(), sourcePreviewWaveform, sampleRate);
+    int size = loadWaveform(fp.c_str(), *sourcePreviewWaveform, sampleRate);
     if (size == 0)
     {
         std::cout << fp << " not avaliable to load...\n";
+        samplePlayerMtx.unlock();
         return;
     }
     sourcePreviewPlayer->ptr = 0;
@@ -784,7 +785,7 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     setParameterValue(kFilterType, fCurrentSample->filterType);
     selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
 
-    fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), editorPreviewWaveform, sampleRate);
+    fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), *editorPreviewWaveform, sampleRate);
 
     fSampleLoaded = true;
     pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
@@ -912,7 +913,7 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
 
     sp.state = PlayState::STOPPED;
     sp.ptr = 0;
-    int length = loadWaveform(sd.getSamplePath(info).c_str(), &buffer, sampleRate);
+    int length = loadWaveform(sd.getSamplePath(info).c_str(), buffer, sampleRate);
 
     if (length == 0)
     {
@@ -1044,9 +1045,11 @@ Plugin *createPlugin()
     return new WAIVESampler();
 }
 
-int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate, int flags)
+int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags)
 {
-    // printf("WAIVESampler::loadWaveform %s\n", fp);
+    // TODO: load on another thread!
+
+    printf("WAIVESampler::loadWaveform %s\n", fp);
 
     SndfileHandle fileHandle(fp, 16, flags);
     int sampleLength = fileHandle.frames();
@@ -1074,43 +1077,48 @@ int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate, int
     // resample data
     if (fileSampleRate != sampleRate)
     {
-        int new_size = sampleChannels * (int)((float)sampleLength * sampleRate / fileSampleRate + 1);
-        sample_tmp.resize(new_size);
+        int new_size = (int)((double)sampleLength * sampleRate / fileSampleRate + 1);
+        sample_tmp.resize(static_cast<size_t>(new_size * sampleChannels));
 
         SRC_DATA src_data;
         src_data.input_frames = sampleLength;
-        src_data.data_out = &sample_tmp.at(0);
-        src_data.data_in = &sample.at(0);
+        src_data.data_out = sample_tmp.data(); //&sample_tmp.at(0);
+        src_data.data_in = sample.data();
         src_data.output_frames = new_size;
         src_data.src_ratio = (float)sampleRate / fileSampleRate;
 
-        // std::cout << "RESAMPLING WAVEFORM:\n";
-        // std::cout << " sample_channels: " << sampleChannels << std::endl;
-        // std::cout << "    input_frames: " << sampleLength << std::endl;
-        // std::cout << "   output_frames: " << new_size << std::endl;
-        // std::cout << "       src_ratio: " << src_data.src_ratio << std::endl;
+        std::cout << "RESAMPLING WAVEFORM:\n";
+        std::cout << "  fileSampleRate: " << fileSampleRate << std::endl;
+        std::cout << "      sampleRate: " << sampleRate << std::endl;
+        std::cout << " sample_channels: " << sampleChannels << std::endl;
+        std::cout << "    input_frames: " << src_data.input_frames << std::endl;
+        std::cout << "   output_frames: " << src_data.output_frames << std::endl;
+        std::cout << "       src_ratio: " << src_data.src_ratio << std::endl;
 
         int result = src_simple(&src_data, SRC_SINC_BEST_QUALITY, sampleChannels);
         if (result != 0)
             std::cerr << "Failed to convert sample rate: " << src_strerror(result) << std::endl;
+        else
+            std::cout << "sample rate sucessfully converted\n";
     }
     else
     {
         sample_tmp = sample;
     }
 
-    if (buffer->size() < sampleLength)
-        buffer->resize(sampleLength);
+    if (buffer.size() < sampleLength)
+        buffer.resize(sampleLength); // TODO: this sometimes reallocates the pointer!
 
+    //  TODO: mix to Mono before sample rate conversion??
     if (sampleChannels > 1)
     {
         for (int i = 0; i < sampleLength; i++)
-            buffer->operator[](i) = (sample_tmp[i * sampleChannels] + sample_tmp[i * sampleChannels + 1]) * 0.5f;
+            buffer[i] = (sample_tmp[i * sampleChannels] + sample_tmp[i * sampleChannels + 1]) * 0.5f;
     }
     else
     {
         for (int i = 0; i < sampleLength; i++)
-            buffer->operator[](i) = sample_tmp[i];
+            buffer[i] = sample_tmp[i];
     }
 
     return sampleLength;
