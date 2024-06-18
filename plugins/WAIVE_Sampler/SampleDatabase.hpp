@@ -6,7 +6,6 @@
 #include <vector>
 #include <unordered_map>
 #include <fstream>
-#include <filesystem>
 #include <functional>
 #include <mutex>
 
@@ -20,6 +19,10 @@
 #include "Poco/Data/SQLite/Connector.h"
 #include "Poco/BasicEvent.h"
 #include "Poco/Delegate.h"
+#include "Poco/Path.h"
+#include "Poco/File.h"
+#include "Poco/FileStream.h"
+#include "Poco/TemporaryFile.h"
 
 #include <sndfile.hh>
 #include "kdtree.h"
@@ -28,9 +31,8 @@
 #include "HTTPClient.hpp"
 
 using json = nlohmann::json;
-namespace fs = std::filesystem;
 
-fs::path get_homedir();
+// typedef Tag std::string;
 struct Tag
 {
     std::string name;
@@ -46,7 +48,7 @@ public:
     void print() const;
 
     std::string name;
-    std::string path;
+    std::string path; // relative from DATA_DIR/WAIVE
     float embedX;
     float embedY;
     bool waive;
@@ -69,6 +71,13 @@ private:
     const int id;
 };
 
+enum DownloadState
+{
+    NOT_DOWNLOADED,
+    DOWNLOADED,
+    DOWNLOADING,
+};
+
 struct SourceInfo
 {
     int id;
@@ -76,7 +85,7 @@ struct SourceInfo
     std::string archive;
     std::string folder;
     std::vector<Tag> tags;
-    bool downloaded;
+    DownloadState downloaded;
 };
 
 class SampleDatabase
@@ -96,6 +105,7 @@ public:
         FILE_DOWNLOADING,
         FILE_DOWNLOADED,
         FILE_DOWNLOAD_FAILED,
+        SOURCE_PREVIEW_READY,
     };
 
     struct WhereConditions
@@ -129,7 +139,7 @@ public:
     std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
     std::string getSampleFolder() const;
     std::string getSourceFolder() const;
-    std::string makeNewSamplePath(std::string name) const;
+    std::string getSourcePreview() const;
 
     std::shared_ptr<SampleInfo> findSample(int id);
     std::vector<std::shared_ptr<SampleInfo>> findKNearest(float x, float y, int k);
@@ -137,6 +147,7 @@ public:
 
     void downloadSourcesList();
     void downloadSourceFile(int index);
+    void playTempSourceFile(int index);
     std::vector<Tag> getTagList() const;
     std::vector<std::string> getArchiveList() const;
     void updateSourcesDatabase();
@@ -156,8 +167,9 @@ public:
     WhereConditions filterConditions;
 
 private:
-    fs::path fCacheDir;
     Poco::Data::Session *session;
+    Poco::Path rootDir, sampleFolder, sourceFolder;
+    std::string sourcePreviewPath;
 
     std::vector<SamplePoint> points;
     kdt::KDTree<SamplePoint> kdtree;

@@ -5,19 +5,10 @@
 #define LOG_LOCATION std::cout << __func__ << "():  " << __FILE__ << ":" << __LINE__ << std::endl;
 #endif
 
-// DATA_DIR: relative from the users $HOME directory
-#ifdef LINUX
-#define DATA_DIR ".cache/WAIVE"
-#elif APPLE
-#define DATA_DIR "Library/Application Support/com.thunderboomrecords.waive"
-#elif WIN32
-// TODO: test on Windows!
-// - does it need backslashes, or does std::filesystem make
-//   the conversion from '/'?
-#define DATA_DIR "AppData\\Local\\WAIVE"
-#else
-#define DATA_DIR ".cache/WAIVE"
-#endif
+// DATA_DIR: Data is stored in folder Poco::Path::dataDir()
+// e.g. ~/.local/share/WAIVE on UNIX machines and on Windows
+// typically C:\Users\user\AppData\Local\WAIVE
+#define DATA_DIR "WAIVE";
 
 // SOURCE_DIR: folder in DATA_DIR that holds the source
 // audio files.

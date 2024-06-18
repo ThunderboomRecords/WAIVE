@@ -83,7 +83,7 @@ struct SamplePlayer
     void clear();
 };
 
-int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate);
+int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate, int flags = 0);
 bool saveWaveform(const char *fp, float *buffer, sf_count_t size, int sampleRate);
 
 class WAIVESampler : public Plugin
@@ -156,6 +156,8 @@ protected:
 
     void newSample();
     void loadPreview(int id);
+    void loadSourcePreview(const std::string &fp);
+    void stopSourcePreview();
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);
     void loadSource(const char *fp);
@@ -168,8 +170,8 @@ protected:
     void triggerPreview();
     std::pair<float, float> getEmbedding(std::vector<float> *wf);
     void getFeatures(std::vector<float> *wf, std::vector<float> *feature);
-    void getOnsets();
     void onTaskFinished(Poco::TaskFinishedNotification *pNf);
+    void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
 
     EnvGen ampEnvGen;
 
@@ -209,8 +211,8 @@ private:
     Filter sampleFilter;
 
     std::mutex samplePlayerMtx;
-    SamplePlayer *editorPreviewPlayer, *mapPreviewPlayer;
-    std::vector<float> *editorPreviewWaveform, *mapPreviewWaveform;
+    SamplePlayer *editorPreviewPlayer, *mapPreviewPlayer, *sourcePreviewPlayer;
+    std::vector<float> *editorPreviewWaveform, *mapPreviewWaveform, *sourcePreviewWaveform;
     std::vector<SamplePlayer> samplePlayers;
     std::vector<std::vector<float>> samplePlayerWaveforms;
 

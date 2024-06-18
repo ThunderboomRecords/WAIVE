@@ -1,16 +1,5 @@
 #include "SampleDatabase.hpp"
 
-fs::path get_homedir()
-{
-    std::string homedir = "";
-#ifdef WIN32
-    homedir += getenv("HOMEDRIVE") + getenv("HOMEPATH");
-#else
-    homedir += getenv("HOME");
-#endif
-    return fs::path(homedir);
-}
-
 bool saveJson(json data, std::string fp)
 {
     std::ofstream ofs(fp, std::ofstream::trunc);
@@ -128,17 +117,28 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
 {
     // Get and create the directory where samples and sound files will
     // be saved to
-    fs::path homedir = get_homedir();
-    fCacheDir = homedir / DATA_DIR;
+    Poco::Path homedir = Poco::Path::dataHome();
+    rootDir = homedir.append(Poco::Path("WAIVE"));
 
-    bool result = fs::create_directory(fCacheDir);
+    Poco::File dir(rootDir);
+    if (!dir.exists())
+        dir.createDirectories();
 
-    fs::create_directory(fCacheDir / SOURCE_DIR);
-    fs::create_directory(fCacheDir / SAMPLE_DIR);
+    sourceFolder = Poco::Path(homedir).append(SOURCE_DIR);
+    Poco::File sourceDir(sourceFolder);
+    if (!sourceDir.exists())
+        sourceDir.createDirectories();
+
+    sampleFolder = Poco::Path(homedir).append(SAMPLE_DIR);
+    Poco::File sampleDir(sampleFolder);
+    if (!sampleDir.exists())
+        sampleDir.createDirectories();
+
+    Poco::File db = Poco::Path(homedir).append("WAIVE.db");
 
     // SAMPLES Database
     Poco::Data::SQLite::Connector::registerConnector();
-    session = new Poco::Data::Session("SQLite", fCacheDir / "samples.db");
+    session = new Poco::Data::Session("SQLite", db.path());
     *session << "CREATE TABLE IF NOT EXISTS Samples ("
                 "id INTEGER PRIMARY KEY, "
                 "name TEXT, "
@@ -325,28 +325,26 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
     if (sample == nullptr)
         return false;
 
-    // TODO: add guards, such as
-    // - checking if new_name contains folder seperator character
-    // - file extension included or not
-    // - check if filename exists already
+    Poco::File sampleFile(rootDir.append(sample->path).append(sample->name));
+    Poco::Path newName(rootDir.append(sample->path).append(new_name));
 
-    // rename saved waveform if exists
+    if (newName.getExtension().compare(".wav") != 0)
+        newName.setExtension(".wav");
+
     try
     {
-        fs::rename(
-            fCacheDir / sample->path / sample->name,
-            fCacheDir / sample->path / new_name);
+        sampleFile.renameTo(newName.toString(), Poco::File::OPT_FAIL_ON_OVERWRITE);
     }
-    catch (fs::filesystem_error &e)
+    catch (Poco::FileExistsException &e)
     {
-        std::cerr << "Failed to rename sample to " << fCacheDir / sample->path / new_name << std::endl;
+        std::cerr << "Failed to rename sample to " << newName.toString() << std::endl;
         std::cerr << e.what() << std::endl;
 
         return false;
     }
 
     // updated SampleInfo
-    sample->name.assign(new_name);
+    sample->name.assign(newName.getFileName());
     int id = sample->getId();
 
     Poco::Data::Statement update(*session);
@@ -404,22 +402,22 @@ std::vector<std::shared_ptr<SampleInfo>> SampleDatabase::findRadius(float x, flo
 std::string SampleDatabase::getSamplePath(std::shared_ptr<SampleInfo> sample) const
 {
     // std::string saveName = fmt::format("{:d}_{}", sample->getId(), sample->name);
-    return (fCacheDir / sample->path / sample->name).string();
+    return Poco::Path(sampleFolder).append(sample->path).append(sample->name).toString();
 }
 
 std::string SampleDatabase::getSampleFolder() const
 {
-    return (fCacheDir / SAMPLE_DIR).string();
+    return sampleFolder.toString();
 }
 
 std::string SampleDatabase::getSourceFolder() const
 {
-    return (fCacheDir / SOURCE_DIR).string();
+    return sourceFolder.toString();
 }
 
-std::string SampleDatabase::makeNewSamplePath(std::string name) const
+std::string SampleDatabase::getSourcePreview() const
 {
-    return (fCacheDir / SAMPLE_DIR / name).string();
+    return sourcePreviewPath;
 }
 
 std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<SampleInfo> sample)
@@ -491,34 +489,44 @@ void SampleDatabase::downloadSourceFile(int i)
     if (i < 0 || i > sourcesList.size())
         return;
 
-    databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADING);
-
     SourceInfo *si = &sourcesList[i];
-    if (si->downloaded)
+    if (si->downloaded == DownloadState::DOWNLOADED)
         return;
 
-    std::string location = "/" + si->archive + "/" + si->folder;
-    std::string endpoint = std::string("/file") + location + "/" + si->name;
+    Poco::Path location = Poco::Path(si->archive).append(si->folder);
+    Poco::Path endpoint = Poco::Path("/file").append(location).append(si->name);
+    Poco::File file = Poco::Path(sourceFolder).append(location).append(si->name);
+
+    if (file.exists())
+    {
+        std::cout << file.path() << " already exists\n";
+        si->downloaded = DownloadState::DOWNLOADED;
+        return;
+    }
+
+    databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADING);
+    si->downloaded = DownloadState::DOWNLOADING;
+
+    std::string filePath = file.path();
 
     httpClient->sendRequest(
-        "127.0.0.1", 3000, endpoint, [this, endpoint, si, location](const std::string &response)
+        "127.0.0.1", 3000, endpoint.toString(Poco::Path::Style::PATH_URI), [this, filePath, si](const std::string &response)
         {
             // save file...
-            std::string save_location = getSourceFolder() + location;
-            fs::create_directories(save_location);
+            Poco::File fp(filePath);
+            Poco::Path parent = Poco::Path(filePath).makeParent();
 
-            std::ofstream fileStream(save_location + "/" + si->name, std::ios::binary);
-            if(fileStream.is_open())
+            Poco::File(parent).createDirectories();
+            bool res = fp.createFile();
+            if(!res)
             {
-                fileStream << response;
-                fileStream.close();
-                std::cout << "File downloaded successfully." << std::endl;
-            }
-            else{
-                std::cerr << "FAILED to open filestream\n";
-                databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
+                std::cout << "cannot create file\n";
                 return;
             }
+            
+            Poco::FileOutputStream out = Poco::FileOutputStream(fp.path());
+            out << response;
+            out.close();
 
             // update database
             int id = si->id;
@@ -527,14 +535,61 @@ void SampleDatabase::downloadSourceFile(int i)
                 Poco::Data::Keywords::use(id);
             update.execute();
 
-            si->downloaded = true;
-
+            sleep(1);
+            si->downloaded = DownloadState::DOWNLOADED;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED); },
-        [this, endpoint]()
+        [this, endpoint, si]()
         {
             sleep(1);
-            std::cout << endpoint << " not avaliable" << std::endl;
+            si->downloaded = DownloadState::NOT_DOWNLOADED;
+            std::cout << "http://127.0.0.1:3000" << endpoint.toString(Poco::Path::Style::PATH_URI) << " not avaliable" << std::endl;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
+        });
+}
+
+void SampleDatabase::playTempSourceFile(int i)
+{
+    if (i < 0 || i > sourcesList.size())
+        return;
+
+    databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADING);
+
+    SourceInfo *si = &sourcesList[i];
+    Poco::Path location = Poco::Path(si->archive).append(si->folder);
+
+    if (si->downloaded == DownloadState::DOWNLOADED)
+    {
+        Poco::File preview = Poco::Path(sourceFolder).append(location).append(si->name);
+        sourcePreviewPath = preview.path();
+        databaseUpdate.notify(this, DatabaseUpdate::SOURCE_PREVIEW_READY);
+        return;
+    }
+
+    Poco::Path endpoint = Poco::Path("/file").append(location).append(si->name);
+    std::cout << endpoint.toString(Poco::Path::Style::PATH_URI) << std::endl;
+
+    httpClient->sendRequest(
+        "127.0.0.1", 3000, endpoint.toString(Poco::Path::Style::PATH_URI), [this](const std::string &response)
+        {
+            Poco::TemporaryFile tmp = Poco::TemporaryFile();
+            tmp.keepUntilExit();
+
+            if (!tmp.createFile())
+            {
+                std::cerr << "FAILED to open filestream\n";
+                return;
+            }
+
+            Poco::FileOutputStream out = Poco::FileOutputStream(tmp.path());
+            out << response;
+            out.close(); 
+            
+            this->sourcePreviewPath = tmp.path();
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_PREVIEW_READY); },
+        [this, endpoint, si]()
+        {
+            sleep(1);
+            std::cout << endpoint.toString(Poco::Path::Style::PATH_URI) << " not avaliable" << std::endl;
         });
 }
 
@@ -700,7 +755,11 @@ void SampleDatabase::filterSources()
             source.archive = archive;
             source.folder = folder;
             source.name = name;
-            source.downloaded = (bool)downloaded;
+            Poco::File sourceFile = Poco::Path(sourceFolder).append(source.archive).append(source.folder).append(source.name);
+            if (sourceFile.exists())
+                source.downloaded = DownloadState::DOWNLOADED;
+            else
+                source.downloaded = DownloadState::NOT_DOWNLOADED;
 
             while (!selectSourcesTag.done())
             {

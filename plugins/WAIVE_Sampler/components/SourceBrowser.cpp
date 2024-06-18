@@ -1,7 +1,11 @@
 #include "SourceBrowser.hpp"
 
 SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
-    : NanoTopLevelWidget(window), sd(sd_), status(ConnectionStatus::CONNECTING)
+    : NanoTopLevelWidget(window),
+      sd(sd_),
+      status(ConnectionStatus::CONNECTING),
+      previewIndex(-1),
+      callback(nullptr)
 {
     loadSharedResources();
 
@@ -54,8 +58,12 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
     Layout::below(loading, source_list, Widget_Align::END, 5);
     loading->toFront();
 
-    connectionStatus = new Label(this, "text");
-    connectionStatus->setSize(10, 10);
+    previewSample = new Label(this, " ");
+    previewSample->resizeToFit();
+    previewSample->setCallback(this);
+    Layout::below(previewSample, source_list, Widget_Align::START, 5);
+
+    connectionStatus = new Label(this, " ");
     connectionStatus->setCallback(this);
     Layout::leftOf(connectionStatus, loading, Widget_Align::CENTER, 5);
 
@@ -120,6 +128,19 @@ void SourceBrowser::sourceDownload(int index)
     sd->downloadSourceFile(index);
 }
 
+void SourceBrowser::sourcePreview(int index)
+{
+    if (index < 0)
+        return;
+
+    previewTitle.assign(sd->sourcesList.at(index).name);
+    previewIndex = index;
+    sd->playTempSourceFile(index);
+    previewSample->setText(std::string("||  ") + previewTitle);
+    previewSample->resizeToFit();
+    previewingSource = true;
+}
+
 void SourceBrowser::updateSearchString(std::string text)
 {
     std::string search = "";
@@ -152,8 +173,28 @@ void SourceBrowser::onNanoDisplay()
 
 void SourceBrowser::labelClicked(Label *label)
 {
-    if (status == ConnectionStatus::FAILED)
-        updateSourceDatabase();
+    if (label == connectionStatus)
+    {
+        if (status == ConnectionStatus::FAILED)
+            updateSourceDatabase();
+    }
+    else if (label == previewSample)
+    {
+        if (previewingSource)
+        {
+            // signal plugin to stop preview...
+            if (callback != nullptr)
+                callback->browserStopPreview();
+
+            previewSample->setText(std::string("▶  ") + previewTitle);
+            previewSample->resizeToFit();
+            previewingSource = false;
+        }
+        else
+        {
+            sourcePreview(previewIndex);
+        }
+    }
 };
 
 void SourceBrowser::setTagList(std::vector<Tag> tagList)
@@ -199,6 +240,7 @@ void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
         status = ConnectionStatus::CONNECTED;
         connectionStatus->setText("source list downloaded");
         connectionStatus->resizeToFit();
+        source_list->repaint();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADING:
@@ -216,10 +258,14 @@ void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
 
 void SourceBrowser::updateSourceDatabase()
 {
-    std::cout << "SourceBrowser::updateSourceDatabase()\n";
     if (sd == nullptr)
         return;
 
     if (!sd->sourcesLoaded)
         sd->downloadSourcesList();
+}
+
+void SourceBrowser::setCallback(Callback *cb)
+{
+    callback = cb;
 }

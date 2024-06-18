@@ -160,9 +160,10 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
     // Register notifications
     taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
+    sd.databaseUpdate += Poco::delegate(this, &WAIVESampler::onDatabaseChanged);
 
-    samplePlayerWaveforms.resize(10);
-    for (int i = 0; i < 10; i++)
+    samplePlayerWaveforms.resize(11);
+    for (int i = 0; i < 11; i++)
     {
         SamplePlayer sp;
         sp.waveform = &samplePlayerWaveforms[i];
@@ -173,6 +174,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     editorPreviewWaveform = &samplePlayerWaveforms[8];
     mapPreviewPlayer = &samplePlayers[9];
     mapPreviewWaveform = &samplePlayerWaveforms[9];
+    sourcePreviewPlayer = &samplePlayers[10];
+    sourcePreviewWaveform = &samplePlayerWaveforms[10];
 
     for (int i = 0; i < 8; i++)
         samplePlayers[i].midi = defaultMidiMap[i];
@@ -718,6 +721,32 @@ void WAIVESampler::loadPreview(int id)
         mapPreviewPlayer->state = PlayState::TRIGGERED;
 }
 
+void WAIVESampler::loadSourcePreview(const std::string &fp)
+{
+    stopSourcePreview();
+    samplePlayerMtx.lock();
+    int size = loadWaveform(fp.c_str(), sourcePreviewWaveform, sampleRate);
+    if (size == 0)
+    {
+        std::cout << fp << " not avaliable to load...\n";
+        return;
+    }
+    sourcePreviewPlayer->ptr = 0;
+    sourcePreviewPlayer->length = size;
+    sourcePreviewPlayer->active = true;
+    sourcePreviewPlayer->state = PlayState::TRIGGERED;
+    samplePlayerMtx.unlock();
+}
+
+void WAIVESampler::stopSourcePreview()
+{
+    samplePlayerMtx.lock();
+    sourcePreviewPlayer->state = PlayState::STOPPED;
+    sourcePreviewPlayer->active = false;
+    sourcePreviewPlayer->ptr = 0;
+    samplePlayerMtx.unlock();
+}
+
 void WAIVESampler::loadSample(int id)
 {
     loadSample(sd.findSample(id));
@@ -993,8 +1022,21 @@ void WAIVESampler::sampleRateChanged(double newSampleRate)
 void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << std::endl;
+    // std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << std::endl;
     pTask->release();
+}
+
+void WAIVESampler::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
+{
+    switch (arg)
+    {
+    case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
+        loadSourcePreview(sd.getSourcePreview());
+        break;
+
+    default:
+        break;
+    }
 }
 
 Plugin *createPlugin()
@@ -1002,11 +1044,11 @@ Plugin *createPlugin()
     return new WAIVESampler();
 }
 
-int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate)
+int loadWaveform(const char *fp, std::vector<float> *buffer, int sampleRate, int flags)
 {
     // printf("WAIVESampler::loadWaveform %s\n", fp);
 
-    SndfileHandle fileHandle(fp);
+    SndfileHandle fileHandle(fp, 16, flags);
     int sampleLength = fileHandle.frames();
 
     if (sampleLength == 0)

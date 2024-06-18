@@ -241,8 +241,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     source_browser_root = new SourceBrowserRoot(getApp(), UI_W, UI_H - 40);
     source_browser_root->setTitle("Browse archives...");
+    source_browser_root->setCallback(this);
 
     source_browser = new SourceBrowser(*source_browser_root, &plugin->sd);
+    source_browser->setCallback(this);
 
     setGeometryConstraints(UI_W * fScaleFactor, UI_H * fScaleFactor, false, false);
 
@@ -508,6 +510,16 @@ void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot)
     }
 };
 
+void WAIVESamplerUI::sourceBrowserClosed()
+{
+    plugin->stopSourcePreview();
+}
+
+void WAIVESamplerUI::browserStopPreview()
+{
+    plugin->stopSourcePreview();
+}
+
 void WAIVESamplerUI::onNanoDisplay()
 {
     float width = getWidth();
@@ -629,7 +641,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
 void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    std::cout << "WAIVESamplerUI::onTaskStarted: " << pTask->name() << std::endl;
+    // std::cout << "WAIVESamplerUI::onTaskStarted: " << pTask->name() << std::endl;
     if (pTask->name().compare("ImporterTask") == 0)
     {
         import_spinner->setLoading(true);
@@ -640,7 +652,7 @@ void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
 void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    std::cout << "WAIVESamplerUI::onTaskProgress: " << pTask->name() << " " << pTask->progress() << std::endl;
+    // std::cout << "WAIVESamplerUI::onTaskProgress: " << pTask->name() << " " << pTask->progress() << std::endl;
     if (pTask->name().compare("FeatureExtractorTask") == 0)
         source_display->repaint();
     pTask->release();
@@ -649,21 +661,21 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
 void WAIVESamplerUI::onTaskCancelled(Poco::TaskCancelledNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    std::cout << "WAIVESamplerUI::onTaskCancelled: " << pTask->name() << std::endl;
+    // std::cout << "WAIVESamplerUI::onTaskCancelled: " << pTask->name() << std::endl;
     pTask->release();
 }
 
 void WAIVESamplerUI::onTaskFailed(Poco::TaskFailedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    std::cout << "WAIVESamplerUI::onTaskFailed: " << pTask->name() << std::endl;
+    // std::cout << "WAIVESamplerUI::onTaskFailed: " << pTask->name() << std::endl;
     pTask->release();
 }
 
 void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    std::cout << "WAIVESamplerUI::onTaskFinished: " << pTask->name() << std::endl;
+    // std::cout << "WAIVESamplerUI::onTaskFinished: " << pTask->name() << std::endl;
     if (pTask->name().compare("ImporterTask") == 0)
     {
         import_spinner->setLoading(false);
@@ -673,7 +685,7 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
 void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
 {
-    std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
+    // std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
 }
 
 void WAIVESamplerUI::setSampleEditorVisible(bool visible)

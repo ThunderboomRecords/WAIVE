@@ -99,6 +99,7 @@ void SourceList::drawSourceInfo(
     translate(x, y);
 
     beginPath();
+    strokeWidth(1.f);
     strokeColor(highlight ? accent_color : stroke_color);
     roundedRect(0, 0, width, height, 4.f);
     stroke();
@@ -121,12 +122,32 @@ void SourceList::drawSourceInfo(
     text(30.f, height / 2.0f, infoString.c_str(), nullptr);
     closePath();
 
-    if (!info.downloaded)
+    if (info.downloaded == DownloadState::NOT_DOWNLOADED)
     {
         globalTint(Color(0, 0, 0));
         download->align = Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE;
         download->drawAt(width - 5, height / 2.f, 26);
         globalTint(Color(255, 255, 255));
+    }
+    else if (info.downloaded == DownloadState::DOWNLOADING)
+    {
+        beginPath();
+        strokeColor(stroke_color);
+        strokeWidth(3.0f);
+        circle(width - 20.f, height / 2.f, 10.f);
+        stroke();
+        closePath();
+    }
+    else
+    {
+        beginPath();
+        strokeColor(stroke_color);
+        strokeWidth(3.0f);
+        moveTo(width - 15.f, 10.f);
+        lineTo(width - 10.f, height / 2.f);
+        lineTo(width - 15.f, height - 10.f);
+        stroke();
+        closePath();
     }
 
     resetTransform();
@@ -212,6 +233,8 @@ bool SourceList::onMouse(const MouseEvent &ev)
         if (ev.pos.getX() < 30)
         {
             std::cout << "play " << highlighting << std::endl;
+            if (callback != nullptr)
+                callback->sourcePreview(highlighting);
             return true;
         }
     }

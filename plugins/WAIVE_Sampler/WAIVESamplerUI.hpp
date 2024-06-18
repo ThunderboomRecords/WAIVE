@@ -56,7 +56,9 @@ class WAIVESamplerUI : public UI,
                        public SampleMap::Callback,
                        public TextInput::Callback,
                        public DropDown::Callback,
-                       public SampleSlot::Callback
+                       public SampleSlot::Callback,
+                       public SourceBrowserRoot::Callback,
+                       public SourceBrowser::Callback
 {
 public:
     WAIVESamplerUI();
@@ -89,6 +91,8 @@ protected:
     void dropdownSelection(DropDown *widget, int item) override;
     void sampleSelected(SampleSlot *slot) override;
     void sampleSlotCleared(SampleSlot *slot) override;
+    void sourceBrowserClosed() override;
+    void browserStopPreview() override;
 
     void openFileBrowser(char *state, bool multiple);
 
