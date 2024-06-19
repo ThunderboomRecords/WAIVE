@@ -43,6 +43,7 @@
 #include <Poco/Observer.h>
 #include "Poco/BasicEvent.h"
 #include "Poco/Delegate.h"
+#include "Poco/Random.h"
 
 START_NAMESPACE_DISTRHO
 
@@ -144,8 +145,6 @@ private:
 
     SourceBrowserRoot *source_browser_root;
     SourceBrowser *source_browser;
-
-    DGL_NAMESPACE::FileBrowserOptions filebrowseropts;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 };

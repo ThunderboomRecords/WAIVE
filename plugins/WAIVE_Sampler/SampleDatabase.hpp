@@ -44,6 +44,7 @@ public:
     SampleInfo(int id, std::string name, std::string path, bool waive);
 
     int getId() const;
+    void setId(int newId);
     json toJson() const;
     void print() const;
 
@@ -68,7 +69,7 @@ public:
     bool saved;
 
 private:
-    const int id;
+    int id;
 };
 
 enum DownloadState
@@ -141,6 +142,7 @@ public:
     std::string getSampleFolder() const;
     std::string getSourceFolder() const;
     std::string getSourcePreview() const;
+    std::string getNewSampleName(const std::string &name) const;
 
     std::shared_ptr<SampleInfo> findSample(int id);
     std::vector<std::shared_ptr<SampleInfo>> findKNearest(float x, float y, int k);

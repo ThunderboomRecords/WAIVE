@@ -468,6 +468,13 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     else if (button == make_kick)
     {
         std::cout << "Make kick...\n";
+        // 0. Check if a source is loaded
+        if (!plugin->fSourceLoaded)
+            return;
+
+        // 1. Select random area of source
+        int source_length = plugin->fSourceLength;
+        // int startIndex = 0.9f *
     }
     else if (button == make_snare)
     {

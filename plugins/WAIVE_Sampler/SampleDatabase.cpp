@@ -44,6 +44,11 @@ int SampleInfo::getId() const
     return id;
 }
 
+void SampleInfo::setId(int newId)
+{
+    id = newId;
+}
+
 void SampleInfo::print() const
 {
     std::string f_type;
@@ -292,7 +297,6 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     int id = sample->getId();
     std::string parameters = sample->toJson().dump();
 
-    std::cout << "addToLibrary id " << id << std::endl;
     Poco::Data::Statement insert(*session);
     insert << "INSERT INTO Samples(name, path, source, parameters) VALUES(?, ?, ?, ?)",
         Poco::Data::Keywords::use(sample->name),
@@ -301,9 +305,21 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
         Poco::Data::Keywords::use(parameters);
     insert.execute();
 
+    int lastId;
+    Poco::Data::Statement lastSampleId(*session);
+    lastSampleId << "SELECT last_insert_rowid()",
+        Poco::Data::Keywords::into(lastId);
+    lastSampleId.execute();
+
+    std::cout << "inserted with ID " << lastId << std::endl;
+    sample->setId(lastId);
+
     // TODO: update Tags and Sample<->Tags database
     for (Tag t : sample->tags)
+    {
+
         newTag(t.name);
+    }
 
     std::cout << "done\n";
 
@@ -438,6 +454,38 @@ std::string SampleDatabase::getSourceFolder() const
 std::string SampleDatabase::getSourcePreview() const
 {
     return sourcePreviewPath;
+}
+
+std::string SampleDatabase::getNewSampleName(const std::string &name) const
+{
+    // Finds a unique name of the form "new_sample_X.wav"
+    std::cout << "SampleDatabase::getNewSampleName\n";
+    int x = 0;
+    int id;
+    std::string newName(name);
+
+    Poco::Path file(name);
+    std::string pattern = file.getBaseName() + "_{}" + file.getExtension();
+
+    Poco::Data::Statement select(*session);
+    select << "SELECT id FROM Samples WHERE name = ?",
+        Poco::Data::Keywords::use(newName),
+        Poco::Data::Keywords::into(id);
+
+    while (select.execute())
+    {
+        if (x > 20)
+        {
+            std::cerr << "Max iterations finding new sample name...\n";
+            break;
+        }
+        x++;
+        newName.assign(fmt::format(pattern, x));
+    }
+
+    std::cout << "new name: " << newName << std::endl;
+
+    return newName;
 }
 
 std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<SampleInfo> sample)

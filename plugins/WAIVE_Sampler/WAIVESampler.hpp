@@ -8,11 +8,7 @@
 #include <string>
 #include <queue>
 #include <optional>
-
 #include <mutex>
-#include <stdlib.h>
-#include <time.h>
-#include <algorithm>
 
 #include <fmt/core.h>
 #include <sndfile.hh>
@@ -25,6 +21,7 @@
 #include "Envelopes.hpp"
 #include "WaveformFeatures.hpp"
 #include "FeatureExtractor.hpp"
+#include "Presets.hpp"
 
 #include "samplerate.h"
 #include "Gist.h"
@@ -162,6 +159,7 @@ protected:
     void loadSample(std::shared_ptr<SampleInfo> s);
     void loadSource(const char *fp);
     void loadSlot(int slot, int id);
+    void loadPreset(Preset preset);
     void selectWaveform(std::vector<float> *source, int start);
     void addCurrentSampleToLibrary();
     void renderSample();

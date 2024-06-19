@@ -23,24 +23,11 @@ void ImporterTask::runTask()
 
 void ImporterTask::import(const std::string &fp)
 {
-    int id = rand() % 10000;
+    std::string folder = Poco::Path(fp).makeParent().toString();
+    std::string name = Poco::Path(fp).getFileName();
 
-    size_t pos = fp.find_last_of("/\\");
+    name.assign(_ws->sd.getNewSampleName(name));
 
-    std::string name, folder;
-
-    if (pos == std::string::npos)
-    {
-        name.assign(fp);
-        folder.assign("./");
-    }
-    else
-    {
-        name.assign(fp.substr(pos + 1));
-        folder.assign(fp.substr(0, pos + 1));
-    }
-
-    std::cout << "         id: " << id << std::endl;
     std::cout << "     folder: " << folder << std::endl;
     std::cout << "       name: " << name << std::endl;
 
@@ -53,7 +40,8 @@ void ImporterTask::import(const std::string &fp)
         return;
     }
 
-    std::shared_ptr<SampleInfo> info(new SampleInfo(id, name, "", false));
+    // id is assigned when added to the database
+    std::shared_ptr<SampleInfo> info(new SampleInfo(-1, name, "", false));
     info->adsr.attack = 0.0f;
     info->adsr.decay = 0.0f;
     info->adsr.sustain = 1.0f;
@@ -155,8 +143,6 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     }
 
     printf(" VERSION: %d.%d.%d\n", V_MAJ, V_MIN, V_PAT);
-
-    srand(time(NULL));
 
     // Register notifications
     taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
@@ -635,15 +621,11 @@ void WAIVESampler::loadSource(const char *fp)
 
 void WAIVESampler::newSample()
 {
-    LOG_LOCATION
-
-    // TODO: save current sample before creating a new one?
-
     if (fCurrentSample != nullptr)
     {
         // duplicating..
         std::shared_ptr<SampleInfo> s = sd.duplicateSampleInfo(fCurrentSample);
-        s->name = fmt::format("{:d}_{}", s->getId(), s->name);
+        s->name = sd.getNewSampleName(s->name);
         s->adsr = ADSR_Params(ampEnvGen.getADSR());
         s->saved = false;
         s->waive = true;
@@ -671,9 +653,7 @@ void WAIVESampler::newSample()
         setParameterValue(kFilterResonance, 0.0f);
         setParameterValue(kFilterType, 0.0);
 
-        time_t current_time = time(NULL);
-        std::string name = fmt::format("Sample{:d}.wav", current_time % 10000);
-        std::shared_ptr<SampleInfo> s(new SampleInfo(current_time, name, "", true));
+        std::shared_ptr<SampleInfo> s(new SampleInfo(-1, sd.getNewSampleName("new_sample.wav"), "", true));
         s->adsr = ADSR_Params(ampEnvGen.getADSR());
         s->saved = false;
         fCurrentSample = s;
@@ -780,6 +760,21 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     renderSample();
 
     pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
+}
+
+void WAIVESampler::loadPreset(Preset preset)
+{
+    setParameterValue(kSampleVolume, preset.volume);
+    setParameterValue(kSamplePitch, preset.pitch);
+    setParameterValue(kAmpAttack, preset.adsr.attack);
+    setParameterValue(kAmpDecay, preset.adsr.decay);
+    setParameterValue(kAmpSustain, preset.adsr.sustain);
+    setParameterValue(kAmpRelease, preset.adsr.release);
+    setParameterValue(kSustainLength, preset.sustainLength);
+    setParameterValue(kPercussiveBoost, preset.percussiveBoost);
+    setParameterValue(kFilterCutoff, preset.filterCutoff);
+    setParameterValue(kFilterResonance, preset.filterResonance);
+    setParameterValue(kFilterType, preset.filterType);
 }
 
 void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
