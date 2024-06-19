@@ -325,6 +325,13 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
     if (sample == nullptr)
         return false;
 
+    // if (!sample->saved)
+    // {
+    //     // just update the SampleInfo and return
+    //     sample->name.assign()
+    //     return;
+    // }
+
     Poco::File sampleFile(Poco::Path(rootDir).append(sample->path).append(sample->name));
     Poco::Path newName(Poco::Path(rootDir).append(sample->path).append(new_name));
 
@@ -337,14 +344,22 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
     }
     catch (Poco::FileExistsException &e)
     {
-        std::cerr << "Failed to rename sample to " << newName.toString() << std::endl;
+        std::cerr << "Failed to rename sample to " << newName.toString() << " since it already exists." << std::endl;
         std::cerr << e.what() << std::endl;
 
         return false;
     }
+    catch (Poco::FileNotFoundException &e)
+    {
+        std::cout << "Sample is not saved yet, updating SampleInfo\n";
+        sample->name.assign(newName.getFileName());
+        sample->saved = false;
+        return true;
+    }
 
     // updated SampleInfo
     sample->name.assign(newName.getFileName());
+    sample->saved = true;
     int id = sample->getId();
 
     Poco::Data::Statement update(*session);
