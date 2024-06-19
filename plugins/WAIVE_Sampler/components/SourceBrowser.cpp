@@ -58,12 +58,13 @@ SourceBrowser::SourceBrowser(Window &window, SampleDatabase *sd_)
     Layout::below(loading, source_list, Widget_Align::END, 5);
     loading->toFront();
 
-    previewSample = new Label(this, " ");
+    previewSample = new Label(this, "");
     previewSample->resizeToFit();
     previewSample->setCallback(this);
     Layout::below(previewSample, source_list, Widget_Align::START, 5);
 
-    connectionStatus = new Label(this, " ");
+    connectionStatus = new Label(this, "");
+    connectionStatus->resizeToFit();
     connectionStatus->setCallback(this);
     Layout::leftOf(connectionStatus, loading, Widget_Align::CENTER, 5);
 

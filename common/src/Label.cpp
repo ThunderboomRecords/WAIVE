@@ -25,6 +25,9 @@ void Label::setFont(const char *name, const uchar *data, uint size)
 
 void Label::resizeToFit()
 {
+    if (label.length() == 0)
+        return;
+
     fontSize(font_size);
     fontFaceId(font);
 
@@ -42,6 +45,9 @@ void Label::setCallback(Callback *cb)
 
 void Label::onNanoDisplay()
 {
+    if (label.length() == 0)
+        return;
+
     beginPath();
     fillColor(text_color);
     textAlign(text_align);
