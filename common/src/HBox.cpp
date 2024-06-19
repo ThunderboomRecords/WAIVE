@@ -3,16 +3,17 @@
 START_NAMESPACE_DISTRHO
 
 HBox::HBox(Widget *widget) noexcept
-    : NanoSubWidget(widget),
+    : WidgetGroup(widget),
       align_items(Align_Items::middle),
       justify_content(Justify_Content::space_between),
       padding(0)
 {
-    setWidth(widget->getWidth());
+    // setWidth(widget->getWidth());
 }
 
-void HBox::addWidget(SubWidget *widget)
+void HBox::addWidget(NanoSubWidget *widget)
 {
+    addChildWidget(widget);
     items_.emplace_back(Item(widget));
 
     const uint box_height = getHeight();
@@ -59,14 +60,6 @@ void HBox::removeWidget(uint id)
             positionWidgets();
             return;
         }
-    }
-}
-
-void HBox::setVisible(bool visible)
-{
-    for (auto it = items_.begin(); it != items_.end(); it++)
-    {
-        it->widget->setVisible(visible);
     }
 }
 

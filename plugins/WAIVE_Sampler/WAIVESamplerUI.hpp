@@ -49,6 +49,8 @@ START_NAMESPACE_DISTRHO
 const unsigned int UI_W = 840;
 const unsigned int UI_H = 582;
 
+Knob3D *createWAIVEKnob();
+
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
                        public Waveform::Callback,
@@ -124,14 +126,19 @@ private:
     TextInput *sample_name;
     Spinner *import_spinner;
 
-    bool map_full;
+    Button *controls_toggle;
+    Label *instructions;
+    HBox *simple_buttons;
+    Button *make_kick, *make_snare, *make_crash;
+
+    bool map_full, simple_controls;
 
     std::vector<SampleSlot *> sampleSlots;
     std::vector<Button *> sampleTriggerButtons;
     std::vector<DropDown *> sampleMidiDropdowns;
     HBox *ampADSRKnobs, *shapeKnobs, *filterKnobs;
     VBox *slots_container;
-    WidgetGroup *sample_editor_controls;
+    WidgetGroup *sample_editor_controls_advanced, *sample_editor_controls_simple;
     Menu *sample_map_menu, *dropdown_menu;
     Link *waive_link;
 

@@ -17,6 +17,31 @@ WAIVEWidget::WAIVEWidget(Widget *widget, int flags) noexcept
     scale_factor = getWindow().getScaleFactor();
 }
 
+void WAIVEWidget::above(NanoSubWidget *w, Widget_Align h_align, int padding)
+{
+    Layout::above(this, w, h_align, padding);
+}
+
+void WAIVEWidget::below(NanoSubWidget *w, Widget_Align h_align, int padding)
+{
+    Layout::below(this, w, h_align, padding);
+}
+
+void WAIVEWidget::leftOf(NanoSubWidget *w, Widget_Align v_align, int padding)
+{
+    Layout::leftOf(this, w, v_align, padding);
+}
+
+void WAIVEWidget::rightOf(NanoSubWidget *w, Widget_Align v_align, int padding)
+{
+    Layout::rightOf(this, w, v_align, padding);
+}
+
+void WAIVEWidget::onTop(NanoSubWidget *w, Widget_Align h_align, Widget_Align v_align, int padding)
+{
+    Layout::onTop(this, w, h_align, v_align, padding);
+}
+
 void WAIVEWidget::setSize(uint width, uint height)
 {
     NanoSubWidget::setSize(width * scale_factor, height * scale_factor);

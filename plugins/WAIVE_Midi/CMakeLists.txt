@@ -19,6 +19,7 @@ dpf_add_plugin(
   FILES_UI
       WAIVEMidiUI.cpp
       ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
+      ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Notes.cpp
@@ -29,6 +30,8 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/GrooveGraph.cpp
       ${CMAKE_SOURCE_DIR}/common/src/DrumPattern.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
 )
 
 find_library(FOUNDATION Foundation)

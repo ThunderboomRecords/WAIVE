@@ -73,11 +73,14 @@ void WidgetGroup::repositionWidgets()
 
 void WidgetGroup::setVisible(bool visible)
 {
-    std::cout << "WidgetGroup::setVisible visible: " << visible << " numChildren: " << children.size() << "\n";
     for (int i = 0; i < children.size(); i++)
     {
-        children[i]->setVisible(visible);
-        children[i]->setSkipDrawing(!visible);
+        // check if WidgetGroup
+        WidgetGroup *group = dynamic_cast<WidgetGroup *>(children.at(i));
+        if (group == nullptr)
+            children[i]->setVisible(visible);
+        else
+            group->setVisible(visible);
     }
 }
 

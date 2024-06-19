@@ -3,7 +3,7 @@
 START_NAMESPACE_DISTRHO
 
 VBox::VBox(Widget *widget) noexcept
-    : NanoSubWidget(widget),
+    : WidgetGroup(widget),
       align_items(Align_Items::middle),
       justify_content(Justify_Content::space_between),
       padding(0)
@@ -11,8 +11,9 @@ VBox::VBox(Widget *widget) noexcept
     setHeight(widget->getHeight());
 }
 
-void VBox::addWidget(SubWidget *widget)
+void VBox::addWidget(NanoSubWidget *widget)
 {
+    addChildWidget(widget);
     items_.emplace_back(Item(widget));
 
     const uint box_width = getWidth();
@@ -59,14 +60,6 @@ void VBox::removeWidget(uint id)
             positionWidgets();
             return;
         }
-    }
-}
-
-void VBox::setVisible(bool visible)
-{
-    for (auto it = items_.begin(); it != items_.end(); it++)
-    {
-        it->widget->setVisible(visible);
     }
 }
 

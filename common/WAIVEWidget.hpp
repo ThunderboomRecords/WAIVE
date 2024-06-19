@@ -6,6 +6,8 @@
 #include "NanoVG.hpp"
 #include "fonts.h"
 
+#include "Layout.hpp"
+
 #include <iostream>
 
 START_NAMESPACE_DISTRHO
@@ -14,6 +16,12 @@ class WAIVEWidget : public NanoSubWidget
 {
 public:
     explicit WAIVEWidget(Widget *widget, int flags = CREATE_ANTIALIAS) noexcept;
+
+    void below(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, int padding = 10);
+    void above(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, int padding = 10);
+    void leftOf(NanoSubWidget *w, Widget_Align v_align = Widget_Align::CENTER, int padding = 10);
+    void rightOf(NanoSubWidget *w, Widget_Align v_align = Widget_Align::CENTER, int padding = 10);
+    void onTop(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, Widget_Align v_align = Widget_Align::CENTER, int padding = 10);
 
     /*
     GOTCHA: setSize() EXCLUDES scale factor, but getSize() INCLUDES scale factor

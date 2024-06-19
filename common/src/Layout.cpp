@@ -16,10 +16,10 @@ void Layout::position(Position p, NanoSubWidget *w1, NanoSubWidget *w2, Widget_A
         Layout::below(w1, w2, h_align, padding);
         break;
     case Position::LEFT_OF:
-        Layout::below(w1, w2, v_align, padding);
+        Layout::leftOf(w1, w2, v_align, padding);
         break;
     case Position::RIGHT_OF:
-        Layout::below(w1, w2, v_align, padding);
+        Layout::rightOf(w1, w2, v_align, padding);
         break;
     default:
         break;

@@ -5,7 +5,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
                                    fScaleFactor(getScaleFactor()),
                                    fScale(1.0f),
                                    filebrowserOpen(false),
-                                   map_full(false)
+                                   map_full(false),
+                                   simple_controls(true)
 {
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
@@ -13,8 +14,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     waive_link->url = "https://waive.studio";
     waive_link->setAbsolutePos(UI_W - 240, 4);
     waive_link->setSize(230, 32);
-
-    // text(width - 10 * fScale * fScaleFactor, 4 * fScale * fScaleFactor, "waive sampler", nullptr);
 
     // register notifications
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
@@ -27,6 +26,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
 
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
+
+    // ------ Sample Map
 
     sample_map = new SampleMap(this);
     sample_map->setSize(520, 300);
@@ -42,53 +43,69 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     expand_map_btn->background_color = Color(40, 40, 40);
     expand_map_btn->text_color = Color(100, 100, 100);
     expand_map_btn->setCallback(this);
-    Layout::onTop(expand_map_btn, sample_map, Widget_Align::END, Widget_Align::END, 5);
-
-    slots_container = new VBox(this);
-    slots_container->setSize(UI_W - sample_map->getWidth() - 30, sample_map->getHeight());
-    slots_container->padding = 2;
-    slots_container->justify_content = VBox::Justify_Content::space_evenly;
-    Layout::rightOf(slots_container, sample_map, Widget_Align::START, 10);
-    createSampleSlots();
-    slots_container->positionWidgets();
+    expand_map_btn->onTop(sample_map, Widget_Align::END, Widget_Align::END, 5);
 
     map_label = new Label(this, "sample map");
     map_label->setFont("VG5000", VG5000, VG5000_len);
     map_label->font_size = 16.0f;
     map_label->resizeToFit();
-    Layout::above(map_label, sample_map, Widget_Align::START, 5);
+    map_label->above(sample_map, Widget_Align::START, 5);
 
     import_sample_btn = new Button(this);
     import_sample_btn->setLabel("import sample");
     import_sample_btn->setSize(100, 20);
-    Layout::rightOf(import_sample_btn, map_label, Widget_Align::CENTER, 20);
+    import_sample_btn->rightOf(map_label, Widget_Align::CENTER, 20);
     import_sample_btn->setCallback(this);
 
     import_spinner = new Spinner(this);
     import_spinner->setSize(20, 20);
-    Layout::rightOf(import_spinner, import_sample_btn, Widget_Align::CENTER, 5);
-    addIdleCallback(import_spinner);
+    import_spinner->rightOf(import_sample_btn, Widget_Align::CENTER, 5);
 
+    sample_map_menu = new Menu(this);
+    for (int i = 1; i < 9; i++)
+        sample_map_menu->addItem(fmt::format("Add to slot {:d}", i));
+
+    sample_map_menu->setWidth(100);
+    sample_map_menu->setFont("VG5000", VG5000, VG5000_len);
+    sample_map_menu->setDisplayNumber(8);
+    sample_map_menu->hide();
+    sample_map_menu->setCallback(sample_map);
+
+    sample_map->menu = sample_map_menu;
+
+    // ------ Sample Player
+
+    slots_container = new VBox(this);
+    slots_container->setSize(UI_W - sample_map->getWidth() - 30, sample_map->getHeight());
+    slots_container->padding = 2;
+    slots_container->justify_content = VBox::Justify_Content::space_evenly;
+    slots_container->rightOf(sample_map, Widget_Align::START, 10);
+    createSampleSlots();
+    slots_container->positionWidgets();
+
+    // ------ Sample Creator
+
+    // Advanced
     sample_controls_label = new Label(this, "sample creator");
     sample_controls_label->setFont("VG5000", VG5000, VG5000_len);
     sample_controls_label->font_size = 16.0f;
     sample_controls_label->resizeToFit();
-    Layout::below(sample_controls_label, sample_map, Widget_Align::START, 5);
+    sample_controls_label->below(sample_map, Widget_Align::START, 5);
 
     new_sample_btn = new Button(this);
     new_sample_btn->setLabel("new");
     new_sample_btn->setSize(70, 20);
-    Layout::rightOf(new_sample_btn, sample_controls_label, Widget_Align::CENTER, 20);
+    new_sample_btn->rightOf(sample_controls_label, Widget_Align::CENTER, 20);
     new_sample_btn->setCallback(this);
 
     sample_name = new TextInput(this);
     sample_name->setSize(200, 20);
-    Layout::rightOf(sample_name, new_sample_btn, Widget_Align::CENTER, 20);
+    sample_name->rightOf(new_sample_btn, Widget_Align::CENTER, 20);
     sample_name->setCallback(this);
 
     source_display = new Waveform(this);
     source_display->setSize(UI_W - 20, 80);
-    Layout::below(source_display, sample_controls_label, Widget_Align::START, 5);
+    source_display->below(sample_controls_label, Widget_Align::START, 5);
     source_display->selectable = true;
     source_display->setCallback(this);
     source_display->lineColor = Color(255, 255, 255);
@@ -100,7 +117,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     open_source_btn->background_color = Color(40, 40, 40);
     open_source_btn->text_color = Color(100, 100, 100);
     open_source_btn->setSize(100, 20);
-    Layout::onTop(open_source_btn, source_display, Widget_Align::END, Widget_Align::START, 2);
+    open_source_btn->onTop(source_display, Widget_Align::END, Widget_Align::START, 2);
     open_source_btn->setCallback(this);
 
     browser_sources_btn = new Button(this);
@@ -108,25 +125,31 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     browser_sources_btn->background_color = Color(40, 40, 40);
     browser_sources_btn->text_color = Color(100, 100, 100);
     browser_sources_btn->setSize(100, 20);
-    Layout::leftOf(browser_sources_btn, open_source_btn, Widget_Align::CENTER, 5);
+    browser_sources_btn->leftOf(open_source_btn, Widget_Align::CENTER, 5);
     browser_sources_btn->setCallback(this);
+
+    controls_toggle = new Button(this);
+    controls_toggle->setCallback(this);
+    controls_toggle->setLabel("advanced");
+    controls_toggle->setSize(100, 20);
+    controls_toggle->below(source_display, Widget_Align::START, 10);
 
     sample_display = new Waveform(this);
     sample_display->setSize(180, 80);
-    Layout::below(sample_display, source_display, Widget_Align::END, 10.0f);
+    sample_display->below(source_display, Widget_Align::END, 10);
     sample_display->setWaveform(plugin->editorPreviewWaveform);
 
     save_sample_btn = new Button(this);
     save_sample_btn->setLabel("add");
     save_sample_btn->setSize(70, 20);
-    Layout::below(save_sample_btn, sample_display, Widget_Align::END, 10.f);
+    save_sample_btn->below(sample_display, Widget_Align::END, 10);
     save_sample_btn->setCallback(this);
     save_sample_btn->setEnabled(false);
 
     play_btn = new Button(this);
     play_btn->setLabel("preview");
     play_btn->setSize(70, 20);
-    Layout::below(play_btn, sample_display, Widget_Align::START, 10.f);
+    play_btn->below(sample_display, Widget_Align::START, 10);
     play_btn->setCallback(this);
     play_btn->setEnabled(false);
 
@@ -144,12 +167,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     filterKnobs->justify_content = HBox::Justify_Content::right;
     filterKnobs->padding = 5;
 
-    // Wave shaping
     pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f, logo_font);
     volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f, logo_font);
     percussionBoost = createWAIVEKnob(this, kPercussiveBoost, "perc.", 0.0f, 1.0f, 1.0f, logo_font);
 
-    // Amp ADSR
     ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 10.0f, logo_font);
     ampAttack->format = "{:.0f}ms";
 
@@ -164,7 +185,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 1000.0f, 100.f, logo_font);
     sustainLength->format = "{:.0f}ms";
 
-    // Filter
     filterCutoff = createWAIVEKnob(this, kFilterCutoff, "cutoff", 0.0, 0.999, 0.999, logo_font);
     filterResonance = createWAIVEKnob(this, kFilterResonance, "res.", 0.0, 1.0, 0.0, logo_font);
     filterType = new DropDown(this);
@@ -182,7 +202,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     shapeKnobs->addWidget(percussionBoost);
     shapeKnobs->addWidget(volume);
     shapeKnobs->resizeToFit();
-    Layout::leftOf(shapeKnobs, sample_display, Widget_Align::CENTER, 10.f);
+    shapeKnobs->leftOf(sample_display, Widget_Align::CENTER, 10);
     shapeKnobs->positionWidgets();
 
     ampADSRKnobs->addWidget(ampAttack);
@@ -191,35 +211,63 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     ampADSRKnobs->addWidget(ampRelease);
     ampADSRKnobs->addWidget(sustainLength);
     ampADSRKnobs->resizeToFit();
-    Layout::leftOf(ampADSRKnobs, shapeKnobs, Widget_Align::CENTER, 10.f);
+    ampADSRKnobs->leftOf(shapeKnobs, Widget_Align::CENTER, 10);
     ampADSRKnobs->positionWidgets();
 
     filterKnobs->addWidget(filterType);
     filterKnobs->addWidget(filterCutoff);
     filterKnobs->addWidget(filterResonance);
     filterKnobs->resizeToFit();
-    Layout::leftOf(filterKnobs, ampADSRKnobs, Widget_Align::CENTER, 10.f);
+    filterKnobs->leftOf(ampADSRKnobs, Widget_Align::CENTER, 10);
     filterKnobs->positionWidgets();
 
-    sample_editor_controls = new WidgetGroup(this);
-    sample_editor_controls->addChildWidget(filterKnobs);
-    sample_editor_controls->addChildWidget(ampADSRKnobs);
-    sample_editor_controls->addChildWidget(shapeKnobs);
-    sample_editor_controls->computeSize();
-    sample_editor_controls->setSkipDrawing(true);
+    sample_editor_controls_advanced = new WidgetGroup(this);
+    sample_editor_controls_advanced->addChildWidget(filterKnobs);
+    sample_editor_controls_advanced->addChildWidget(ampADSRKnobs);
+    sample_editor_controls_advanced->addChildWidget(shapeKnobs);
+    sample_editor_controls_advanced->computeSize();
+    sample_editor_controls_advanced->render = false;
 
-    sample_map_menu = new Menu(this);
-    for (int i = 1; i < 9; i++)
-        sample_map_menu->addItem(fmt::format("Add to slot {:d}", i));
+    // Simple controls
+    make_kick = new Button(this);
+    make_kick->setLabel("kick");
+    make_kick->setSize(100, 20);
+    make_kick->setCallback(this);
 
-    sample_map_menu->setWidth(100);
-    sample_map_menu->setFont("VG5000", VG5000, VG5000_len);
-    sample_map_menu->setDisplayNumber(8);
-    sample_map_menu->hide();
-    sample_map_menu->setCallback(sample_map);
+    make_snare = new Button(this);
+    make_snare->setLabel("snare");
+    make_snare->setSize(100, 20);
+    make_snare->setCallback(this);
 
-    sample_map->menu = sample_map_menu;
+    make_crash = new Button(this);
+    make_crash->setLabel("crash");
+    make_crash->setSize(100, 20);
+    make_crash->setCallback(this);
 
+    simple_buttons = new HBox(this);
+    simple_buttons->padding = 10;
+    simple_buttons->addWidget(make_kick);
+    simple_buttons->addWidget(make_snare);
+    simple_buttons->addWidget(make_crash);
+    simple_buttons->resizeToFit();
+
+    instructions = new Label(this, "First load a Source above, then click to create different drum hits");
+    instructions->resizeToFit();
+    sample_editor_controls_simple = new WidgetGroup(this);
+    sample_editor_controls_simple->render = false;
+    sample_editor_controls_simple->addChildWidget(simple_buttons,
+                                                  {simple_buttons,
+                                                   sample_editor_controls_advanced,
+                                                   Position::ON_TOP,
+                                                   Widget_Align::CENTER,
+                                                   Widget_Align::END, 0});
+    // sample_editor_controls_simple->addChildWidget(instructions, {instructions, simple_buttons, Position::ON_TOP, Widget_Align::CENTER, Widget_Align::CENTER, 5});
+    sample_editor_controls_simple->repositionWidgets();
+    instructions->below(simple_buttons, Widget_Align::CENTER, 5);
+
+    simple_buttons->positionWidgets();
+
+    // ----------- Floating components
     dropdown_menu = new Menu(this);
     dropdown_menu->hide();
     dropdown_menu->setFont("VG5000", VG5000, VG5000_len);
@@ -382,26 +430,52 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
     else if (button == expand_map_btn)
     {
-        if (map_full)
+        map_full = !map_full;
+        if (!map_full)
         {
             sample_map->toFront();
             sample_map->setSize(520, 300);
 
             expand_map_btn->setLabel("↘");
             expand_map_btn->toFront();
-            Layout::onTop(expand_map_btn, sample_map, Widget_Align::END, Widget_Align::END, 5);
-            map_full = false;
         }
         else
         {
             sample_map->toFront();
-            sample_map->setSize(UI_W - 20, UI_H - 60);
+            sample_map->setSize(UI_W - 20, UI_H - 50);
 
             expand_map_btn->setLabel("↖");
             expand_map_btn->toFront();
-            Layout::onTop(expand_map_btn, sample_map, Widget_Align::END, Widget_Align::END, 5);
-            map_full = true;
         }
+        expand_map_btn->onTop(sample_map, Widget_Align::END, Widget_Align::END, 5);
+    }
+    else if (button == controls_toggle)
+    {
+        simple_controls = !simple_controls;
+        if (simple_controls)
+        {
+            sample_editor_controls_advanced->setVisible(false);
+            sample_editor_controls_simple->setVisible(true);
+            controls_toggle->setLabel("advanced");
+        }
+        else
+        {
+            sample_editor_controls_advanced->setVisible(true);
+            sample_editor_controls_simple->setVisible(false);
+            controls_toggle->setLabel("simple");
+        }
+    }
+    else if (button == make_kick)
+    {
+        std::cout << "Make kick...\n";
+    }
+    else if (button == make_snare)
+    {
+        std::cout << "Make snare...\n";
+    }
+    else if (button == make_crash)
+    {
+        std::cout << "Make crash...\n";
     }
     else
     {
@@ -695,11 +769,22 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
 
 void WAIVESamplerUI::setSampleEditorVisible(bool visible)
 {
+    if (simple_controls)
+    {
+        sample_editor_controls_advanced->setVisible(false);
+        sample_editor_controls_simple->setVisible(visible);
+    }
+    else
+    {
+        sample_editor_controls_advanced->setVisible(visible);
+        sample_editor_controls_simple->setVisible(false);
+        // ampADSRKnobs->setVisible(visible);
+        // filterKnobs->setVisible(visible);
+        // shapeKnobs->setVisible(visible);
+    }
     source_display->setVisible(visible);
+    controls_toggle->setVisible(visible);
     sample_display->setVisible(visible);
-    ampADSRKnobs->setVisible(visible);
-    filterKnobs->setVisible(visible);
-    shapeKnobs->setVisible(visible);
     open_source_btn->setVisible(visible);
     browser_sources_btn->setVisible(visible);
     save_sample_btn->setVisible(visible);
