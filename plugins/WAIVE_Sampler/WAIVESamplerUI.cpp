@@ -10,6 +10,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 {
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
+    random.seed();
+
     waive_link = new Link(this);
     waive_link->url = "https://waive.studio";
     waive_link->setAbsolutePos(UI_W - 240, 4);
@@ -472,9 +474,23 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         if (!plugin->fSourceLoaded)
             return;
 
+        // 0.5 Create new sample?
+        plugin->newSample();
+
         // 1. Select random area of source
         int source_length = plugin->fSourceLength;
-        // int startIndex = 0.9f *
+        int startIndex = 0.9f * random.nextFloat() * source_length;
+        plugin->selectWaveform(&plugin->fSourceWaveform, startIndex);
+
+        // 2. Load preset parameter values
+        plugin->loadPreset(Presets::KickPreset);
+
+        // 3. Set sample name
+        std::string sampleName = plugin->sd.getNewSampleName("kick.wav");
+        sample_name->setText(sampleName.c_str(), true);
+
+        // 4. Add to library
+        plugin->addCurrentSampleToLibrary();
     }
     else if (button == make_snare)
     {

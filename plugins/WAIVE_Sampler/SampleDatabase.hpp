@@ -135,14 +135,15 @@ public:
     void loadSampleDatabase();
     void newTag(std::string &tag);
     bool addToLibrary(std::shared_ptr<SampleInfo> sample);
+    bool updateSample(std::shared_ptr<SampleInfo> sample);
     bool renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name);
-    static std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
+    std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
     std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
     std::string getFullSamplePath(std::shared_ptr<SampleInfo> sample) const;
     std::string getSampleFolder() const;
     std::string getSourceFolder() const;
     std::string getSourcePreview() const;
-    std::string getNewSampleName(const std::string &name) const;
+    std::string getNewSampleName(const std::string &name);
 
     std::shared_ptr<SampleInfo> findSample(int id);
     std::vector<std::shared_ptr<SampleInfo>> findKNearest(float x, float y, int k);

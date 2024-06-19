@@ -28,7 +28,7 @@ namespace Presets
     static Preset KickPreset = {
         1.5f,
         0.1f,
-        1.5f,
+        0.12f,
         0.2f,
         0.0f,
         Filter::FILTER_LOWPASS,

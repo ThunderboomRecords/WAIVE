@@ -290,8 +290,6 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     if (sample == nullptr)
         return false;
 
-    std::cout << "SampleDatabase::addToLibrary\n";
-
     sample->saved = true;
 
     int id = sample->getId();
@@ -311,21 +309,50 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
         Poco::Data::Keywords::into(lastId);
     lastSampleId.execute();
 
-    std::cout << "inserted with ID " << lastId << std::endl;
     sample->setId(lastId);
 
-    // TODO: update Tags and Sample<->Tags database
+    // TODO: update Sample<->Tags database
     for (Tag t : sample->tags)
     {
-
         newTag(t.name);
     }
-
-    std::cout << "done\n";
 
     fAllSamples.push_back(sample);
     databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_ADDED);
     return true;
+}
+
+bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
+{
+    if (sample == nullptr)
+        return false;
+
+    std::cout << "SampleDatabase::updateSample\n";
+
+    int id = sample->getId();
+    std::string parameters = sample->toJson().dump();
+
+    std::cout << parameters << std::endl;
+
+    Poco::Data::Statement update(*session);
+    update << "UPDATE Samples SET name = ?, path = ?, source = ?, parameters = ? WHERE id = ?",
+        Poco::Data::Keywords::use(sample->name),
+        Poco::Data::Keywords::use(sample->path),
+        Poco::Data::Keywords::use(sample->source),
+        Poco::Data::Keywords::use(parameters),
+        Poco::Data::Keywords::use(id);
+    int n = update.execute();
+
+    std::cout << update.toString() << std::endl;
+    std::cout << n << std::endl;
+
+    // TODO: update Sample<->Tags database
+    for (Tag t : sample->tags)
+    {
+        newTag(t.name);
+    }
+
+    return n == 1;
 }
 
 void SampleDatabase::newTag(std::string &tag)
@@ -351,8 +378,8 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
     Poco::File sampleFile(Poco::Path(rootDir).append(sample->path).append(sample->name));
     Poco::Path newName(Poco::Path(rootDir).append(sample->path).append(new_name));
 
-    if (newName.getExtension().compare(".wav") != 0)
-        newName.setExtension(".wav");
+    if (newName.getExtension().compare("wav") != 0)
+        newName.setExtension("wav");
 
     try
     {
@@ -456,7 +483,7 @@ std::string SampleDatabase::getSourcePreview() const
     return sourcePreviewPath;
 }
 
-std::string SampleDatabase::getNewSampleName(const std::string &name) const
+std::string SampleDatabase::getNewSampleName(const std::string &name)
 {
     // Finds a unique name of the form "new_sample_X.wav"
     std::cout << "SampleDatabase::getNewSampleName\n";
@@ -465,15 +492,20 @@ std::string SampleDatabase::getNewSampleName(const std::string &name) const
     std::string newName(name);
 
     Poco::Path file(name);
-    std::string pattern = file.getBaseName() + "_{}" + file.getExtension();
+    std::string pattern = file.getBaseName() + "_{}." + file.getExtension();
+    std::cout << pattern << std::endl;
 
     Poco::Data::Statement select(*session);
     select << "SELECT id FROM Samples WHERE name = ?",
         Poco::Data::Keywords::use(newName),
         Poco::Data::Keywords::into(id);
 
+    std::cout << select.toString() << std::endl;
+    std::cout << newName << std::endl;
+
     while (select.execute())
     {
+        std::cout << "attempt " << x << std::endl;
         if (x > 20)
         {
             std::cerr << "Max iterations finding new sample name...\n";
@@ -490,16 +522,9 @@ std::string SampleDatabase::getNewSampleName(const std::string &name) const
 
 std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<SampleInfo> sample)
 {
-    time_t current_time = time(NULL);
+    std::string duplicateName = getNewSampleName(sample->name);
 
-    if (sample == nullptr)
-    {
-        std::cout << "duplucateSample: null input, initialising new.\n";
-        std::string name = fmt::format("Sample{:d}.wav", current_time % 10000);
-        return std::make_shared<SampleInfo>(current_time, name, SAMPLE_DIR, true);
-    }
-
-    std::shared_ptr<SampleInfo> s(new SampleInfo(current_time, sample->name, sample->path, sample->waive));
+    std::shared_ptr<SampleInfo> s(new SampleInfo(-1, duplicateName, sample->path, sample->waive));
     s->pitch = sample->pitch;
     s->percussiveBoost = sample->percussiveBoost;
     s->volume = sample->volume;

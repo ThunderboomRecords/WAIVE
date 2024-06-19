@@ -625,7 +625,6 @@ void WAIVESampler::newSample()
     {
         // duplicating..
         std::shared_ptr<SampleInfo> s = sd.duplicateSampleInfo(fCurrentSample);
-        s->name = sd.getNewSampleName(s->name);
         s->adsr = ADSR_Params(ampEnvGen.getADSR());
         s->saved = false;
         s->waive = true;
@@ -675,13 +674,20 @@ void WAIVESampler::addCurrentSampleToLibrary()
     fCurrentSample->embedX = embedding.first;
     fCurrentSample->embedY = embedding.second;
 
-    sd.addToLibrary(fCurrentSample);
+    fCurrentSample->adsr = ADSR_Params(ampEnvGen.getADSR());
+
+    if (fCurrentSample->saved)
+        sd.updateSample(fCurrentSample);
+    else
+        sd.addToLibrary(fCurrentSample);
+
     saveWaveform(sd.getFullSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength, sampleRate);
+    mapPreviewPlayer->sampleInfo = nullptr;
 }
 
 void WAIVESampler::loadPreview(int id)
 {
-    if (samplePlayers[9].sampleInfo == nullptr || samplePlayers[9].sampleInfo->getId() != id)
+    if (mapPreviewPlayer->sampleInfo == nullptr || mapPreviewPlayer->sampleInfo->getId() != id)
         loadSlot(9, id);
 
     if (id >= 0 && mapPreviewPlayer->state == PlayState::STOPPED)
@@ -775,6 +781,12 @@ void WAIVESampler::loadPreset(Preset preset)
     setParameterValue(kFilterCutoff, preset.filterCutoff);
     setParameterValue(kFilterResonance, preset.filterResonance);
     setParameterValue(kFilterType, preset.filterType);
+
+    fSampleLoaded = true;
+    pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
+
+    renderSample();
+    pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
 }
 
 void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
@@ -895,7 +907,7 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
 
     sp.state = PlayState::STOPPED;
     sp.ptr = 0;
-    int length = loadWaveform(sd.getSamplePath(info).c_str(), buffer, sampleRate);
+    int length = loadWaveform(sd.getFullSamplePath(info).c_str(), buffer, sampleRate);
 
     if (length == 0)
     {

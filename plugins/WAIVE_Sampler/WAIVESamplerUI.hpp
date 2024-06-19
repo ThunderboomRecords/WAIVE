@@ -109,6 +109,8 @@ private:
 
     WAIVESampler *plugin;
 
+    Poco::Random random;
+
     FontId logo_font;
 
     std::thread open_dialog;
