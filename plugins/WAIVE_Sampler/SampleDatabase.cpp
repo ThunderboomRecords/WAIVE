@@ -492,7 +492,31 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
     std::string newName(name);
 
     Poco::Path file(name);
-    std::string pattern = file.getBaseName() + "_{}." + file.getExtension();
+    std::string basename = file.getBaseName();
+
+    // if basename ends in `_X` or `_XX`, dont include that in pattern..
+
+    size_t pos = basename.rfind('_');
+    if (pos != std::string::npos)
+    {
+        bool isNumericSuffix = true;
+        for (size_t i = pos + 1; i < basename.length(); ++i)
+        {
+            if (!std::isdigit(basename[i]))
+            {
+                isNumericSuffix = false;
+                break;
+            }
+        }
+
+        if (isNumericSuffix)
+        {
+            // remove numeric suffix
+            basename = basename.substr(0, pos);
+        }
+    }
+
+    std::string pattern = basename + "_{}." + file.getExtension();
     std::cout << pattern << std::endl;
 
     Poco::Data::Statement select(*session);
@@ -506,7 +530,7 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
     while (select.execute())
     {
         std::cout << "attempt " << x << std::endl;
-        if (x > 20)
+        if (x > 99)
         {
             std::cerr << "Max iterations finding new sample name...\n";
             break;
