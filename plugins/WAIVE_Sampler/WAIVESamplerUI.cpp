@@ -257,7 +257,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 WAIVESamplerUI::~WAIVESamplerUI()
 {
     plugin->sd.databaseUpdate -= Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
-    source_browser_root->close();
+    source_browser_root->getWindow().close();
 
     if (open_dialog.joinable())
         open_dialog.join();

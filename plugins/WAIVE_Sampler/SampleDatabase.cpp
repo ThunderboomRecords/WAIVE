@@ -285,6 +285,8 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     if (sample == nullptr)
         return false;
 
+    std::cout << "SampleDatabase::addToLibrary\n";
+
     sample->saved = true;
 
     int id = sample->getId();
@@ -296,8 +298,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
         Poco::Data::Keywords::use(sample->name),
         Poco::Data::Keywords::use(sample->path),
         Poco::Data::Keywords::use(sample->source),
-        Poco::Data::Keywords::use(parameters),
-        Poco::Data::Keywords::now;
+        Poco::Data::Keywords::use(parameters);
     insert.execute();
 
     // TODO: update Tags and Sample<->Tags database
@@ -315,8 +316,7 @@ void SampleDatabase::newTag(std::string &tag)
 {
     Poco::Data::Statement insertTag(*session);
     insertTag << "INSERT OR IGNORE INTO Tags (tag) VALUES (?)",
-        Poco::Data::Keywords::use(tag),
-        Poco::Data::Keywords::now;
+        Poco::Data::Keywords::use(tag);
     insertTag.execute();
 }
 
@@ -619,6 +619,11 @@ void SampleDatabase::updateSourcesDatabase()
         Poco::Data::Keywords::into(tagId),
         Poco::Data::Keywords::use(tag);
 
+    // get last inserted Sources' id
+    Poco::Data::Statement lastSourceId(*session);
+    lastSourceId << "SELECT last_insert_rowid()",
+        Poco::Data::Keywords::into(sourceId);
+
     // updating the Sources<->Tags table
     Poco::Data::Statement insertTagSource(*session);
     insertTagSource << "INSERT INTO SourcesTags(source_id, tag_id) VALUES (?, ?)",
@@ -632,9 +637,9 @@ void SampleDatabase::updateSourcesDatabase()
         folder.assign(it.value()["folder"]);
 
         size_t num = insert.execute();
+        lastSourceId.execute();
         if (num)
         {
-            *session << "SELECT last_insert_rowid()", Poco::Data::Keywords::into(sourceId), Poco::Data::Keywords::now;
             std::stringstream taglist(std::string(it.value()["tags"]));
             while (std::getline(taglist, tag, '|'))
             {
@@ -722,6 +727,7 @@ void SampleDatabase::filterSources()
         Poco ::Data::Statement select(*session);
         std::string name, archive, folder;
         int id, downloaded;
+        int lastId = -1;
         select << "SELECT Sources.id, Sources.name, Sources.archive, Sources.folder, Sources.downloaded "
                   "FROM Sources "
                   "JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
@@ -749,12 +755,18 @@ void SampleDatabase::filterSources()
         std::string tag;
         selectTag << "SELECT tag FROM Tags WHERE id = ?",
             Poco::Data::Keywords::into(tag),
-            Poco::Data::Keywords::use(tagId);
+            Poco::Data::Keywords::use(tagId),
+            Poco::Data::Keywords::range(0, 1);
 
         while (!select.done())
         {
             if (!select.execute())
                 continue;
+
+            if (id == lastId)
+                continue;
+
+            lastId = id;
             SourceInfo source;
             source.id = id;
             source.archive = archive;
