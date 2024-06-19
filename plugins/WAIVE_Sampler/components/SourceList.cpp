@@ -224,10 +224,21 @@ bool SourceList::onMouse(const MouseEvent &ev)
 
         if (ev.pos.getX() > getWidth() - 26 - scrollBarWidth)
         {
-            std::cout << "download " << highlighting << std::endl;
-            if (callback != nullptr)
-                callback->sourceDownload(highlighting);
-            return true;
+            if (source_info->at(highlighting).downloaded == DownloadState::DOWNLOADED)
+            {
+                std::cout << "load source " << highlighting << std::endl;
+                if (callback != nullptr)
+                    callback->sourceLoad(highlighting);
+                return true;
+            }
+            else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
+            {
+                std::cout << "download " << highlighting << std::endl;
+                if (callback != nullptr)
+                    callback->sourceDownload(highlighting);
+                return true;
+            }
+            return false;
         }
 
         if (ev.pos.getX() < 30)

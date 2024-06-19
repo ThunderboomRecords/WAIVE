@@ -29,6 +29,7 @@ public:
     public:
         virtual ~Callback(){};
         virtual void browserStopPreview() = 0;
+        virtual void browserLoadSource(const std::string &fp) = 0;
     };
 
     explicit SourceBrowser(Window &window, SampleDatabase *sd_);
@@ -51,6 +52,7 @@ protected:
     void labelClicked(Label *label) override;
     void sourceDownload(int index) override;
     void sourcePreview(int index) override;
+    void sourceLoad(int index) override;
 
 private:
     Callback *callback;

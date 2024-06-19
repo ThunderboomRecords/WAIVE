@@ -137,6 +137,7 @@ public:
     bool renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name);
     static std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
     std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
+    std::string getFullSamplePath(std::shared_ptr<SampleInfo> sample) const;
     std::string getSampleFolder() const;
     std::string getSourceFolder() const;
     std::string getSourcePreview() const;

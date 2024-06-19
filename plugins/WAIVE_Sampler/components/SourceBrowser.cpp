@@ -142,6 +142,23 @@ void SourceBrowser::sourcePreview(int index)
     previewingSource = true;
 }
 
+void SourceBrowser::sourceLoad(int index)
+{
+    if (index < 0)
+        return;
+
+    if (callback != nullptr)
+    {
+        std::string fp = Poco::Path(sd->getSourceFolder())
+                             .append(sd->sourcesList.at(index).archive)
+                             .append(sd->sourcesList.at(index).folder)
+                             .append(sd->sourcesList.at(index).name)
+                             .toString();
+        callback->browserLoadSource(fp);
+        getWindow().close();
+    }
+}
+
 void SourceBrowser::updateSearchString(std::string text)
 {
     std::string search = "";

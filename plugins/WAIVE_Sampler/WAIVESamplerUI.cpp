@@ -520,6 +520,11 @@ void WAIVESamplerUI::browserStopPreview()
     plugin->stopSourcePreview();
 }
 
+void WAIVESamplerUI::browserLoadSource(const std::string &fp)
+{
+    plugin->loadSource(fp.c_str());
+}
+
 void WAIVESamplerUI::onNanoDisplay()
 {
     float width = getWidth();

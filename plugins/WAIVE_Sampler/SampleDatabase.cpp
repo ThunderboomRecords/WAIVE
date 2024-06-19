@@ -325,8 +325,8 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
     if (sample == nullptr)
         return false;
 
-    Poco::File sampleFile(rootDir.append(sample->path).append(sample->name));
-    Poco::Path newName(rootDir.append(sample->path).append(new_name));
+    Poco::File sampleFile(Poco::Path(rootDir).append(sample->path).append(sample->name));
+    Poco::Path newName(Poco::Path(rootDir).append(sample->path).append(new_name));
 
     if (newName.getExtension().compare(".wav") != 0)
         newName.setExtension(".wav");
@@ -402,6 +402,11 @@ std::vector<std::shared_ptr<SampleInfo>> SampleDatabase::findRadius(float x, flo
 std::string SampleDatabase::getSamplePath(std::shared_ptr<SampleInfo> sample) const
 {
     // std::string saveName = fmt::format("{:d}_{}", sample->getId(), sample->name);
+    return Poco::Path(sample->path).append(sample->name).toString();
+}
+
+std::string SampleDatabase::getFullSamplePath(std::shared_ptr<SampleInfo> sample) const
+{
     return Poco::Path(sampleFolder).append(sample->path).append(sample->name).toString();
 }
 

@@ -53,7 +53,7 @@ void ImporterTask::import(const std::string &fp)
         return;
     }
 
-    std::shared_ptr<SampleInfo> info(new SampleInfo(id, name, _ws->sd.getSampleFolder(), false));
+    std::shared_ptr<SampleInfo> info(new SampleInfo(id, name, "", false));
     info->adsr.attack = 0.0f;
     info->adsr.decay = 0.0f;
     info->adsr.sustain = 1.0f;
@@ -77,7 +77,7 @@ void ImporterTask::import(const std::string &fp)
 
     _ws->sd.addToLibrary(info);
 
-    saveWaveform(_ws->sd.getSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength, _ws->getSampleRate());
+    saveWaveform(_ws->sd.getFullSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength, _ws->getSampleRate());
     std::cout << " - import done\n";
 };
 
@@ -91,6 +91,8 @@ void FeatureExtractorTask::runTask()
     int frame = 0;
     int length = _ws->fSourceLength;
     Gist<float> gist(512, (int)_ws->getSampleRate());
+
+    _ws->sourceFeaturesMtx.lock();
     _ws->fSourceFeatures.clear();
 
     float pStep = (float)gist.getAudioFrameSize() / length;
@@ -102,7 +104,6 @@ void FeatureExtractorTask::runTask()
         float onset = gist.spectralDifferenceHWR();
         if (onset > 150.0f)
         {
-            // TODO: use mutex to reserve vector operation
             _ws->fSourceFeatures.push_back({FeatureType::Onset,
                                             "onset",
                                             onset,
@@ -114,7 +115,7 @@ void FeatureExtractorTask::runTask()
 
         frame += gist.getAudioFrameSize();
     }
-
+    _ws->sourceFeaturesMtx.unlock();
     setProgress(1.0f);
 }
 
@@ -145,8 +146,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                httpClient(&taskManager),
                                sd(&httpClient),
                                fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow),
-                               importerTask(new ImporterTask(this, &import_queue)),
-                               sourceFeatureTask(new FeatureExtractorTask(this))
+                               importerTask(new ImporterTask(this, &import_queue))
 {
     if (isDummyInstance())
     {
@@ -611,14 +611,6 @@ void WAIVESampler::loadSource(const char *fp)
 {
     std::cout << "WAIVESampler::loadSource" << std::endl;
 
-    if (sourceFeatureTask->state() != Poco::Task::TASK_FINISHED)
-    {
-        sourceFeatureTask->cancel();
-        while (sourceFeatureTask->state() == Poco::Task::TASK_RUNNING)
-        {
-        }
-    }
-
     fSourceLoaded = false;
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
 
@@ -631,12 +623,7 @@ void WAIVESampler::loadSource(const char *fp)
         if (fCurrentSample->sourceStart >= fSourceLength)
             selectWaveform(&fSourceWaveform, 0);
 
-        if (sourceFeatureTask != NULL)
-            sourceFeatureTask->release();
-
-        sourceFeatureTask = new FeatureExtractorTask(this);
-        taskManager.start(sourceFeatureTask);
-
+        taskManager.start(new FeatureExtractorTask(this));
         pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
     }
     else
@@ -686,7 +673,7 @@ void WAIVESampler::newSample()
 
         time_t current_time = time(NULL);
         std::string name = fmt::format("Sample{:d}.wav", current_time % 10000);
-        std::shared_ptr<SampleInfo> s(new SampleInfo(current_time, name, sd.getSampleFolder(), true));
+        std::shared_ptr<SampleInfo> s(new SampleInfo(current_time, name, "", true));
         s->adsr = ADSR_Params(ampEnvGen.getADSR());
         s->saved = false;
         fCurrentSample = s;
@@ -709,7 +696,7 @@ void WAIVESampler::addCurrentSampleToLibrary()
     fCurrentSample->embedY = embedding.second;
 
     sd.addToLibrary(fCurrentSample);
-    saveWaveform(sd.getSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength, sampleRate);
+    saveWaveform(sd.getFullSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength, sampleRate);
 }
 
 void WAIVESampler::loadPreview(int id)
@@ -1126,7 +1113,7 @@ int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int
 
 bool saveWaveform(const char *fp, float *buffer, sf_count_t size, int sampleRate)
 {
-    // std::cout << "WAIVESampler::saveWaveform" << std::endl;
+    std::cout << "WAIVESampler::saveWaveform to " << fp << std::endl;
 
     SndfileHandle file = SndfileHandle(
         fp,

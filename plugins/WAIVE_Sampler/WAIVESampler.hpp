@@ -178,7 +178,7 @@ protected:
 private:
     Poco::TaskManager taskManager;
     ImporterTask *importerTask;
-    FeatureExtractorTask *sourceFeatureTask;
+    // FeatureExtractorTask *sourceFeatureTask;
     ThreadsafeQueue<std::string> import_queue;
     Poco::BasicEvent<const PluginUpdate> pluginUpdate;
 
@@ -205,6 +205,7 @@ private:
     std::vector<float> fSourceWaveform;
     bool fSourceLoaded, fSampleLoaded;
     int fSourceLength;
+    std::mutex sourceFeaturesMtx;
     std::vector<WaveformFeature> fSourceFeatures;
 
     float fNormalisationRatio;

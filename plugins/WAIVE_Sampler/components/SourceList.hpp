@@ -18,6 +18,7 @@ public:
         virtual ~Callback(){};
         virtual void sourceDownload(int index) = 0;
         virtual void sourcePreview(int index) = 0;
+        virtual void sourceLoad(int index) = 0;
     };
 
     SourceList(Widget *widget);

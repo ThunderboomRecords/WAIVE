@@ -93,6 +93,7 @@ protected:
     void sampleSlotCleared(SampleSlot *slot) override;
     void sourceBrowserClosed() override;
     void browserStopPreview() override;
+    void browserLoadSource(const std::string &fp) override;
 
     void openFileBrowser(char *state, bool multiple);
 
