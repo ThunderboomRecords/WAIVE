@@ -142,7 +142,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sample_display->setWaveform(plugin->editorPreviewWaveform);
 
     save_sample_btn = new Button(this);
-    save_sample_btn->setLabel("add");
+    save_sample_btn->setLabel("save");
     save_sample_btn->setSize(70, 20);
     save_sample_btn->below(sample_display, Widget_Align::END, 10);
     save_sample_btn->setCallback(this);
@@ -474,12 +474,15 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         if (!plugin->fSourceLoaded)
             return;
 
-        // 0.5 Create new sample?
-        plugin->newSample();
+        // 1. Select random candidate area of source
+        int nCandidates = plugin->fSourceFeatures.size();
+        if (nCandidates == 0)
+            return; // or pick a random spot/
 
-        // 1. Select random area of source
-        int source_length = plugin->fSourceLength;
-        int startIndex = 0.9f * random.nextFloat() * source_length;
+        int i = random.next() % nCandidates;
+        int startIndex = plugin->fSourceFeatures[i].start;
+        // int source_length = plugin->fSourceLength;
+        // int startIndex = 0.9f * random.nextFloat() * source_length;
         plugin->selectWaveform(&plugin->fSourceWaveform, startIndex);
 
         // 2. Load preset parameter values
@@ -490,7 +493,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         sample_name->setText(sampleName.c_str(), true);
 
         // 4. Add to library
-        plugin->addCurrentSampleToLibrary();
+        // plugin->addCurrentSampleToLibrary();
     }
     else if (button == make_snare)
     {
@@ -670,7 +673,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         if (plugin->fCurrentSample->saved)
             save_sample_btn->setLabel("update");
         else
-            save_sample_btn->setLabel("add");
+            save_sample_btn->setLabel("save");
         sample_display->waveformNew();
         play_btn->setEnabled(true);
         break;
@@ -682,7 +685,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             if (plugin->fCurrentSample->saved)
                 save_sample_btn->setLabel("update");
             else
-                save_sample_btn->setLabel("add");
+                save_sample_btn->setLabel("save");
         }
         play_btn->setEnabled(true);
         break;
@@ -712,7 +715,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
                 if (plugin->fCurrentSample->saved)
                     save_sample_btn->setLabel("update");
                 else
-                    save_sample_btn->setLabel("add");
+                    save_sample_btn->setLabel("save");
             }
             else
                 save_sample_btn->setVisible(false);

@@ -11,6 +11,19 @@ struct WaveformFeature
     float value;
     int start;
     int end;
+    int index;
+};
+
+struct WaveformMeasurements
+{
+    float rms;
+    float peakEnergy;
+    float zcr;
+    float specCentroid;
+    float specCrest;
+    float specFlat;
+    float specRolloff;
+    float specKurtosis;
 };
 
 #endif

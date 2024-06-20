@@ -76,33 +76,61 @@ void FeatureExtractorTask::runTask()
     if (_ws->fSourceLength == 0)
         return;
 
+    // TODO: check and load cached features
+    Poco::File cachedir = Poco::Path(Poco::Path::cacheHome()).append("WAIVE").append("SourceAnalysis");
+    if (!cachedir.exists())
+        cachedir.createDirectories();
+
+    int frameIndex = 0;
     int frame = 0;
     int length = _ws->fSourceLength;
-    Gist<float> gist(512, (int)_ws->getSampleRate());
+    Gist<float> gist(256, (int)_ws->getSampleRate());
 
     _ws->sourceFeaturesMtx.lock();
     _ws->fSourceFeatures.clear();
+    _ws->fSourceMeasurements.clear();
 
     float pStep = (float)gist.getAudioFrameSize() / length;
     float p = 0.0f;
 
     while (frame < length - gist.getAudioFrameSize() && !isCancelled())
     {
-        gist.processAudioFrame(std::vector<float>(_ws->fSourceWaveform.begin() + frame, _ws->fSourceWaveform.begin() + frame + gist.getAudioFrameSize()));
-        float onset = gist.spectralDifferenceHWR();
-        if (onset > 150.0f)
+        WaveformMeasurements m;
+        // gist.processAudioFrame(std::vector<float>(_ws->fSourceWaveform.begin() + frame, _ws->fSourceWaveform.begin() + frame + gist.getAudioFrameSize()));
+        gist.processAudioFrame(&_ws->fSourceWaveform.at(frame), gist.getAudioFrameSize());
+
+        m.rms = gist.rootMeanSquare();
+        m.peakEnergy = gist.peakEnergy();
+        m.specCentroid = gist.spectralCentroid();
+        m.specCrest = gist.spectralCrest();
+        m.specFlat = gist.spectralFlatness();
+        m.specKurtosis = gist.spectralKurtosis();
+        m.specRolloff = gist.spectralRolloff();
+        m.zcr = gist.zeroCrossingRate();
+
+        // printf("  RMS: %6.2f PE: %6.2f SCent: %6.2f SCre: %6.2f SF: %6.2f SK: %6.2f SR: %6.2f ZCR: %6.2f\n",
+        //    m.rms, m.peakEnergy, m.specCentroid, m.specCrest, m.specFlat, m.specKurtosis, m.specRolloff, m.zcr);
+
+        float onset = gist.energyDifference();
+        if (onset > 1.5f)
         {
             _ws->fSourceFeatures.push_back({FeatureType::Onset,
                                             "onset",
                                             onset,
                                             frame,
-                                            frame});
+                                            frame,
+                                            frameIndex});
         }
+        _ws->fSourceMeasurements.push_back(m);
         p += pStep;
         setProgress(p);
 
         frame += gist.getAudioFrameSize();
+        frameIndex++;
     }
+
+    // TODO: cache features here (if not cancelled)
+
     _ws->sourceFeaturesMtx.unlock();
     setProgress(1.0f);
 }

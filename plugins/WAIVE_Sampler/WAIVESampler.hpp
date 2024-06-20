@@ -205,6 +205,7 @@ private:
     int fSourceLength;
     std::mutex sourceFeaturesMtx;
     std::vector<WaveformFeature> fSourceFeatures;
+    std::vector<WaveformMeasurements> fSourceMeasurements;
 
     float fNormalisationRatio;
     Filter sampleFilter;
