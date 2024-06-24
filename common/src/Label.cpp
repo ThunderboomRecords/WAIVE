@@ -11,7 +11,7 @@ Label::Label(Widget *parent, std::string text) noexcept
     loadSharedResources();
 }
 
-void Label::setText(std::string text)
+void Label::setLabel(std::string text)
 {
     label = text;
     repaint();

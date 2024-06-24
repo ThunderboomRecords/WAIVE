@@ -118,6 +118,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sourceLoading->onTop(sourceWaveformDisplay, START, START, padding * 2);
     sourceLoading->setLoading(false);
 
+    progress = new Label(this, "");
+    progress->font_size = 12.f;
+    progress->resizeToFit();
+    progress->rightOf(sourceLoading, START, padding);
+
     presetLabel = new Label(this, "Detect:");
     presetLabel->setFont("VG5000", VG5000, VG5000_len);
     presetLabel->resizeToFit();
@@ -735,40 +740,76 @@ void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
     if (pTask->name().compare("ImporterTask") == 0)
+    {
         sampleBrowser->loading->setLoading(true);
+    }
+    else if (pTask->name().compare("WaveformLoaderTask") == 0)
+    {
+        sourceLoading->setLoading(true);
+        progress->setLabel("Importing...");
+        progress->resizeToFit();
+        progress->setVisible(true);
+    }
+    else if (pTask->name().compare("FeatureExtractorTask") == 0)
+    {
+        sourceLoading->setLoading(true);
+        progress->setLabel("Analysing...");
+        progress->resizeToFit();
+        progress->setVisible(true);
+    }
     pTask->release();
 }
 
 void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    // std::cout << "WAIVESamplerUI::onTaskProgress: " << pTask->name() << " " << pTask->progress() << std::endl;
+    printf("WAIVESamplerUI::onTaskProgress: %s progress %.4f\n", pTask->name().c_str(), pTask->progress());
     if (pTask->name().compare("FeatureExtractorTask") == 0)
+    {
+        progress->setLabel(fmt::format("Analysing...[{:d}%]", (int)(pTask->progress() * 100.f)));
+        progress->resizeToFit();
+        progress->setVisible(true);
         sourceWaveformDisplay->repaint();
+    }
+    else if (pTask->name().compare("WaveformLoaderTask") == 0)
+    {
+        progress->setLabel(fmt::format("Importing...[{:d}%]", (int)(pTask->progress() * 100.f)));
+        progress->resizeToFit();
+        progress->setVisible(true);
+        sourceWaveformDisplay->repaint();
+    }
     pTask->release();
 }
 
 void WAIVESamplerUI::onTaskCancelled(Poco::TaskCancelledNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    // std::cout << "WAIVESamplerUI::onTaskCancelled: " << pTask->name() << std::endl;
+    std::cout << "WAIVESamplerUI::onTaskCancelled: " << pTask->name() << std::endl;
     pTask->release();
 }
 
 void WAIVESamplerUI::onTaskFailed(Poco::TaskFailedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    // std::cout << "WAIVESamplerUI::onTaskFailed: " << pTask->name() << std::endl;
+    std::cerr << "WAIVESamplerUI::onTaskFailed: " << pTask->name() << std::endl;
+    std::cerr << "Reason: " << pNf->reason().displayText() << std::endl;
     pTask->release();
 }
 
 void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    // std::cout << "WAIVESamplerUI::onTaskFinished: " << pTask->name() << std::endl;
     if (pTask->name().compare("ImporterTask") == 0)
-    {
         sampleBrowser->loading->setLoading(false);
+    else if (pTask->name().compare("WaveformLoaderTask") == 0)
+    {
+        sourceLoading->setLoading(false);
+        progress->setVisible(false);
+    }
+    else if (pTask->name().compare("FeatureExtractorTask") == 0)
+    {
+        sourceLoading->setLoading(false);
+        progress->setVisible(false);
     }
     pTask->release();
 }

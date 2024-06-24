@@ -140,9 +140,9 @@ WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buff
 
 void WaveformLoaderTask::runTask()
 {
-
+    std::cout << "WaveformLoaderTask::runTask()\n";
     SndfileHandle fileHandle(fp, SFM_READ);
-    int sampleLength = fileHandle.frames();
+    size_t sampleLength = fileHandle.frames();
 
     if (sampleLength == 0)
     {
@@ -155,58 +155,98 @@ void WaveformLoaderTask::runTask()
     int sampleChannels = fileHandle.channels();
     int fileSampleRate = fileHandle.samplerate();
 
-    // std::cout << "sampleChannels: " << sampleChannels << " "
-    //           << " sampleLength: " << sampleLength
-    //           << " fileSampleRate: " << fileSampleRate
-    //           << " (sampleRate: " << sampleRate << ")\n";
-
     std::vector<float> sample;
     sample.resize(sampleLength * sampleChannels);
     fileHandle.read(&sample.at(0), sampleLength * sampleChannels);
 
     std::vector<float> sample_tmp;
-    int new_size = sampleLength;
+    size_t new_size = sampleLength;
+
+    if (isCancelled())
+        return;
 
     // resample data
     if (fileSampleRate != sampleRate)
     {
-        // TODO: use the stream API to resample and load the waveform
-        // incramentally
-        new_size = (int)((double)sampleLength * sampleRate / fileSampleRate + 1);
-        sample_tmp.resize(static_cast<size_t>(new_size * sampleChannels));
+        double src_ratio = (double)sampleRate / fileSampleRate;
+        new_size = (size_t)(sampleLength * src_ratio + 1);
+        sample_tmp.reserve(new_size);
 
         SRC_DATA src_data;
-        src_data.input_frames = sampleLength;
-        src_data.data_out = sample_tmp.data(); //&sample_tmp.at(0);
-        src_data.data_in = sample.data();
-        src_data.output_frames = new_size;
-        src_data.src_ratio = (float)sampleRate / fileSampleRate;
+        src_data.src_ratio = src_ratio;
 
         std::cout << "RESAMPLING WAVEFORM:\n";
         std::cout << "  fileSampleRate: " << fileSampleRate << std::endl;
         std::cout << "      sampleRate: " << sampleRate << std::endl;
         std::cout << " sample_channels: " << sampleChannels << std::endl;
-        std::cout << "    input_frames: " << src_data.input_frames << std::endl;
-        std::cout << "   output_frames: " << src_data.output_frames << std::endl;
         std::cout << "       src_ratio: " << src_data.src_ratio << std::endl;
 
-        int result = src_simple(&src_data, SRC_SINC_BEST_QUALITY, sampleChannels);
-        if (result != 0)
-            std::cerr << "Failed to convert sample rate: " << src_strerror(result) << std::endl;
-        else
-            std::cout << "sample rate sucessfully converted\n";
+        size_t chunk = 512;
+        std::vector<float> outputChunk((size_t)(sampleChannels * chunk * src_data.src_ratio) + sampleChannels);
+
+        double progress = 0.0f;
+        int error;
+
+        SRC_STATE *converter = src_new(SRC_SINC_BEST_QUALITY, sampleChannels, &error);
+        if (converter == NULL)
+        {
+            std::cout << "Could not init samplerate converter, reason: " << sf_error_number(error) << std::endl;
+            return;
+        }
+
+        setProgress(progress);
+
+        src_data.end_of_input = 0;
+        src_data.input_frames = chunk;
+
+        size_t inputPos = 0;
+        double pStep = (double)chunk / sample.size();
+        while (inputPos < sample.size())
+        {
+            if (isCancelled())
+            {
+                src_delete(converter);
+                return;
+            }
+
+            size_t currentChunkSize = std::min(chunk, (sample.size() - inputPos) / sampleChannels);
+
+            src_data.data_in = sample.data() + inputPos;
+            src_data.input_frames = currentChunkSize;
+            src_data.data_out = outputChunk.data();
+            src_data.output_frames = outputChunk.size() / sampleChannels;
+
+            error = src_process(converter, &src_data);
+            if (error)
+            {
+                std::cout << "Error during sample rate conversion: " << src_strerror(error) << std::endl;
+                src_delete(converter);
+                return;
+            }
+
+            sample_tmp.insert(sample_tmp.end(), src_data.data_out, src_data.data_out + src_data.output_frames_gen * sampleChannels);
+
+            progress += pStep;
+            setProgress(progress);
+
+            inputPos += currentChunkSize * sampleChannels;
+        }
+        std::cout << "DONE" << std::endl;
+
+        src_delete(converter);
     }
     else
         sample_tmp = sample;
 
-    std::cout << "about to resize to " << (new_size) << std::endl;
+    if (isCancelled())
+        return;
+
     buffer->resize(new_size);
 
     //  TODO: mix to Mono before sample rate conversion??
-    printf("buffer.size() %d, sample_tmp.size() %d\n", buffer->size(), sample_tmp.size());
     if (sampleChannels > 1)
     {
-        for (int i = 0; i < new_size; ++i)
+        for (size_t i = 0; i < new_size; ++i)
         {
             float sum = 0.0f;
             for (int ch = 0; ch < sampleChannels; ++ch)
@@ -216,12 +256,9 @@ void WaveformLoaderTask::runTask()
     }
     else
     {
-        // std::copy(sample_tmp.begin(), sample_tmp.begin() + sampleLength, buffer->begin());
-        for (int i = 0; i < new_size; i++)
-            buffer->at(i) = sample_tmp[i];
+        std::copy(sample_tmp.begin(), sample_tmp.begin() + new_size, buffer->begin());
     }
-
-    std::cout << "loadWaveform new_size: " << new_size << std::endl;
+    std::cout << "Finished loading waveform. new_size: " << new_size << std::endl;
 }
 
 void SamplePlayer::clear()
@@ -248,6 +285,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
                                oscClient("localhost", 8000),
                                taskManager("plugin manager", 1, 8, 60, 0),
+                               converterManager("converter manager", 1, 1, 60, 0),
                                httpClient(&taskManager),
                                sd(&httpClient),
                                fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow),
@@ -265,6 +303,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
     // Register notifications
     taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
+    converterManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
     sd.databaseUpdate += Poco::delegate(this, &WAIVESampler::onDatabaseChanged);
 
     samplePlayerWaveforms.resize(11);
@@ -328,6 +367,8 @@ WAIVESampler::~WAIVESampler()
 {
     std::cout << "closing WAIVESampler..." << std::endl;
 
+    converterManager.cancelAll();
+    converterManager.joinAll();
     taskManager.cancelAll();
     taskManager.joinAll();
 }
@@ -717,6 +758,8 @@ void WAIVESampler::loadSource(const char *fp)
     std::cout << "WAIVESampler::loadSource" << std::endl;
     fSourceLoaded = false;
     fSourcePath = std::string(fp);
+    converterManager.cancelAll();
+    converterManager.joinAll();
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
     waveformLoaderTask = new WaveformLoaderTask(tempBuffer, std::string(fp), sampleRate);
     taskManager.start(waveformLoaderTask);
@@ -1112,9 +1155,17 @@ void WAIVESampler::sampleRateChanged(double newSampleRate)
 void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    // std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << std::endl;
+    // std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << " isCancelled: " << pTask->isCancelled() << std::endl;
     if (pTask->name() == "WaveformLoaderTask")
     {
+        if (pTask->isCancelled())
+        {
+            fCurrentSample->source = "";
+            fSourcePath = "";
+            fSourceLength = 0;
+            return;
+        }
+
         fSourceLength = tempBuffer->size();
         std::cout << "fSourceLength " << fSourceLength << std::endl;
         fSourceWaveform.resize(fSourceLength);

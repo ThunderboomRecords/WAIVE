@@ -54,6 +54,17 @@ START_NAMESPACE_DISTRHO
 const unsigned int UI_W = 1000;
 const unsigned int UI_H = 582;
 
+class WAIVESamplerUI;
+
+Knob *createWAIVEKnob(
+    WAIVESamplerUI *parent,
+    Parameters param,
+    std::string label,
+    float min,
+    float max,
+    float value,
+    UI::FontId font);
+
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
                        public Waveform::Callback,
@@ -63,7 +74,6 @@ class WAIVESamplerUI : public UI,
                        public DropDown::Callback,
                        public SampleSlot::Callback,
                        public SampleBrowserRoot::Callback,
-                       //    public SampleBrowser::Callback,
                        public SourceList::Callback
 {
 public:
@@ -141,7 +151,7 @@ private:
     Knob *filterCutoff, *filterResonance;
     DropDown *filterType;
     Spinner *sourceLoading;
-    Label *instructions;
+    Label *instructions, *progress;
 
     // 3. Sample Panel Components
     Waveform *sampleWaveformDisplay;
@@ -161,15 +171,6 @@ private:
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 };
-
-Knob *createWAIVEKnob(
-    WAIVESamplerUI *parent,
-    Parameters param,
-    std::string label,
-    float min,
-    float max,
-    float value,
-    UI::FontId font);
 
 UI *createUI()
 {

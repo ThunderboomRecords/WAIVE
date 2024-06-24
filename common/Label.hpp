@@ -18,7 +18,7 @@ public:
     explicit Label(Widget *widget, std::string text) noexcept;
     void setCallback(Callback *cb);
 
-    void setText(std::string);
+    void setLabel(std::string);
     void setFont(const char *name, const uchar *data, uint size);
     void resizeToFit();
 

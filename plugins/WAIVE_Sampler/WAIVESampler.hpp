@@ -175,7 +175,7 @@ protected:
     EnvGen ampEnvGen;
 
 private:
-    Poco::TaskManager taskManager;
+    Poco::TaskManager taskManager, converterManager;
     ImporterTask *importerTask;
     WaveformLoaderTask *waveformLoaderTask;
     std::shared_ptr<std::vector<float>> tempBuffer;
