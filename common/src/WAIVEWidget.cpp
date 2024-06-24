@@ -5,14 +5,14 @@ START_NAMESPACE_DISTRHO
 WAIVEWidget::WAIVEWidget(Widget *widget, int flags) noexcept
     : NanoSubWidget(widget, flags),
       scale_factor(1.0f),
-      background_color(Color(200, 200, 200)),
-      foreground_color(Color(120, 120, 120)),
-      highlight_color(Color(Color(255, 255, 255), background_color, 0.5f)),
-      stroke_color(Color(30, 30, 30)),
-      accent_color(Color(0, 160, 245)),
-      text_color(Color(10, 10, 10)),
+      background_color(WaiveColors::grey1),
+      foreground_color(WaiveColors::grey2),
+      highlight_color(WaiveColors::light1),
+      accent_color(WaiveColors::accent1),
+      text_color(WaiveColors::text),
       font_size(16.0f),
-      font(0)
+      font(0),
+      renderDebug(false)
 {
     scale_factor = getWindow().getScaleFactor();
 }
@@ -42,19 +42,30 @@ void WAIVEWidget::onTop(NanoSubWidget *w, Widget_Align h_align, Widget_Align v_a
     Layout::onTop(this, w, h_align, v_align, padding);
 }
 
-void WAIVEWidget::setSize(uint width, uint height)
+void WAIVEWidget::setSize(uint width, uint height, bool ignore_sf)
 {
-    NanoSubWidget::setSize(width * scale_factor, height * scale_factor);
+    if (ignore_sf)
+        NanoSubWidget::setSize(width, height);
+    else
+        NanoSubWidget::setSize(width * scale_factor, height * scale_factor);
 }
 
-void WAIVEWidget::setSize(const Size<uint> &size)
+void WAIVEWidget::setSize(const Size<uint> &size, bool ignore_sf)
 {
-    NanoSubWidget::setSize(size.getWidth() * scale_factor, size.getHeight() * scale_factor);
+    if (ignore_sf)
+        NanoSubWidget::setSize(size.getWidth(), size.getHeight());
+    else
+        NanoSubWidget::setSize(size.getWidth() * scale_factor, size.getHeight() * scale_factor);
 }
 
 void WAIVEWidget::fontSize(float size)
 {
     NanoSubWidget::fontSize(size * scale_factor);
+}
+
+void WAIVEWidget::setFont(const char *name, const uchar *data, uint size)
+{
+    font = createFontFromMemory(name, data, size, false);
 }
 
 END_NAMESPACE_DISTRHO

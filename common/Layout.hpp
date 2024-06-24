@@ -36,6 +36,10 @@ namespace Layout
 
     void onTop(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, int padding);
 
+    float measureVertical(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget *w2, Widget_Align a2);
+
+    float measureHorizontal(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget *w2, Widget_Align a2);
+
 }
 END_NAMESPACE_DISTRHO
 

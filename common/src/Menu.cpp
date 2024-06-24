@@ -8,6 +8,7 @@ Menu::Menu(Widget *parent) noexcept
       has_focus(false)
 {
     loadSharedResources();
+    hide();
 }
 
 void Menu::setFont(const char *name, const uchar *data, uint size)
@@ -38,8 +39,13 @@ void Menu::setDisplayNumber(int number)
 
 void Menu::positionTo(NanoSubWidget *widget)
 {
-    // TODO: make sure it fits fully in parent window
-    setAbsolutePos(widget->getAbsolutePos());
+    int y = widget->getAbsoluteY();
+    int maxY = getWindow().getHeight();
+
+    if (y + getHeight() > maxY)
+        y = maxY - getHeight();
+
+    setAbsolutePos(widget->getAbsoluteX(), y);
     setWidth(widget->getWidth());
 }
 
@@ -70,13 +76,6 @@ void Menu::onNanoDisplay()
         closePath();
     }
 
-    beginPath();
-    strokeColor(stroke_color);
-    strokeWidth(1);
-    rect(1, 1, width - 2, height - 2);
-    stroke();
-    closePath();
-
     for (int i = 0; i < std::min(display_number, (int)items.size()); i++)
     {
         beginPath();
@@ -92,7 +91,7 @@ void Menu::onNanoDisplay()
     {
         float steps = height / items.size();
         beginPath();
-        fillColor(stroke_color);
+        fillColor(WaiveColors::light2);
         rect(width - 4, scroll_index * steps, 4, steps * display_number);
         fill();
         closePath();
@@ -137,15 +136,14 @@ bool Menu::onMotion(const MotionEvent &ev)
     {
         hide(); // maybe not?
         has_focus = false;
-        getParentWidget()->repaint();
+        getWindow().repaint();
 
         return false;
     }
     else if (hover)
     {
         has_focus = true;
-        const float height = getHeight();
-        const float item_height = height / display_number;
+        const float item_height = getHeight() / display_number;
         highlighted_item = scroll_index + std::floor(ev.pos.getY() / item_height);
 
         repaint();

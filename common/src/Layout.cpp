@@ -159,4 +159,78 @@ void Layout::onTop(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, W
     w1->setAbsolutePos(targetX, targetY);
 }
 
+float Layout::measureVertical(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget *w2, Widget_Align a2)
+{
+    float y1, y2;
+
+    switch (a1)
+    {
+    case Widget_Align::START:
+        y1 = w1->getAbsoluteY();
+        break;
+    case Widget_Align::CENTER:
+        y1 = w1->getAbsoluteY() + 0.5f * w1->getHeight();
+        break;
+    case Widget_Align::END:
+        y1 = w1->getAbsoluteY() + w1->getHeight();
+        break;
+    default:
+        break;
+    }
+
+    switch (a2)
+    {
+    case Widget_Align::START:
+        y2 = w2->getAbsoluteY();
+        break;
+    case Widget_Align::CENTER:
+        y2 = w2->getAbsoluteY() + 0.5f * w2->getHeight();
+        break;
+    case Widget_Align::END:
+        y2 = w2->getAbsoluteY() + w2->getHeight();
+        break;
+    default:
+        break;
+    }
+
+    return y2 - y1;
+}
+
+float Layout::measureHorizontal(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget *w2, Widget_Align a2)
+{
+    float x1, x2;
+
+    switch (a1)
+    {
+    case Widget_Align::START:
+        x1 = w1->getAbsoluteX();
+        break;
+    case Widget_Align::CENTER:
+        x1 = w1->getAbsoluteX() + 0.5f * w1->getWidth();
+        break;
+    case Widget_Align::END:
+        x1 = w1->getAbsoluteX() + w1->getWidth();
+        break;
+    default:
+        break;
+    }
+
+    switch (a2)
+    {
+    case Widget_Align::START:
+        x2 = w2->getAbsoluteX();
+        break;
+    case Widget_Align::CENTER:
+        x2 = w2->getAbsoluteX() + 0.5f * w2->getWidth();
+        break;
+    case Widget_Align::END:
+        x2 = w2->getAbsoluteX() + w2->getWidth();
+        break;
+    default:
+        break;
+    }
+
+    return x2 - x1;
+}
+
 END_NAMESPACE_DISTRHO

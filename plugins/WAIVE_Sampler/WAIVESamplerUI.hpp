@@ -11,28 +11,32 @@
 #include "Window.hpp"
 
 #include "WidgetGroup.hpp"
-#include "SourceBrowser.hpp"
-#include "SourceBrowserRoot.hpp"
+#include "SampleBrowser.hpp"
+#include "SampleBrowserRoot.hpp"
 #include "HBox.hpp"
 #include "VBox.hpp"
 #include "Link.hpp"
 #include "Menu.hpp"
+#include "Icon.hpp"
 #include "Knob.hpp"
 #include "Knob3D.hpp"
 #include "Label.hpp"
 #include "Popup.hpp"
+#include "Image.hpp"
 #include "Spinner.hpp"
 #include "DropDown.hpp"
 #include "Waveform.hpp"
 #include "TextInput.hpp"
 #include "SampleMap.hpp"
 #include "SampleSlot.hpp"
+#include "SourceList.hpp"
 #include "SimpleButton.hpp"
 #include "ValueIndicator.hpp"
 
 #include "Layout.hpp"
 
 #include "fonts.h"
+#include "icons/search.h"
 
 #include "WAIVESampler.hpp"
 #include "WAIVESamplerParams.h"
@@ -47,10 +51,8 @@
 
 START_NAMESPACE_DISTRHO
 
-const unsigned int UI_W = 840;
+const unsigned int UI_W = 1000;
 const unsigned int UI_H = 582;
-
-Knob3D *createWAIVEKnob();
 
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
@@ -60,8 +62,9 @@ class WAIVESamplerUI : public UI,
                        public TextInput::Callback,
                        public DropDown::Callback,
                        public SampleSlot::Callback,
-                       public SourceBrowserRoot::Callback,
-                       public SourceBrowser::Callback
+                       public SampleBrowserRoot::Callback,
+                       //    public SampleBrowser::Callback,
+                       public SourceList::Callback
 {
 public:
     WAIVESamplerUI();
@@ -76,11 +79,13 @@ public:
     void onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg);
 
 protected:
+    // Plugin callbacks
     void parameterChanged(uint32_t index, float value) override;
     void stateChanged(const char *key, const char *value) override;
     void onNanoDisplay() override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
+    // Widget Callbacks
     void buttonClicked(Button *button) override;
     void waveformSelection(Waveform *waveform, uint selectionStart) override;
     void knobDragStarted(Knob *knob) override;
@@ -89,20 +94,20 @@ protected:
     void mapSampleHovered(int id) override;
     void mapSampleSelected(int id) override;
     void mapSampleLoadSlot(int index, int slot) override;
+    void mapSampleImport() override;
     void textEntered(TextInput *textInput, std::string text) override;
     void textInputChanged(TextInput *textInput, std::string text) override;
     void dropdownSelection(DropDown *widget, int item) override;
-    void sampleSelected(SampleSlot *slot) override;
-    void sampleSlotCleared(SampleSlot *slot) override;
-    void sourceBrowserClosed() override;
-    void browserStopPreview() override;
-    void browserLoadSource(const std::string &fp) override;
+    void sampleSelected(SampleSlot *slot, int slotId) override;
+    void sampleSlotCleared(SampleSlot *slot, int slotId) override;
 
-    void openFileBrowser(char *state, bool multiple);
+    // Source List Callbacks
+    void sourceDownload(int index) override;
+    void sourcePreview(int index) override;
+    void sourceLoad(int index) override;
 
 private:
-    void createSampleSlots();
-    void setSampleEditorVisible(bool visible);
+    void beginOpenFileBrowser(const std::string &state, bool multiple);
 
     float fScale;
     double fScaleFactor;
@@ -116,42 +121,48 @@ private:
     std::thread open_dialog;
     std::atomic<bool> filebrowserOpen;
 
-    Label *logo, *map_label, *sample_controls_label;
-    ValueIndicator *value_indicator;
-    Button *import_sample_btn, *open_source_btn, *new_sample_btn, *save_sample_btn, *play_btn,
-        *expand_map_btn, *browser_sources_btn;
-    Waveform *source_display, *sample_display;
-    Knob3D *pitch, *volume, *percussionBoost;
-    Knob3D *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
-    Knob3D *filterCutoff, *filterResonance;
+    Panel *sourceBrowserPanel, *sampleEditorPanel, *samplePanel, *samplePlayerPanel;
+
+    // 1. Source Browser Components
+    SourceList *sourceList;
+    Spinner *loading;
+    Button *filterSources;
+    Panel *searchBox;
+    TextInput *sourceSearch;
+    Icon *searchIcon;
+
+    // 2. Sample Editor Components
+    Waveform *sourceWaveformDisplay;
+    HBox *presetButtons, *editorKnobs;
+    Button *makeKick, *makeSnare, *makeHihat, *makeClap, *importSource;
+    Label *presetLabel, *knobsLabel;
+    Knob *pitch, *volume, *percussionBoost;
+    Knob *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
+    Knob *filterCutoff, *filterResonance;
     DropDown *filterType;
-    SampleMap *sample_map;
-    TextInput *sample_name;
-    Spinner *import_spinner;
-
-    Button *controls_toggle;
+    Spinner *sourceLoading;
     Label *instructions;
-    HBox *simple_buttons;
-    Button *make_kick, *make_snare, *make_crash;
 
-    bool map_full, simple_controls;
+    // 3. Sample Panel Components
+    Waveform *sampleWaveformDisplay;
+    TextInput *sampleName;
+    Button *saveSampleBtn, *playSampleBtn; // *newSampleBtn;
 
+    // 4. Sample Pack Components
+    VBox *sampleSlotsContainer;
     std::vector<SampleSlot *> sampleSlots;
-    std::vector<Button *> sampleTriggerButtons;
-    std::vector<DropDown *> sampleMidiDropdowns;
-    HBox *ampADSRKnobs, *shapeKnobs, *filterKnobs;
-    VBox *slots_container;
-    WidgetGroup *sample_editor_controls_advanced, *sample_editor_controls_simple;
-    Menu *sample_map_menu, *dropdown_menu;
-    Link *waive_link;
+    Button *openMapBtn;
 
-    SourceBrowserRoot *source_browser_root;
-    SourceBrowser *source_browser;
+    SampleBrowserRoot *sampleBrowserRoot;
+    SampleBrowser *sampleBrowser;
+
+    // OTHER
+    ValueIndicator *valueIndicator;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 };
 
-Knob3D *createWAIVEKnob(
+Knob *createWAIVEKnob(
     WAIVESamplerUI *parent,
     Parameters param,
     std::string label,

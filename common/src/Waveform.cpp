@@ -4,8 +4,6 @@ START_NAMESPACE_DISTRHO
 
 Waveform::Waveform(Widget *widget) noexcept
     : WAIVEWidget(widget, 0), // No anti-aliasing to speed up rendering
-      backgroundColor(Color(40, 40, 40)),
-      lineColor(Color(200, 200, 200)),
       waveformCached(false),
       dragAction(NONE),
       waveformSelectStart(0),
@@ -17,7 +15,10 @@ Waveform::Waveform(Widget *widget) noexcept
       reduced(false),
       wf(nullptr),
       wfFeatures(nullptr),
-      featureHighlight(-1)
+      featureHighlight(-1),
+      level_of_detail(4),
+      feature_color(WaiveColors::accent1),
+      cursor_color(WaiveColors::accent2)
 {
 }
 
@@ -45,7 +46,6 @@ void Waveform::setSelection(int start, bool sendCallback = false)
 void Waveform::setWaveformLength(int length)
 {
     waveformLength = length;
-    // calculateWaveform();
 }
 
 void Waveform::waveformNew()
@@ -77,20 +77,21 @@ void Waveform::calculateWaveform()
     waveformCached = false;
 
     const int width = getWidth() - 2;
-    double samples_per_pixel = (visibleEnd - visibleStart) / (double)(width);
-    reduced = samples_per_pixel > 2.0f;
+    int number_of_blocks = width / level_of_detail;
+    double samples_per_block = (double)(visibleEnd - visibleStart) / (number_of_blocks);
+    reduced = samples_per_block > 2 * level_of_detail;
 
-    if (waveformMin.size() != width)
+    if (waveformMin.size() != number_of_blocks)
     {
-        waveformMin.resize(width);
-        waveformMax.resize(width);
+        waveformMin.resize(number_of_blocks);
+        waveformMax.resize(number_of_blocks);
     }
 
     int start, end;
-    for (int i = 0; i < width; i++)
+    for (int i = 0; i < number_of_blocks; i++)
     {
-        start = (int)(i * samples_per_pixel) + visibleStart;
-        end = std::min((int)waveformLength, (int)((i + 1) * samples_per_pixel) + visibleStart);
+        start = (int)(i * samples_per_block) + visibleStart;
+        end = std::min((int)waveformLength, (int)((i + 1) * samples_per_block) + visibleStart);
 
         auto [min, max] = std::minmax_element(
             wf->begin() + start,
@@ -116,27 +117,41 @@ void Waveform::onNanoDisplay()
     float range = visibleEnd - visibleStart;
 
     beginPath();
-    fillColor(backgroundColor);
-    rect(0, 0, width, height);
+    fillColor(background_color);
+    roundedRect(0, 0, width, height, 8.f);
     fill();
     closePath();
 
     if (!waveformCached || wf == nullptr || waveformLength == 0)
         return;
 
+    // if (reduced)
+    // {
+    //     beginPath();
+    //     strokeColor(text_color);
+    //     moveTo(0, height / 2.f);
+    //     lineTo(width, height / 2.f);
+    //     stroke();
+    //     closePath();
+    // }
+
     // draw waveform
     beginPath();
     lineJoin(BEVEL);
-    lineCap(BUTT);
-    strokeColor(lineColor);
-    strokeWidth(1.0f);
+    lineCap(SQUARE);
+    strokeColor(text_color);
+    strokeWidth(reduced ? 1.5f : 1.f);
     moveTo(0, half);
 
     for (int i = 0; i < waveformMin.size(); i++)
     {
-        lineTo(i + 1, half - waveformMax[i] * half);
         if (reduced)
-            lineTo(i + 1, half - waveformMin[i] * half);
+        {
+            moveTo((i * level_of_detail) + 1, half - waveformMax[i] * half);
+            lineTo((i * level_of_detail) + 1, half - waveformMin[i] * half);
+        }
+        else
+            lineTo((i * level_of_detail) + 1, half - waveformMax[i] * half);
     }
     stroke();
     closePath();
@@ -154,7 +169,7 @@ void Waveform::onNanoDisplay()
                     continue;
 
                 beginPath();
-                strokeColor(255, 0, 255);
+                strokeColor(feature_color);
                 if (i == featureHighlight)
                     strokeWidth(3.0f);
                 else
@@ -167,13 +182,13 @@ void Waveform::onNanoDisplay()
         }
     }
 
-    //  draw highlighted region
+    //  draw selected region
     if (selectable)
     {
         float cursorPosStart = (float)(waveformSelectStart - visibleStart) / range;
         float x1 = width * std::clamp(cursorPosStart, 0.0f, 1.0f);
         beginPath();
-        fillColor(Color(255, 200, 0, 0.8f));
+        fillColor(cursor_color);
         rect(x1, 0, 2, height);
         fill();
         closePath();
@@ -183,7 +198,7 @@ void Waveform::onNanoDisplay()
     if (visibleStart > 0 || visibleEnd < waveformLength)
     {
         beginPath();
-        fillColor(Color(30, 30, 30));
+        fillColor(Color(background_color, Color(255, 255, 255), 0.2f));
         rect(0, height - 12.0f, width, 12.0f);
         fill();
         closePath();
@@ -192,7 +207,7 @@ void Waveform::onNanoDisplay()
         if (selectable)
         {
             beginPath();
-            fillColor(Color(200, 200, 0, 0.3f));
+            fillColor(cursor_color);
             x = (float)waveformSelectStart / waveformLength * width;
             // float w = (float)(waveformSelectEnd - waveformSelectStart) / waveformLength * width;
             rect(x, height - 12.0f, 2, 12.0f);
@@ -202,10 +217,10 @@ void Waveform::onNanoDisplay()
 
         beginPath();
         strokeWidth(1.0f);
-        strokeColor(Color(230, 230, 230));
+        strokeColor(text_color);
         x = (float)visibleStart / waveformLength * width;
         float w = (float)(visibleEnd - visibleStart) / waveformLength * width;
-        rect(x + 1.0f, height - 12.0f + 1.0f, w - 2.0f, 12.0f - 1.0f);
+        rect(x + 1.0f, height - 12.0f, w - 2.0f, 12.0f - 1.0f);
         stroke();
         closePath();
     }

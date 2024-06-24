@@ -35,11 +35,12 @@ std::string Knob::getFormat() noexcept
 
 void Knob::setRadius(float r)
 {
+    radius = r;
     fontSize(font_size);
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
-    setSize(2 * radius, 2 * radius + bounds.getHeight() * 1.1);
+    setSize(std::max(2 * radius, bounds.getWidth()), 2 * radius + bounds.getHeight() * 1.5);
 }
 
 void Knob::setValue(float val, bool sendCallback) noexcept
@@ -127,18 +128,57 @@ bool Knob::onScroll(const ScrollEvent &ev)
 
 void Knob::onNanoDisplay()
 {
+    const float width = getWidth();
+    const float height = getHeight();
+
+    if (renderDebug)
+    {
+        beginPath();
+        strokeColor(accent_color);
+        rect(0, 0, width, height);
+        stroke();
+        closePath();
+    }
+
+    const float center_x = width / 2.0f;
+    const float center_y = height / 2.0f;
+
+    float normValue = (getValue() - min) / (max - min);
+    if (normValue < 0.0f)
+        normValue = 0.0f;
+
     drawIndicator();
+
+    beginPath();
+    circle(center_x, center_y, radius - gauge_width - 2.0f);
+    fillColor(foreground_color);
+    fill();
+    closePath();
+
+    float angle = (0.75f + 1.5f * normValue) * M_PI;
+    float x1 = cos(-angle) * (0.6f * radius) + center_x;
+    float y1 = -sin(-angle) * (0.6f * radius) + center_y;
+    float x2 = cos(-angle) * radius + center_x;
+    float y2 = -sin(-angle) * radius + center_y;
+
+    beginPath();
+    strokeColor(accent_color);
+    strokeWidth(gauge_width);
+    moveTo(x1, y1);
+    lineTo(x2, y2);
+    stroke();
+    closePath();
+
     drawLabel();
 }
 
 void Knob::drawIndicator()
 {
-    const float width = getWidth() * scale_factor;
-    const float height = getHeight() * scale_factor;
+    const float width = getWidth();
+    const float height = getHeight();
 
     const float center_x = width / 2.0f;
     const float center_y = height / 2.0f;
-    const float radius = std::min(center_x, center_y);
 
     float normValue = (value_ - min) / (max - min);
     if (normValue < 0.0f)
@@ -146,7 +186,7 @@ void Knob::drawIndicator()
 
     beginPath();
     strokeWidth(gauge_width);
-    strokeColor(foreground_color);
+    strokeColor(highlight_color);
     arc(center_x, center_y, radius - gauge_width / 2, 0.75f * M_PI, 0.25f * M_PI, NanoVG::Winding::CW);
     stroke();
     closePath();
@@ -176,9 +216,9 @@ void Knob::drawLabel()
     beginPath();
     fillColor(text_color);
     fontFaceId(font);
-    textAlign(Align::ALIGN_CENTER | Align::ALIGN_TOP);
-    fontSize(font_size * scale_factor);
-    text(getWidth() / 2.0f, getHeight() - font_size, label.c_str(), nullptr);
+    textAlign(Align::ALIGN_CENTER | Align::ALIGN_BOTTOM);
+    fontSize(font_size);
+    text(getWidth() / 2.0f, getHeight(), label.c_str(), nullptr);
 
     closePath();
 }

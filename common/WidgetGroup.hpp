@@ -32,7 +32,6 @@ public:
 
     void computeSize();
     void repositionWidgets();
-    bool render;
 
 protected:
     void onNanoDisplay() override;

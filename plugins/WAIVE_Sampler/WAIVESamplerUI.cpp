@@ -4,18 +4,15 @@ START_NAMESPACE_DISTRHO
 WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
                                    fScaleFactor(getScaleFactor()),
                                    fScale(1.0f),
-                                   filebrowserOpen(false),
-                                   map_full(false),
-                                   simple_controls(true)
+                                   filebrowserOpen(false)
 {
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
     random.seed();
 
-    waive_link = new Link(this);
-    waive_link->url = "https://waive.studio";
-    waive_link->setAbsolutePos(UI_W - 240, 4);
-    waive_link->setSize(230, 32);
+    float width = UI_W * fScaleFactor;
+    float height = UI_H * fScaleFactor;
+    float padding = 4.f;
 
     // register notifications
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
@@ -29,145 +26,147 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
 
-    // ------ Sample Map
+    float panelWidths = width - 3.f * padding;
+    float panelHeights = height - 3.f * padding;
 
-    sample_map = new SampleMap(this);
-    sample_map->setSize(520, 300);
-    sample_map->setAbsolutePos(10, 46);
-    sample_map->allSamples = &plugin->sd.fAllSamples;
-    sample_map->selectedSample = &plugin->fCurrentSample;
-    sample_map->background_color = Color(40, 40, 40);
-    sample_map->setCallback(this);
+    float col1Width = panelWidths * 2.f / 3.f;
+    float col2Width = panelWidths - col1Width;
 
-    expand_map_btn = new Button(this);
-    expand_map_btn->setSize(26, 26);
-    expand_map_btn->setLabel("↘");
-    expand_map_btn->background_color = Color(40, 40, 40);
-    expand_map_btn->text_color = Color(100, 100, 100);
-    expand_map_btn->setCallback(this);
-    expand_map_btn->onTop(sample_map, Widget_Align::END, Widget_Align::END, 5);
+    // 1 ----- Source Browser Panel
+    sourceBrowserPanel = new Panel(this);
+    sourceBrowserPanel->setSize(col1Width, panelHeights * 0.5f, true);
+    sourceBrowserPanel->setAbsolutePos(padding, padding);
+    sourceBrowserPanel->setFont("VG5000", VG5000, VG5000_len);
+    sourceBrowserPanel->label = "1";
+    sourceBrowserPanel->title = "Source";
 
-    map_label = new Label(this, "sample map");
-    map_label->setFont("VG5000", VG5000, VG5000_len);
-    map_label->font_size = 16.0f;
-    map_label->resizeToFit();
-    map_label->above(sample_map, Widget_Align::START, 5);
+    sourceList = new SourceList(this);
+    sourceList->setSize(sourceBrowserPanel->getWidth() - 4.f * padding, sourceBrowserPanel->getHeight() * 0.6f);
+    sourceList->onTop(sourceBrowserPanel, CENTER, START, sourceBrowserPanel->font_size * 2.f);
+    sourceList->source_info = &(plugin->sd.sourcesList);
+    sourceList->source_info_mtx = &(plugin->sd.sourceListMutex);
+    sourceList->scrollHandle = WaiveColors::light2;
+    sourceList->scrollGutter = WaiveColors::light1;
+    sourceList->background_color = WaiveColors::grey2;
+    sourceList->accent_color = sourceBrowserPanel->background_color;
+    sourceList->padding = 0.0f;
+    sourceList->margin = 0.0f;
+    sourceList->setCallback(this);
 
-    import_sample_btn = new Button(this);
-    import_sample_btn->setLabel("import sample");
-    import_sample_btn->setSize(100, 20);
-    import_sample_btn->rightOf(map_label, Widget_Align::CENTER, 20);
-    import_sample_btn->setCallback(this);
+    filterSources = new Button(this);
+    filterSources->setLabel("Filter");
+    filterSources->resizeToFit();
+    filterSources->onTop(sourceBrowserPanel, START, END, padding * 2.f);
+    filterSources->setCallback(this);
 
-    import_spinner = new Spinner(this);
-    import_spinner->setSize(20, 20);
-    import_spinner->rightOf(import_sample_btn, Widget_Align::CENTER, 5);
+    searchBox = new Panel(this);
+    searchBox->setSize(300, filterSources->getHeight(), true);
+    searchBox->radius = searchBox->getHeight() / 2;
+    searchBox->background_color = WaiveColors::grey2;
+    searchBox->rightOf(filterSources);
 
-    sample_map_menu = new Menu(this);
-    for (int i = 1; i < 9; i++)
-        sample_map_menu->addItem(fmt::format("Add to slot {:d}", i));
+    sourceSearch = new TextInput(this);
+    sourceSearch->placeholder = "Search...";
+    sourceSearch->foreground_color = WaiveColors::light1;
+    sourceSearch->background_color = searchBox->background_color;
+    sourceSearch->setFont("VG5000", VG5000, VG5000_len);
+    sourceSearch->setSize(searchBox->getWidth() - padding * 4.f - sourceSearch->font_size, sourceSearch->font_size, true);
+    sourceSearch->onTop(searchBox, START, CENTER, padding * 2.f);
+    sourceSearch->setCallback(this);
 
-    sample_map_menu->setWidth(100);
-    sample_map_menu->setFont("VG5000", VG5000, VG5000_len);
-    sample_map_menu->setDisplayNumber(8);
-    sample_map_menu->hide();
-    sample_map_menu->setCallback(sample_map);
+    searchIcon = new Icon(this);
+    searchIcon->setImageData(search, search_len, 85, 85, IMAGE_GENERATE_MIPMAPS);
+    searchIcon->setSize(sourceSearch->getHeight() - padding, sourceSearch->getHeight() - padding, false);
+    searchIcon->onTop(searchBox, END, CENTER, padding * 2.f);
 
-    sample_map->menu = sample_map_menu;
+    loading = new Spinner(this);
+    loading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
+    loading->rightOf(searchBox, CENTER, padding * 2.f);
 
-    // ------ Sample Player
+    sourceList->setHeight(Layout::measureVertical(sourceList, START, searchBox, START) - 2.f * padding);
+    sourceBrowserPanel->addChildWidget(sourceList);
+    sourceBrowserPanel->addChildWidget(filterSources);
+    sourceBrowserPanel->addChildWidget(searchBox);
+    sourceBrowserPanel->addChildWidget(sourceSearch);
 
-    slots_container = new VBox(this);
-    slots_container->setSize(UI_W - sample_map->getWidth() - 30, sample_map->getHeight());
-    slots_container->padding = 2;
-    slots_container->justify_content = VBox::Justify_Content::space_evenly;
-    slots_container->rightOf(sample_map, Widget_Align::START, 10);
-    createSampleSlots();
-    slots_container->positionWidgets();
+    // 2 ----- Sample Editor Panel
+    sampleEditorPanel = new Panel(this);
+    sampleEditorPanel->setSize(col1Width, panelHeights * 0.5f, true);
+    sampleEditorPanel->below(sourceBrowserPanel, START, padding);
+    sampleEditorPanel->setFont("VG5000", VG5000, VG5000_len);
+    sampleEditorPanel->label = "2";
+    sampleEditorPanel->title = "Sample Editor";
 
-    // ------ Sample Creator
+    importSource = new Button(this);
+    importSource->setLabel("Import source");
+    importSource->resizeToFit();
+    importSource->onTop(sampleEditorPanel, END, START, padding * 2.f);
+    importSource->setCallback(this);
 
-    // Advanced
-    sample_controls_label = new Label(this, "sample creator");
-    sample_controls_label->setFont("VG5000", VG5000, VG5000_len);
-    sample_controls_label->font_size = 16.0f;
-    sample_controls_label->resizeToFit();
-    sample_controls_label->below(sample_map, Widget_Align::START, 5);
+    sourceWaveformDisplay = new Waveform(this);
+    sourceWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 4.f * padding, 100);
+    sourceWaveformDisplay->below(importSource, END, padding);
+    sourceWaveformDisplay->selectable = true;
+    sourceWaveformDisplay->setCallback(this);
+    sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
+    sourceWaveformDisplay->setWaveformFeatures(&plugin->fSourceFeatures);
+    sourceWaveformDisplay->background_color = WaiveColors::dark;
+    sampleEditorPanel->addChildWidget(sourceWaveformDisplay);
 
-    new_sample_btn = new Button(this);
-    new_sample_btn->setLabel("new");
-    new_sample_btn->setSize(70, 20);
-    new_sample_btn->rightOf(sample_controls_label, Widget_Align::CENTER, 20);
-    new_sample_btn->setCallback(this);
+    sourceLoading = new Spinner(this);
+    sourceLoading->setSize(16, 16);
+    sourceLoading->onTop(sourceWaveformDisplay, START, START, padding * 2);
+    sourceLoading->setLoading(false);
 
-    sample_name = new TextInput(this);
-    sample_name->setSize(200, 20);
-    sample_name->rightOf(new_sample_btn, Widget_Align::CENTER, 20);
-    sample_name->setCallback(this);
+    presetLabel = new Label(this, "Detect:");
+    presetLabel->setFont("VG5000", VG5000, VG5000_len);
+    presetLabel->resizeToFit();
+    knobsLabel = new Label(this, "Adjust");
+    knobsLabel->setFont("VG5000", VG5000, VG5000_len);
+    knobsLabel->resizeToFit();
 
-    source_display = new Waveform(this);
-    source_display->setSize(UI_W - 20, 80);
-    source_display->below(sample_controls_label, Widget_Align::START, 5);
-    source_display->selectable = true;
-    source_display->setCallback(this);
-    source_display->lineColor = Color(255, 255, 255);
-    source_display->setWaveform(&plugin->fSourceWaveform);
-    source_display->setWaveformFeatures(&plugin->fSourceFeatures);
+    makeKick = new Button(this);
+    makeKick->setLabel("Kick");
+    makeKick->font_size = 16.f;
+    makeKick->setFont("VG5000", VG5000, VG5000_len);
+    makeKick->setSize(100.f, 32.f);
+    makeKick->setCallback(this);
 
-    open_source_btn = new Button(this);
-    open_source_btn->setLabel("import source");
-    open_source_btn->background_color = Color(40, 40, 40);
-    open_source_btn->text_color = Color(100, 100, 100);
-    open_source_btn->setSize(100, 20);
-    open_source_btn->onTop(source_display, Widget_Align::END, Widget_Align::START, 2);
-    open_source_btn->setCallback(this);
+    makeSnare = new Button(this);
+    makeSnare->setLabel("Snare");
+    makeSnare->font_size = 16.f;
+    makeSnare->setFont("VG5000", VG5000, VG5000_len);
+    makeSnare->setSize(100.f, 32.f);
+    makeSnare->setCallback(this);
 
-    browser_sources_btn = new Button(this);
-    browser_sources_btn->setLabel("browse...");
-    browser_sources_btn->background_color = Color(40, 40, 40);
-    browser_sources_btn->text_color = Color(100, 100, 100);
-    browser_sources_btn->setSize(100, 20);
-    browser_sources_btn->leftOf(open_source_btn, Widget_Align::CENTER, 5);
-    browser_sources_btn->setCallback(this);
+    makeHihat = new Button(this);
+    makeHihat->setLabel("Hi-Hat");
+    makeHihat->font_size = 16.f;
+    makeHihat->setFont("VG5000", VG5000, VG5000_len);
+    makeHihat->setSize(100.f, 32.f);
+    makeHihat->setCallback(this);
 
-    controls_toggle = new Button(this);
-    controls_toggle->setCallback(this);
-    controls_toggle->setLabel("advanced");
-    controls_toggle->setSize(100, 20);
-    controls_toggle->below(source_display, Widget_Align::START, 10);
+    makeClap = new Button(this);
+    makeClap->setLabel("Clap");
+    makeClap->font_size = 16.f;
+    makeClap->setFont("VG5000", VG5000, VG5000_len);
+    makeClap->setSize(100.f, 32.f);
+    makeClap->setCallback(this);
 
-    sample_display = new Waveform(this);
-    sample_display->setSize(180, 80);
-    sample_display->below(source_display, Widget_Align::END, 10);
-    sample_display->setWaveform(plugin->editorPreviewWaveform);
+    presetButtons = new HBox(this);
+    presetButtons->addWidget(presetLabel);
+    presetButtons->setWidgetJustify_Content(0, HBox::Justify_Content::left);
+    presetButtons->addWidget(makeKick);
+    presetButtons->addWidget(makeSnare);
+    presetButtons->addWidget(makeHihat);
+    presetButtons->addWidget(makeClap);
+    presetButtons->below(sourceWaveformDisplay, START, 2.f * padding);
+    presetButtons->setWidth(sourceWaveformDisplay->getWidth());
+    presetButtons->setHeight(makeKick->getHeight());
+    presetButtons->justify_content = HBox::Justify_Content::space_evenly;
+    presetButtons->positionWidgets();
 
-    save_sample_btn = new Button(this);
-    save_sample_btn->setLabel("save");
-    save_sample_btn->setSize(70, 20);
-    save_sample_btn->below(sample_display, Widget_Align::END, 10);
-    save_sample_btn->setCallback(this);
-    save_sample_btn->setEnabled(false);
-
-    play_btn = new Button(this);
-    play_btn->setLabel("preview");
-    play_btn->setSize(70, 20);
-    play_btn->below(sample_display, Widget_Align::START, 10);
-    play_btn->setCallback(this);
-    play_btn->setEnabled(false);
-
-    ampADSRKnobs = new HBox(this);
-    ampADSRKnobs->setSize(300, 60);
-    ampADSRKnobs->justify_content = HBox::Justify_Content::right;
-    ampADSRKnobs->padding = 5;
-
-    shapeKnobs = new HBox(this);
-    shapeKnobs->setSize(300, 60);
-    shapeKnobs->justify_content = HBox::Justify_Content::right;
-    shapeKnobs->padding = 5;
-
-    filterKnobs = new HBox(this);
-    filterKnobs->justify_content = HBox::Justify_Content::right;
-    filterKnobs->padding = 5;
+    presetButtons->setVisible(false);
 
     pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f, logo_font);
     volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f, logo_font);
@@ -175,139 +174,160 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 10.0f, logo_font);
     ampAttack->format = "{:.0f}ms";
-
     ampDecay = createWAIVEKnob(this, kAmpDecay, "decay", 0.0f, 500.0f, 50.0f, logo_font);
     ampDecay->format = "{:.0f}ms";
-
     ampSustain = createWAIVEKnob(this, kAmpSustain, "sustain", 0.0f, 1.0f, 0.7f, logo_font);
-
     ampRelease = createWAIVEKnob(this, kAmpRelease, "release", 0.0f, 500.0f, 100.0f, logo_font);
     ampRelease->format = "{:.0f}ms";
-
     sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 1000.0f, 100.f, logo_font);
     sustainLength->format = "{:.0f}ms";
 
     filterCutoff = createWAIVEKnob(this, kFilterCutoff, "cutoff", 0.0, 0.999, 0.999, logo_font);
     filterResonance = createWAIVEKnob(this, kFilterResonance, "res.", 0.0, 1.0, 0.0, logo_font);
+
     filterType = new DropDown(this);
     filterType->font_size = 16.0f;
+    filterType->setFont("VG5000", VG5000, VG5000_len);
     filterType->addItem("LP");
     filterType->addItem("HP");
     filterType->addItem("BP");
     filterType->setId(kFilterType);
-    filterType->setFont("VG5000", VG5000, VG5000_len);
     filterType->setDisplayNumber(3);
-    filterType->setSize(40, 20);
+    filterType->setSize(35, 20);
     filterType->setCallback(this);
+    filterType->setItem(0, false);
 
-    shapeKnobs->addWidget(pitch);
-    shapeKnobs->addWidget(percussionBoost);
-    shapeKnobs->addWidget(volume);
-    shapeKnobs->resizeToFit();
-    shapeKnobs->leftOf(sample_display, Widget_Align::CENTER, 10);
-    shapeKnobs->positionWidgets();
+    editorKnobs = new HBox(this);
+    editorKnobs->addWidget(knobsLabel);
+    editorKnobs->addWidget(pitch);
+    editorKnobs->addWidget(volume);
+    editorKnobs->addWidget(percussionBoost);
+    editorKnobs->addWidget(ampAttack);
+    editorKnobs->addWidget(ampDecay);
+    editorKnobs->addWidget(ampSustain);
+    editorKnobs->addWidget(ampRelease);
+    editorKnobs->addWidget(sustainLength);
+    editorKnobs->addWidget(filterCutoff);
+    editorKnobs->addWidget(filterResonance);
+    editorKnobs->addWidget(filterType);
+    editorKnobs->below(presetButtons, START, padding);
+    editorKnobs->setWidth(presetButtons->getWidth());
+    editorKnobs->setHeight(Layout::measureVertical(editorKnobs, START, sampleEditorPanel, END) - padding);
+    editorKnobs->justify_content = HBox::Justify_Content::space_between;
+    editorKnobs->positionWidgets();
 
-    ampADSRKnobs->addWidget(ampAttack);
-    ampADSRKnobs->addWidget(ampDecay);
-    ampADSRKnobs->addWidget(ampSustain);
-    ampADSRKnobs->addWidget(ampRelease);
-    ampADSRKnobs->addWidget(sustainLength);
-    ampADSRKnobs->resizeToFit();
-    ampADSRKnobs->leftOf(shapeKnobs, Widget_Align::CENTER, 10);
-    ampADSRKnobs->positionWidgets();
+    editorKnobs->setVisible(false);
 
-    filterKnobs->addWidget(filterType);
-    filterKnobs->addWidget(filterCutoff);
-    filterKnobs->addWidget(filterResonance);
-    filterKnobs->resizeToFit();
-    filterKnobs->leftOf(ampADSRKnobs, Widget_Align::CENTER, 10);
-    filterKnobs->positionWidgets();
-
-    sample_editor_controls_advanced = new WidgetGroup(this);
-    sample_editor_controls_advanced->addChildWidget(filterKnobs);
-    sample_editor_controls_advanced->addChildWidget(ampADSRKnobs);
-    sample_editor_controls_advanced->addChildWidget(shapeKnobs);
-    sample_editor_controls_advanced->computeSize();
-    sample_editor_controls_advanced->render = false;
-
-    // Simple controls
-    make_kick = new Button(this);
-    make_kick->setLabel("kick");
-    make_kick->setSize(100, 20);
-    make_kick->setCallback(this);
-
-    make_snare = new Button(this);
-    make_snare->setLabel("snare");
-    make_snare->setSize(100, 20);
-    make_snare->setCallback(this);
-
-    make_crash = new Button(this);
-    make_crash->setLabel("crash");
-    make_crash->setSize(100, 20);
-    make_crash->setCallback(this);
-
-    simple_buttons = new HBox(this);
-    simple_buttons->padding = 10;
-    simple_buttons->addWidget(make_kick);
-    simple_buttons->addWidget(make_snare);
-    simple_buttons->addWidget(make_crash);
-    simple_buttons->resizeToFit();
-
-    instructions = new Label(this, "First load a Source above, then click to create different drum hits");
+    instructions = new Label(this, "Load a source or inport your own audio to extract samples from.");
     instructions->resizeToFit();
-    sample_editor_controls_simple = new WidgetGroup(this);
-    sample_editor_controls_simple->render = false;
-    sample_editor_controls_simple->addChildWidget(simple_buttons,
-                                                  {simple_buttons,
-                                                   sample_editor_controls_advanced,
-                                                   Position::ON_TOP,
-                                                   Widget_Align::CENTER,
-                                                   Widget_Align::END, 0});
-    // sample_editor_controls_simple->addChildWidget(instructions, {instructions, simple_buttons, Position::ON_TOP, Widget_Align::CENTER, Widget_Align::CENTER, 5});
-    sample_editor_controls_simple->repositionWidgets();
-    instructions->below(simple_buttons, Widget_Align::CENTER, 5);
+    instructions->setFont("VG5000", VG5000, VG5000_len);
+    instructions->below(sourceWaveformDisplay, CENTER, Layout::measureVertical(sourceWaveformDisplay, END, sampleEditorPanel, END) / 2.f);
 
-    simple_buttons->positionWidgets();
+    valueIndicator = new ValueIndicator(this);
+    valueIndicator->setSize(70, 20);
+    valueIndicator->setFont("VG5000", VG5000, VG5000_len);
+    valueIndicator->hide();
+    valueIndicator->background_color = WaiveColors::grey2;
 
-    // ----------- Floating components
-    dropdown_menu = new Menu(this);
-    dropdown_menu->hide();
-    dropdown_menu->setFont("VG5000", VG5000, VG5000_len);
+    // 3 ----- Sample Viewer Panel
+    samplePanel = new Panel(this);
+    samplePanel->setSize(col2Width, panelHeights / 3.f, true);
+    samplePanel->rightOf(sourceBrowserPanel, START, padding);
+    samplePanel->setFont("VG5000", VG5000, VG5000_len);
+    samplePanel->label = "3";
+    samplePanel->title = "Sample";
 
-    for (int i = 0; i < sampleSlots.size(); i++)
+    sampleWaveformDisplay = new Waveform(this);
+    sampleWaveformDisplay->setSize(samplePanel->getWidth() - 4.f * padding, samplePanel->getHeight() * 0.4f, true);
+    sampleWaveformDisplay->onTop(samplePanel, CENTER, START, samplePanel->font_size * 2.f);
+    sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
+    sampleWaveformDisplay->background_color = WaiveColors::accent1;
+    samplePanel->addChildWidget(sampleWaveformDisplay);
+
+    playSampleBtn = new Button(this);
+    playSampleBtn->setLabel("▶");
+    playSampleBtn->drawBackground = false;
+    playSampleBtn->resizeToFit();
+    playSampleBtn->onTop(sampleWaveformDisplay, END, START, padding);
+    playSampleBtn->setCallback(this);
+
+    sampleName = new TextInput(this);
+    sampleName->setSize(samplePanel->getWidth() * 0.8f, 20, true);
+    sampleName->below(sampleWaveformDisplay, CENTER, padding);
+    sampleName->setCallback(this);
+    sampleName->setFont("VG5000", VG5000, VG5000_len);
+    sampleName->placeholder = "name...";
+    sampleName->align = Align::ALIGN_CENTER;
+    sampleName->foreground_color = WaiveColors::light1;
+
+    saveSampleBtn = new Button(this);
+    saveSampleBtn->setLabel("Add to pack");
+    saveSampleBtn->resizeToFit();
+    saveSampleBtn->onTop(samplePanel, CENTER, END, padding * 2.f);
+    saveSampleBtn->setCallback(this);
+
+    // newSampleBtn = new Button(this);
+    // newSampleBtn->setLabel("New sample")
+
+    // 4 ----- Sample Player Panel
+    samplePlayerPanel = new Panel(this);
+    samplePlayerPanel->setSize(col2Width, panelHeights * 2.f / 3.f, true);
+    samplePlayerPanel->rightOf(sampleEditorPanel, END, padding);
+    samplePlayerPanel->setFont("VG5000", VG5000, VG5000_len);
+    samplePlayerPanel->label = "4";
+    samplePlayerPanel->title = "Sample Player";
+
+    openMapBtn = new Button(this);
+    openMapBtn->setLabel("Sample Map");
+    openMapBtn->resizeToFit();
+    openMapBtn->onTop(samplePlayerPanel, CENTER, END, padding * 2.f);
+    openMapBtn->setCallback(this);
+
+    sampleSlotsContainer = new VBox(this);
+    sampleSlotsContainer->justify_content = VBox::Justify_Content::space_evenly;
+    sampleSlotsContainer->setWidth(samplePlayerPanel->getWidth() - 4.f * padding);
+    sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, samplePlayerPanel->font_size * 2.f);
+    sampleSlotsContainer->setHeight(Layout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - padding);
+    samplePlayerPanel->addChildWidget(sampleSlotsContainer);
+
+    for (int i = 0; i < 8; i++)
     {
-        sampleMidiDropdowns[i]->menu = dropdown_menu;
-        sampleSlots[i]->repositionWidgets();
+        SampleSlot *slot = new SampleSlot(this);
+        slot->setSamplePlayer(&plugin->samplePlayers[i]);
+        slot->setCallback(this);
+        slot->slotId = i;
+        slot->setSize(sampleSlotsContainer->getWidth(), 35);
+
+        sampleSlotsContainer->addWidget(slot);
+        sampleSlots.push_back(slot);
     }
 
-    filterType->menu = dropdown_menu;
+    sampleSlotsContainer->positionWidgets();
+    for (int i = 0; i < sampleSlots.size(); i++)
+        sampleSlots[i]->repositionWidgets();
 
-    value_indicator = new ValueIndicator(this);
-    value_indicator->setSize(70, 20);
-    value_indicator->fontId = logo_font;
-    value_indicator->hide();
+    // 5 ----- Sample Map
+    sampleBrowserRoot = new SampleBrowserRoot(getApp(), UI_W, UI_H - 40);
+    sampleBrowserRoot->setTitle("Browse samples");
+    sampleBrowserRoot->setCallback(this);
 
-    setSampleEditorVisible(false);
+    sampleBrowser = new SampleBrowser(*sampleBrowserRoot, &plugin->sd);
+    sampleBrowser->setCallback(this);
 
-    source_browser_root = new SourceBrowserRoot(getApp(), UI_W, UI_H - 40);
-    source_browser_root->setTitle("Browse archives...");
-    source_browser_root->setCallback(this);
-
-    source_browser = new SourceBrowser(*source_browser_root, &plugin->sd);
-    source_browser->setCallback(this);
-
-    setGeometryConstraints(UI_W * fScaleFactor, UI_H * fScaleFactor, false, false);
+    setGeometryConstraints(width, height, false, false);
 
     if (fScaleFactor != 1.0)
-        setSize(UI_W * fScaleFactor, UI_H * fScaleFactor);
+        setSize(width, height);
 
-    std::cout << "WAIVESamplerUI initialised" << std::endl;
+    printf("WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
+
+    plugin->sd.downloadSourcesList();
 }
 
 WAIVESamplerUI::~WAIVESamplerUI()
 {
     plugin->sd.databaseUpdate -= Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
-    source_browser_root->getWindow().close();
+    sampleBrowserRoot->close();
 
     if (open_dialog.joinable())
         open_dialog.join();
@@ -360,7 +380,7 @@ void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
     case kSlot7MidiNumber:
     case kSlot8MidiNumber:
         slot = index - kSlot1MidiNumber;
-        sampleMidiDropdowns[slot]->setItem(value, false);
+        sampleSlots[slot]->setMidiNumber(value, false);
         break;
     default:
         break;
@@ -382,18 +402,18 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
 
 void WAIVESamplerUI::knobDragStarted(Knob *knob)
 {
-    value_indicator->setAbsoluteX(knob->getAbsoluteX());
-    value_indicator->setWidth(knob->getWidth());
-    value_indicator->setAbsoluteY(knob->getAbsoluteY() + knob->getHeight());
-    value_indicator->setFormatString(knob->getFormat());
-    value_indicator->setValue(knob->getValue());
-    value_indicator->toFront();
-    value_indicator->show();
+    valueIndicator->setAbsoluteX(knob->getAbsoluteX());
+    valueIndicator->setWidth(knob->getWidth());
+    valueIndicator->setAbsoluteY(knob->getAbsoluteY() + knob->getHeight());
+    valueIndicator->setFormatString(knob->getFormat());
+    valueIndicator->setValue(knob->getValue());
+    valueIndicator->toFront();
+    valueIndicator->show();
 }
 
 void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 {
-    value_indicator->hide();
+    valueIndicator->hide();
     repaint();
 
     plugin->triggerPreview();
@@ -402,72 +422,18 @@ void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 {
     setParameterValue(knob->getId(), value);
-    value_indicator->setValue(knob->getValue());
+    valueIndicator->setValue(knob->getValue());
 }
 
 void WAIVESamplerUI::buttonClicked(Button *button)
 {
-    if (button == open_source_btn || button == import_sample_btn)
-    {
-        if (filebrowserOpen)
-            return;
-        if (open_dialog.joinable())
-            open_dialog.join();
-
-        if (button == open_source_btn)
-            open_dialog = std::thread(&WAIVESamplerUI::openFileBrowser, this, (char *)"filename", false);
-        else if (button == import_sample_btn)
-            open_dialog = std::thread(&WAIVESamplerUI::openFileBrowser, this, (char *)"import", true);
-    }
-    else if (button == save_sample_btn)
+    if (button == importSource)
+        beginOpenFileBrowser("filename", false);
+    if (button == saveSampleBtn)
         plugin->addCurrentSampleToLibrary();
-    else if (button == play_btn)
+    else if (button == playSampleBtn)
         plugin->triggerPreview();
-    else if (button == new_sample_btn)
-        plugin->newSample();
-    else if (button == browser_sources_btn)
-    {
-        source_browser_root->show();
-        source_browser->updateSourceDatabase();
-    }
-    else if (button == expand_map_btn)
-    {
-        map_full = !map_full;
-        if (!map_full)
-        {
-            sample_map->toFront();
-            sample_map->setSize(520, 300);
-
-            expand_map_btn->setLabel("↘");
-            expand_map_btn->toFront();
-        }
-        else
-        {
-            sample_map->toFront();
-            sample_map->setSize(UI_W - 20, UI_H - 50);
-
-            expand_map_btn->setLabel("↖");
-            expand_map_btn->toFront();
-        }
-        expand_map_btn->onTop(sample_map, Widget_Align::END, Widget_Align::END, 5);
-    }
-    else if (button == controls_toggle)
-    {
-        simple_controls = !simple_controls;
-        if (simple_controls)
-        {
-            sample_editor_controls_advanced->setVisible(false);
-            sample_editor_controls_simple->setVisible(true);
-            controls_toggle->setLabel("advanced");
-        }
-        else
-        {
-            sample_editor_controls_advanced->setVisible(true);
-            sample_editor_controls_simple->setVisible(false);
-            controls_toggle->setLabel("simple");
-        }
-    }
-    else if (button == make_kick)
+    else if (button == makeKick)
     {
         std::cout << "Make kick...\n";
         // 0. Check if a source is loaded
@@ -477,67 +443,76 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 1. Select random candidate area of source
         int nCandidates = plugin->fSourceFeatures.size();
         if (nCandidates == 0)
-            return; // or pick a random spot/
+            return; // or pick a random spot?
 
         int i = random.next() % nCandidates;
         int startIndex = plugin->fSourceFeatures[i].start;
-        // int source_length = plugin->fSourceLength;
-        // int startIndex = 0.9f * random.nextFloat() * source_length;
         plugin->selectWaveform(&plugin->fSourceWaveform, startIndex);
 
         // 2. Load preset parameter values
         plugin->loadPreset(Presets::KickPreset);
 
         // 3. Set sample name
-        std::string sampleName = plugin->sd.getNewSampleName("kick.wav");
-        sample_name->setText(sampleName.c_str(), true);
+        sampleName->setText(plugin->sd.getNewSampleName("kick.wav").c_str(), true);
 
         // 4. Add to library
         // plugin->addCurrentSampleToLibrary();
     }
-    else if (button == make_snare)
+    else if (button == makeSnare)
     {
         std::cout << "Make snare...\n";
     }
-    else if (button == make_crash)
+    else if (button == makeHihat)
     {
-        std::cout << "Make crash...\n";
+        std::cout << "Make hihat...\n";
     }
-    else
+    else if (button == makeClap)
     {
-        for (int i = 0; i < sampleTriggerButtons.size(); i++)
-        {
-            if (sampleTriggerButtons[i] == button)
-            {
-                plugin->samplePlayers[i].state = PlayState::TRIGGERED;
-                break;
-            }
-        }
+        std::cout << "Make clap...\n";
+    }
+    else if (button == openMapBtn)
+    {
+        sampleBrowserRoot->show();
     }
 
     repaint();
 }
 
-void WAIVESamplerUI::openFileBrowser(char *state, bool multiple)
+void WAIVESamplerUI::mapSampleImport()
 {
-    filebrowserOpen = true;
-    char const *filename;
-    char const *filterPatterns[2] = {"*.mp3", "*.wav"};
-    filename = tinyfd_openFileDialog(
-        "Open audio file...",
-        "./",
-        2,
-        filterPatterns,
-        "Audio files",
-        multiple);
+    beginOpenFileBrowser("import", true);
+}
 
-    std::cout << filename << std::endl;
-    if (filename)
-        setState(state, filename);
-    else
-        std::cout << "No file selected" << std::endl;
+void WAIVESamplerUI::beginOpenFileBrowser(const std::string &state, bool multiple)
+{
+    if (filebrowserOpen)
+        return;
 
-    filebrowserOpen = false;
+    if (open_dialog.joinable())
+        open_dialog.join();
+
+    open_dialog = std::thread(
+        [this, state, multiple]()
+        {
+            filebrowserOpen = true;
+            char const *filename;
+            char const *filterPatterns[2] = {"*.mp3", "*.wav"};
+            filename = tinyfd_openFileDialog(
+                "Open audio file...",
+                "./",
+                2,
+                filterPatterns,
+                "Audio files",
+                multiple);
+
+            std::cout << filename << std::endl;
+            if (filename)
+                setState(state.c_str(), filename);
+            else
+                std::cout << "No file selected" << std::endl;
+
+            filebrowserOpen = false;
+        });
 }
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
@@ -562,8 +537,7 @@ void WAIVESamplerUI::mapSampleLoadSlot(int id, int slot)
 
 void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
 {
-    std::cout << "WAIVESamplerUI::textEntered " << text << std::endl;
-    if (textInput == sample_name)
+    if (textInput == sampleName)
     {
         if (text.length() == 0)
         {
@@ -574,9 +548,45 @@ void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
         if (plugin->fCurrentSample != nullptr)
             plugin->sd.renameSample(plugin->fCurrentSample, text);
     }
+    else if (textInput == sourceSearch)
+    {
+        std::string search = "";
+        search.reserve(text.size());
+
+        for (int i = 0; i < text.size(); i++)
+        {
+            if (text[i] != '"')
+                search += text[i];
+        }
+
+        if (text.compare(plugin->sd.filterConditions.searchString) != 0)
+        {
+            plugin->sd.filterConditions.searchString.assign(search);
+            plugin->sd.filterSources();
+        }
+    }
 }
 
-void WAIVESamplerUI::textInputChanged(TextInput *textInput, std::string text) {}
+void WAIVESamplerUI::textInputChanged(TextInput *textInput, std::string text)
+{
+    if (textInput == sourceSearch)
+    {
+        std::string search = "";
+        search.reserve(text.size());
+
+        for (int i = 0; i < text.size(); i++)
+        {
+            if (text[i] != '"')
+                search += text[i];
+        }
+
+        if (text.compare(plugin->sd.filterConditions.searchString) != 0)
+        {
+            plugin->sd.filterConditions.searchString.assign(search);
+            plugin->sd.filterSources();
+        }
+    }
+}
 
 void WAIVESamplerUI::dropdownSelection(DropDown *widget, int item)
 {
@@ -586,43 +596,35 @@ void WAIVESamplerUI::dropdownSelection(DropDown *widget, int item)
     }
 }
 
-void WAIVESamplerUI::sampleSelected(SampleSlot *slot)
+void WAIVESamplerUI::sampleSelected(SampleSlot *slot, int slotId)
 {
-    for (int i = 0; i < sampleSlots.size(); i++)
-    {
-        if (sampleSlots[i] != slot)
-            continue;
-
-        plugin->loadSample(sampleSlots[i]->getSamplePlayer()->sampleInfo);
-        return;
-    }
+    plugin->loadSample(sampleSlots[slotId]->getSamplePlayer()->sampleInfo);
+    return;
 };
 
-void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot)
+void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
 {
-    for (int i = 0; i < sampleSlots.size(); i++)
-    {
-        if (sampleSlots[i] != slot)
-            continue;
-
-        plugin->clearSamplePlayer(*sampleSlots[i]->getSamplePlayer());
-        return;
-    }
+    plugin->clearSamplePlayer(*sampleSlots[slotId]->getSamplePlayer());
+    return;
 };
 
-void WAIVESamplerUI::sourceBrowserClosed()
+void WAIVESamplerUI::sourceDownload(int index)
 {
-    plugin->stopSourcePreview();
+    plugin->sd.downloadSourceFile(index);
 }
 
-void WAIVESamplerUI::browserStopPreview()
-{
-    plugin->stopSourcePreview();
-}
+void WAIVESamplerUI::sourcePreview(int index) {}
 
-void WAIVESamplerUI::browserLoadSource(const std::string &fp)
+// void WAIVESamplerUI::browserStopPreview()
+// {
+//     plugin->stopSourcePreview();
+// }
+
+void WAIVESamplerUI::sourceLoad(int index)
 {
+    std::string fp = plugin->sd.getFullSourcePath(plugin->sd.sourcesList.at(index));
     plugin->loadSource(fp.c_str());
+    sourceLoading->setLoading(true);
 }
 
 void WAIVESamplerUI::onNanoDisplay()
@@ -631,18 +633,9 @@ void WAIVESamplerUI::onNanoDisplay()
     float height = getHeight();
 
     beginPath();
-    fillColor(Color(240, 240, 240));
+    fillColor(WaiveColors::dark);
     rect(0.0f, 0.0f, width, height);
     fill();
-    closePath();
-
-    beginPath();
-    fillColor(Color(40, 40, 40));
-    fontSize(32 * fScale * fScaleFactor);
-    textAlign(Align::ALIGN_RIGHT | Align::ALIGN_TOP);
-
-    fontFaceId(logo_font);
-    text(width - 10 * fScale * fScaleFactor, 4 * fScale * fScaleFactor, "waive sampler", nullptr);
     closePath();
 }
 
@@ -653,49 +646,51 @@ void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
 
 void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg)
 {
+    bool sourceAvailable;
     switch (arg)
     {
     case WAIVESampler::kSourceLoading:
         break;
     case WAIVESampler::kSourceLoaded:
-        source_display->setWaveformLength(plugin->fSourceLength);
-        source_display->waveformNew();
-        save_sample_btn->setEnabled(true);
-        break;
     case WAIVESampler::kSourceUpdated:
-        source_display->setWaveformLength(plugin->fSourceLength);
-        source_display->waveformUpdated();
+        sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
+        sourceWaveformDisplay->setWaveformLength(plugin->fSourceLength);
+        sourceWaveformDisplay->waveformNew();
+        sourceAvailable = plugin->fSourceLength > 0;
+        saveSampleBtn->setEnabled(sourceAvailable);
+        sourceLoading->setLoading(false);
+        presetButtons->setVisible(sourceAvailable);
+        editorKnobs->setVisible(sourceAvailable);
+        instructions->setVisible(!sourceAvailable);
         break;
     case WAIVESampler::kSampleLoading:
         break;
     case WAIVESampler::kSampleLoaded:
-        sample_display->setWaveformLength(plugin->fCurrentSample->sampleLength);
+        sampleWaveformDisplay->setWaveformLength(plugin->fCurrentSample->sampleLength);
         if (plugin->fCurrentSample->saved)
-            save_sample_btn->setLabel("update");
+            saveSampleBtn->setLabel("update");
         else
-            save_sample_btn->setLabel("save");
-        sample_display->waveformNew();
-        play_btn->setEnabled(true);
+            saveSampleBtn->setLabel("save");
+        sampleWaveformDisplay->waveformNew();
+        playSampleBtn->setEnabled(true);
         break;
     case WAIVESampler::kSampleUpdated:
         if (plugin->fCurrentSample != nullptr)
         {
-            sample_display->setWaveformLength(plugin->fCurrentSample->sampleLength);
-            sample_display->waveformUpdated();
+            sampleWaveformDisplay->setWaveformLength(plugin->fCurrentSample->sampleLength);
+            sampleWaveformDisplay->waveformUpdated();
             if (plugin->fCurrentSample->saved)
-                save_sample_btn->setLabel("update");
+                saveSampleBtn->setLabel("update");
             else
-                save_sample_btn->setLabel("save");
+                saveSampleBtn->setLabel("save");
         }
-        play_btn->setEnabled(true);
+        playSampleBtn->setEnabled(true);
         break;
     case WAIVESampler::kSampleAdded:
-        sample_map->repaint();
         break;
     case WAIVESampler::kParametersChanged:
         if (plugin->fCurrentSample != nullptr)
         {
-            setSampleEditorVisible(true);
             pitch->setValue(plugin->fCurrentSample->pitch, false);
             percussionBoost->setValue(plugin->fCurrentSample->percussiveBoost, false);
             volume->setValue(plugin->fCurrentSample->volume, false);
@@ -708,27 +703,20 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             ampSustain->setValue(plugin->ampEnvGen.getSustain(), false);
             ampRelease->setValue(plugin->ampEnvGen.getRelease(), false);
 
-            source_display->setSelection(plugin->fCurrentSample->sourceStart, false);
+            sourceWaveformDisplay->setSelection(plugin->fCurrentSample->sourceStart, false);
             if (plugin->fCurrentSample->waive)
             {
-                save_sample_btn->setVisible(true);
+                saveSampleBtn->setVisible(true);
                 if (plugin->fCurrentSample->saved)
-                    save_sample_btn->setLabel("update");
+                    saveSampleBtn->setLabel("update");
                 else
-                    save_sample_btn->setLabel("save");
+                    saveSampleBtn->setLabel("save");
             }
             else
-                save_sample_btn->setVisible(false);
-            sample_name->setText(plugin->fCurrentSample->name.c_str(), false);
-            new_sample_btn->setLabel("duplicate");
+                saveSampleBtn->setVisible(false);
+            sampleName->setText(plugin->fCurrentSample->name.c_str(), false);
+            // newSampleBtn->setLabel("duplicate");
         }
-        else
-        {
-            setSampleEditorVisible(false);
-            new_sample_btn->setLabel("new");
-        }
-
-        sample_map->repaint();
 
         break;
     case WAIVESampler::kSlotLoaded:
@@ -746,11 +734,8 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
 void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    // std::cout << "WAIVESamplerUI::onTaskStarted: " << pTask->name() << std::endl;
     if (pTask->name().compare("ImporterTask") == 0)
-    {
-        import_spinner->setLoading(true);
-    }
+        sampleBrowser->loading->setLoading(true);
     pTask->release();
 }
 
@@ -759,7 +744,7 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
     Poco::Task *pTask = pNf->task();
     // std::cout << "WAIVESamplerUI::onTaskProgress: " << pTask->name() << " " << pTask->progress() << std::endl;
     if (pTask->name().compare("FeatureExtractorTask") == 0)
-        source_display->repaint();
+        sourceWaveformDisplay->repaint();
     pTask->release();
 }
 
@@ -783,43 +768,50 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     // std::cout << "WAIVESamplerUI::onTaskFinished: " << pTask->name() << std::endl;
     if (pTask->name().compare("ImporterTask") == 0)
     {
-        import_spinner->setLoading(false);
+        sampleBrowser->loading->setLoading(false);
     }
     pTask->release();
 }
 
 void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
 {
-    // std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
+    std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
+    switch (arg)
+    {
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
+        loading->setLoading(true);
+        // status = ConnectionStatus::DOWNLOADING;
+        // connectionStatus->setText("downloading list...");
+        // connectionStatus->resizeToFit();
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
+        loading->setLoading(false);
+        // status = ConnectionStatus::FAILED;
+        // connectionStatus->setText("connection failed, click to retry");
+        // connectionStatus->resizeToFit();
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
+        loading->setLoading(false);
+        // setTagList(sd->getTagList());
+        // setArchiveList(sd->getArchiveList());
+        // status = ConnectionStatus::CONNECTED;
+        // connectionStatus->setText("source list downloaded");
+        // connectionStatus->resizeToFit();
+        sourceList->repaint();
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADING:
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOAD_FAILED:
+        sourceList->repaint();
+        break;
+    default:
+        break;
+    }
+    repaint();
 }
 
-void WAIVESamplerUI::setSampleEditorVisible(bool visible)
-{
-    if (simple_controls)
-    {
-        sample_editor_controls_advanced->setVisible(false);
-        sample_editor_controls_simple->setVisible(visible);
-    }
-    else
-    {
-        sample_editor_controls_advanced->setVisible(visible);
-        sample_editor_controls_simple->setVisible(false);
-        // ampADSRKnobs->setVisible(visible);
-        // filterKnobs->setVisible(visible);
-        // shapeKnobs->setVisible(visible);
-    }
-    source_display->setVisible(visible);
-    controls_toggle->setVisible(visible);
-    sample_display->setVisible(visible);
-    open_source_btn->setVisible(visible);
-    browser_sources_btn->setVisible(visible);
-    save_sample_btn->setVisible(visible);
-    play_btn->setVisible(visible);
-    sample_name->setVisible(visible);
-}
-
-// Helper functions to set up UI
-Knob3D *createWAIVEKnob(
+Knob *createWAIVEKnob(
     WAIVESamplerUI *parent,
     Parameters param,
     std::string label,
@@ -828,65 +820,19 @@ Knob3D *createWAIVEKnob(
     float value,
     UI::FontId font)
 {
-    Knob3D *knob = new Knob3D(parent);
+    Knob *knob = new Knob(parent);
     knob->setId(param);
     knob->label = label;
-    knob->setRadius(25.f);
+    knob->setRadius(16.f);
     knob->min = min;
     knob->max = max;
     knob->setValue(value);
-    knob->gauge_width = 6.0f;
+    knob->gauge_width = 3.0f;
     knob->setCallback(parent);
     knob->font = font;
+    knob->font_size = 12.f;
 
     return knob;
-}
-
-void WAIVESamplerUI::createSampleSlots()
-{
-    int n = 8;
-    float width = slots_container->getWidth();
-    for (int i = 0; i < n; i++)
-    {
-        DropDown *midi_number = new DropDown(this);
-        Button *trigger_btn = new Button(this);
-
-        trigger_btn->fontSize(16.0f);
-        trigger_btn->setLabel("▶");
-        trigger_btn->setSize(20, 20);
-
-        for (int i = 1; i < 128; i++)
-            midi_number->addItem(fmt::format("{:d}", i).c_str());
-
-        midi_number->setDisplayNumber(16);
-        midi_number->font_size = 16.0f;
-        midi_number->setSize(45, 20);
-
-        SampleSlot *slot = new SampleSlot(this);
-        slot->setCallback(this);
-        slot->addChildWidget(trigger_btn, {trigger_btn, slot, Position::ON_TOP, Widget_Align::START, Widget_Align::CENTER, 5});
-        slot->addChildWidget(midi_number, {midi_number, slot, Position::ON_TOP, Widget_Align::END, Widget_Align::CENTER, 5});
-
-        slot->setSize(width, 300.f / n - 5.f);
-        slot->setSamplePlayer(&plugin->samplePlayers.at(i));
-
-        float hue = ((float)8 - i) / (n + 2);
-        slot->highlight_color = Color::fromHSL(hue, 0.8f, 0.7f);
-
-        slots_container->addWidget(slot);
-        sampleSlots.push_back(slot);
-
-        midi_number->setItem(60 + i, false);
-        midi_number->setId(kSlot1MidiNumber + i);
-        midi_number->setCallback(this);
-
-        trigger_btn->setCallback(this);
-
-        sampleMidiDropdowns.push_back(midi_number);
-        sampleTriggerButtons.push_back(trigger_btn);
-
-        addIdleCallback(slot);
-    }
 }
 
 END_NAMESPACE_DISTRHO

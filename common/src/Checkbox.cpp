@@ -28,11 +28,8 @@ void Checkbox::onNanoDisplay()
     float r = height / 2.0f - 1.0f;
 
     beginPath();
-    strokeColor(stroke_color);
-    if (checked)
-        fillColor(accent_color);
-    else
-        fillColor(background_color);
+    strokeColor(checked ? accent_color : foreground_color);
+    fillColor(checked ? accent_color : foreground_color);
     circle(r, r, r - 2.f);
     fill();
     stroke();

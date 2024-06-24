@@ -5,13 +5,9 @@ START_NAMESPACE_DISTRHO
 using DGL_NAMESPACE::Color;
 
 ValueIndicator::ValueIndicator(Widget *parent) noexcept
-    : NanoSubWidget(parent),
+    : WAIVEWidget(parent),
       fFormat("%.2f"),
-      fValue(0.0f),
-      background_color(Color(30, 30, 30, 0.7f)),
-      text_color(Color(200, 200, 200)),
-      border_color(Color(200, 200, 200)),
-      font_size(16.0f)
+      fValue(0.0f)
 {
     loadSharedResources();
 }
@@ -37,24 +33,16 @@ void ValueIndicator::onNanoDisplay()
     const float height = getHeight();
 
     beginPath();
-    rect(0.0f, 0.0f, width, height);
     fillColor(background_color);
+    roundedRect(0.0f, 0.0f, width, height, 4.0f);
     fill();
     closePath();
 
     beginPath();
-    rect(1.0f, 1.0f, width-2.0f, height-2.0f);
-    strokeColor(border_color);
-    strokeWidth(1.0f);
-    stroke();
-    closePath();
-
-    beginPath();
     fillColor(text_color);
-    // fillColor(255, 255, 255);
     textAlign(Align::ALIGN_CENTER | Align::ALIGN_MIDDLE);
     fontSize(font_size);
-    fontFaceId(fontId);
+    fontFaceId(font);
     text(width / 2, height / 2, textString.c_str(), nullptr);
     closePath();
 }

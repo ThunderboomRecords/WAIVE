@@ -43,8 +43,6 @@ public:
     int padding;
 
 protected:
-    void onNanoDisplay() override;
-
 private:
     struct Item
     {

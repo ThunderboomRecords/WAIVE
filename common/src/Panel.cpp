@@ -2,7 +2,11 @@
 
 START_NAMESPACE_DISTRHO
 
-Panel::Panel(Widget *widget) : WAIVEWidget(widget) {}
+Panel::Panel(Widget *widget)
+    : WidgetGroup(widget), padding(10.f), radius(10.f)
+{
+    font_size = 18.f;
+}
 
 void Panel::onNanoDisplay()
 {
@@ -11,24 +15,31 @@ void Panel::onNanoDisplay()
 
     beginPath();
     fillColor(background_color);
-    rect(0, 0, width, height);
+    roundedRect(0, 0, width, height, radius);
     fill();
     closePath();
-}
 
-bool Panel::onMouse(const MouseEvent &ev)
-{
-    return contains(ev.pos);
-}
+    if (label.size() > 0)
+    {
+        beginPath();
+        fillColor(text_color);
+        fontFaceId(font);
+        fontSize(font_size);
+        textAlign(ALIGN_TOP | ALIGN_LEFT);
+        text(padding, padding, label.c_str(), nullptr);
+        closePath();
+    }
 
-bool Panel::onScroll(const ScrollEvent &ev)
-{
-    return contains(ev.pos);
-}
-
-bool Panel::onMotion(const MotionEvent &ev)
-{
-    return contains(ev.pos);
+    if (title.size() > 0)
+    {
+        beginPath();
+        fillColor(text_color);
+        fontFaceId(font);
+        fontSize(font_size);
+        textAlign(ALIGN_TOP | ALIGN_CENTER);
+        text(width * 0.5f, padding, title.c_str(), nullptr);
+        closePath();
+    }
 }
 
 END_NAMESPACE_DISTRHO

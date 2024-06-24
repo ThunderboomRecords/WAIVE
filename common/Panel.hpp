@@ -1,20 +1,25 @@
 #ifndef PANEL_HPP_INCLUDED
 #define PANEL_HPP_INCLUDED
 
-#include "WAIVEWidget.hpp"
+#include "WidgetGroup.hpp"
 
 START_NAMESPACE_DISTRHO
 
-class Panel : public WAIVEWidget
+class Panel : public WidgetGroup
 {
 public:
     Panel(Widget *widget);
 
+    std::string title;
+    std::string label;
+
+    float padding;
+    float radius;
+
 protected:
     void onNanoDisplay() override;
-    bool onMotion(const MotionEvent &ev) override;
-    bool onMouse(const MouseEvent &ev) override;
-    bool onScroll(const ScrollEvent &ev) override;
+
+    DISTRHO_LEAK_DETECTOR(Panel);
 };
 
 END_NAMESPACE_DISTRHO

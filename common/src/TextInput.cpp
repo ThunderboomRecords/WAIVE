@@ -11,6 +11,7 @@ TextInput::TextInput(Widget *parent) noexcept
       textValue(""),
       position(0),
       placeholder(""),
+      align(Align::ALIGN_LEFT),
       callback(nullptr)
 {
     loadSharedResources();
@@ -61,49 +62,67 @@ void TextInput::onNanoDisplay()
     {
         beginPath();
         fillColor(foreground_color);
-        textAlign(ALIGN_TOP);
-        fontFaceId(0);
-        text(4, 2, placeholder.c_str(), nullptr);
+        textAlign(ALIGN_MIDDLE | align);
+        fontFaceId(font);
+        if (align == Align::ALIGN_CENTER)
+            text(width / 2, height / 2, placeholder.c_str(), nullptr);
+        else if (align == Align::ALIGN_LEFT)
+            text(2, height / 2, placeholder.c_str(), nullptr);
+        else
+            text(width - 2, height / 2, placeholder.c_str(), nullptr);
+
         closePath();
     }
+
+    Rectangle<float> bounds;
 
     if (textValue.size() > 0)
     {
         beginPath();
         fillColor(text_color);
-        textAlign(ALIGN_TOP);
-        fontFaceId(0);
-        text(4, 2, textValue.c_str(), nullptr);
+        textAlign(ALIGN_MIDDLE | align);
+        fontFaceId(font);
+        if (align == Align::ALIGN_CENTER)
+            textBounds(width / 2, height / 2, textValue.c_str(), nullptr, bounds);
+        else if (align == Align::ALIGN_LEFT)
+            textBounds(2, height / 2, textValue.c_str(), nullptr, bounds);
+        else
+            textBounds(width - 2, height / 2, textValue.c_str(), nullptr, bounds);
+
+        textAlign(ALIGN_LEFT | ALIGN_TOP);
+        text(bounds.getX(), bounds.getY(), textValue.c_str(), nullptr);
         closePath();
+    }
+    else
+    {
+        if (align == Align::ALIGN_CENTER)
+            bounds.setX(width / 2);
+        else if (align == Align::ALIGN_LEFT)
+            bounds.setX(2);
+        else
+            bounds.setX(width - 2);
     }
 
     if (!hasKeyFocus)
         return;
 
     // draw cursor
+    beginPath();
+    textAlign(ALIGN_MIDDLE | ALIGN_LEFT);
+    fontFaceId(font);
+    float x;
     if (textValue.size() > 0 && position > 0)
     {
-        Rectangle<float> bounds;
-        beginPath();
-        textAlign(ALIGN_TOP);
-        fontFaceId(0);
-        textBounds(4, 2, textValue.substr(0, position).c_str(), nullptr, bounds);
-        strokeColor(text_color);
-        float x = bounds.getX() + bounds.getWidth();
-        moveTo(x, 0);
-        lineTo(x, height);
-        stroke();
-        closePath();
+        textBounds(bounds.getX(), bounds.getY(), textValue.substr(0, position).c_str(), nullptr, bounds);
+        x = bounds.getX() + bounds.getWidth();
     }
     else
-    {
-        beginPath();
-        strokeColor(text_color);
-        moveTo(4, 0);
-        lineTo(4, height);
-        stroke();
-        closePath();
-    }
+        x = bounds.getX();
+    strokeColor(text_color);
+    moveTo(x, 0);
+    lineTo(x, height);
+    stroke();
+    closePath();
 }
 
 bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
@@ -198,7 +217,8 @@ bool TextInput::onMouse(const MouseEvent &ev)
 
     if (ev.press)
     {
-        if (contains(ev.pos) && !hasKeyFocus)
+        bool inWidget = contains(ev.pos);
+        if (inWidget && !hasKeyFocus)
         {
             hasKeyFocus = true;
             lastTextValue.assign(textValue);
@@ -206,7 +226,7 @@ bool TextInput::onMouse(const MouseEvent &ev)
             repaint();
             return true;
         }
-        else if (!contains(ev.pos) && hasKeyFocus)
+        else if (!inWidget && hasKeyFocus)
         {
             if (callback != nullptr && textValue.size() > 0 && textValue.compare(lastTextValue) != 0)
                 callback->textEntered(this, textValue);
@@ -214,7 +234,7 @@ bool TextInput::onMouse(const MouseEvent &ev)
                 textValue.assign(lastTextValue);
             hasKeyFocus = false;
             repaint();
-            return true;
+            return false;
         }
     }
 

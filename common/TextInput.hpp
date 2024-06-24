@@ -24,6 +24,7 @@ public:
     void undo();
 
     std::string placeholder;
+    Align align;
 
 protected:
     void onNanoDisplay() override;

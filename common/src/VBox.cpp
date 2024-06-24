@@ -287,6 +287,4 @@ void VBox::resizeToFit()
     setHeight(height);
 }
 
-void VBox::onNanoDisplay() {}
-
 END_NAMESPACE_DISTRHO

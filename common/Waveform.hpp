@@ -32,8 +32,9 @@ public:
     void waveformNew();
     void waveformUpdated();
 
-    Color backgroundColor, lineColor;
+    Color feature_color, cursor_color;
     bool selectable, zoomable;
+    int level_of_detail;
 
 protected:
     void onNanoDisplay() override;

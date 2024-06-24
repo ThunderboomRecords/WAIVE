@@ -21,12 +21,20 @@ void Knob3D::setKnobColor(Color color)
 
 void Knob3D::onNanoDisplay()
 {
-    const float width = getWidth() * getWindow().getScaleFactor();
+    const float width = getWidth();
     const float height = getHeight();
+
+    if (renderDebug)
+    {
+        beginPath();
+        strokeColor(accent_color);
+        rect(0, 0, width, height);
+        stroke();
+        closePath();
+    }
 
     const float center_x = width / 2.0f;
     const float center_y = height / 2.0f;
-    const float radius = std::min(center_x, center_y);
 
     float normValue = (getValue() - min) / (max - min);
     if (normValue < 0.0f)

@@ -22,10 +22,8 @@ void Popup::onNanoDisplay()
 
     beginPath();
     fillColor(background_color);
-    strokeColor(stroke_color);
     roundedRect(0, 0, width, height, border_radius);
     fill();
-    stroke();
     closePath();
 }
 

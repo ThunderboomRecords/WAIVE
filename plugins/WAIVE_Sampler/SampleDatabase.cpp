@@ -468,6 +468,11 @@ std::string SampleDatabase::getFullSamplePath(std::shared_ptr<SampleInfo> sample
     return Poco::Path(sampleFolder).append(sample->path).append(sample->name).toString();
 }
 
+std::string SampleDatabase::getFullSourcePath(SourceInfo source) const
+{
+    return Poco::Path(sourceFolder).append(source.archive).append(source.folder).append(source.name).toString();
+}
+
 std::string SampleDatabase::getSampleFolder() const
 {
     return sampleFolder.toString();
@@ -486,7 +491,6 @@ std::string SampleDatabase::getSourcePreview() const
 std::string SampleDatabase::getNewSampleName(const std::string &name)
 {
     // Finds a unique name of the form "new_sample_X.wav"
-    std::cout << "SampleDatabase::getNewSampleName\n";
     int x = 0;
     int id;
     std::string newName(name);
@@ -495,7 +499,6 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
     std::string basename = file.getBaseName();
 
     // if basename ends in `_X` or `_XX`, dont include that in pattern..
-
     size_t pos = basename.rfind('_');
     if (pos != std::string::npos)
     {
@@ -517,19 +520,14 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
     }
 
     std::string pattern = basename + "_{}." + file.getExtension();
-    std::cout << pattern << std::endl;
 
     Poco::Data::Statement select(*session);
     select << "SELECT id FROM Samples WHERE name = ?",
         Poco::Data::Keywords::use(newName),
         Poco::Data::Keywords::into(id);
 
-    std::cout << select.toString() << std::endl;
-    std::cout << newName << std::endl;
-
     while (select.execute())
     {
-        std::cout << "attempt " << x << std::endl;
         if (x > 99)
         {
             std::cerr << "Max iterations finding new sample name...\n";
@@ -538,8 +536,6 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
         x++;
         newName.assign(fmt::format(pattern, x));
     }
-
-    std::cout << "new name: " << newName << std::endl;
 
     return newName;
 }
@@ -586,7 +582,6 @@ void SampleDatabase::downloadSourcesList()
             try
             {
                 this->updateSourcesDatabase();
-                databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED);
             } catch (const std::exception &e) {
                 std::cerr << e.what() << '\n';
                 databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
@@ -762,7 +757,9 @@ void SampleDatabase::updateSourcesDatabase()
         }
     }
 
+    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED);
     sourcesLoaded = true;
+    filterSources();
 }
 
 std::vector<Tag> SampleDatabase::getTagList() const

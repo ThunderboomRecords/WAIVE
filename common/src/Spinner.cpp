@@ -43,7 +43,7 @@ void Spinner::onNanoDisplay()
     beginPath();
     strokeWidth(4);
     strokeColor(foreground_color);
-    arc(center_x, center_y, radius - 2, angle * M_PI, (angle + 0.7f) * M_PI, NanoVG::CW);
+    arc(center_x, center_y, radius - 2, angle * M_PI, (angle + 1.5f) * M_PI, NanoVG::CW);
     stroke();
     closePath();
 }

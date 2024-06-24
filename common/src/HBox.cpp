@@ -289,6 +289,4 @@ void HBox::resizeToFit()
     setWidth(width);
 }
 
-void HBox::onNanoDisplay() {}
-
 END_NAMESPACE_DISTRHO

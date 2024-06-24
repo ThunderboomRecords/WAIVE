@@ -6,6 +6,7 @@
 #include "NanoVG.hpp"
 #include "fonts.h"
 
+#include "WAIVEColors.hpp"
 #include "Layout.hpp"
 
 #include <iostream>
@@ -26,23 +27,24 @@ public:
     /*
     GOTCHA: setSize() EXCLUDES scale factor, but getSize() INCLUDES scale factor
             so w1.setSize(w2.getSize()) will not necessarily make the widget the
-            same size as the second
-    TODO:   handle this? optional argument to ignore scaling factor? store "virtual"
-            (i.e. unscaled) size info?
+            same size as the second, unlese w1.setSize(..., true) is set
     */
 
     // Geometry
-    void setSize(uint width, uint height);
-    void setSize(const Size<uint> &size);
+    void setSize(uint width, uint height, bool ignore_sf = false);
+    void setSize(const Size<uint> &size, bool ignore_sf = false);
 
     // Drawing
     void fontSize(float size);
+    void setFont(const char *name, const uchar *data, uint size);
 
     // Color values
-    Color background_color, foreground_color, highlight_color, stroke_color, accent_color;
+    Color background_color, foreground_color, highlight_color, accent_color;
     Color text_color;
     float font_size;
     FontId font;
+
+    bool renderDebug;
 
 protected:
     float scale_factor;

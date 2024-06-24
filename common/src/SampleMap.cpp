@@ -5,7 +5,7 @@ START_NAMESPACE_DISTRHO
 using DGL_NAMESPACE::Color;
 
 SampleMap::SampleMap(Widget *widget) noexcept
-    : NanoBaseWidget(widget), background_color(Color(100, 100, 100)),
+    : WAIVEWidget(widget),
       c0(Color::fromHSL(0.0f, 0.8f, 0.7f)),
       c1(Color::fromHSL(0.2f, 0.8f, 0.7f)),
       c2(Color::fromHSL(0.6f, 0.8f, 0.7f)),
@@ -18,6 +18,14 @@ SampleMap::SampleMap(Widget *widget) noexcept
       selectedSample(nullptr),
       callback(nullptr)
 {
+    menu = new Menu(widget);
+    for (int i = 1; i < 9; i++)
+        menu->addItem(fmt::format("Add to slot {:d}", i));
+    menu->setWidth(100);
+    menu->setFont("VG5000", VG5000, VG5000_len);
+    menu->setDisplayNumber(8);
+    menu->hide();
+    menu->setCallback(this);
 }
 
 // pMap = ((pEmbed - cP) * zL * 0.5 + 0.5) * width
@@ -259,6 +267,12 @@ void SampleMap::onNanoDisplay()
             closePath();
         }
     }
+}
+
+void SampleMap::buttonClicked(Button *btn)
+{
+    if (callback != nullptr)
+        callback->mapSampleImport();
 }
 
 void SampleMap::setCallback(Callback *cb)

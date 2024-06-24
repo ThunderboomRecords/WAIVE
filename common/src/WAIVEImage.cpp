@@ -31,6 +31,9 @@ void WAIVEImage::drawAt(int x, int y, int w, int h, float alpha)
     {
         h = ((float)w / width) * height;
     }
+    else if (w > 0 && h > 0)
+    {
+    }
     else
     {
         std::cout << "Invalid w or h (" << w << ", " << h << ")" << std::endl;

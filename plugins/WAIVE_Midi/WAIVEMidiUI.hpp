@@ -14,6 +14,7 @@
 #include "DrumPattern.hpp"
 
 #include "fonts.h"
+#include "WAIVEColors.hpp"
 
 #include "WAIVEMidi.hpp"
 
@@ -23,7 +24,6 @@ const unsigned int UI_W = 840;
 const unsigned int UI_H = 380;
 
 class WAIVEMidiUI : public UI,
-                    public Slider::Callback,
                     public GrooveGraph::Callback
 {
 public:
@@ -34,9 +34,6 @@ protected:
     void parameterChanged(uint32_t index, float value) override;
     void stateChanged(const char *key, const char *value) override;
     void onNanoDisplay() override;
-    void sliderDragStarted(Slider *slider) override;
-    void sliderDragFinished(Slider *slider, float value) override;
-    void sliderValueChanged(Slider *slider, float value) override;
     void grooveClicked(GrooveGraph *graph) override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 

@@ -68,8 +68,6 @@ void WAIVEMidiUI::parameterChanged(uint32_t index, float value)
 {
     switch (index)
     {
-    case kThreshold:
-        fThreshold->setValue(value);
     default:
         break;
     }
@@ -133,18 +131,6 @@ void WAIVEMidiUI::onNanoDisplay()
 void WAIVEMidiUI::uiScaleFactorChanged(const double scaleFactor)
 {
     fScaleFactor = scaleFactor;
-}
-
-void WAIVEMidiUI::sliderDragStarted(Slider *slider) {}
-
-void WAIVEMidiUI::sliderDragFinished(Slider *slider, float value) {}
-
-void WAIVEMidiUI::sliderValueChanged(Slider *slider, float value)
-{
-    if (slider == fThreshold)
-    {
-        setParameterValue(kThreshold, value);
-    }
 }
 
 void WAIVEMidiUI::grooveClicked(GrooveGraph *graph)

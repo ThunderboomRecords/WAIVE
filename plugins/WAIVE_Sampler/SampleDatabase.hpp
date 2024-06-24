@@ -140,6 +140,7 @@ public:
     std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
     std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
     std::string getFullSamplePath(std::shared_ptr<SampleInfo> sample) const;
+    std::string getFullSourcePath(SourceInfo source) const;
     std::string getSampleFolder() const;
     std::string getSourceFolder() const;
     std::string getSourcePreview() const;

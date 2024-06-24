@@ -9,11 +9,14 @@ SourceList::SourceList(Widget *widget)
       rowHeight(30.f),
       scrollBarWidth(8),
       scrolling(false),
+      scrollGutter(background_color),
+      scrollHandle(foreground_color),
+      info("No results found"),
       callback(nullptr)
 {
     loadSharedResources();
 
-    download = new WAIVEImage(this, download_icon, download_icon_len, 512, 344, IMAGE_GENERATE_MIPMAPS);
+    download = new WAIVEImage(this, download_icon, download_icon_len, 131, 119, IMAGE_GENERATE_MIPMAPS);
 }
 
 void SourceList::onNanoDisplay()
@@ -23,10 +26,18 @@ void SourceList::onNanoDisplay()
 
     beginPath();
     fillColor(background_color);
-    rect(0, 0, width, height);
+    roundedRect(0, 0, width, height, scrollBarWidth / 2.f);
     fill();
-    stroke();
     closePath();
+
+    if (renderDebug)
+    {
+        beginPath();
+        strokeColor(accent_color);
+        rect(0, 0, width, height);
+        stroke();
+        closePath();
+    }
 
     if (source_info == nullptr || source_info_mtx == nullptr)
         return;
@@ -50,7 +61,7 @@ void SourceList::onNanoDisplay()
         fillColor(text_color);
         fontSize(font_size);
         textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_CENTER);
-        text(width / 2.f, height / 2.f, "no results found", nullptr);
+        text(width / 2.f, height / 2.f, info.c_str(), nullptr);
         closePath();
 
         source_info_mtx->unlock();
@@ -77,15 +88,22 @@ void SourceList::onNanoDisplay()
     // scroll bar
     if (n > maxDisplay)
     {
+        beginPath();
+        fillColor(scrollGutter);
+        roundedRect(width - scrollBarWidth, 0, scrollBarWidth, height, scrollBarWidth / 2.f);
+        fill();
+        closePath();
+
         float steps = height / n;
 
         beginPath();
-        fillColor(stroke_color);
-        rect(
+        fillColor(scrollHandle);
+        roundedRect(
             width - scrollBarWidth,
             (scrollPos / (rowHeight + margin)) * steps,
             scrollBarWidth,
-            steps * maxDisplay);
+            steps * maxDisplay,
+            scrollBarWidth / 2.f);
         fill();
         closePath();
     }
@@ -98,20 +116,14 @@ void SourceList::drawSourceInfo(
 {
     translate(x, y);
 
-    beginPath();
-    strokeWidth(1.f);
-    strokeColor(highlight ? accent_color : stroke_color);
-    roundedRect(0, 0, width, height, 4.f);
-    stroke();
-    closePath();
-
-    beginPath();
-    fillColor(text_color);
-    moveTo(8, 10);
-    lineTo(8, height - 10);
-    lineTo(23, height / 2);
-    fill();
-    closePath();
+    if (highlight)
+    {
+        beginPath();
+        fillColor(accent_color);
+        rect(0, 0, width, height);
+        fill();
+        closePath();
+    }
 
     std::string infoString = info.archive + ": " + info.name;
 
@@ -122,30 +134,43 @@ void SourceList::drawSourceInfo(
     text(30.f, height / 2.0f, infoString.c_str(), nullptr);
     closePath();
 
+    if (!highlight)
+    {
+        resetTransform();
+        return;
+    }
+
+    // play button
+    beginPath();
+    fillColor(text_color);
+    moveTo(8, 10);
+    lineTo(8, height - 10);
+    lineTo(20, height / 2);
+    fill();
+    closePath();
+
     if (info.downloaded == DownloadState::NOT_DOWNLOADED)
     {
-        globalTint(Color(0, 0, 0));
         download->align = Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE;
-        download->drawAt(width - 5, height / 2.f, 26);
-        globalTint(Color(255, 255, 255));
+        download->drawAt(width - scrollBarWidth * 2.f, height / 2.f, 26);
     }
     else if (info.downloaded == DownloadState::DOWNLOADING)
     {
         beginPath();
-        strokeColor(stroke_color);
+        strokeColor(text_color);
         strokeWidth(3.0f);
-        circle(width - 20.f, height / 2.f, 10.f);
+        circle(width - 8.f - 2.f * scrollBarWidth, height / 2.f, 8.f);
         stroke();
         closePath();
     }
     else
     {
         beginPath();
-        strokeColor(stroke_color);
+        strokeColor(text_color);
         strokeWidth(3.0f);
-        moveTo(width - 15.f, 10.f);
-        lineTo(width - 10.f, height / 2.f);
-        lineTo(width - 15.f, height - 10.f);
+        moveTo(width - scrollBarWidth * 2.f - 12.f, 10.f);
+        lineTo(width - scrollBarWidth * 2.f - 4.f, height / 2.f);
+        lineTo(width - scrollBarWidth * 2.f - 12.f, height - 10.f);
         stroke();
         closePath();
     }
@@ -222,7 +247,7 @@ bool SourceList::onMouse(const MouseEvent &ev)
             return true;
         }
 
-        if (ev.pos.getX() > getWidth() - 26 - scrollBarWidth)
+        if (ev.pos.getX() > 30)
         {
             if (source_info->at(highlighting).downloaded == DownloadState::DOWNLOADED)
             {

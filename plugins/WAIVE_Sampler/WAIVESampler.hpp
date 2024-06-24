@@ -63,6 +63,7 @@ enum PlayState
 
 class ImporterTask;
 class FeatureExtractorTask;
+class WaveformLoaderTask;
 
 struct SamplePlayer
 {
@@ -176,8 +177,10 @@ protected:
 private:
     Poco::TaskManager taskManager;
     ImporterTask *importerTask;
-    // FeatureExtractorTask *sourceFeatureTask;
+    WaveformLoaderTask *waveformLoaderTask;
+    std::shared_ptr<std::vector<float>> tempBuffer;
     ThreadsafeQueue<std::string> import_queue;
+    std::string fSourcePath;
     Poco::BasicEvent<const PluginUpdate> pluginUpdate;
 
     HTTPClient httpClient;
@@ -243,6 +246,18 @@ public:
 
 private:
     WAIVESampler *_ws;
+};
+
+class WaveformLoaderTask : public Poco::Task
+{
+public:
+    WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, const std::string &_fp, int sampleRate);
+    void runTask() override;
+    std::string fp;
+
+private:
+    std::shared_ptr<std::vector<float>> buffer;
+    int sampleRate, flags;
 };
 
 END_NAMESPACE_DISTRHO

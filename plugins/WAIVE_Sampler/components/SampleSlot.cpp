@@ -5,7 +5,6 @@ START_NAMESPACE_DISTRHO
 SampleSlot::SampleSlot(Widget *parent) noexcept
     : WidgetGroup(parent),
       samplePlayer(nullptr),
-      animation_step(1.0f),
       lastPlaying(PlayState::STOPPED),
       callback(nullptr)
 {
@@ -18,6 +17,22 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     contextMenu->setFont("VG5000", VG5000, VG5000_len);
     contextMenu->hide();
     contextMenu->calculateHeight();
+
+    triggerBtn = new Button(parent);
+    triggerBtn->setCallback(this);
+    triggerBtn->setLabel("▶");
+    triggerBtn->setSize(20, 20);
+    triggerBtn->drawBackground = false;
+
+    midiSelect = new DropDown(parent);
+    for (int i = 1; i < 128; i++)
+        midiSelect->addItem(fmt::format("{:d}", i).c_str());
+    midiSelect->setDisplayNumber(6);
+    midiSelect->font_size = 16.0f;
+    midiSelect->setSize(35, 20);
+
+    addChildWidget(triggerBtn, {triggerBtn, this, Position::ON_TOP, Widget_Align::START, Widget_Align::CENTER, 5});
+    addChildWidget(midiSelect, {midiSelect, this, Position::ON_TOP, Widget_Align::END, Widget_Align::CENTER, 5});
 }
 
 void SampleSlot::setSamplePlayer(SamplePlayer *sp)
@@ -47,8 +62,8 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
     }
     else if (ev.button == kMouseButtonLeft)
     {
-        if (callback != nullptr)
-            callback->sampleSelected(this);
+        if (callback != nullptr && samplePlayer != nullptr && samplePlayer->sampleInfo != nullptr)
+            callback->sampleSelected(this, slotId);
     }
 
     return false;
@@ -63,7 +78,7 @@ void SampleSlot::onMenuItemSelection(Menu *menu, int item, const std::string &va
         if (item == 0)
         {
             if (callback != nullptr)
-                callback->sampleSlotCleared(this);
+                callback->sampleSlotCleared(this, slotId);
         }
     }
 }
@@ -73,62 +88,48 @@ void SampleSlot::onNanoDisplay()
     const float width = getWidth();
     const float height = getHeight();
 
-    beginPath();
-    if (samplePlayer->active)
-        strokeColor(Color(Color(120, 120, 120), highlight_color, animation_step));
-    else
-        strokeColor(180, 180, 180);
-    strokeWidth(1.f);
-    roundedRect(1, 1, width - 2, height - 2, 3);
-    stroke();
-    closePath();
+    if (renderDebug)
+    {
+        beginPath();
+        rect(0, 0, width, height);
+        strokeColor(accent_color);
+        stroke();
+        closePath();
+    }
 
     // sample info
     if (samplePlayer != nullptr && samplePlayer->active && samplePlayer->sampleInfo != nullptr)
     {
-        std::string state;
-        if (samplePlayer->state == PlayState::PLAYING)
-            state = "playing";
-        else
-            state = "stopped";
-
-        std::string info = fmt::format("{}: {}", samplePlayer->sampleInfo->name, state);
+        std::string info = samplePlayer->sampleInfo->name;
 
         beginPath();
-        fontSize(14.0f);
-        fillColor(Color(30, 30, 30));
+        fontSize(font_size);
+        fillColor(text_color);
         textAlign(Align::ALIGN_MIDDLE);
-        fontFaceId(0);
+        fontFaceId(font);
         text(26, height / 2, info.c_str(), nullptr);
         closePath();
     }
 }
 
-void SampleSlot::idleCallback()
+void SampleSlot::buttonClicked(Button *button)
 {
-    if (samplePlayer == nullptr)
-        return;
-
-    bool needs_repaint = false;
-
-    if (animation_step > 0.0f)
-    {
-        animation_step = std::max(0.0f, animation_step - 0.05f);
-        needs_repaint = true;
-    }
-
-    if (lastPlaying != samplePlayer->state)
-    {
-        lastPlaying = samplePlayer->state;
-        if (lastPlaying == PlayState::PLAYING)
-            animation_step = 1.0f;
-
-        needs_repaint = true;
-    }
-
-    if (needs_repaint)
-        repaint();
+    if (samplePlayer != nullptr)
+        samplePlayer->state = PlayState::TRIGGERED;
 }
+
+void SampleSlot::dropdownSelection(DropDown *widget, int item)
+{
+    if (samplePlayer != nullptr)
+        samplePlayer->midi = item;
+}
+
+void SampleSlot::setMidiNumber(int midi, bool sendCallback)
+{
+    midiSelect->setItem(midi, sendCallback);
+}
+
+void SampleSlot::idleCallback() {}
 
 void SampleSlot::setCallback(Callback *cb)
 {

@@ -23,6 +23,9 @@ public:
 
     void setLabel(const std::string &label);
     void setEnabled(bool enabled);
+    void resizeToFit();
+
+    bool drawBackground;
 
 protected:
     void onNanoDisplay() override;

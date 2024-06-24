@@ -112,7 +112,7 @@ void FeatureExtractorTask::runTask()
         //    m.rms, m.peakEnergy, m.specCentroid, m.specCrest, m.specFlat, m.specKurtosis, m.specRolloff, m.zcr);
 
         float onset = gist.energyDifference();
-        if (onset > 1.5f)
+        if (onset > 2.f)
         {
             _ws->fSourceFeatures.push_back({FeatureType::Onset,
                                             "onset",
@@ -133,6 +133,95 @@ void FeatureExtractorTask::runTask()
 
     _ws->sourceFeaturesMtx.unlock();
     setProgress(1.0f);
+}
+
+WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, const std::string &_fp, int _sampleRate)
+    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), fp(_fp), sampleRate(_sampleRate){};
+
+void WaveformLoaderTask::runTask()
+{
+
+    SndfileHandle fileHandle(fp, SFM_READ);
+    int sampleLength = fileHandle.frames();
+
+    if (sampleLength == 0)
+    {
+        std::cerr << "Error: Unable to open input file " << fp << "\n  error: " << sf_error_number(fileHandle.error()) << std::endl;
+
+        buffer->resize(0);
+        return;
+    }
+
+    int sampleChannels = fileHandle.channels();
+    int fileSampleRate = fileHandle.samplerate();
+
+    // std::cout << "sampleChannels: " << sampleChannels << " "
+    //           << " sampleLength: " << sampleLength
+    //           << " fileSampleRate: " << fileSampleRate
+    //           << " (sampleRate: " << sampleRate << ")\n";
+
+    std::vector<float> sample;
+    sample.resize(sampleLength * sampleChannels);
+    fileHandle.read(&sample.at(0), sampleLength * sampleChannels);
+
+    std::vector<float> sample_tmp;
+    int new_size = sampleLength;
+
+    // resample data
+    if (fileSampleRate != sampleRate)
+    {
+        // TODO: use the stream API to resample and load the waveform
+        // incramentally
+        new_size = (int)((double)sampleLength * sampleRate / fileSampleRate + 1);
+        sample_tmp.resize(static_cast<size_t>(new_size * sampleChannels));
+
+        SRC_DATA src_data;
+        src_data.input_frames = sampleLength;
+        src_data.data_out = sample_tmp.data(); //&sample_tmp.at(0);
+        src_data.data_in = sample.data();
+        src_data.output_frames = new_size;
+        src_data.src_ratio = (float)sampleRate / fileSampleRate;
+
+        std::cout << "RESAMPLING WAVEFORM:\n";
+        std::cout << "  fileSampleRate: " << fileSampleRate << std::endl;
+        std::cout << "      sampleRate: " << sampleRate << std::endl;
+        std::cout << " sample_channels: " << sampleChannels << std::endl;
+        std::cout << "    input_frames: " << src_data.input_frames << std::endl;
+        std::cout << "   output_frames: " << src_data.output_frames << std::endl;
+        std::cout << "       src_ratio: " << src_data.src_ratio << std::endl;
+
+        int result = src_simple(&src_data, SRC_SINC_BEST_QUALITY, sampleChannels);
+        if (result != 0)
+            std::cerr << "Failed to convert sample rate: " << src_strerror(result) << std::endl;
+        else
+            std::cout << "sample rate sucessfully converted\n";
+    }
+    else
+        sample_tmp = sample;
+
+    std::cout << "about to resize to " << (new_size) << std::endl;
+    buffer->resize(new_size);
+
+    //  TODO: mix to Mono before sample rate conversion??
+    printf("buffer.size() %d, sample_tmp.size() %d\n", buffer->size(), sample_tmp.size());
+    if (sampleChannels > 1)
+    {
+        for (int i = 0; i < new_size; ++i)
+        {
+            float sum = 0.0f;
+            for (int ch = 0; ch < sampleChannels; ++ch)
+                sum += sample_tmp[i * sampleChannels + ch];
+            buffer->at(i) = sum / sampleChannels;
+        }
+    }
+    else
+    {
+        // std::copy(sample_tmp.begin(), sample_tmp.begin() + sampleLength, buffer->begin());
+        for (int i = 0; i < new_size; i++)
+            buffer->at(i) = sample_tmp[i];
+    }
+
+    std::cout << "loadWaveform new_size: " << new_size << std::endl;
 }
 
 void SamplePlayer::clear()
@@ -162,7 +251,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                httpClient(&taskManager),
                                sd(&httpClient),
                                fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow),
-                               importerTask(new ImporterTask(this, &import_queue))
+                               importerTask(new ImporterTask(this, &import_queue)),
+                               waveformLoaderTask(nullptr),
+                               tempBuffer(std::make_shared<std::vector<float>>())
 {
     if (isDummyInstance())
     {
@@ -624,27 +715,11 @@ void WAIVESampler::run(
 void WAIVESampler::loadSource(const char *fp)
 {
     std::cout << "WAIVESampler::loadSource" << std::endl;
-
     fSourceLoaded = false;
+    fSourcePath = std::string(fp);
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
-
-    fSourceLength = loadWaveform(fp, fSourceWaveform, sampleRate);
-
-    if (fSourceLength > 0)
-    {
-        fSourceLoaded = true;
-        fCurrentSample->source = std::string(fp);
-        if (fCurrentSample->sourceStart >= fSourceLength)
-            selectWaveform(&fSourceWaveform, 0);
-
-        taskManager.start(new FeatureExtractorTask(this));
-        pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
-    }
-    else
-    {
-        std::cerr << "Source failed to load\n";
-        fCurrentSample->source = "";
-    }
+    waveformLoaderTask = new WaveformLoaderTask(tempBuffer, std::string(fp), sampleRate);
+    taskManager.start(waveformLoaderTask);
 }
 
 void WAIVESampler::newSample()
@@ -662,12 +737,6 @@ void WAIVESampler::newSample()
     }
     else
     {
-        // new default sample
-        fSourceLoaded = false;
-        fSampleLoaded = false;
-        fSourceLength = 0;
-        fSourceWaveform.clear();
-
         setParameterValue(kSampleVolume, 1.0f);
         setParameterValue(kSamplePitch, 1.0f);
         setParameterValue(kAmpAttack, 0.0f);
@@ -685,8 +754,6 @@ void WAIVESampler::newSample()
         s->saved = false;
         fCurrentSample = s;
     }
-
-    std::cout << fCurrentSample->getId() << std::endl;
 
     pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
     pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
@@ -1046,6 +1113,35 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
     // std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << std::endl;
+    if (pTask->name() == "WaveformLoaderTask")
+    {
+        fSourceLength = tempBuffer->size();
+        std::cout << "fSourceLength " << fSourceLength << std::endl;
+        fSourceWaveform.resize(fSourceLength);
+
+        std::copy(tempBuffer->begin(), tempBuffer->begin() + fSourceLength, fSourceWaveform.begin());
+
+        if (fCurrentSample == nullptr)
+            newSample();
+
+        if (fSourceLength > 0)
+        {
+            fSourceLoaded = true;
+            fCurrentSample->source = fSourcePath;
+            selectWaveform(&fSourceWaveform, 0);
+
+            taskManager.start(new FeatureExtractorTask(this));
+        }
+        else
+        {
+            std::cerr << "Source failed to load\n";
+            fCurrentSample->source = "";
+            fSourcePath = "";
+        }
+        waveformLoaderTask->release();
+        pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
+    }
+
     pTask->release();
 }
 
@@ -1129,9 +1225,10 @@ int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int
     }
 
     if (buffer.size() < sampleLength)
-        buffer.resize(sampleLength); // TODO: this sometimes reallocates the pointer!
+        buffer.resize(sampleLength + 1); // TODO: this sometimes reallocates the pointer!
 
     //  TODO: mix to Mono before sample rate conversion??
+    printf("buffer.size() %d, sample_tmp.size() %d\n", buffer.size(), sample_tmp.size());
     if (sampleChannels > 1)
     {
         for (int i = 0; i < sampleLength; i++)
@@ -1143,6 +1240,7 @@ int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int
             buffer[i] = sample_tmp[i];
     }
 
+    std::cout << "loadWaveform sampleLength: " << sampleLength << std::endl;
     return sampleLength;
 }
 

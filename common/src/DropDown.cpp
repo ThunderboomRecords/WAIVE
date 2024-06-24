@@ -2,22 +2,18 @@
 
 DropDown::DropDown(Widget *parent) noexcept
     : WAIVEWidget(parent),
-      font(0),
       selected_item(0),
-      menu(nullptr),
       callback(nullptr)
 {
     loadSharedResources();
-}
-
-void DropDown::setFont(const char *name, const uchar *data, uint size)
-{
-    font = createFontFromMemory(name, data, size, false);
+    menu = new Menu(parent);
+    menu->setCallback(this);
 }
 
 void DropDown::setDisplayNumber(int number)
 {
-    display_number = number;
+    // display_number = number;
+    menu->setDisplayNumber(number);
 }
 
 void DropDown::onMenuItemSelection(Menu *menu, int item, const std::string &value)
@@ -34,26 +30,14 @@ void DropDown::onNanoDisplay()
     const float width = getWidth();
     const float height = getHeight();
 
-    beginPath();
-    fillColor(background_color);
-    rect(0, 0, width, height);
-    fill();
-    closePath();
-
-    beginPath();
-    strokeColor(text_color);
-    strokeWidth(1);
-    rect(1, 1, width - 2, height - 2);
-    stroke();
-    closePath();
-
-    beginPath();
-    fillColor(text_color);
-    moveTo(width - 5, height / 2 - 3);
-    lineTo(width - 8, height / 2 + 3);
-    lineTo(width - 11, height / 2 - 3);
-    fill();
-    closePath();
+    if (renderDebug)
+    {
+        beginPath();
+        strokeColor(accent_color);
+        rect(0, 0, width, height);
+        stroke();
+        closePath();
+    }
 
     if (currentItem.size() > 0)
     {
@@ -75,17 +59,9 @@ bool DropDown::onMouse(const MouseEvent &ev)
     if (ev.press && ev.button == kMouseButtonLeft && menu != nullptr && contains(ev.pos))
     {
         menu->positionTo(this);
-        menu->clear();
-        for (int i = 0; i < items.size(); i++)
-            menu->addItem(items[i].c_str());
-
-        menu->calculateHeight();
-        menu->setItem(selected_item, false);
-        menu->font_size = font_size;
-        menu->setCallback(this);
-        menu->setDisplayNumber(display_number);
+        menu->toFront();
         menu->show();
-        return true;
+        return false;
     }
 
     return false;
@@ -100,7 +76,7 @@ bool DropDown::onMotion(const MotionEvent &ev)
             getWindow().setCursor(kMouseCursorHand);
             hover = true;
         }
-        return true;
+        return false;
     }
     else
     {
@@ -116,12 +92,13 @@ bool DropDown::onMotion(const MotionEvent &ev)
 
 void DropDown::addItem(const char *item)
 {
-    items.push_back(item);
+    menu->addItem(item);
 }
 
 void DropDown::setItem(int item, bool sendCallback = false)
 {
-    currentItem.assign(items[item]);
+    menu->setItem(item, sendCallback);
+    currentItem.assign(menu->getItem(item));
     selected_item = item;
     if (sendCallback && callback != nullptr)
         callback->dropdownSelection(this, item);

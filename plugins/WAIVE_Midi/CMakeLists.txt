@@ -9,8 +9,8 @@ dpf_add_plugin(
       clap
   FILES_DSP
       WAIVEMidi.cpp
+      ./components/Notes.cpp
       ${CMAKE_SOURCE_DIR}/common/src/model_utils.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/Notes.cpp
       ./models/score_decoder.onnx.c
       ./models/score_encoder.onnx.c
       ./models/groove_decoder.onnx.c
@@ -18,17 +18,17 @@ dpf_add_plugin(
       ./models/full_groove_model.onnx.c
   FILES_UI
       WAIVEMidiUI.cpp
+      ./components/Notes.cpp
+      ./components/ScoreGrid.cpp
+      ./components/GrooveGraph.cpp
+      ./components/DrumPattern.cpp
       ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/Notes.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Slider.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VSlider.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Playhead.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/ScoreGrid.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/GrooveGraph.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/DrumPattern.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
@@ -50,6 +50,7 @@ target_include_directories(
   PUBLIC 
     .
     ./models
+    ./components
     ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/common/fonts
     ${CMAKE_SOURCE_DIR}/common/icons

@@ -4,18 +4,17 @@
 #include <map>
 #include <iostream>
 
-#include "fonts.h"
-#include "Window.hpp"
-#include "Widget.hpp"
-#include "NanoVG.hpp"
+#include "WAIVEWidget.hpp"
 
 #include "Menu.hpp"
+#include "SimpleButton.hpp"
 #include "SampleDatabase.hpp"
 
 START_NAMESPACE_DISTRHO
 
-class SampleMap : public NanoSubWidget,
-                  public Menu::Callback
+class SampleMap : public WAIVEWidget,
+                  public Menu::Callback,
+                  public Button::Callback
 {
 public:
     class Callback
@@ -25,12 +24,11 @@ public:
         virtual void mapSampleHovered(int id) = 0;
         virtual void mapSampleSelected(int id) = 0;
         virtual void mapSampleLoadSlot(int index, int slot) = 0;
+        virtual void mapSampleImport() = 0;
     };
 
     explicit SampleMap(Widget *widget) noexcept;
     void setCallback(Callback *cb);
-
-    Color background_color;
 
     std::vector<std::shared_ptr<SampleInfo>> *allSamples;
     std::shared_ptr<SampleInfo> *selectedSample;
@@ -44,6 +42,7 @@ protected:
     bool onMotion(const MotionEvent &) override;
     bool onScroll(const ScrollEvent &) override;
     void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
+    void buttonClicked(Button *btn);
 
 private:
     enum DragAction

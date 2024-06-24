@@ -7,19 +7,32 @@ Button::Button(Widget *parent)
       label("button"),
       fHasFocus(false),
       callback(nullptr),
-      fEnabled(true)
+      fEnabled(true),
+      drawBackground(true)
 {
-#ifdef DGL_NO_SHARED_RESOURCES
-    createFontFromFile("sans", "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf");
-#else
     loadSharedResources();
-#endif
+    background_color = WaiveColors::grey2;
 }
 
 void Button::setLabel(const std::string &label_)
 {
     label = label_;
     repaint();
+}
+
+void Button::resizeToFit()
+{
+    if (label.length() == 0)
+        return;
+
+    fontSize(font_size);
+    fontFaceId(font);
+
+    Rectangle<float> bounds;
+    textBounds(0, 0, label.c_str(), NULL, bounds);
+
+    setHeight(bounds.getHeight() * 2.f);
+    setWidth(bounds.getWidth() + getHeight());
 }
 
 void Button::setEnabled(bool enabled)
@@ -34,28 +47,32 @@ void Button::onNanoDisplay()
     const uint height = getHeight();
     const float margin = 1.0f;
 
+    if (renderDebug)
+    {
+        beginPath();
+        strokeColor(accent_color);
+        rect(0, 0, width, height);
+        stroke();
+        closePath();
+    }
+
     // Background
-    beginPath();
-    if (fHasFocus)
-        fillColor(Color(background_color.red + 0.1f, background_color.green + 0.1f, background_color.blue + 0.1f, background_color.alpha));
-    else
-        fillColor(background_color);
-    strokeColor(text_color);
-    rect(margin, margin, width - 2 * margin, height - 2 * margin);
-    fill();
-    stroke();
-    closePath();
+    if (drawBackground)
+    {
+        beginPath();
+        fillColor(fHasFocus ? highlight_color : background_color);
+        roundedRect(margin, margin, width - 2 * margin, height - 2 * margin, height * 0.5f);
+        fill();
+        closePath();
+    }
 
     // Label
     beginPath();
-    fontSize(14);
+    fontSize(font_size);
+    fontFaceId(font);
     fillColor(text_color);
-    Rectangle<float> bounds;
-    textBounds(0, 0, label.c_str(), NULL, bounds);
-    float tx = width / 2.0f;
-    float ty = height / 2.0f;
     textAlign(ALIGN_CENTER | ALIGN_MIDDLE);
-    text(tx, ty, label.c_str(), NULL);
+    text(width / 2, height / 2, label.c_str(), nullptr);
     closePath();
 
     if (!fEnabled)
@@ -88,7 +105,7 @@ bool Button::onMotion(const MotionEvent &ev)
 {
     if (contains(ev.pos))
     {
-        if (!fHasFocus)
+        if (!fHasFocus && fEnabled)
         {
             fHasFocus = true;
             getWindow().setCursor(kMouseCursorHand);

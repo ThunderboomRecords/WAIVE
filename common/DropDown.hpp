@@ -20,13 +20,10 @@ public:
 
     explicit DropDown(Widget *parent) noexcept;
 
-    void setFont(const char *name, const uchar *data, uint dataSize);
     void setCallback(Callback *cb);
     void addItem(const char *item);
     void setDisplayNumber(int number);
     void setItem(int item, bool sendCallback);
-
-    Menu *menu;
 
 protected:
     void onNanoDisplay() override;
@@ -37,10 +34,9 @@ protected:
 private:
     Callback *callback;
 
-    FontId font;
-
+    Menu *menu;
     std::string currentItem;
-    std::vector<std::string> items;
+    // std::vector<std::string> items;
     int selected_item, display_number;
     bool hover;
 

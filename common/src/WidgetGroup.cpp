@@ -3,7 +3,7 @@
 START_NAMESPACE_DISTRHO
 
 WidgetGroup::WidgetGroup(Widget *widget, float x, float y, float width, float height) noexcept
-    : WAIVEWidget(widget), render(true)
+    : WAIVEWidget(widget)
 {
     setSize(width, height);
     setAbsolutePos(x, y);
@@ -22,7 +22,7 @@ void WidgetGroup::addChildWidget(NanoSubWidget *widget, WidgetPosition position)
 
 void WidgetGroup::onNanoDisplay()
 {
-    if (!render)
+    if (!renderDebug)
         return;
 
     const float width = getWidth();
@@ -30,7 +30,7 @@ void WidgetGroup::onNanoDisplay()
 
     beginPath();
     rect(0, 0, width, height);
-    strokeColor(stroke_color);
+    strokeColor(accent_color);
     stroke();
     closePath();
 }

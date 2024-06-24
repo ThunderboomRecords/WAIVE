@@ -109,16 +109,13 @@ void CheckboxList::drawCheckbox(CheckboxData *data, float x, float y, float widt
     translate(x, y);
 
     beginPath();
-    strokeColor(stroke_color);
+    strokeColor(data->checked ? accent_color : foreground_color);
     circle(r, height / 2, r - 2.f);
     stroke();
     closePath();
 
     beginPath();
-    if (data->checked)
-        fillColor(accent_color);
-    else
-        fillColor(background_color);
+    fillColor(data->checked ? accent_color : foreground_color);
     circle(r, height / 2, r - 5.f);
     fill();
     closePath();

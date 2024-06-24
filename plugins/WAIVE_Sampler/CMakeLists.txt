@@ -22,9 +22,10 @@ dpf_add_plugin(
       ./models/tsne.c
   FILES_UI
       WAIVESamplerUI.cpp
+      ./components/SampleSlot.cpp
       ./components/SourceList.cpp
-      ./components/SourceBrowser.cpp
-      ./components/SourceBrowserRoot.cpp
+      ./components/SampleBrowser.cpp
+      ./components/SampleBrowserRoot.cpp
       ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
       ${CMAKE_SOURCE_DIR}/common/icons/download_icon.h
@@ -37,6 +38,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Link.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Menu.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Icon.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Knob.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Knob3D.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Label.cpp
@@ -48,7 +50,6 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/DropDown.cpp
       ${CMAKE_SOURCE_DIR}/common/src/TextInput.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SampleMap.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/SampleSlot.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEImage.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
