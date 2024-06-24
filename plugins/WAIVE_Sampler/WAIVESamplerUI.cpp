@@ -763,7 +763,7 @@ void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
 void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    printf("WAIVESamplerUI::onTaskProgress: %s progress %.4f\n", pTask->name().c_str(), pTask->progress());
+    // printf("WAIVESamplerUI::onTaskProgress: %s progress %.4f\n", pTask->name().c_str(), pTask->progress());
     if (pTask->name().compare("FeatureExtractorTask") == 0)
     {
         progress->setLabel(fmt::format("Analysing...[{:d}%]", (int)(pTask->progress() * 100.f)));

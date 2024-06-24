@@ -170,7 +170,7 @@ void WaveformLoaderTask::runTask()
     {
         double src_ratio = (double)sampleRate / fileSampleRate;
         new_size = (size_t)(sampleLength * src_ratio + 1);
-        sample_tmp.reserve(new_size);
+        sample_tmp.reserve(new_size * sampleChannels + sampleChannels);
 
         SRC_DATA src_data;
         src_data.src_ratio = src_ratio;
@@ -180,6 +180,7 @@ void WaveformLoaderTask::runTask()
         std::cout << "      sampleRate: " << sampleRate << std::endl;
         std::cout << " sample_channels: " << sampleChannels << std::endl;
         std::cout << "       src_ratio: " << src_data.src_ratio << std::endl;
+        std::cout << "        new_size: " << new_size << std::endl;
 
         size_t chunk = 512;
         std::vector<float> outputChunk((size_t)(sampleChannels * chunk * src_data.src_ratio) + sampleChannels);
@@ -200,7 +201,7 @@ void WaveformLoaderTask::runTask()
         src_data.input_frames = chunk;
 
         size_t inputPos = 0;
-        double pStep = (double)chunk / sample.size();
+        double pStep = (double)(chunk * sampleChannels) / sample.size();
         while (inputPos < sample.size())
         {
             if (isCancelled())
@@ -932,6 +933,9 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
     if (!fSourceLoaded)
         return;
 
+    if (start >= source->size())
+        start = 0;
+
     fSampleLoaded = false;
     if (fCurrentSample == nullptr)
         newSample();
@@ -1179,7 +1183,7 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         {
             fSourceLoaded = true;
             fCurrentSample->source = fSourcePath;
-            selectWaveform(&fSourceWaveform, 0);
+            selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
 
             taskManager.start(new FeatureExtractorTask(this));
         }
