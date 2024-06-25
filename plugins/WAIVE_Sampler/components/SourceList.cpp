@@ -116,6 +116,12 @@ void SourceList::drawSourceInfo(
 {
     translate(x, y);
 
+    if (info.description.length() == 0)
+    {
+        std::cout << "zero length description...\n";
+        return;
+    }
+
     if (highlight)
     {
         beginPath();
@@ -125,13 +131,13 @@ void SourceList::drawSourceInfo(
         closePath();
     }
 
-    std::string infoString = info.archive + ": " + info.name;
+    // std::string infoString = info.description;
 
     beginPath();
     fillColor(text_color);
     fontSize(font_size);
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
-    text(30.f, height / 2.0f, infoString.c_str(), nullptr);
+    text(30.f, height / 2.0f, info.description.c_str(), nullptr);
     closePath();
 
     if (!highlight)
@@ -152,7 +158,7 @@ void SourceList::drawSourceInfo(
     if (info.downloaded == DownloadState::NOT_DOWNLOADED)
     {
         download->align = Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE;
-        download->drawAt(width - scrollBarWidth * 2.f, height / 2.f, 26);
+        download->drawAt(width - scrollBarWidth * 2.f, height / 2.f, height / 2.f);
     }
     else if (info.downloaded == DownloadState::DOWNLOADING)
     {

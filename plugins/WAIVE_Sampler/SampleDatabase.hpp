@@ -13,16 +13,20 @@
 #include "Envelopes.hpp"
 #include "WAIVESamplerParams.h"
 
-#include "Poco/TaskManager.h"
-#include "Poco/Data/Session.h"
-#include "Poco/Data/RecordSet.h"
-#include "Poco/Data/SQLite/Connector.h"
-#include "Poco/BasicEvent.h"
-#include "Poco/Delegate.h"
 #include "Poco/Path.h"
 #include "Poco/File.h"
+#include "Poco/Task.h"
+#include "Poco/Delegate.h"
 #include "Poco/FileStream.h"
+#include "Poco/BasicEvent.h"
+#include "Poco/TaskManager.h"
 #include "Poco/TemporaryFile.h"
+#include <Poco/StringTokenizer.h>
+#include "Poco/Data/Session.h"
+#include "Poco/Data/RecordSet.h"
+#include "Poco/Data/Transaction.h"
+#include <Poco/Data/SQLite/Utility.h>
+#include "Poco/Data/SQLite/Connector.h"
 
 #include <sndfile.hh>
 #include "kdtree.h"
@@ -36,6 +40,8 @@ using json = nlohmann::json;
 struct Tag
 {
     std::string name;
+    float embedX;
+    float embedY;
 };
 
 class SampleInfo
@@ -82,9 +88,9 @@ enum DownloadState
 struct SourceInfo
 {
     int id;
-    std::string name;
     std::string archive;
-    std::string folder;
+    std::string description;
+    std::string filename;
     std::vector<Tag> tags;
     DownloadState downloaded;
 };
@@ -102,12 +108,65 @@ public:
         SOURCE_LIST_DOWNLOADED,
         SOURCE_LIST_DOWNLOAD_ERROR,
         SOURCE_LIST_UPDATED,
+        SOURCE_LIST_READY,
+        SOURCE_LIST_FILTER_START,
+        SOURCE_LIST_FILTER_END,
         SOURCE_LIST_QUERY_ERROR,
+        TAG_LIST_DOWNLOADED,
+        TAG_LIST_DOWNLOAD_ERROR,
+        BUILDING_TAG_LIST,
         FILE_DOWNLOADING,
         FILE_DOWNLOADED,
         FILE_DOWNLOAD_FAILED,
         SOURCE_PREVIEW_READY,
     };
+
+    inline std::string databaseUpdateString(DatabaseUpdate v)
+    {
+        switch (v)
+        {
+        case SAMPLE_LIST_LOADED:
+            return "SAMPLE_LIST_LOADED";
+        case SAMPLE_ADDED:
+            return "SAMPLE_ADDED";
+        case SAMPLE_UPDATED:
+            return "SAMPLE_UPDATED";
+        case SAMPLE_DELETED:
+            return "SAMPLE_DELETED";
+        case SOURCE_LIST_DOWNLOADING:
+            return "SOURCE_LIST_DOWNLOADING";
+        case SOURCE_LIST_DOWNLOADED:
+            return "SOURCE_LIST_DOWNLOADED";
+        case SOURCE_LIST_DOWNLOAD_ERROR:
+            return "SOURCE_LIST_DOWNLOAD_ERROR";
+        case SOURCE_LIST_UPDATED:
+            return "SOURCE_LIST_UPDATED";
+        case SOURCE_LIST_READY:
+            return "SOURCE_LIST_READY";
+        case SOURCE_LIST_FILTER_START:
+            return "SOURCE_LIST_FILTER_START";
+        case SOURCE_LIST_FILTER_END:
+            return "SOURCE_LIST_FILTER_END";
+        case SOURCE_LIST_QUERY_ERROR:
+            return "SOURCE_LIST_QUERY_ERROR";
+        case TAG_LIST_DOWNLOADED:
+            return "TAG_LIST_DOWNLOADED";
+        case TAG_LIST_DOWNLOAD_ERROR:
+            return "TAG_LIST_DOWNLOAD_ERROR";
+        case BUILDING_TAG_LIST:
+            return "BUILDING_TAG_LIST";
+        case FILE_DOWNLOADING:
+            return "FILE_DOWNLOADING";
+        case FILE_DOWNLOADED:
+            return "FILE_DOWNLOADED";
+        case FILE_DOWNLOAD_FAILED:
+            return "FILE_DOWNLOAD_FAILED";
+        case SOURCE_PREVIEW_READY:
+            return "SOURCE_PREVIEW_READY";
+        default:
+            return "Unknown: " + v;
+        }
+    }
 
     struct WhereConditions
     {
@@ -132,6 +191,7 @@ public:
 
     Poco::BasicEvent<const DatabaseUpdate> databaseUpdate;
 
+    // SAMPLES
     void loadSampleDatabase();
     void newTag(std::string &tag);
     bool addToLibrary(std::shared_ptr<SampleInfo> sample);
@@ -150,13 +210,23 @@ public:
     std::vector<std::shared_ptr<SampleInfo>> findKNearest(float x, float y, int k);
     std::vector<std::shared_ptr<SampleInfo>> findRadius(float x, float y, float r);
 
+    // SOURCES + Remote
+    void parseTSV(const std::string table, const std::vector<std::string> &column_names, const std::vector<std::string> &column_type, const std::string &csvData);
+    void checkLatestRemoteVersion();
+    void updateDatabaseVersion(int new_version);
     void downloadSourcesList();
+    void downloadTagsList();
+    void makeTagSourcesTable();
     void downloadSourceFile(int index);
     void playTempSourceFile(int index);
     std::vector<Tag> getTagList() const;
     std::vector<std::string> getArchiveList() const;
-    void updateSourcesDatabase();
     void filterSources();
+
+    // CALLBACKS
+    void onTaskStarted(Poco::TaskStartedNotification *pNf);
+    void onTaskFinished(Poco::TaskFinishedNotification *pNf);
+    void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
 
     std::mutex sourceListMutex;
     std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
@@ -170,6 +240,8 @@ public:
     bool sourcesLoaded;
 
     WhereConditions filterConditions;
+
+    Poco::TaskManager taskManager;
 
 private:
     Poco::Data::Session *session;

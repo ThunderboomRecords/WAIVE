@@ -144,38 +144,13 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     // SAMPLES Database
     Poco::Data::SQLite::Connector::registerConnector();
     session = new Poco::Data::Session("SQLite", db.path());
+
     *session << "CREATE TABLE IF NOT EXISTS Samples ("
                 "id INTEGER PRIMARY KEY, "
                 "name TEXT, "
                 "path TEXT, "
                 "source TEXT, "
                 "parameters TEXT)",
-        Poco::Data::Keywords::now;
-
-    // SOURCES Database
-    *session << "CREATE TABLE IF NOT EXISTS Sources ("
-                "id INTEGER PRIMARY KEY, "
-                "name TEXT, "
-                "archive TEXT, "
-                "folder TEXT, "
-                "downloaded INT, "
-                "license INT, "
-                "description TEXT, "
-                "UNIQUE(name, archive, folder))",
-        Poco::Data::Keywords::now;
-
-    // TAGS Databases
-    *session << "CREATE TABLE IF NOT EXISTS Tags ("
-                "id INTEGER PRIMARY KEY, "
-                "tag TEXT UNIQUE)",
-        Poco::Data::Keywords::now;
-
-    *session << "CREATE TABLE IF NOT EXISTS SourcesTags ("
-                "source_id INT, "
-                "tag_id INT, "
-                "FOREIGN KEY (source_id) REFERENCES Sources(id), "
-                "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
-                "PRIMARY KEY (source_id, tag_id))",
         Poco::Data::Keywords::now;
 
     *session << "CREATE TABLE IF NOT EXISTS SamplesTags ("
@@ -186,11 +161,7 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
                 "PRIMARY KEY (sample_id, tag_id))",
         Poco::Data::Keywords::now;
 
-    // License database
-    *session << "CREATE TABLE IF NOT EXISTS License ("
-                "id INTEGER PRIMARY KEY, "
-                "tag TEXT UNIQUE)",
-        Poco::Data::Keywords::now;
+    databaseUpdate += Poco::delegate(this, &SampleDatabase::onDatabaseChanged);
 
     std::cout << "SampleDatabase initialised\n";
 
@@ -199,6 +170,8 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
 
 SampleDatabase::~SampleDatabase()
 {
+    taskManager.cancelAll();
+    taskManager.joinAll();
     session->close();
 }
 
@@ -470,7 +443,7 @@ std::string SampleDatabase::getFullSamplePath(std::shared_ptr<SampleInfo> sample
 
 std::string SampleDatabase::getFullSourcePath(SourceInfo source) const
 {
-    return Poco::Path(sourceFolder).append(source.archive).append(source.folder).append(source.name).toString();
+    return Poco::Path(sourceFolder).append(source.archive).append(source.filename).toString();
 }
 
 std::string SampleDatabase::getSampleFolder() const
@@ -565,35 +538,195 @@ std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<
     return s;
 }
 
+void SampleDatabase::checkLatestRemoteVersion()
+{
+    int user_version;
+    *session << "PRAGMA user_version",
+        Poco::Data::Keywords::into(user_version),
+        Poco::Data::Keywords::now;
+
+    std::cout << "user_version: " << user_version << std::endl;
+
+    httpClient->sendRequest(
+        "CheckDatabaseVersion",
+        "127.0.0.1", 3000, "/latest", [this, user_version](const std::string &response)
+        { 
+            json result = json::parse(response); 
+            int latest_version = result["version"]; 
+            if(latest_version <= user_version)
+            {
+                databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
+                return;
+            }
+
+            this->updateDatabaseVersion(latest_version); },
+        [this]()
+        {
+            std::cout << "cannot connect to remote database and verify if up-to-date." << std::endl;
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
+        });
+}
+
+void SampleDatabase::updateDatabaseVersion(int new_version)
+{
+    std::cout << "SampleDatabase::updateDatabaseVersion, new_version: " << new_version << std::endl;
+
+    Poco::Data::Statement pragma(*session);
+    pragma << "PRAGMA user_version = " << new_version;
+
+    std::cout << pragma.toString() << std::endl;
+
+    pragma.execute();
+
+    downloadSourcesList();
+}
+
 void SampleDatabase::downloadSourcesList()
 {
     if (sourcesLoaded)
         return;
 
-    printf("SampleDatabase::downloadSourcesList()\n");
-
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
 
     httpClient->sendRequest(
-        "127.0.0.1", 3000, "/sources", [this](const std::string &response)
+        "DownloadSourceList",
+        "127.0.0.1", 3000, "/filelist", [this](const std::string &response)
         {
-            this->sourcesLoaded = true;
-            this->sourcesData = json::parse(response); 
-            try
-            {
-                this->updateSourcesDatabase();
-            } catch (const std::exception &e) {
-                std::cerr << e.what() << '\n';
-                databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
-
-            } },
+            parseTSV(
+                "Sources",
+                {"id", "description", "tags", "folder", "filename", "archive", "license"},
+                {"INTEGER PRIMARY KEY", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT"},
+                response);
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED); },
         [this]()
         {
-            std::cout << "/sources not avaliable" << std::endl;
+            // std::cout << "/sources not avaliable" << std::endl;
             // wait 1 second before reporting connection error...
             sleep(1);
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
         });
+}
+
+void SampleDatabase::downloadTagsList()
+{
+    if (sourcesLoaded)
+        return;
+
+    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
+
+    httpClient->sendRequest(
+        "DownloadTagsList",
+        "127.0.0.1", 3000, "/tags", [this](const std::string &response)
+        {
+            parseTSV(
+                "Tags",
+                {"id", "tag", "embedX", "embedY", "counts"},
+                {"INTEGER PRIMARY KEY", "TEXT", "FLOAT", "FLOAT", "INTEGER"},
+                response);
+            databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOADED); },
+        [this]()
+        {
+            // std::cout << "/sources not avaliable" << std::endl;
+            // wait 1 second before reporting connection error...
+            sleep(1);
+            databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR);
+        });
+}
+
+void SampleDatabase::parseTSV(
+    const std::string table,
+    const std::vector<std::string> &column_names,
+    const std::vector<std::string> &column_type,
+    const std::string &csvData)
+{
+    std::cout << "SampleDatabase::parseTSV\n";
+
+    // 1. Create database
+    *session << "DROP TABLE IF EXISTS " << table,
+        Poco::Data::Keywords::now;
+
+    std::ostringstream createTableQuery;
+    createTableQuery << "CREATE TABLE IF NOT EXISTS " << table << " (";
+    for (size_t i = 0; i < column_names.size(); ++i)
+    {
+        createTableQuery << column_names[i] << " " << column_type[i];
+        if (i < column_names.size() - 1)
+            createTableQuery << ", ";
+    }
+    createTableQuery << ")";
+    *session << createTableQuery.str(), Poco::Data::Keywords::now;
+
+    // 2. Tokenise CSV data
+    Poco::StringTokenizer tokenizer(csvData, "\n", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
+
+    // 3. Build INSERT statement
+    std::ostringstream insertQuery;
+    insertQuery << "INSERT INTO " << table << " (";
+    for (size_t i = 0; i < column_names.size(); ++i)
+    {
+        insertQuery << column_names[i];
+        if (i < column_names.size() - 1)
+            insertQuery << ", ";
+    }
+    insertQuery << ") VALUES (";
+    for (size_t i = 0; i < column_names.size(); ++i)
+    {
+        insertQuery << "?";
+        if (i < column_names.size() - 1)
+            insertQuery << ", ";
+    }
+    insertQuery << ")";
+    // 4. Iterate line by line
+    double progress = 0.0;
+    double pStep = 1.0 / tokenizer.count();
+
+    int batch_size = 1000;
+
+    session->begin();
+
+    size_t i;
+    for (i = 0; i < tokenizer.count(); ++i)
+    {
+        // if (isCancelled())
+        //     return;
+
+        std::string line = tokenizer[i];
+        Poco::StringTokenizer lineTokenizer(line, "\t", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
+
+        if (lineTokenizer.count() == column_names.size())
+        {
+
+            Poco::Data::Statement insertStmt(*session);
+            insertStmt << insertQuery.str();
+            for (size_t j = 0; j < lineTokenizer.count(); ++j)
+                insertStmt, Poco::Data::Keywords::use(lineTokenizer[j]);
+
+            insertStmt.execute();
+
+            if (i % batch_size == 0)
+            {
+                std::cout << "Row " << i << " parsed" << std::endl;
+                session->commit();
+                // setProgress((float)i / tokenizer.count());
+                session->begin();
+            }
+        }
+        // else
+        // std::cerr << "Row " << i << " does not match the expected column count and will be skipped." << std::endl;
+        progress += pStep;
+        // std::cout << progress << std::endl;
+        // setProgress(progress);
+    }
+
+    if (i % batch_size != 0)
+    {
+        std::cout << "Row " << i << " parsed" << std::endl;
+        session->commit();
+    }
+
+    // setProgress(1.0);
+
+    std::cout << "ParseCSV DONE\n";
 }
 
 void SampleDatabase::downloadSourceFile(int i)
@@ -605,9 +738,9 @@ void SampleDatabase::downloadSourceFile(int i)
     if (si->downloaded == DownloadState::DOWNLOADED)
         return;
 
-    Poco::Path location = Poco::Path(si->archive).append(si->folder);
-    Poco::Path endpoint = Poco::Path("/file").append(location).append(si->name);
-    Poco::File file = Poco::Path(sourceFolder).append(location).append(si->name);
+    Poco::Path location = Poco::Path(si->archive);
+    Poco::Path endpoint = Poco::Path("/file").append(location).append(si->filename);
+    Poco::File file = Poco::Path(sourceFolder).append(location).append(si->filename);
 
     if (file.exists())
     {
@@ -622,6 +755,7 @@ void SampleDatabase::downloadSourceFile(int i)
     std::string filePath = file.path();
 
     httpClient->sendRequest(
+        "DownloadSourceFile",
         "127.0.0.1", 3000, endpoint.toString(Poco::Path::Style::PATH_URI), [this, filePath, si](const std::string &response)
         {
             // save file...
@@ -639,13 +773,6 @@ void SampleDatabase::downloadSourceFile(int i)
             Poco::FileOutputStream out = Poco::FileOutputStream(fp.path());
             out << response;
             out.close();
-
-            // update database
-            int id = si->id;
-            Poco::Data::Statement update(*session);
-            update << "UPDATE Sources SET downloaded = 1 WHERE id == ?", 
-                Poco::Data::Keywords::use(id);
-            update.execute();
 
             sleep(1);
             si->downloaded = DownloadState::DOWNLOADED;
@@ -667,20 +794,21 @@ void SampleDatabase::playTempSourceFile(int i)
     databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADING);
 
     SourceInfo *si = &sourcesList[i];
-    Poco::Path location = Poco::Path(si->archive).append(si->folder);
+    Poco::Path location = Poco::Path(si->archive);
 
     if (si->downloaded == DownloadState::DOWNLOADED)
     {
-        Poco::File preview = Poco::Path(sourceFolder).append(location).append(si->name);
+        Poco::File preview = Poco::Path(sourceFolder).append(location).append(si->filename);
         sourcePreviewPath = preview.path();
         databaseUpdate.notify(this, DatabaseUpdate::SOURCE_PREVIEW_READY);
         return;
     }
 
-    Poco::Path endpoint = Poco::Path("/file").append(location).append(si->name);
+    Poco::Path endpoint = Poco::Path("/file").append(location).append(si->filename);
     std::cout << endpoint.toString(Poco::Path::Style::PATH_URI) << std::endl;
 
     httpClient->sendRequest(
+        "PlayTempSourceFile",
         "127.0.0.1", 3000, endpoint.toString(Poco::Path::Style::PATH_URI), [this](const std::string &response)
         {
             Poco::TemporaryFile tmp = Poco::TemporaryFile();
@@ -705,18 +833,28 @@ void SampleDatabase::playTempSourceFile(int i)
         });
 }
 
-void SampleDatabase::updateSourcesDatabase()
+void SampleDatabase::makeTagSourcesTable()
 {
-    sourcesLoaded = false;
-    // prepare statement for inserting Sources
-    Poco::Data::Statement insert(*session);
-    std::string name, archive, folder;
-    int sourceId;
+    std::cout << "SampleDatabase::makeTagSourcesTable()" << std::endl;
+    *session << "DROP TABLE IF EXISTS SourcesTags",
+        Poco::Data::Keywords::now;
 
-    insert << "INSERT OR IGNORE INTO Sources(name, archive, folder, downloaded) VALUES (?, ?, ?, 0)",
-        Poco::Data::Keywords::use(name),
-        Poco::Data::Keywords::use(archive),
-        Poco::Data::Keywords::use(folder);
+    *session << "CREATE TABLE IF NOT EXISTS SourcesTags ("
+                "source_id INT, "
+                "tag_id INT, "
+                "FOREIGN KEY (source_id) REFERENCES Sources(id), "
+                "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
+                "PRIMARY KEY (source_id, tag_id))",
+        Poco::Data::Keywords::now;
+
+    // prepare statement for selecting all Sources
+    Poco::Data::Statement selectSource(*session);
+    std::string tags;
+    int sourceId;
+    selectSource << "SELECT id, tags FROM Sources",
+        Poco::Data::Keywords::into(sourceId),
+        Poco::Data::Keywords::into(tags),
+        Poco::Data::Keywords::range(0, 1);
 
     // prepare statement for selecting tags
     Poco::Data::Statement selectTag(*session);
@@ -726,40 +864,46 @@ void SampleDatabase::updateSourcesDatabase()
         Poco::Data::Keywords::into(tagId),
         Poco::Data::Keywords::use(tag);
 
-    // get last inserted Sources' id
-    Poco::Data::Statement lastSourceId(*session);
-    lastSourceId << "SELECT last_insert_rowid()",
-        Poco::Data::Keywords::into(sourceId);
-
     // updating the Sources<->Tags table
     Poco::Data::Statement insertTagSource(*session);
-    insertTagSource << "INSERT INTO SourcesTags(source_id, tag_id) VALUES (?, ?)",
+    insertTagSource << "INSERT INTO SourcesTags (source_id, tag_id) VALUES (?, ?)",
         Poco::Data::Keywords::use(sourceId),
         Poco::Data::Keywords::use(tagId);
 
-    for (json::iterator it = sourcesData.begin(); it != sourcesData.end(); ++it)
-    {
-        name.assign(it.value()["name"]);
-        archive.assign(it.value()["archive"]);
-        folder.assign(it.value()["folder"]);
+    session->begin();
 
-        size_t num = insert.execute();
-        lastSourceId.execute();
-        if (num)
+    int count = 0;
+
+    while (selectSource.execute())
+    {
+        if (selectSource.done())
+            return;
+
+        Poco::StringTokenizer tokenizer(tags, "|", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
+        for (size_t i = 0; i < tokenizer.count(); ++i)
         {
-            std::stringstream taglist(std::string(it.value()["tags"]));
-            while (std::getline(taglist, tag, '|'))
+            tag.assign(tokenizer[i]);
+            if (selectTag.execute())
             {
-                newTag(tag);
-                selectTag.execute();
                 insertTagSource.execute();
+                count++;
+                if (count % 1000 == 0)
+                {
+                    std::cout << "committing at " << count << std::endl;
+                    session->commit();
+                    session->begin();
+                }
             }
         }
     }
 
-    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED);
-    sourcesLoaded = true;
-    filterSources();
+    if (count % 1000 != 0)
+    {
+        std::cout << "committing at " << count << std::endl;
+        session->commit();
+    }
+
+    std::cout << "SampleDatabase::makeTagSourcesTable() finished" << std::endl;
 }
 
 std::vector<Tag> SampleDatabase::getTagList() const
@@ -801,6 +945,7 @@ std::vector<std::string> SampleDatabase::getArchiveList() const
 
 void SampleDatabase::filterSources()
 {
+    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_FILTER_START);
     sourceListMutex.lock();
     sourcesList.clear();
 
@@ -817,7 +962,7 @@ void SampleDatabase::filterSources()
     if (filterConditions.searchString.length() > 0)
     {
         conditions.push_back(
-            fmt::format("(Sources.name LIKE \"%{0}%\" OR Sources.description LIKE \"%{0}%\" OR Sources.folder LIKE \"%{0}%\")",
+            fmt::format("(Sources.filename LIKE \"%{0}%\" OR Sources.description LIKE \"%{0}%\")",
                         filterConditions.searchString));
     }
 
@@ -834,19 +979,18 @@ void SampleDatabase::filterSources()
     try
     {
         Poco ::Data::Statement select(*session);
-        std::string name, archive, folder;
-        int id, downloaded;
+        std::string filename, archive, description;
+        int id;
         int lastId = -1;
-        select << "SELECT Sources.id, Sources.name, Sources.archive, Sources.folder, Sources.downloaded "
+        select << "SELECT Sources.id, Sources.filename, Sources.archive, Sources.description "
                   "FROM Sources "
                   "JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
                   "JOIN Tags ON Tags.id = SourcesTags.tag_id "
                << where,
             Poco::Data::Keywords::into(id),
-            Poco::Data::Keywords::into(name),
+            Poco::Data::Keywords::into(filename),
             Poco::Data::Keywords::into(archive),
-            Poco::Data::Keywords::into(folder),
-            Poco::Data::Keywords::into(downloaded),
+            Poco::Data::Keywords::into(description),
             Poco::Data::Keywords::range(0, 1);
 
         std::cout << "\nSampleDatabase::filterSources select:\n  \""
@@ -879,9 +1023,9 @@ void SampleDatabase::filterSources()
             SourceInfo source;
             source.id = id;
             source.archive = archive;
-            source.folder = folder;
-            source.name = name;
-            Poco::File sourceFile = Poco::Path(sourceFolder).append(source.archive).append(source.folder).append(source.name);
+            source.filename = filename;
+            source.description = description;
+            Poco::File sourceFile = getFullSourcePath(source);
             if (sourceFile.exists())
                 source.downloaded = DownloadState::DOWNLOADED;
             else
@@ -905,6 +1049,79 @@ void SampleDatabase::filterSources()
         return;
     }
 
+    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_FILTER_END);
+
     sourceListMutex.unlock();
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_UPDATED);
+}
+
+void SampleDatabase::onTaskStarted(Poco::TaskStartedNotification *pNf)
+{
+    Poco::Task *pTask = pNf->task();
+
+    if (pTask->name().compare("ParseSourceList") == 0)
+    {
+    }
+    else if (pTask->name().compare("ParseTagsList") == 0)
+    {
+    }
+
+    pTask->release();
+}
+
+void SampleDatabase::onTaskFinished(Poco::TaskFinishedNotification *pNf)
+{
+    Poco::Task *pTask = pNf->task();
+
+    if (pTask->name().compare("ParseSourceList") == 0)
+    {
+        if (!pTask->isCancelled())
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED);
+    }
+    else if (pTask->name().compare("ParseTagsList") == 0)
+    {
+        if (!pTask->isCancelled())
+            databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOADED);
+    }
+
+    pTask->release();
+}
+
+void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
+{
+    std::cout << "SampleDatabase::onDatabaseChanged " << databaseUpdateString(arg) << std::endl;
+    switch (arg)
+    {
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
+        downloadTagsList();
+        break;
+    case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
+        break;
+    case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOADED:
+        makeTagSourcesTable();
+        databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
+        sourcesLoaded = true;
+        filterSources();
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_START:
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
+        break;
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADING:
+        break;
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
+        break;
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOAD_FAILED:
+        break;
+    default:
+        break;
+    }
 }

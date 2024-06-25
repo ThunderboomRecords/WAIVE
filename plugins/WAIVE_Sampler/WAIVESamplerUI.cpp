@@ -21,6 +21,12 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
     plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
 
+    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+
     plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
     plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
 
@@ -79,9 +85,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     searchIcon->setSize(sourceSearch->getHeight() - padding, sourceSearch->getHeight() - padding, false);
     searchIcon->onTop(searchBox, END, CENTER, padding * 2.f);
 
-    loading = new Spinner(this);
-    loading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
-    loading->rightOf(searchBox, CENTER, padding * 2.f);
+    databaseLoading = new Spinner(this);
+    databaseLoading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
+    databaseLoading->rightOf(searchBox, CENTER, padding * 2.f);
+
+    databaseProgress = new Label(this, "");
+    databaseProgress->rightOf(databaseLoading, START);
+    databaseProgress->setFont("VG5000", VG5000, VG5000_len);
 
     sourceList->setHeight(Layout::measureVertical(sourceList, START, searchBox, START) - 2.f * padding);
     sourceBrowserPanel->addChildWidget(sourceList);
@@ -326,7 +336,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     printf("WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
 
-    plugin->sd.downloadSourcesList();
+    plugin->sd.checkLatestRemoteVersion();
 }
 
 WAIVESamplerUI::~WAIVESamplerUI()
@@ -763,7 +773,8 @@ void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
 void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    // printf("WAIVESamplerUI::onTaskProgress: %s progress %.4f\n", pTask->name().c_str(), pTask->progress());
+    printf("WAIVESamplerUI::onTaskProgress: %s progress %.4f\n", pTask->name().c_str(), pTask->progress());
+
     if (pTask->name().compare("FeatureExtractorTask") == 0)
     {
         progress->setLabel(fmt::format("Analysing...[{:d}%]", (int)(pTask->progress() * 100.f)));
@@ -777,6 +788,18 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
         progress->resizeToFit();
         progress->setVisible(true);
         sourceWaveformDisplay->repaint();
+    }
+    else if (pTask->name().compare("ParseSourceList") == 0)
+    {
+        databaseProgress->setLabel(fmt::format("Importing sources [{:d}%]", (int)(pTask->progress() * 100.f)));
+        databaseProgress->resizeToFit();
+        databaseProgress->setVisible(true);
+    }
+    else if (pTask->name().compare("ParseTagsList") == 0)
+    {
+        databaseProgress->setLabel(fmt::format("Importing tags [{:d}%]", (int)(pTask->progress() * 100.f)));
+        databaseProgress->resizeToFit();
+        databaseProgress->setVisible(true);
     }
     pTask->release();
 }
@@ -811,40 +834,41 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         sourceLoading->setLoading(false);
         progress->setVisible(false);
     }
+    else if (pTask->name().compare("ParseSourceList") == 0)
+    {
+        databaseProgress->hide();
+    }
+    else if (pTask->name().compare("ParseTagsList") == 0)
+    {
+        databaseProgress->hide();
+    }
+
     pTask->release();
 }
 
 void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
 {
-    std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
+    // std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
     switch (arg)
     {
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
-        loading->setLoading(true);
-        // status = ConnectionStatus::DOWNLOADING;
-        // connectionStatus->setText("downloading list...");
-        // connectionStatus->resizeToFit();
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_START:
+    case SampleDatabase::DatabaseUpdate::BUILDING_TAG_LIST:
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADING:
+        databaseLoading->setLoading(true);
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
-        loading->setLoading(false);
-        // status = ConnectionStatus::FAILED;
-        // connectionStatus->setText("connection failed, click to retry");
-        // connectionStatus->resizeToFit();
-        break;
+    case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
-        loading->setLoading(false);
-        // setTagList(sd->getTagList());
-        // setArchiveList(sd->getArchiveList());
-        // status = ConnectionStatus::CONNECTED;
-        // connectionStatus->setText("source list downloaded");
-        // connectionStatus->resizeToFit();
-        sourceList->repaint();
-        break;
-    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
-    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADING:
-    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOAD_FAILED:
-        sourceList->repaint();
+        databaseLoading->setLoading(false);
+        break;
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
+        databaseLoading->setLoading(false);
+        break;
         break;
     default:
         break;

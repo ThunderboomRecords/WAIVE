@@ -1,19 +1,21 @@
 #include "HTTPClient.hpp"
 
 HTTPRequestTask::HTTPRequestTask(
+    const std::string &name,
     const std::string &host,
     const std::string &path,
     std::function<void(const std::string &)> callback,
     std::function<void()> failCallback)
-    : Poco::Task("HTTPRequestTask"), _host(host), _port(-1), _path(path), _callback(callback), _failCallback(failCallback) {}
+    : Poco::Task(name), _host(host), _port(-1), _path(path), _callback(callback), _failCallback(failCallback) {}
 
 HTTPRequestTask::HTTPRequestTask(
+    const std::string &name,
     const std::string &host,
     int port,
     const std::string &path,
     std::function<void(const std::string &)> callback,
     std::function<void()> failCallback)
-    : Poco::Task("HTTPRequestTask"), _host(host), _port(port), _path(path), _callback(callback), _failCallback(failCallback) {}
+    : Poco::Task(name), _host(host), _port(port), _path(path), _callback(callback), _failCallback(failCallback) {}
 
 void HTTPRequestTask::runTask()
 {
@@ -44,15 +46,15 @@ void HTTPRequestTask::runTask()
 HTTPClient::HTTPClient(Poco::TaskManager *tm) : _taskManager(tm) {}
 HTTPClient::~HTTPClient() {}
 
-void HTTPClient::sendRequest(const std::string &host, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback)
+void HTTPClient::sendRequest(const std::string &name, const std::string &host, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback)
 {
-    HTTPRequestTask *task = new HTTPRequestTask(host, path, callback, failCallback);
+    HTTPRequestTask *task = new HTTPRequestTask(name, host, path, callback, failCallback);
     _taskManager->start(task);
 }
 
-void HTTPClient::sendRequest(const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback)
+void HTTPClient::sendRequest(const std::string &name, const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback)
 {
-    HTTPRequestTask *task = new HTTPRequestTask(host, port, path, callback, failCallback);
+    HTTPRequestTask *task = new HTTPRequestTask(name, host, port, path, callback, failCallback);
     _taskManager->start(task);
 }
 

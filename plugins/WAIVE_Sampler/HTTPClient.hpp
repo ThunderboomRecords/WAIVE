@@ -18,8 +18,8 @@
 class HTTPRequestTask : public Poco::Task
 {
 public:
-    HTTPRequestTask(const std::string &host, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback);
-    HTTPRequestTask(const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback);
+    HTTPRequestTask(const std::string &name, const std::string &host, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback);
+    HTTPRequestTask(const std::string &name, const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback);
     void runTask() override;
 
 private:
@@ -36,8 +36,8 @@ public:
     HTTPClient(Poco::TaskManager *tm);
     ~HTTPClient();
 
-    void sendRequest(const std::string &host, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback);
-    void sendRequest(const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback);
+    void sendRequest(const std::string &name, const std::string &host, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback);
+    void sendRequest(const std::string &name, const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback, std::function<void()> failCallback);
     void onTaskFinished(Poco::TaskFinishedNotification *pNf);
 
 private:

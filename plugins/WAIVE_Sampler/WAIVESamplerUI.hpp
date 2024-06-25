@@ -135,11 +135,12 @@ private:
 
     // 1. Source Browser Components
     SourceList *sourceList;
-    Spinner *loading;
+    Spinner *databaseLoading;
     Button *filterSources;
     Panel *searchBox;
     TextInput *sourceSearch;
     Icon *searchIcon;
+    Label *databaseProgress;
 
     // 2. Sample Editor Components
     Waveform *sourceWaveformDisplay;

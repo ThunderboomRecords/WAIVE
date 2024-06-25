@@ -306,6 +306,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
     converterManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
     sd.databaseUpdate += Poco::delegate(this, &WAIVESampler::onDatabaseChanged);
+    sd.taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
 
     samplePlayerWaveforms.resize(11);
     for (int i = 0; i < 11; i++)
@@ -658,8 +659,7 @@ void WAIVESampler::initState(unsigned int index, String &stateKey, String &defau
 }
 
 void WAIVESampler::run(
-    const float **, // incoming audio        sourceFeatureTask = new FeatureExtractorTask(this);
-
+    const float **,              // incoming audio
     float **outputs,             // outgoing audio
     uint32_t numFrames,          // size of block to process
     const MidiEvent *midiEvents, // MIDI pointer
@@ -1171,7 +1171,6 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         }
 
         fSourceLength = tempBuffer->size();
-        std::cout << "fSourceLength " << fSourceLength << std::endl;
         fSourceWaveform.resize(fSourceLength);
 
         std::copy(tempBuffer->begin(), tempBuffer->begin() + fSourceLength, fSourceWaveform.begin());

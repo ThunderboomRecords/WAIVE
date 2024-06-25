@@ -137,7 +137,7 @@ void SourceBrowser::sourcePreview(int index)
     previewTitle.assign(sd->sourcesList.at(index).name);
     previewIndex = index;
     sd->playTempSourceFile(index);
-    previewSample->setText(std::string("||  ") + previewTitle);
+    previewSample->setLabel(std::string("||  ") + previewTitle);
     previewSample->resizeToFit();
     previewingSource = true;
 }
@@ -204,7 +204,7 @@ void SourceBrowser::labelClicked(Label *label)
             if (callback != nullptr)
                 callback->browserStopPreview();
 
-            previewSample->setText(std::string("▶  ") + previewTitle);
+            previewSample->setLabel(std::string("▶  ") + previewTitle);
             previewSample->resizeToFit();
             previewingSource = false;
         }
@@ -242,13 +242,13 @@ void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
         loading->setLoading(true);
         status = ConnectionStatus::DOWNLOADING;
-        connectionStatus->setText("downloading list...");
+        connectionStatus->setLabel("downloading list...");
         connectionStatus->resizeToFit();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
         loading->setLoading(false);
         status = ConnectionStatus::FAILED;
-        connectionStatus->setText("connection failed, click to retry");
+        connectionStatus->setLabel("connection failed, click to retry");
         connectionStatus->resizeToFit();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
@@ -256,7 +256,7 @@ void SourceBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
         setTagList(sd->getTagList());
         setArchiveList(sd->getArchiveList());
         status = ConnectionStatus::CONNECTED;
-        connectionStatus->setText("source list downloaded");
+        connectionStatus->setLabel("source list downloaded");
         connectionStatus->resizeToFit();
         source_list->repaint();
         break;
