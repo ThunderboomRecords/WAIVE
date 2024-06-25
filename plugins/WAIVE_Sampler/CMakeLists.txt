@@ -22,8 +22,11 @@ dpf_add_plugin(
       ./models/tsne.c
   FILES_UI
       WAIVESamplerUI.cpp
+      ./components/TagMap.cpp
+      ./components/TagBrowser.cpp
       ./components/SampleSlot.cpp
       ./components/SourceList.cpp
+      ./components/SampleMap.cpp
       ./components/SampleBrowser.cpp
       ./components/SampleBrowserRoot.cpp
       ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
@@ -49,7 +52,6 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/Waveform.cpp
       ${CMAKE_SOURCE_DIR}/common/src/DropDown.cpp
       ${CMAKE_SOURCE_DIR}/common/src/TextInput.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/SampleMap.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEImage.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp

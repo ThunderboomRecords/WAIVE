@@ -39,6 +39,7 @@ using json = nlohmann::json;
 // typedef Tag std::string;
 struct Tag
 {
+    int id;
     std::string name;
     float embedX;
     float embedY;
@@ -171,6 +172,7 @@ public:
     struct WhereConditions
     {
         std::string tagNotIn = "";
+        std::string tagIn = "";
         std::string archiveNotIn = "";
         std::string searchString = "";
         bool downloadsOnly = false;
@@ -219,7 +221,7 @@ public:
     void makeTagSourcesTable();
     void downloadSourceFile(int index);
     void playTempSourceFile(int index);
-    std::vector<Tag> getTagList() const;
+    void getTagList();
     std::vector<std::string> getArchiveList() const;
     void filterSources();
 
@@ -233,15 +235,13 @@ public:
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
     std::vector<SourceInfo> sourcesList;
 
-    bool sourceDatabaseConnected;
-    std::string sourceDatabaseStatus;
-
-    json sourcesData;
+    bool sourceDatabaseInitialised;
     bool sourcesLoaded;
 
     WhereConditions filterConditions;
 
     Poco::TaskManager taskManager;
+    std::vector<Tag> tagList;
 
 private:
     Poco::Data::Session *session;

@@ -116,9 +116,9 @@ json SampleInfo::toJson() const
 }
 
 SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
-    : sourceDatabaseConnected(false),
-      httpClient(_httpClient),
-      sourcesLoaded(false)
+    : httpClient(_httpClient),
+      sourcesLoaded(false),
+      sourceDatabaseInitialised(true)
 {
     // Get and create the directory where samples and sound files will
     // be saved to
@@ -547,6 +547,16 @@ void SampleDatabase::checkLatestRemoteVersion()
 
     std::cout << "user_version: " << user_version << std::endl;
 
+    // check if "Sources" table exists
+    std::string exists;
+    *session
+        << "SELECT name FROM sqlite_master WHERE type='table' AND name='Sources'",
+        Poco::Data::Keywords::into(exists),
+        Poco::Data::Keywords::range(0, 1),
+        Poco::Data::Keywords::now;
+
+    sourceDatabaseInitialised = exists.size() > 0;
+
     httpClient->sendRequest(
         "CheckDatabaseVersion",
         "127.0.0.1", 3000, "/latest", [this, user_version](const std::string &response)
@@ -563,6 +573,8 @@ void SampleDatabase::checkLatestRemoteVersion()
         [this]()
         {
             std::cout << "cannot connect to remote database and verify if up-to-date." << std::endl;
+            if (!sourceDatabaseInitialised)
+                std::cout << "no Source info avaliable\n";
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
         });
 }
@@ -597,6 +609,7 @@ void SampleDatabase::downloadSourcesList()
                 {"id", "description", "tags", "folder", "filename", "archive", "license"},
                 {"INTEGER PRIMARY KEY", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT"},
                 response);
+            sourceDatabaseInitialised = true;
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED); },
         [this]()
         {
@@ -676,6 +689,7 @@ void SampleDatabase::parseTSV(
             insertQuery << ", ";
     }
     insertQuery << ")";
+
     // 4. Iterate line by line
     double progress = 0.0;
     double pStep = 1.0 / tokenizer.count();
@@ -687,9 +701,6 @@ void SampleDatabase::parseTSV(
     size_t i;
     for (i = 0; i < tokenizer.count(); ++i)
     {
-        // if (isCancelled())
-        //     return;
-
         std::string line = tokenizer[i];
         Poco::StringTokenizer lineTokenizer(line, "\t", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
 
@@ -707,15 +718,10 @@ void SampleDatabase::parseTSV(
             {
                 std::cout << "Row " << i << " parsed" << std::endl;
                 session->commit();
-                // setProgress((float)i / tokenizer.count());
                 session->begin();
             }
         }
-        // else
-        // std::cerr << "Row " << i << " does not match the expected column count and will be skipped." << std::endl;
         progress += pStep;
-        // std::cout << progress << std::endl;
-        // setProgress(progress);
     }
 
     if (i % batch_size != 0)
@@ -723,8 +729,6 @@ void SampleDatabase::parseTSV(
         std::cout << "Row " << i << " parsed" << std::endl;
         session->commit();
     }
-
-    // setProgress(1.0);
 
     std::cout << "ParseCSV DONE\n";
 }
@@ -836,6 +840,7 @@ void SampleDatabase::playTempSourceFile(int i)
 void SampleDatabase::makeTagSourcesTable()
 {
     std::cout << "SampleDatabase::makeTagSourcesTable()" << std::endl;
+
     *session << "DROP TABLE IF EXISTS SourcesTags",
         Poco::Data::Keywords::now;
 
@@ -906,23 +911,25 @@ void SampleDatabase::makeTagSourcesTable()
     std::cout << "SampleDatabase::makeTagSourcesTable() finished" << std::endl;
 }
 
-std::vector<Tag> SampleDatabase::getTagList() const
+void SampleDatabase::getTagList()
 {
-
-    std::vector<Tag> tags;
+    tagList.clear();
     Poco::Data::Statement select(*session);
+    int tagId;
     std::string tag;
-    select << "SELECT tag FROM Tags",
+    float embedX, embedY;
+    select << "SELECT id, tag, embedX, embedY FROM Tags",
+        Poco::Data::Keywords::into(tagId),
         Poco::Data::Keywords::into(tag),
+        Poco::Data::Keywords::into(embedX),
+        Poco::Data::Keywords::into(embedY),
         Poco::Data::Keywords::range(0, 1);
 
     while (!select.done())
     {
         if (select.execute())
-            tags.push_back({std::string(tag)});
+            tagList.push_back({tagId, std::string(tag), float(embedX), float(embedY)});
     }
-
-    return tags;
 }
 
 std::vector<std::string> SampleDatabase::getArchiveList() const
@@ -945,13 +952,16 @@ std::vector<std::string> SampleDatabase::getArchiveList() const
 
 void SampleDatabase::filterSources()
 {
+    if (!sourceDatabaseInitialised)
+        return;
+
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_FILTER_START);
     sourceListMutex.lock();
     sourcesList.clear();
 
     std::vector<std::string> conditions = {};
-    if (filterConditions.tagNotIn.length() > 0)
-        conditions.push_back("Tags.tag NOT IN (" + filterConditions.tagNotIn + ")");
+    if (filterConditions.tagIn.length() > 0)
+        conditions.push_back("Tags.id IN (" + filterConditions.tagIn + ")");
 
     if (filterConditions.archiveNotIn.length() > 0)
         conditions.push_back("Sources.archive NOT IN (" + filterConditions.archiveNotIn + ")");
@@ -1006,8 +1016,12 @@ void SampleDatabase::filterSources()
 
         Poco::Data::Statement selectTag(*session);
         std::string tag;
-        selectTag << "SELECT tag FROM Tags WHERE id = ?",
+        float embedX, embedY;
+        selectTag << "SELECT id, tag, embedX, embedY FROM Tags WHERE id = ?",
+            Poco::Data::Keywords::into(tagId),
             Poco::Data::Keywords::into(tag),
+            Poco::Data::Keywords::into(embedX),
+            Poco::Data::Keywords::into(embedY),
             Poco::Data::Keywords::use(tagId),
             Poco::Data::Keywords::range(0, 1);
 
@@ -1035,7 +1049,7 @@ void SampleDatabase::filterSources()
             {
                 selectSourcesTag.execute();
                 selectTag.execute();
-                source.tags.push_back({std::string(tag)});
+                source.tags.push_back({tagId, std::string(tag), embedX, embedY});
             }
 
             sourcesList.push_back(source);
@@ -1106,7 +1120,7 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
         databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
-        sourcesLoaded = true;
+        getTagList();
         filterSources();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:

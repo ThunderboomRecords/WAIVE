@@ -329,6 +329,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sampleBrowser = new SampleBrowser(*sampleBrowserRoot, &plugin->sd);
     sampleBrowser->setCallback(this);
 
+    // 6 ----- Sample Map
+    tagRoot = new SampleBrowserRoot(getApp(), 300, 300);
+    tagRoot->setTitle("Browse tags");
+    tagRoot->setCallback(this);
+
+    tagBrowser = new TagBrowser(*tagRoot, &plugin->sd);
+
     setGeometryConstraints(width, height, false, false);
 
     if (fScaleFactor != 1.0)
@@ -343,6 +350,7 @@ WAIVESamplerUI::~WAIVESamplerUI()
 {
     plugin->sd.databaseUpdate -= Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
     sampleBrowserRoot->close();
+    tagRoot->close();
 
     if (open_dialog.joinable())
         open_dialog.join();
@@ -448,6 +456,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->addCurrentSampleToLibrary();
     else if (button == playSampleBtn)
         plugin->triggerPreview();
+    else if (button == filterSources)
+        tagRoot->show();
     else if (button == makeKick)
     {
         std::cout << "Make kick...\n";
@@ -486,9 +496,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         std::cout << "Make clap...\n";
     }
     else if (button == openMapBtn)
-    {
         sampleBrowserRoot->show();
-    }
 
     repaint();
 }

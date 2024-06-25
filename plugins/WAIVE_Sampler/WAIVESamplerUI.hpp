@@ -23,6 +23,7 @@
 #include "Label.hpp"
 #include "Popup.hpp"
 #include "Image.hpp"
+#include "TagBrowser.hpp"
 #include "Spinner.hpp"
 #include "DropDown.hpp"
 #include "Waveform.hpp"
@@ -141,6 +142,10 @@ private:
     TextInput *sourceSearch;
     Icon *searchIcon;
     Label *databaseProgress;
+
+    SampleBrowserRoot *tagRoot;
+    TagBrowser *tagBrowser;
+    // TagMap *tagMap;
 
     // 2. Sample Editor Components
     Waveform *sourceWaveformDisplay;
