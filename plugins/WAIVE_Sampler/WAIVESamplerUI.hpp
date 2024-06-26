@@ -10,6 +10,7 @@
 #include "NanoVG.hpp"
 #include "Window.hpp"
 
+#include "WAIVEUtils.hpp"
 #include "WidgetGroup.hpp"
 #include "SampleBrowser.hpp"
 #include "SampleBrowserRoot.hpp"
@@ -166,7 +167,7 @@ private:
     // 4. Sample Pack Components
     VBox *sampleSlotsContainer;
     std::vector<SampleSlot *> sampleSlots;
-    Button *openMapBtn;
+    Button *openMapBtn, *browseFilesBtn;
 
     SampleBrowserRoot *sampleBrowserRoot;
     SampleBrowser *sampleBrowser;

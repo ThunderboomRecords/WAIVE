@@ -57,6 +57,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sourceList->accent_color = sourceBrowserPanel->background_color;
     sourceList->padding = 0.0f;
     sourceList->margin = 0.0f;
+    sourceList->font_size = 14.f;
     sourceList->setCallback(this);
 
     filterSources = new Button(this);
@@ -286,7 +287,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sampleName->below(sampleWaveformDisplay, CENTER, padding);
     sampleName->setCallback(this);
     sampleName->setFont("VG5000", VG5000, VG5000_len);
-    sampleName->placeholder = "name...";
     sampleName->align = Align::ALIGN_CENTER;
     sampleName->foreground_color = WaiveColors::light1;
 
@@ -294,6 +294,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     saveSampleBtn->setLabel("Add to pack");
     saveSampleBtn->resizeToFit();
     saveSampleBtn->setCallback(this);
+    saveSampleBtn->setEnabled(false);
 
     newSampleBtn = new Button(this);
     newSampleBtn->setLabel("New sample");
@@ -321,8 +322,24 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     openMapBtn = new Button(this);
     openMapBtn->setLabel("Sample Map");
     openMapBtn->resizeToFit();
-    openMapBtn->onTop(samplePlayerPanel, CENTER, END, padding * 2.f);
+    // openMapBtn->onTop(samplePlayerPanel, CENTER, END, padding * 2.f);
     openMapBtn->setCallback(this);
+
+    browseFilesBtn = new Button(this);
+    browseFilesBtn->setLabel("Open Folder");
+    browseFilesBtn->resizeToFit();
+    // browseFilesBtn->onTop(samplePlayerPanel, CENTER, END, padding * 2.f);
+    browseFilesBtn->setCallback(this);
+
+    HBox alignPlayerButtons(this);
+    alignPlayerButtons.addWidget(openMapBtn);
+    alignPlayerButtons.addWidget(browseFilesBtn);
+    alignPlayerButtons.justify_content = HBox::Justify_Content::center;
+    alignPlayerButtons.padding = 2.f * padding;
+    alignPlayerButtons.resizeToFit();
+    alignPlayerButtons.setWidth(samplePlayerPanel->getWidth() - 4.f * padding);
+    alignPlayerButtons.onTop(samplePlayerPanel, CENTER, END, padding * 2.f);
+    alignPlayerButtons.positionWidgets();
 
     sampleSlotsContainer = new VBox(this);
     sampleSlotsContainer->justify_content = VBox::Justify_Content::space_evenly;
@@ -622,6 +639,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 3. Set sample name
         sampleName->setText(plugin->sd.getNewSampleName("clap.wav").c_str(), true);
     }
+    else if (button == browseFilesBtn)
+        SystemOpenDirectory(plugin->sd.getSampleFolder());
     else if (button == openMapBtn)
         sampleBrowserRoot->show();
 
@@ -864,7 +883,6 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             else
                 saveSampleBtn->setVisible(false);
             sampleName->setText(plugin->fCurrentSample->name.c_str(), false);
-            // newSampleBtn->setLabel("duplicate");
         }
 
         break;

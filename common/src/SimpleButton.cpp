@@ -78,8 +78,8 @@ void Button::onNanoDisplay()
     if (!fEnabled)
     {
         beginPath();
-        fillColor(0.f, 0.f, 0.f, 0.3f);
-        rect(0, 0, width, height);
+        fillColor(0.f, 0.f, 0.f, 0.5f);
+        roundedRect(margin, margin, width - 2 * margin, height - 2 * margin, height * 0.5f);
         fill();
         closePath();
     }
