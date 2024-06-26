@@ -3,7 +3,7 @@
 
 #include <cstdlib>
 #include <string>
-#include <iostream>>
+#include <iostream>
 
 static void SystemOpenURL(const std::string &url)
 {

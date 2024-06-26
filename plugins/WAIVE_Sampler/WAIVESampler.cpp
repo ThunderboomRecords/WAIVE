@@ -82,9 +82,9 @@ void FeatureExtractorTask::runTask()
         cachedir.createDirectories();
 
     int frameIndex = 0;
-    int frame = 0;
-    int length = _ws->fSourceLength;
-    Gist<float> gist(256, (int)_ws->getSampleRate());
+    long frame = 0;
+    long length = _ws->fSourceLength;
+    Gist<float> gist(128, (int)_ws->getSampleRate());
 
     _ws->sourceFeaturesMtx.lock();
     _ws->fSourceFeatures.clear();
@@ -93,12 +93,14 @@ void FeatureExtractorTask::runTask()
     float pStep = (float)gist.getAudioFrameSize() / length;
     float p = 0.0f;
 
+    long lastOnset = -5000;
+
     while (frame < length - gist.getAudioFrameSize() && !isCancelled())
     {
         WaveformMeasurements m;
-        // gist.processAudioFrame(std::vector<float>(_ws->fSourceWaveform.begin() + frame, _ws->fSourceWaveform.begin() + frame + gist.getAudioFrameSize()));
         gist.processAudioFrame(&_ws->fSourceWaveform.at(frame), gist.getAudioFrameSize());
 
+        m.frame = frame;
         m.rms = gist.rootMeanSquare();
         m.peakEnergy = gist.peakEnergy();
         m.specCentroid = gist.spectralCentroid();
@@ -107,12 +109,14 @@ void FeatureExtractorTask::runTask()
         m.specKurtosis = gist.spectralKurtosis();
         m.specRolloff = gist.spectralRolloff();
         m.zcr = gist.zeroCrossingRate();
+        m.highfrequencyContent = gist.highFrequencyContent();
 
-        // printf("  RMS: %6.2f PE: %6.2f SCent: %6.2f SCre: %6.2f SF: %6.2f SK: %6.2f SR: %6.2f ZCR: %6.2f\n",
-        //    m.rms, m.peakEnergy, m.specCentroid, m.specCrest, m.specFlat, m.specKurtosis, m.specRolloff, m.zcr);
+        printf("  RMS: %6.2f PE: %6.2f SCent: %6.2f SCre: %6.2f SF: %6.2f SK: %6.2f SR: %6.2f ZCR: %6.2f\n",
+               m.rms, m.peakEnergy, m.specCentroid, m.specCrest, m.specFlat, m.specKurtosis, m.specRolloff, m.zcr);
 
-        float onset = gist.energyDifference();
-        if (onset > 2.f)
+        float onset = gist.complexSpectralDifference();
+
+        if (onset > 100.f && frame > lastOnset + 4800)
         {
             _ws->fSourceFeatures.push_back({FeatureType::Onset,
                                             "onset",
@@ -120,6 +124,7 @@ void FeatureExtractorTask::runTask()
                                             frame,
                                             frame,
                                             frameIndex});
+            lastOnset = frame;
         }
         _ws->fSourceMeasurements.push_back(m);
         p += pStep;

@@ -490,11 +490,16 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 1. Select random candidate area of source
         int nCandidates = plugin->fSourceFeatures.size();
         if (nCandidates == 0)
-            return; // or pick a random spot?
+        {
 
-        int i = random.next() % nCandidates;
-        int startIndex = plugin->fSourceFeatures[i].start;
-        plugin->selectWaveform(&plugin->fSourceWaveform, startIndex);
+            return; // or pick a random spot?
+        }
+        else
+        {
+            int i = random.next() % nCandidates;
+            int startIndex = plugin->fSourceFeatures[i].start;
+            plugin->selectWaveform(&plugin->fSourceWaveform, startIndex);
+        }
 
         // 2. Load preset parameter values
         plugin->loadPreset(Presets::KickPreset);
@@ -508,14 +513,101 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     else if (button == makeSnare)
     {
         std::cout << "Make snare...\n";
+        // 0. Check if a source is loaded
+        if (!plugin->fSourceLoaded)
+            return;
+
+        // 1. pick random start
+        std::vector<long> starts;
+
+        for (auto &m : plugin->fSourceMeasurements)
+        {
+            if (m.rms > 0.1 && m.specFlat > 0.9f)
+            {
+                starts.push_back(m.frame);
+            }
+        }
+
+        std::cout << "options: " << starts.size() << std::endl;
+        if (starts.size() == 0)
+        {
+            return;
+        }
+
+        int i = random.next() % starts.size();
+        plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
+
+        // 2. Load preset parameter values
+        plugin->loadPreset(Presets::SnarePreset);
+
+        // 3. Set sample name
+        sampleName->setText(plugin->sd.getNewSampleName("snare.wav").c_str(), true);
     }
     else if (button == makeHihat)
     {
         std::cout << "Make hihat...\n";
+        // 0. Check if a source is loaded
+        if (!plugin->fSourceLoaded)
+            return;
+
+        // 1. pick random start
+        std::vector<long> starts;
+
+        for (auto &m : plugin->fSourceMeasurements)
+        {
+            if (m.rms > 0.1 && m.specFlat > 0.9f)
+            {
+                starts.push_back(m.frame);
+            }
+        }
+
+        std::cout << "options: " << starts.size() << std::endl;
+        if (starts.size() == 0)
+        {
+            return;
+        }
+
+        int i = random.next() % starts.size();
+        plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
+
+        // 2. Load preset parameter values
+        plugin->loadPreset(Presets::HiHat);
+
+        // 3. Set sample name
+        sampleName->setText(plugin->sd.getNewSampleName("hihat.wav").c_str(), true);
     }
     else if (button == makeClap)
     {
         std::cout << "Make clap...\n";
+        // 0. Check if a source is loaded
+        if (!plugin->fSourceLoaded)
+            return;
+
+        // 1. pick random start
+        std::vector<long> starts;
+
+        for (auto &m : plugin->fSourceMeasurements)
+        {
+            if (m.rms > 0.1 && m.specFlat > 0.9f)
+            {
+                starts.push_back(m.frame);
+            }
+        }
+
+        std::cout << "options: " << starts.size() << std::endl;
+        if (starts.size() == 0)
+        {
+            return;
+        }
+
+        int i = random.next() % starts.size();
+        plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
+
+        // 2. Load preset parameter values
+        plugin->loadPreset(Presets::Clap);
+
+        // 3. Set sample name
+        sampleName->setText(plugin->sd.getNewSampleName("clap.wav").c_str(), true);
     }
     else if (button == openMapBtn)
         sampleBrowserRoot->show();

@@ -9,13 +9,14 @@ struct WaveformFeature
     FeatureType type;
     std::string label;
     float value;
-    int start;
-    int end;
+    long start;
+    long end;
     int index;
 };
 
 struct WaveformMeasurements
 {
+    long frame;
     float rms;
     float peakEnergy;
     float zcr;
@@ -24,6 +25,7 @@ struct WaveformMeasurements
     float specFlat;
     float specRolloff;
     float specKurtosis;
+    float highfrequencyContent;
 };
 
 #endif

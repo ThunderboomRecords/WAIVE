@@ -41,9 +41,9 @@ namespace Presets
     static Preset SnarePreset = {
         1.0f,
         1.0f,
-        2.0f,
+        0.0f,
+        0.1f,
         0.2f,
-        0.5f,
         Filter::FILTER_BANDPASS,
         {0.0f,
          60.f,
@@ -51,17 +51,30 @@ namespace Presets
          100.f},
         50.f};
 
-    static Preset CrashPreset = {
+    static Preset HiHat = {
         1.0f,
         1.0f,
         2.0f,
         0.2f,
         0.3f,
         Filter::FILTER_HIGHPASS,
-        {10.0f,
-         100.f,
+        {2.0f,
+         50.f,
          0.6f,
-         300.f},
+         120.f},
+        50.f};
+
+    static Preset Clap = {
+        1.0f,
+        1.0f,
+        1.5f,
+        0.2f,
+        0.3f,
+        Filter::FILTER_BANDPASS,
+        {2.0f,
+         50.f,
+         0.6f,
+         120.f},
         50.f};
 } // namespace Presets
 

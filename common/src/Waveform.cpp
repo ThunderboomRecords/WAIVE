@@ -158,6 +158,9 @@ void Waveform::onNanoDisplay()
 
     if (wfFeatures != nullptr)
     {
+        Color f_color(feature_color);
+        f_color.alpha = 0.8f;
+        strokeColor(f_color);
         for (int i = 0; i < wfFeatures->size(); i++)
         {
             WaveformFeature f = wfFeatures->at(i);
@@ -169,7 +172,6 @@ void Waveform::onNanoDisplay()
                     continue;
 
                 beginPath();
-                strokeColor(feature_color);
                 if (i == featureHighlight)
                     strokeWidth(3.0f);
                 else
