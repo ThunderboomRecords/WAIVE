@@ -4,6 +4,7 @@
 #include "NanoVG.hpp"
 #include "Window.hpp"
 
+#include "fonts.h"
 #include "TagMap.hpp"
 #include "SimpleButton.hpp"
 

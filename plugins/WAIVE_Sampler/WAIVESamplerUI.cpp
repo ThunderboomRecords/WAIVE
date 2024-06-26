@@ -57,11 +57,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sourceList->accent_color = sourceBrowserPanel->background_color;
     sourceList->padding = 0.0f;
     sourceList->margin = 0.0f;
-    sourceList->font_size = 14.f;
+    sourceList->font_size = 16.f;
+    sourceList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     sourceList->setCallback(this);
 
     filterSources = new Button(this);
     filterSources->setLabel("Tags");
+    filterSources->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     filterSources->resizeToFit();
     filterSources->onTop(sourceBrowserPanel, START, END, padding * 2.f);
     filterSources->setCallback(this);
@@ -74,9 +76,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     sourceSearch = new TextInput(this);
     sourceSearch->placeholder = "Search...";
+    sourceSearch->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     sourceSearch->foreground_color = WaiveColors::light1;
     sourceSearch->background_color = searchBox->background_color;
-    sourceSearch->setFont("VG5000", VG5000, VG5000_len);
     sourceSearch->setSize(searchBox->getWidth() - padding * 4.f - sourceSearch->font_size, sourceSearch->font_size, true);
     sourceSearch->onTop(searchBox, START, CENTER, padding * 2.f);
     sourceSearch->setCallback(this);
@@ -94,10 +96,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     databaseProgress = new Label(this, "");
     databaseProgress->rightOf(databaseLoading, START);
-    databaseProgress->setFont("VG5000", VG5000, VG5000_len);
+    databaseProgress->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
 
     previewPlayback = new Button(this);
     previewPlayback->setLabel("Stop");
+    previewPlayback->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     previewPlayback->resizeToFit();
     previewPlayback->onTop(sourceBrowserPanel, END, END, padding * 2.f);
     previewPlayback->setCallback(this);
@@ -118,6 +121,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     importSource = new Button(this);
     importSource->setLabel("Import source");
+    importSource->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     importSource->resizeToFit();
     importSource->onTop(sampleEditorPanel, END, START, padding * 2.f);
     importSource->setCallback(this);
@@ -146,41 +150,43 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     progress = new Label(this, "");
     progress->font_size = 12.f;
+    progress->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     progress->resizeToFit();
     progress->rightOf(sourceLoading, START, padding);
 
     presetLabel = new Label(this, "Detect:");
-    presetLabel->setFont("VG5000", VG5000, VG5000_len);
+    presetLabel->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     presetLabel->resizeToFit();
+
     knobsLabel = new Label(this, "Adjust");
-    knobsLabel->setFont("VG5000", VG5000, VG5000_len);
+    knobsLabel->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     knobsLabel->resizeToFit();
 
     makeKick = new Button(this);
     makeKick->setLabel("Kick");
     makeKick->font_size = 16.f;
-    makeKick->setFont("VG5000", VG5000, VG5000_len);
+    makeKick->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     makeKick->setSize(100.f, 32.f);
     makeKick->setCallback(this);
 
     makeSnare = new Button(this);
     makeSnare->setLabel("Snare");
     makeSnare->font_size = 16.f;
-    makeSnare->setFont("VG5000", VG5000, VG5000_len);
+    makeSnare->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     makeSnare->setSize(100.f, 32.f);
     makeSnare->setCallback(this);
 
     makeHihat = new Button(this);
     makeHihat->setLabel("Hi-Hat");
     makeHihat->font_size = 16.f;
-    makeHihat->setFont("VG5000", VG5000, VG5000_len);
+    makeHihat->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     makeHihat->setSize(100.f, 32.f);
     makeHihat->setCallback(this);
 
     makeClap = new Button(this);
     makeClap->setLabel("Clap");
     makeClap->font_size = 16.f;
-    makeClap->setFont("VG5000", VG5000, VG5000_len);
+    makeClap->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     makeClap->setSize(100.f, 32.f);
     makeClap->setCallback(this);
 
@@ -199,26 +205,26 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     presetButtons->setVisible(false);
 
-    pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f, logo_font);
-    volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f, logo_font);
-    percussionBoost = createWAIVEKnob(this, kPercussiveBoost, "perc.", 0.0f, 1.0f, 1.0f, logo_font);
+    pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f);
+    volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f);
+    percussionBoost = createWAIVEKnob(this, kPercussiveBoost, "perc.", 0.0f, 1.0f, 1.0f);
 
-    ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 10.0f, logo_font);
+    ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 10.0f);
     ampAttack->format = "{:.0f}ms";
-    ampDecay = createWAIVEKnob(this, kAmpDecay, "decay", 0.0f, 500.0f, 50.0f, logo_font);
+    ampDecay = createWAIVEKnob(this, kAmpDecay, "decay", 0.0f, 500.0f, 50.0f);
     ampDecay->format = "{:.0f}ms";
-    ampSustain = createWAIVEKnob(this, kAmpSustain, "sustain", 0.0f, 1.0f, 0.7f, logo_font);
-    ampRelease = createWAIVEKnob(this, kAmpRelease, "release", 0.0f, 500.0f, 100.0f, logo_font);
+    ampSustain = createWAIVEKnob(this, kAmpSustain, "sustain", 0.0f, 1.0f, 0.7f);
+    ampRelease = createWAIVEKnob(this, kAmpRelease, "release", 0.0f, 500.0f, 100.0f);
     ampRelease->format = "{:.0f}ms";
-    sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 1000.0f, 100.f, logo_font);
+    sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 1000.0f, 100.f);
     sustainLength->format = "{:.0f}ms";
 
-    filterCutoff = createWAIVEKnob(this, kFilterCutoff, "cutoff", 0.0, 0.999, 0.999, logo_font);
-    filterResonance = createWAIVEKnob(this, kFilterResonance, "res.", 0.0, 1.0, 0.0, logo_font);
+    filterCutoff = createWAIVEKnob(this, kFilterCutoff, "cutoff", 0.0, 0.999, 0.999);
+    filterResonance = createWAIVEKnob(this, kFilterResonance, "res.", 0.0, 1.0, 0.0);
 
     filterType = new DropDown(this);
     filterType->font_size = 16.0f;
-    filterType->setFont("VG5000", VG5000, VG5000_len);
+    filterType->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     filterType->addItem("LP");
     filterType->addItem("HP");
     filterType->addItem("BP");
@@ -251,12 +257,12 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     instructions = new Label(this, "Load a source or inport your own audio to extract samples from.");
     instructions->resizeToFit();
-    instructions->setFont("VG5000", VG5000, VG5000_len);
+    instructions->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     instructions->below(sourceWaveformDisplay, CENTER, Layout::measureVertical(sourceWaveformDisplay, END, sampleEditorPanel, END) / 2.f);
 
     valueIndicator = new ValueIndicator(this);
     valueIndicator->setSize(70, 20);
-    valueIndicator->setFont("VG5000", VG5000, VG5000_len);
+    valueIndicator->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     valueIndicator->hide();
     valueIndicator->background_color = WaiveColors::grey2;
 
@@ -264,7 +270,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     samplePanel = new Panel(this);
     samplePanel->setSize(col2Width, panelHeights / 3.f, true);
     samplePanel->rightOf(sourceBrowserPanel, START, padding);
-    samplePanel->setFont("VG5000", VG5000, VG5000_len);
+    samplePanel->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     samplePanel->label = "3";
     samplePanel->title = "Sample";
 
@@ -286,18 +292,20 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sampleName->setSize(samplePanel->getWidth() * 0.8f, 20, true);
     sampleName->below(sampleWaveformDisplay, CENTER, padding);
     sampleName->setCallback(this);
-    sampleName->setFont("VG5000", VG5000, VG5000_len);
+    sampleName->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     sampleName->align = Align::ALIGN_CENTER;
     sampleName->foreground_color = WaiveColors::light1;
 
     saveSampleBtn = new Button(this);
     saveSampleBtn->setLabel("Add to pack");
+    saveSampleBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     saveSampleBtn->resizeToFit();
     saveSampleBtn->setCallback(this);
     saveSampleBtn->setEnabled(false);
 
     newSampleBtn = new Button(this);
     newSampleBtn->setLabel("New sample");
+    newSampleBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     newSampleBtn->resizeToFit();
     newSampleBtn->setCallback(this);
 
@@ -315,20 +323,20 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     samplePlayerPanel = new Panel(this);
     samplePlayerPanel->setSize(col2Width, panelHeights * 2.f / 3.f, true);
     samplePlayerPanel->rightOf(sampleEditorPanel, END, padding);
-    samplePlayerPanel->setFont("VG5000", VG5000, VG5000_len);
+    samplePlayerPanel->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     samplePlayerPanel->label = "4";
     samplePlayerPanel->title = "Sample Player";
 
     openMapBtn = new Button(this);
     openMapBtn->setLabel("Sample Map");
+    openMapBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     openMapBtn->resizeToFit();
-    // openMapBtn->onTop(samplePlayerPanel, CENTER, END, padding * 2.f);
     openMapBtn->setCallback(this);
 
     browseFilesBtn = new Button(this);
     browseFilesBtn->setLabel("Open Folder");
+    browseFilesBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     browseFilesBtn->resizeToFit();
-    // browseFilesBtn->onTop(samplePlayerPanel, CENTER, END, padding * 2.f);
     browseFilesBtn->setCallback(this);
 
     HBox alignPlayerButtons(this);
@@ -355,6 +363,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         slot->setCallback(this);
         slot->slotId = i;
         slot->setSize(sampleSlotsContainer->getWidth(), 35);
+        slot->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
 
         sampleSlotsContainer->addWidget(slot);
         sampleSlots.push_back(slot);
@@ -1075,8 +1084,7 @@ Knob *createWAIVEKnob(
     std::string label,
     float min,
     float max,
-    float value,
-    UI::FontId font)
+    float value)
 {
     Knob *knob = new Knob(parent);
     knob->setId(param);
@@ -1087,7 +1095,7 @@ Knob *createWAIVEKnob(
     knob->setValue(value);
     knob->gauge_width = 3.0f;
     knob->setCallback(parent);
-    knob->font = font;
+    knob->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     knob->font_size = 12.f;
 
     return knob;

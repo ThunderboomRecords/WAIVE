@@ -17,12 +17,14 @@ TagBrowser::TagBrowser(Window &window, SampleDatabase *sd_)
 
     select_none = new Button(this);
     select_none->setLabel("None");
+    select_none->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     select_none->resizeToFit();
     select_none->setCallback(this);
     select_none->onTop(tagMap, END, START, 10);
 
     select_all = new Button(this);
     select_all->setLabel("All");
+    select_all->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     select_all->resizeToFit();
     select_all->setCallback(this);
     select_all->leftOf(select_none, START, 10);

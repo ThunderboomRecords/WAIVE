@@ -64,8 +64,7 @@ Knob *createWAIVEKnob(
     std::string label,
     float min,
     float max,
-    float value,
-    UI::FontId font);
+    float value);
 
 class WAIVESamplerUI : public UI,
                        public Button::Callback,

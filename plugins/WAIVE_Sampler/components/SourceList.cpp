@@ -136,6 +136,7 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
     fillColor(text_color);
     fontSize(font_size);
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
+    fontFaceId(font);
     text(30.f, height / 2.0f, info.description.c_str(), nullptr);
     closePath();
 
