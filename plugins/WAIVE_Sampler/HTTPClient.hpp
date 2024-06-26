@@ -1,13 +1,14 @@
 #ifndef HTTP_CLIENT_HPP_INCLUDED
 #define HTTP_CLIENT_HPP_INCLUDED
 
-#include <Poco/Net/HTTPClientSession.h>
+#include <Poco/Net/HTTPSClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/ThreadPool.h>
 #include <Poco/Runnable.h>
 #include <Poco/Task.h>
+#include <Poco/URI.h>
 #include <Poco/TaskManager.h>
 #include <Poco/TaskNotification.h>
 #include <Poco/Observer.h>

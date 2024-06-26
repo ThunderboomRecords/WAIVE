@@ -137,7 +137,7 @@ private:
     // 1. Source Browser Components
     SourceList *sourceList;
     Spinner *databaseLoading;
-    Button *filterSources;
+    Button *filterSources, *previewPlayback;
     Panel *searchBox;
     TextInput *sourceSearch;
     Icon *searchIcon;

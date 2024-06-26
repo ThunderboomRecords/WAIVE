@@ -443,7 +443,7 @@ std::string SampleDatabase::getFullSamplePath(std::shared_ptr<SampleInfo> sample
 
 std::string SampleDatabase::getFullSourcePath(SourceInfo source) const
 {
-    return Poco::Path(sourceFolder).append(source.archive).append(source.filename).toString();
+    return Poco::Path(sourceFolder).append(source.url).toString();
 }
 
 std::string SampleDatabase::getSampleFolder() const
@@ -559,7 +559,7 @@ void SampleDatabase::checkLatestRemoteVersion()
 
     httpClient->sendRequest(
         "CheckDatabaseVersion",
-        "127.0.0.1", 3000, "/latest", [this, user_version](const std::string &response)
+        WAIVE_SERVER, "/latest", [this, user_version](const std::string &response)
         { 
             json result = json::parse(response); 
             int latest_version = result["version"]; 
@@ -602,12 +602,12 @@ void SampleDatabase::downloadSourcesList()
 
     httpClient->sendRequest(
         "DownloadSourceList",
-        "127.0.0.1", 3000, "/filelist", [this](const std::string &response)
+        WAIVE_SERVER, "/filelist", [this](const std::string &response)
         {
             parseTSV(
                 "Sources",
-                {"id", "description", "tags", "folder", "filename", "archive", "license"},
-                {"INTEGER PRIMARY KEY", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT"},
+                {"id", "description", "tags", "folder", "filename", "archive", "url", "license"},
+                {"INTEGER PRIMARY KEY", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT"},
                 response);
             sourceDatabaseInitialised = true;
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED); },
@@ -629,7 +629,7 @@ void SampleDatabase::downloadTagsList()
 
     httpClient->sendRequest(
         "DownloadTagsList",
-        "127.0.0.1", 3000, "/tags", [this](const std::string &response)
+        WAIVE_SERVER, "/tags", [this](const std::string &response)
         {
             parseTSV(
                 "Tags",
@@ -742,9 +742,9 @@ void SampleDatabase::downloadSourceFile(int i)
     if (si->downloaded == DownloadState::DOWNLOADED)
         return;
 
-    Poco::Path location = Poco::Path(si->archive);
-    Poco::Path endpoint = Poco::Path("/file").append(location).append(si->filename);
-    Poco::File file = Poco::Path(sourceFolder).append(location).append(si->filename);
+    Poco::Path location = Poco::Path(si->url);
+    Poco::Path endpoint = Poco::Path("/file").append(location);
+    Poco::File file = Poco::Path(sourceFolder).append(location);
 
     if (file.exists())
     {
@@ -760,7 +760,7 @@ void SampleDatabase::downloadSourceFile(int i)
 
     httpClient->sendRequest(
         "DownloadSourceFile",
-        "127.0.0.1", 3000, endpoint.toString(Poco::Path::Style::PATH_URI), [this, filePath, si](const std::string &response)
+        WAIVE_SERVER, endpoint.toString(Poco::Path::Style::PATH_URI), [this, filePath, si](const std::string &response)
         {
             // save file...
             Poco::File fp(filePath);
@@ -795,25 +795,24 @@ void SampleDatabase::playTempSourceFile(int i)
     if (i < 0 || i > sourcesList.size())
         return;
 
-    databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADING);
-
     SourceInfo *si = &sourcesList[i];
-    Poco::Path location = Poco::Path(si->archive);
+    Poco::Path location = Poco::Path(si->url);
 
     if (si->downloaded == DownloadState::DOWNLOADED)
     {
-        Poco::File preview = Poco::Path(sourceFolder).append(location).append(si->filename);
+        Poco::File preview = Poco::Path(sourceFolder).append(location);
         sourcePreviewPath = preview.path();
         databaseUpdate.notify(this, DatabaseUpdate::SOURCE_PREVIEW_READY);
         return;
     }
 
-    Poco::Path endpoint = Poco::Path("/file").append(location).append(si->filename);
+    databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADING);
+    Poco::Path endpoint = Poco::Path("/file").append(location);
     std::cout << endpoint.toString(Poco::Path::Style::PATH_URI) << std::endl;
 
     httpClient->sendRequest(
         "PlayTempSourceFile",
-        "127.0.0.1", 3000, endpoint.toString(Poco::Path::Style::PATH_URI), [this](const std::string &response)
+        WAIVE_SERVER, endpoint.toString(Poco::Path::Style::PATH_URI), [this](const std::string &response)
         {
             Poco::TemporaryFile tmp = Poco::TemporaryFile();
             tmp.keepUntilExit();
@@ -826,7 +825,9 @@ void SampleDatabase::playTempSourceFile(int i)
 
             Poco::FileOutputStream out = Poco::FileOutputStream(tmp.path());
             out << response;
-            out.close(); 
+            out.close();
+
+            databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED);
             
             this->sourcePreviewPath = tmp.path();
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_PREVIEW_READY); },
@@ -989,10 +990,10 @@ void SampleDatabase::filterSources()
     try
     {
         Poco ::Data::Statement select(*session);
-        std::string filename, archive, description;
+        std::string filename, archive, description, url, license;
         int id;
         int lastId = -1;
-        select << "SELECT Sources.id, Sources.filename, Sources.archive, Sources.description "
+        select << "SELECT Sources.id, Sources.filename, Sources.archive, Sources.description, Sources.url, Sources.license "
                   "FROM Sources "
                   "JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
                   "JOIN Tags ON Tags.id = SourcesTags.tag_id "
@@ -1001,6 +1002,8 @@ void SampleDatabase::filterSources()
             Poco::Data::Keywords::into(filename),
             Poco::Data::Keywords::into(archive),
             Poco::Data::Keywords::into(description),
+            Poco::Data::Keywords::into(url),
+            Poco::Data::Keywords::into(license),
             Poco::Data::Keywords::range(0, 1);
 
         std::cout << "\nSampleDatabase::filterSources select:\n  \""
@@ -1039,6 +1042,8 @@ void SampleDatabase::filterSources()
             source.archive = archive;
             source.filename = filename;
             source.description = description;
+            source.license = license;
+            source.url = url;
             Poco::File sourceFile = getFullSourcePath(source);
             if (sourceFile.exists())
                 source.downloaded = DownloadState::DOWNLOADED;

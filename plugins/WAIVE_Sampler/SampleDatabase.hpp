@@ -34,6 +34,8 @@
 #include <fmt/core.h>
 #include "HTTPClient.hpp"
 
+#define WAIVE_SERVER "https://arranlyon.com/waivesampler"
+
 using json = nlohmann::json;
 
 // typedef Tag std::string;
@@ -94,6 +96,8 @@ struct SourceInfo
     std::string filename;
     std::vector<Tag> tags;
     DownloadState downloaded;
+    std::string license;
+    std::string url;
 };
 
 class SampleDatabase

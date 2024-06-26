@@ -636,7 +636,10 @@ void WAIVESamplerUI::sourceDownload(int index)
     plugin->sd.downloadSourceFile(index);
 }
 
-void WAIVESamplerUI::sourcePreview(int index) {}
+void WAIVESamplerUI::sourcePreview(int index)
+{
+    plugin->sd.playTempSourceFile(index);
+}
 
 // void WAIVESamplerUI::browserStopPreview()
 // {
@@ -877,10 +880,43 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
         databaseLoading->setLoading(false);
         break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
         break;
     default:
         break;
     }
+
+    switch (arg)
+    {
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
+        databaseProgress->setLabel("Downloading file list...");
+        break;
+    case SampleDatabase::DatabaseUpdate::BUILDING_TAG_LIST:
+        databaseProgress->setLabel("Building database...");
+        break;
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADING:
+        databaseProgress->setLabel("Downloading file...");
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
+        databaseProgress->setLabel("");
+        break;
+    case SampleDatabase::DatabaseUpdate::FILE_DOWNLOAD_FAILED:
+    case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
+        databaseProgress->setLabel("Error downloading.");
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_START:
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
+        break;
+    default:
+        break;
+    }
+    databaseProgress->resizeToFit();
+
     repaint();
 }
 

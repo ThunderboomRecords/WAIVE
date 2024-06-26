@@ -80,7 +80,7 @@ endif()
 
 find_package(fmt REQUIRED)
 
-find_package(Poco REQUIRED COMPONENTS Net Foundation DataSQLite Data)
+find_package(Poco REQUIRED COMPONENTS NetSSL Crypto Net Foundation DataSQLite Data)
 
 target_include_directories(
   WAIVE_Sampler
