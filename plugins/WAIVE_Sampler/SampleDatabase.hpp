@@ -56,6 +56,7 @@ public:
     void setId(int newId);
     json toJson() const;
     void print() const;
+    void setTags(std::vector<Tag> tags_);
 
     std::string name;
     std::string path; // relative from DATA_DIR/WAIVE
@@ -64,6 +65,7 @@ public:
     bool waive;
     std::vector<Tag> tags;
     std::string source;
+    std::string tagString;
     float volume;
     float pitch;
     float percussiveBoost;
@@ -90,14 +92,14 @@ enum DownloadState
 
 struct SourceInfo
 {
-    int id;
-    std::string archive;
-    std::string description;
-    std::string filename;
-    std::vector<Tag> tags;
-    DownloadState downloaded;
-    std::string license;
-    std::string url;
+    int id = -1;
+    std::string archive = "";
+    std::string description = "";
+    std::string filename = "";
+    std::vector<Tag> tags = {};
+    DownloadState downloaded = DownloadState::NOT_DOWNLOADED;
+    std::string license = "";
+    std::string url = "";
 };
 
 class SampleDatabase
@@ -263,5 +265,7 @@ private:
 
     HTTPClient *httpClient;
 };
+
+std::string makeTagString(const std::vector<Tag> tags);
 
 #endif

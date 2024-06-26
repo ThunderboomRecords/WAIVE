@@ -49,6 +49,13 @@ void SampleInfo::setId(int newId)
     id = newId;
 }
 
+void SampleInfo::setTags(std::vector<Tag> tags_)
+{
+    std::cout << "setTags\n";
+    tags = tags_;
+    tagString = makeTagString(tags);
+}
+
 void SampleInfo::print() const
 {
     std::string f_type;
@@ -109,7 +116,7 @@ json SampleInfo::toJson() const
     data["tags"] = json::array();
     for (const Tag t : tags)
         data["tags"].push_back(t.name);
-
+    data["tagString"] = tagString;
     data["saved"] = saved;
 
     return data;
@@ -228,6 +235,7 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
         s->embedY = data["embedding"]["y"];
         for (auto &el : data["tags"])
             s->tags.push_back({el});
+        s->tagString.assign(data["tagString"]);
         s->sampleLength = data["sampleLength"];
         s->source = data["source"];
         s->sourceStart = data["sourceStart"];
@@ -247,6 +255,9 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
         s->filterType = data["filter"]["filterType"];
 
         s->saved = data["saved"];
+
+        std::cout << "SampleDatabase::deserialiseSampleInfo done: tagString = " << s->tagString << std::endl;
+
         return s;
     }
     catch (const json::exception &e)
@@ -529,7 +540,9 @@ std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<
     s->adsr.decay = sample->adsr.decay;
     s->adsr.sustain = sample->adsr.sustain;
     s->adsr.release = sample->adsr.release;
-
+    s->tagString = sample->tagString;
+    for (auto &t : sample->tags)
+        s->tags.push_back(t);
     s->source = sample->source;
     s->sourceStart = sample->sourceStart;
     s->embedX = sample->embedX;
@@ -743,6 +756,8 @@ void SampleDatabase::downloadSourceFile(int i)
         return;
 
     SourceInfo *si = &sourcesList[i];
+    // loadedSource = SourceInfo(*si);
+
     if (si->downloaded == DownloadState::DOWNLOADED)
         return;
 
@@ -918,6 +933,9 @@ void SampleDatabase::makeTagSourcesTable()
 
 void SampleDatabase::getTagList()
 {
+    if (!sourceDatabaseInitialised)
+        return;
+
     tagList.clear();
     Poco::Data::Statement select(*session);
     int tagId;
@@ -1014,24 +1032,6 @@ void SampleDatabase::filterSources()
                   << select.toString() << "\"\n"
                   << std::endl;
 
-        Poco::Data::Statement selectSourcesTag(*session);
-        int tagId;
-        selectSourcesTag << "SELECT tag_id FROM SourcesTags WHERE source_id = ?",
-            Poco::Data::Keywords::into(tagId),
-            Poco::Data::Keywords::use(id),
-            Poco::Data::Keywords::range(0, 1);
-
-        Poco::Data::Statement selectTag(*session);
-        std::string tag;
-        float embedX, embedY;
-        selectTag << "SELECT id, tag, embedX, embedY FROM Tags WHERE id = ?",
-            Poco::Data::Keywords::into(tagId),
-            Poco::Data::Keywords::into(tag),
-            Poco::Data::Keywords::into(embedX),
-            Poco::Data::Keywords::into(embedY),
-            Poco::Data::Keywords::use(tagId),
-            Poco::Data::Keywords::range(0, 1);
-
         while (!select.done())
         {
             if (!select.execute())
@@ -1054,9 +1054,28 @@ void SampleDatabase::filterSources()
             else
                 source.downloaded = DownloadState::NOT_DOWNLOADED;
 
+            Poco::Data::Statement selectSourcesTag(*session);
+            int tagId;
+            selectSourcesTag << "SELECT tag_id FROM SourcesTags WHERE source_id = ?",
+                Poco::Data::Keywords::into(tagId),
+                Poco::Data::Keywords::use(id),
+                Poco::Data::Keywords::range(0, 1);
+
+            Poco::Data::Statement selectTag(*session);
+            std::string tag;
+            float embedX, embedY;
+            selectTag << "SELECT tag, embedX, embedY FROM Tags WHERE id = ?",
+                Poco::Data::Keywords::into(tag),
+                Poco::Data::Keywords::into(embedX),
+                Poco::Data::Keywords::into(embedY),
+                Poco::Data::Keywords::use(tagId),
+                Poco::Data::Keywords::range(0, 1);
+
             while (!selectSourcesTag.done())
             {
-                selectSourcesTag.execute();
+                int res = selectSourcesTag.execute();
+                if (!res)
+                    break;
                 selectTag.execute();
                 source.tags.push_back({tagId, std::string(tag), embedX, embedY});
             }
@@ -1147,4 +1166,19 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
     default:
         break;
     }
+}
+
+std::string makeTagString(const std::vector<Tag> tags)
+{
+    std::cout << "makeTagString " << tags.size() << std::endl;
+    std::string tagString = "";
+    for (int i = 0; i < tags.size(); i++)
+    {
+        if (tagString.size() > 0)
+            tagString += "|";
+        tagString += tags[i].name;
+    }
+
+    std::cout << tagString << std::endl;
+    return tagString;
 }

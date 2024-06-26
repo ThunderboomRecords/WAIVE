@@ -621,6 +621,8 @@ void WAIVESampler::setState(const char *key, const char *value)
 {
     if (strcmp(key, "filename") == 0)
     {
+        // sd.loadedSource = SourceInfo();
+        fSourceTagString = "";
         loadSource(value);
     }
     else if (strcmp(key, "import") == 0)
@@ -706,7 +708,7 @@ void WAIVESampler::run(
                         samplePlayers[j].state = PlayState::TRIGGERED;
                         samplePlayers[j].velocity = (float)velocity / 128;
 
-                        oscClient.sendMessage("/WAIVE_Sampler", {samplePlayers[j].sampleInfo->name, samplePlayers[j].midi});
+                        oscClient.sendMessage("/WAIVE_Sampler", {samplePlayers[j].sampleInfo->name, samplePlayers[j].sampleInfo->tagString, samplePlayers[j].midi});
                     }
                 }
             }
@@ -1088,6 +1090,7 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
     sp.length = length;
     sp.active = true;
     sp.sampleInfo = info;
+    sp.sampleInfo->tagString.assign(info->tagString); // no idea why we must do this only for tagString...
 
     pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
     samplePlayerMtx.unlock();
@@ -1208,6 +1211,7 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         {
             fSourceLoaded = true;
             fCurrentSample->source = fSourcePath;
+            fCurrentSample->tagString = fSourceTagString;
             selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
 
             taskManager.start(new FeatureExtractorTask(this));
@@ -1216,6 +1220,7 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         {
             std::cerr << "Source failed to load\n";
             fCurrentSample->source = "";
+            fCurrentSample->tagString = "";
             fSourcePath = "";
         }
         waveformLoaderTask->release();

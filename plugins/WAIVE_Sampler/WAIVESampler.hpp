@@ -208,6 +208,7 @@ private:
     std::vector<float> fSourceWaveform;
     bool fSourceLoaded, fSampleLoaded;
     int fSourceLength;
+    std::string fSourceTagString;
     std::mutex sourceFeaturesMtx;
     std::vector<WaveformFeature> fSourceFeatures;
     std::vector<WaveformMeasurements> fSourceMeasurements;

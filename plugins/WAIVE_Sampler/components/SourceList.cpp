@@ -270,14 +270,12 @@ bool SourceList::onMouse(const MouseEvent &ev)
         {
             if (source_info->at(highlighting).downloaded == DownloadState::DOWNLOADED)
             {
-                std::cout << "load source " << highlighting << std::endl;
                 if (callback != nullptr)
                     callback->sourceLoad(highlighting);
                 return true;
             }
             else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
             {
-                std::cout << "download " << highlighting << std::endl;
                 if (callback != nullptr)
                     callback->sourceDownload(highlighting);
                 return true;

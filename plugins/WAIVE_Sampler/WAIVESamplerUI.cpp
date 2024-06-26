@@ -658,21 +658,17 @@ void WAIVESamplerUI::sourceDownload(int index)
     plugin->sd.downloadSourceFile(index);
 }
 
-void WAIVESamplerUI::sourcePreview(int index)
-{
-    plugin->sd.playTempSourceFile(index);
-}
-
-// void WAIVESamplerUI::browserStopPreview()
-// {
-//     plugin->stopSourcePreview();
-// }
-
 void WAIVESamplerUI::sourceLoad(int index)
 {
     std::string fp = plugin->sd.getFullSourcePath(plugin->sd.sourcesList.at(index));
+    plugin->fSourceTagString = makeTagString(plugin->sd.sourcesList.at(index).tags);
     plugin->loadSource(fp.c_str());
     sourceLoading->setLoading(true);
+}
+
+void WAIVESamplerUI::sourcePreview(int index)
+{
+    plugin->sd.playTempSourceFile(index);
 }
 
 void WAIVESamplerUI::onNanoDisplay()

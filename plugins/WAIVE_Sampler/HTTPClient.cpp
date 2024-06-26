@@ -21,16 +21,11 @@ void HTTPRequestTask::runTask()
 {
     try
     {
-        // Poco::URI uri("https://arranlyon.com/waivesampler/latest");
-
-        // uri_path.append(_host);
-
-        std::cout << "== runTask\n";
         if (_path.front() != '/')
             _path = '/' + _path;
 
         Poco::URI uri(_host + _path);
-        std::cout << uri.toString() << std::endl;
+        // std::cout << uri.toString() << std::endl;
 
         std::string path(uri.getPathAndQuery());
         if (path.empty())
@@ -49,7 +44,7 @@ void HTTPRequestTask::runTask()
         Poco::Net::HTTPResponse response;
         std::istream &resStream = session.receiveResponse(response);
 
-        std::cout << "HTTPRequestTask " << _host << _path << " " << response.getStatus() << ": " << response.getReason() << std::endl;
+        // std::cout << "HTTPRequestTask " << _host << _path << " " << response.getStatus() << ": " << response.getReason() << std::endl;
 
         std::stringstream responseString;
         Poco::StreamCopier::copyStream(resStream, responseString);
