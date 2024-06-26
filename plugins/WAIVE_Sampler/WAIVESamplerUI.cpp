@@ -623,10 +623,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         sampleName->setText(plugin->sd.getNewSampleName("clap.wav").c_str(), true);
     }
     else if (button == openMapBtn)
-    {
-        std::cout << "openMapBtn\n";
         sampleBrowserRoot->show();
-    }
 
     repaint();
 }
@@ -872,6 +869,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
 
         break;
     case WAIVESampler::kSlotLoaded:
+        std::cout << "onPluginUpdated: kSlotLoaded\n";
         for (int i = 0; i < sampleSlots.size(); i++)
         {
             sampleSlots[i]->repaint();

@@ -826,12 +826,24 @@ void WAIVESampler::addCurrentSampleToLibrary()
 
     fCurrentSample->adsr = ADSR_Params(ampEnvGen.getADSR());
 
+    saveWaveform(sd.getFullSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength, sampleRate);
+
     if (fCurrentSample->saved)
         sd.updateSample(fCurrentSample);
     else
+    {
         sd.addToLibrary(fCurrentSample);
+        // add it to next avaliable sample player
+        for (int i = 0; i < samplePlayers.size(); i++)
+        {
+            if (!samplePlayers[i].active)
+            {
+                loadSamplePlayer(fCurrentSample, samplePlayers[i], samplePlayerWaveforms[i]);
+                break;
+            }
+        }
+    }
 
-    saveWaveform(sd.getFullSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength, sampleRate);
     mapPreviewPlayer->sampleInfo = nullptr;
 }
 
