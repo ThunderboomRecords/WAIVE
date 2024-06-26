@@ -7,6 +7,7 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/ThreadPool.h>
 #include <Poco/Runnable.h>
+#include <Poco/Timespan.h>
 #include <Poco/Task.h>
 #include <Poco/URI.h>
 #include <Poco/TaskManager.h>

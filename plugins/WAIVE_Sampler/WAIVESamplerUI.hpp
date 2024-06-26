@@ -145,7 +145,6 @@ private:
 
     SampleBrowserRoot *tagRoot;
     TagBrowser *tagBrowser;
-    // TagMap *tagMap;
 
     // 2. Sample Editor Components
     Waveform *sourceWaveformDisplay;

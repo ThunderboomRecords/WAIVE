@@ -41,6 +41,7 @@ void HTTPRequestTask::runTask()
         // std::cout << uri.getHost() << " " << uri.getPort() << " " << path << std::endl;
 
         Poco::Net::HTTPSClientSession session(uri.getHost(), uri.getPort());
+        session.setTimeout(Poco::Timespan(10, 0));
 
         Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_GET, path);
         session.sendRequest(request);

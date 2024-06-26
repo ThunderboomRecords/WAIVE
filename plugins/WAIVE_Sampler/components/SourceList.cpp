@@ -140,6 +140,19 @@ void SourceList::drawSourceInfo(
     text(30.f, height / 2.0f, info.description.c_str(), nullptr);
     closePath();
 
+    // fade string
+
+    Paint fade;
+    if (highlight)
+        fade = linearGradient(width - height / 2 - 2.f * scrollBarWidth, 0, width - height / 2 - 6.f * scrollBarWidth, 0, accent_color, Color(0, 0, 0, 0.f));
+    else
+        fade = linearGradient(width - scrollBarWidth, 0, width - 4.f * scrollBarWidth, 0, background_color, Color(0, 0, 0, 0.f));
+    beginPath();
+    fillPaint(fade);
+    rect(0, 0, width, height);
+    fill();
+    closePath();
+
     if (!highlight)
     {
         resetTransform();
