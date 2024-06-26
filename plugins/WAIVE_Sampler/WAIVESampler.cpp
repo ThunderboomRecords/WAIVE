@@ -733,7 +733,10 @@ void WAIVESampler::run(
                 else
                 {
                     sp->state = PlayState::PLAYING;
-                    sp->ptr = 0;
+                    if (sp->startAt < sp->length)
+                        sp->ptr = sp->startAt;
+                    else
+                        sp->ptr = 0;
                 }
             }
 
@@ -742,7 +745,7 @@ void WAIVESampler::run(
             sp->ptr++;
             if (sp->ptr >= sp->length)
             {
-                sp->ptr = 0;
+                sp->ptr = sp->startAt;
                 sp->state = PlayState::STOPPED;
             }
         }
@@ -757,6 +760,7 @@ void WAIVESampler::run(
 void WAIVESampler::loadSource(const char *fp)
 {
     std::cout << "WAIVESampler::loadSource" << std::endl;
+    stopSourcePreview();
     fSourceLoaded = false;
     fSourcePath = std::string(fp);
     converterManager.cancelAll();
@@ -824,7 +828,7 @@ void WAIVESampler::addCurrentSampleToLibrary()
     mapPreviewPlayer->sampleInfo = nullptr;
 }
 
-void WAIVESampler::loadPreview(int id)
+void WAIVESampler::loadSamplePreview(int id)
 {
     if (mapPreviewPlayer->sampleInfo == nullptr || mapPreviewPlayer->sampleInfo->getId() != id)
         loadSlot(9, id);
@@ -844,10 +848,32 @@ void WAIVESampler::loadSourcePreview(const std::string &fp)
         samplePlayerMtx.unlock();
         return;
     }
-    sourcePreviewPlayer->ptr = 0;
+    sourcePreviewPlayer->waveform = sourcePreviewWaveform;
+    sourcePreviewPlayer->startAt = 0;
     sourcePreviewPlayer->length = size;
     sourcePreviewPlayer->active = true;
     sourcePreviewPlayer->state = PlayState::TRIGGERED;
+    samplePlayerMtx.unlock();
+}
+
+void WAIVESampler::playSourcePreview()
+{
+    if (!fSourceLoaded || fSourceWaveform.size() == 0)
+        return;
+
+    samplePlayerMtx.lock();
+    if (sourcePreviewPlayer->state == PlayState::PLAYING)
+    {
+        sourcePreviewPlayer->state = PlayState::STOPPED;
+    }
+    else
+    {
+        sourcePreviewPlayer->startAt = fCurrentSample->sourceStart;
+        sourcePreviewPlayer->length = fSourceLength;
+        sourcePreviewPlayer->waveform = &fSourceWaveform;
+        sourcePreviewPlayer->active = true;
+        sourcePreviewPlayer->state = PlayState::TRIGGERED;
+    }
     samplePlayerMtx.unlock();
 }
 

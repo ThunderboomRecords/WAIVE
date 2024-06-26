@@ -72,8 +72,8 @@ public:
     Filter::FilterType filterType;
     ADSR_Params adsr;
     float sustainLength;
-    int sourceStart;
-    int sampleLength;
+    long sourceStart;
+    long sampleLength;
 
     bool saved;
 
@@ -109,6 +109,8 @@ public:
         SAMPLE_ADDED,
         SAMPLE_UPDATED,
         SAMPLE_DELETED,
+        SOURCE_LIST_CHECKING_UPDATE,
+        SOURCE_LIST_CHECKED_UPDATE,
         SOURCE_LIST_DOWNLOADING,
         SOURCE_LIST_DOWNLOADED,
         SOURCE_LIST_DOWNLOAD_ERROR,
@@ -140,6 +142,10 @@ public:
             return "SAMPLE_DELETED";
         case SOURCE_LIST_DOWNLOADING:
             return "SOURCE_LIST_DOWNLOADING";
+        case SOURCE_LIST_CHECKING_UPDATE:
+            return "SOURCE_LIST_CHECKING_UPDATE";
+        case SOURCE_LIST_CHECKED_UPDATE:
+            return "SOURCE_LIST_CHECKED_UPDATE";
         case SOURCE_LIST_DOWNLOADED:
             return "SOURCE_LIST_DOWNLOADED";
         case SOURCE_LIST_DOWNLOAD_ERROR:

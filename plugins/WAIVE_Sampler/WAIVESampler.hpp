@@ -68,8 +68,9 @@ class WaveformLoaderTask;
 struct SamplePlayer
 {
     std::vector<float> *waveform = nullptr;
-    int length = 0;
-    int ptr = 0;
+    long length = 0;
+    long ptr = 0;
+    long startAt = 0;
     int midi = -1;
     float gain = 1.0f;
     float velocity = 0.8f;
@@ -153,8 +154,9 @@ protected:
     void sampleRateChanged(double newSampleRate) override;
 
     void newSample();
-    void loadPreview(int id);
+    void loadSamplePreview(int id);
     void loadSourcePreview(const std::string &fp);
+    void playSourcePreview();
     void stopSourcePreview();
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);

@@ -60,7 +60,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sourceList->setCallback(this);
 
     filterSources = new Button(this);
-    filterSources->setLabel("Filter");
+    filterSources->setLabel("Tags");
     filterSources->resizeToFit();
     filterSources->onTop(sourceBrowserPanel, START, END, padding * 2.f);
     filterSources->setCallback(this);
@@ -85,6 +85,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     searchIcon->setSize(sourceSearch->getHeight() - padding, sourceSearch->getHeight() - padding, false);
     searchIcon->onTop(searchBox, END, CENTER, padding * 2.f);
 
+    sourceList->setHeight(Layout::measureVertical(sourceList, START, searchBox, START) - 2.f * padding);
+
     databaseLoading = new Spinner(this);
     databaseLoading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
     databaseLoading->rightOf(searchBox, CENTER, padding * 2.f);
@@ -93,7 +95,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     databaseProgress->rightOf(databaseLoading, START);
     databaseProgress->setFont("VG5000", VG5000, VG5000_len);
 
-    sourceList->setHeight(Layout::measureVertical(sourceList, START, searchBox, START) - 2.f * padding);
+    previewPlayback = new Button(this);
+    previewPlayback->setLabel("Stop");
+    previewPlayback->resizeToFit();
+    previewPlayback->onTop(sourceBrowserPanel, END, END, padding * 2.f);
+    previewPlayback->setCallback(this);
+    previewPlayback->setVisible(false);
+
     sourceBrowserPanel->addChildWidget(sourceList);
     sourceBrowserPanel->addChildWidget(filterSources);
     sourceBrowserPanel->addChildWidget(searchBox);
@@ -122,6 +130,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sourceWaveformDisplay->setWaveformFeatures(&plugin->fSourceFeatures);
     sourceWaveformDisplay->background_color = WaiveColors::dark;
     sampleEditorPanel->addChildWidget(sourceWaveformDisplay);
+
+    sourcePreviewBtn = new Button(this);
+    sourcePreviewBtn->setLabel("▶");
+    sourcePreviewBtn->drawBackground = false;
+    sourcePreviewBtn->resizeToFit();
+    sourcePreviewBtn->onTop(sourceWaveformDisplay, END, START, padding);
+    sourcePreviewBtn->setCallback(this);
 
     sourceLoading = new Spinner(this);
     sourceLoading->setSize(16, 16);
@@ -458,6 +473,13 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->triggerPreview();
     else if (button == filterSources)
         tagRoot->show();
+    else if (button == previewPlayback)
+    {
+        plugin->stopSourcePreview();
+        previewPlayback->setVisible(false);
+    }
+    else if (button == sourcePreviewBtn)
+        plugin->playSourcePreview();
     else if (button == makeKick)
     {
         std::cout << "Make kick...\n";
@@ -545,7 +567,7 @@ void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
 
 void WAIVESamplerUI::mapSampleHovered(int id)
 {
-    plugin->loadPreview(id);
+    plugin->loadSamplePreview(id);
 }
 
 void WAIVESamplerUI::mapSampleSelected(int id)
@@ -876,10 +898,10 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
         break;
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
-    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
         databaseLoading->setLoading(false);
         break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
         break;
     default:
@@ -909,6 +931,8 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
         databaseProgress->setLabel("Error downloading.");
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
+        previewPlayback->setVisible(true);
+        break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_START:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
         break;

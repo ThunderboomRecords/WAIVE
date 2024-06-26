@@ -149,7 +149,7 @@ private:
     // 2. Sample Editor Components
     Waveform *sourceWaveformDisplay;
     HBox *presetButtons, *editorKnobs;
-    Button *makeKick, *makeSnare, *makeHihat, *makeClap, *importSource;
+    Button *makeKick, *makeSnare, *makeHihat, *makeClap, *importSource, *sourcePreviewBtn;
     Label *presetLabel, *knobsLabel;
     Knob *pitch, *volume, *percussionBoost;
     Knob *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;

@@ -557,15 +557,19 @@ void SampleDatabase::checkLatestRemoteVersion()
 
     sourceDatabaseInitialised = exists.size() > 0;
 
+    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
+    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKING_UPDATE);
+
     httpClient->sendRequest(
         "CheckDatabaseVersion",
         WAIVE_SERVER, "/latest", [this, user_version](const std::string &response)
         { 
             json result = json::parse(response); 
-            int latest_version = result["version"]; 
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKED_UPDATE);
+
+            int latest_version = result["version"];
             if(latest_version <= user_version)
             {
-                databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
                 return;
             }
 
