@@ -14,15 +14,15 @@ bool Link::onMouse(const MouseEvent &ev)
     if (!ev.press || ev.button != kMouseButtonLeft || url.length() == 0 || !contains(ev.pos))
         return false;
 
-    openURL();
+    SystemOpenURL(url);
     return true;
 }
 
-void Link::openURL()
-{
-    std::string cmd = fmt::format("{} {}", OPEN_CMD, url);
-    std::cout << cmd << std::endl;
-    system(cmd.c_str());
-}
+// void Link::openURL()
+// {
+//     std::string cmd = fmt::format("{} {}", OPEN_CMD, url);
+//     std::cout << cmd << std::endl;
+//     system(cmd.c_str());
+// }
 
 END_NAMESPACE_DISTRHO

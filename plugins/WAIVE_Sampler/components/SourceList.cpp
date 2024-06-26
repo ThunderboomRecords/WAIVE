@@ -111,8 +111,7 @@ void SourceList::onNanoDisplay()
     source_info_mtx->unlock();
 }
 
-void SourceList::drawSourceInfo(
-    const SourceInfo &info, float x, float y, float width, float height, bool highlight)
+void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight)
 {
     translate(x, y);
 
@@ -141,10 +140,9 @@ void SourceList::drawSourceInfo(
     closePath();
 
     // fade string
-
     Paint fade;
     if (highlight)
-        fade = linearGradient(width - height / 2 - 2.f * scrollBarWidth, 0, width - height / 2 - 6.f * scrollBarWidth, 0, accent_color, Color(0, 0, 0, 0.f));
+        fade = linearGradient(width - 26.f - 2.f * scrollBarWidth - 50, 0, width - 26.f - 50 - 4.f * scrollBarWidth, 0, accent_color, Color(0, 0, 0, 0.f));
     else
         fade = linearGradient(width - scrollBarWidth, 0, width - 4.f * scrollBarWidth, 0, background_color, Color(0, 0, 0, 0.f));
     beginPath();
@@ -166,6 +164,14 @@ void SourceList::drawSourceInfo(
     lineTo(8, height - 10);
     lineTo(20, height / 2);
     fill();
+    closePath();
+
+    // license info button
+    beginPath();
+    fillColor(text_color);
+    fontSize(font_size * 0.8f);
+    textAlign(Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE);
+    text(width - 26.f - 2.f * scrollBarWidth, height / 2.f, "License", nullptr);
     closePath();
 
     if (info.downloaded == DownloadState::NOT_DOWNLOADED)
@@ -263,6 +269,13 @@ bool SourceList::onMouse(const MouseEvent &ev)
         if (ev.pos.getX() > getWidth() - scrollBarWidth)
         {
             scrolling = true;
+            return true;
+        }
+
+        if (ev.pos.getX() > getWidth() - 26.f - 2.f * scrollBarWidth - 50)
+        {
+            std::cout << "License: " << source_info->at(highlighting).license << std::endl;
+            SystemOpenURL(source_info->at(highlighting).license);
             return true;
         }
 

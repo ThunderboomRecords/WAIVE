@@ -4,6 +4,7 @@
 #include "WAIVEWidget.hpp"
 #include "WAIVEImage.hpp"
 #include "SampleDatabase.hpp"
+#include "WAIVEUtils.hpp"
 
 #include "download_icon.h"
 
