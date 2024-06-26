@@ -224,8 +224,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     filterType->setId(kFilterType);
     filterType->setDisplayNumber(3);
     filterType->setSize(35, 20);
-    filterType->setCallback(this);
     filterType->setItem(0, false);
+    filterType->setCallback(this);
 
     editorKnobs = new HBox(this);
     editorKnobs->addWidget(knobsLabel);
@@ -293,11 +293,22 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     saveSampleBtn = new Button(this);
     saveSampleBtn->setLabel("Add to pack");
     saveSampleBtn->resizeToFit();
-    saveSampleBtn->onTop(samplePanel, CENTER, END, padding * 2.f);
     saveSampleBtn->setCallback(this);
 
-    // newSampleBtn = new Button(this);
-    // newSampleBtn->setLabel("New sample")
+    newSampleBtn = new Button(this);
+    newSampleBtn->setLabel("New sample");
+    newSampleBtn->resizeToFit();
+    newSampleBtn->setCallback(this);
+
+    HBox alignSampleButtons(this);
+    alignSampleButtons.addWidget(newSampleBtn);
+    alignSampleButtons.addWidget(saveSampleBtn);
+    alignSampleButtons.justify_content = HBox::Justify_Content::center;
+    alignSampleButtons.padding = 2.f * padding;
+    alignSampleButtons.resizeToFit();
+    alignSampleButtons.setWidth(samplePanel->getWidth() - 4.f * padding);
+    alignSampleButtons.onTop(samplePanel, CENTER, END, padding * 2.f);
+    alignSampleButtons.positionWidgets();
 
     // 4 ----- Sample Player Panel
     samplePlayerPanel = new Panel(this);
@@ -467,7 +478,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 {
     if (button == importSource)
         beginOpenFileBrowser("filename", false);
-    if (button == saveSampleBtn)
+    else if (button == saveSampleBtn)
         plugin->addCurrentSampleToLibrary();
     else if (button == playSampleBtn)
         plugin->triggerPreview();
@@ -480,6 +491,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
     else if (button == sourcePreviewBtn)
         plugin->playSourcePreview();
+    else if (button == newSampleBtn)
+        plugin->newSample();
     else if (button == makeKick)
     {
         std::cout << "Make kick...\n";
@@ -610,7 +623,10 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         sampleName->setText(plugin->sd.getNewSampleName("clap.wav").c_str(), true);
     }
     else if (button == openMapBtn)
+    {
+        std::cout << "openMapBtn\n";
         sampleBrowserRoot->show();
+    }
 
     repaint();
 }
@@ -1020,6 +1036,11 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
         previewPlayback->setVisible(true);
+        break;
+    case SampleDatabase::DatabaseUpdate::SAMPLE_ADDED:
+    case SampleDatabase::DatabaseUpdate::SAMPLE_DELETED:
+    case SampleDatabase::DatabaseUpdate::SAMPLE_UPDATED:
+        sampleBrowser->repaint();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_START:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:

@@ -121,7 +121,10 @@ void HBox::positionWidgets()
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             combined_widget_width += it->widget->getWidth();
+            combined_widget_width += padding;
         }
+
+        combined_widget_width -= padding;
 
         int startX = box_x + width / 2 - combined_widget_width / 2;
         for (auto it = items_.begin(); it != items_.end(); it++)
@@ -131,6 +134,7 @@ void HBox::positionWidgets()
             it->x = startX;
             const uint ww = it->widget->getWidth();
             startX += ww;
+            startX += padding;
             it->width = ww;
         }
         break;
@@ -277,16 +281,19 @@ void HBox::positionWidgets()
 void HBox::resizeToFit()
 {
     float width = 0.0f;
+    float height = 0.0f;
 
     for (auto it = items_.begin(); it != items_.end(); it++)
     {
         width += it->widget->getWidth();
+        height = std::max(height, (float)it->widget->getHeight());
     }
 
     if (items_.size() > 0)
         width += (items_.size() - 1) * padding;
 
     setWidth(width);
+    setHeight(height);
 }
 
 END_NAMESPACE_DISTRHO

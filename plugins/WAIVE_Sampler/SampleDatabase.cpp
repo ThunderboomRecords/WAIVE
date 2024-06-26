@@ -256,8 +256,6 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
 
         s->saved = data["saved"];
 
-        std::cout << "SampleDatabase::deserialiseSampleInfo done: tagString = " << s->tagString << std::endl;
-
         return s;
     }
     catch (const json::exception &e)
@@ -311,12 +309,12 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
     if (sample == nullptr)
         return false;
 
-    std::cout << "SampleDatabase::updateSample\n";
+    // std::cout << "SampleDatabase::updateSample\n";
 
     int id = sample->getId();
     std::string parameters = sample->toJson().dump();
 
-    std::cout << parameters << std::endl;
+    // std::cout << parameters << std::endl;
 
     Poco::Data::Statement update(*session);
     update << "UPDATE Samples SET name = ?, path = ?, source = ?, parameters = ? WHERE id = ?",
@@ -327,14 +325,16 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
         Poco::Data::Keywords::use(id);
     int n = update.execute();
 
-    std::cout << update.toString() << std::endl;
-    std::cout << n << std::endl;
+    // std::cout << update.toString() << std::endl;
+    // std::cout << n << std::endl;
 
     // TODO: update Sample<->Tags database
     for (Tag t : sample->tags)
     {
         newTag(t.name);
     }
+
+    databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_UPDATED);
 
     return n == 1;
 }

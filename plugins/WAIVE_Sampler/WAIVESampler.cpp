@@ -111,8 +111,8 @@ void FeatureExtractorTask::runTask()
         m.zcr = gist.zeroCrossingRate();
         m.highfrequencyContent = gist.highFrequencyContent();
 
-        printf("  RMS: %6.2f PE: %6.2f SCent: %6.2f SCre: %6.2f SF: %6.2f SK: %6.2f SR: %6.2f ZCR: %6.2f\n",
-               m.rms, m.peakEnergy, m.specCentroid, m.specCrest, m.specFlat, m.specKurtosis, m.specRolloff, m.zcr);
+        // printf("  RMS: %6.2f PE: %6.2f SCent: %6.2f SCre: %6.2f SF: %6.2f SK: %6.2f SR: %6.2f ZCR: %6.2f\n",
+        //        m.rms, m.peakEnergy, m.specCentroid, m.specCrest, m.specFlat, m.specKurtosis, m.specRolloff, m.zcr);
 
         float onset = gist.complexSpectralDifference();
 
@@ -145,7 +145,7 @@ WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buff
 
 void WaveformLoaderTask::runTask()
 {
-    std::cout << "WaveformLoaderTask::runTask()\n";
+    // std::cout << "WaveformLoaderTask::runTask()\n";
     SndfileHandle fileHandle(fp, SFM_READ);
     size_t sampleLength = fileHandle.frames();
 
@@ -264,7 +264,7 @@ void WaveformLoaderTask::runTask()
     {
         std::copy(sample_tmp.begin(), sample_tmp.begin() + new_size, buffer->begin());
     }
-    std::cout << "Finished loading waveform. new_size: " << new_size << std::endl;
+    // std::cout << "Finished loading waveform. new_size: " << new_size << std::endl;
 }
 
 void SamplePlayer::clear()
@@ -810,7 +810,7 @@ void WAIVESampler::newSample()
         fCurrentSample = s;
     }
 
-    pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
+    // pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
     pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
     pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
 }
@@ -1257,7 +1257,7 @@ int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int
 {
     // TODO: load on another thread!
 
-    printf("WAIVESampler::loadWaveform %s\n", fp);
+    // printf("WAIVESampler::loadWaveform %s\n", fp);
 
     SndfileHandle fileHandle(fp, 16, flags);
     int sampleLength = fileHandle.frames();
@@ -1318,7 +1318,7 @@ int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int
         buffer.resize(sampleLength + 1); // TODO: this sometimes reallocates the pointer!
 
     //  TODO: mix to Mono before sample rate conversion??
-    printf("buffer.size() %d, sample_tmp.size() %d\n", buffer.size(), sample_tmp.size());
+    // printf("buffer.size() %d, sample_tmp.size() %d\n", buffer.size(), sample_tmp.size());
     if (sampleChannels > 1)
     {
         for (int i = 0; i < sampleLength; i++)
@@ -1330,7 +1330,7 @@ int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int
             buffer[i] = sample_tmp[i];
     }
 
-    std::cout << "loadWaveform sampleLength: " << sampleLength << std::endl;
+    // std::cout << "loadWaveform sampleLength: " << sampleLength << std::endl;
     return sampleLength;
 }
 

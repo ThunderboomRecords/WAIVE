@@ -161,7 +161,7 @@ private:
     // 3. Sample Panel Components
     Waveform *sampleWaveformDisplay;
     TextInput *sampleName;
-    Button *saveSampleBtn, *playSampleBtn; // *newSampleBtn;
+    Button *saveSampleBtn, *playSampleBtn, *newSampleBtn;
 
     // 4. Sample Pack Components
     VBox *sampleSlotsContainer;
