@@ -2,18 +2,18 @@
 
 START_NAMESPACE_DISTRHO
 
-
 HBox::HBox(Widget *widget) noexcept
-    : NanoSubWidget(widget),
+    : WidgetGroup(widget),
       align_items(Align_Items::middle),
       justify_content(Justify_Content::space_between),
       padding(0)
 {
-    setWidth(widget->getWidth());
+    // setWidth(widget->getWidth());
 }
 
-void HBox::addWidget(SubWidget *widget)
+void HBox::addWidget(NanoSubWidget *widget)
 {
+    addChildWidget(widget);
     items_.emplace_back(Item(widget));
 
     const uint box_height = getHeight();
@@ -70,9 +70,10 @@ void HBox::positionWidgets()
     const uint box_x = getAbsoluteX();
     const uint box_y = getAbsoluteY();
 
-    printf("HBox::positionWidgets()\n  width = %d height = %d  box_x = %d box_y = %d\n", width, height, box_x, box_y);
+    // printf("HBox::positionWidgets()\n  width = %d height = %d  box_x = %d box_y = %d\n", width, height, box_x, box_y);
 
-    if(items_.size() == 0) return;
+    if (items_.size() == 0)
+        return;
 
     switch (justify_content)
     {
@@ -120,7 +121,10 @@ void HBox::positionWidgets()
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             combined_widget_width += it->widget->getWidth();
+            combined_widget_width += padding;
         }
+
+        combined_widget_width -= padding;
 
         int startX = box_x + width / 2 - combined_widget_width / 2;
         for (auto it = items_.begin(); it != items_.end(); it++)
@@ -130,6 +134,7 @@ void HBox::positionWidgets()
             it->x = startX;
             const uint ww = it->widget->getWidth();
             startX += ww;
+            startX += padding;
             it->width = ww;
         }
         break;
@@ -174,15 +179,16 @@ void HBox::positionWidgets()
 
         int space_left = width - combined_widget_width;
         int space_between = 0;
-        if(number_of_items <= 1) 
+        if (number_of_items <= 1)
         {
             space_between = space_left;
         }
-        else 
+        else
         {
             space_between = space_left / (number_of_items - 1);
         }
-        if(space_between < 0) space_between = 0;
+        if (space_between < 0)
+            space_between = 0;
 
         int startX = box_x;
         for (auto it = items_.begin(); it != items_.end(); it++)
@@ -272,6 +278,22 @@ void HBox::positionWidgets()
     }
 }
 
-void HBox::onNanoDisplay(){ }
+void HBox::resizeToFit()
+{
+    float width = 0.0f;
+    float height = 0.0f;
+
+    for (auto it = items_.begin(); it != items_.end(); it++)
+    {
+        width += it->widget->getWidth();
+        height = std::max(height, (float)it->widget->getHeight());
+    }
+
+    if (items_.size() > 0)
+        width += (items_.size() - 1) * padding;
+
+    setWidth(width);
+    setHeight(height);
+}
 
 END_NAMESPACE_DISTRHO

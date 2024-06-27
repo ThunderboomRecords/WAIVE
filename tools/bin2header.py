@@ -6,18 +6,22 @@ import sys
 import argparse
 
 
-def bin2header(data, var_name='var'):
+def bin2header(data: bytes, var_name: str ='var'):
+    header_guard = var_name.upper() + "_H_INCLUDED"
     out = []
-    out.append('/*\n  generated with bin2header.py \n*/')
-    out.append('const unsigned int {var_name}_len = {data_len};'.format(var_name=var_name, data_len=len(data)))
-    out.append('const unsigned char {var_name}[] = {{'.format(var_name=var_name))
+    out.append('/*\n  generated with bin2header.py \n*/\n');
+    out.append(f'#ifndef {header_guard}')
+    out.append(f'#define {header_guard}\n')
+    out.append(f'const unsigned int {var_name}_len = {len(data)};')
+    out.append(f'const unsigned char {var_name}[] = {{')
     l = [ data[i:i+12] for i in range(0, len(data), 12) ]
     for i, x in enumerate(l):
         line = ', '.join([f'0x{c:02x}' for c in x])
         if i < len(l) - 1:
             line = line + ','
         out.append("    " + line)
-    out.append('};')
+    out.append('};\n')
+    out.append('#endif')
     return '\n'.join(out)
 
 
@@ -53,8 +57,15 @@ def main():
 
     if not args.var:
         args.var = fn2VarName(args.input)
+    
+    if args.out.split(".")[-1] != 'h':
+        args.out += '.h'
+
+    print(f"Converting {args.input} to {args.out} with variable name {args.var}")
 
     out = bin2header(data, args.var)
+
+
     with open(args.out, 'w') as f:
         f.write(out)
 

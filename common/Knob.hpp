@@ -1,53 +1,64 @@
 #ifndef KNOB_HPP_INCLUDED
 #define KNOB_HPP_INCLUDED
 
-#include "Window.hpp"
-#include "Widget.hpp"
+// #include "Window.hpp"
+// #include "Widget.hpp"
 #include "NanoVG.hpp"
 #include <iostream>
+#include "WAIVEWidget.hpp"
 
 START_NAMESPACE_DISTRHO
 
-class Knob : public NanoSubWidget,
+class Knob : public WAIVEWidget,
              public IdleCallback
 {
 public:
-    class Callback {
-        public:
-            virtual ~Callback() {};
-            virtual void knobDragStarted(Knob *knob) = 0;
-            virtual void knobDragFinished(Knob *knob, float value) = 0;
-            virtual void knobValueChanged(Knob *knob, float value) = 0;
+    class Callback
+    {
+    public:
+        virtual ~Callback(){};
+        virtual void knobDragStarted(Knob *knob) = 0;
+        virtual void knobDragFinished(Knob *knob, float value) = 0;
+        virtual void knobValueChanged(Knob *knob, float value) = 0;
     };
 
     explicit Knob(Widget *widget) noexcept;
 
     void setCallback(Callback *cb);
-    void setValue(float val, bool sendCallback=false) noexcept;
+    void setValue(float val, bool sendCallback = false) noexcept;
     float getValue() noexcept;
+    std::string getFormat() noexcept;
     void idleCallback() override;
+    void setRadius(float r);
 
+    float radius;
     float min, max;
     float gauge_width;
-    Color foreground_color, background_color;
+    std::string format;
+
+    bool enabled;
+    bool integer;
+
+    FontId font;
+    std::string label;
 
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
     bool onScroll(const ScrollEvent &) override;
+    void drawIndicator();
+    void drawLabel();
 
 private:
     Callback *callback;
-    bool dragging_;
-    float value_, tmp_value_;
-    int mouseY_;
-    int last_mouse_y_;
+    bool dragging_, mousedown_;
+    float value_, tmp_p;
+    float dragStart;
+    bool sensitive;
 
     DISTRHO_LEAK_DETECTOR(Knob);
 };
-
-
 
 END_NAMESPACE_DISTRHO
 

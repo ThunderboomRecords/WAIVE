@@ -22,3 +22,5 @@ lib/
 
 *.onnx
 *.ort
+
+.ipynb_checkpoints/

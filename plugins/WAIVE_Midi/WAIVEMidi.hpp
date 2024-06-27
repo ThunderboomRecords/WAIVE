@@ -24,6 +24,18 @@
 
 #include "latent_distributions.h"
 
+#include "version_config.h"
+
+#ifdef WAIVE_PLUGINS_VERSION_INFO
+const int V_MAJ = WAIVE_PLUGINS_VERSION_MAJOR;
+const int V_MIN = WAIVE_PLUGINS_VERSION_MINOR;
+const int V_PAT = WAIVE_PLUGINS_VERSION_PATCH;
+#else
+const int V_MAJ = 1;
+const int V_MIN = 0;
+const int V_PAT = 0;
+#endif
+
 START_NAMESPACE_DISTRHO
 
 class WAIVEMidi : public Plugin
@@ -59,7 +71,7 @@ protected:
 
     uint32_t getVersion() const noexcept override
     {
-        return d_version(0, 2, 1);
+        return d_version(V_MAJ, V_MIN, V_PAT);
     }
 
     int64_t getUniqueId() const noexcept override
@@ -77,7 +89,6 @@ protected:
     void setParameterValue(uint32_t index, float value) override;
 
     // --- Process ----------------
-    // void activate() override;
     void run(const float **, float **, uint32_t numFrames, const MidiEvent *midiEvents, uint32_t midiEventCount) override;
     void sampleRateChanged(double newSampleRate) override;
     void allNotesOff(uint32_t frame);
@@ -98,10 +109,10 @@ private:
     unsigned seed;
     std::default_random_engine generator;
     std::normal_distribution<float> distribution;
-    
+
     Ort::SessionOptions sessionOptions;
-    Ort::RunOptions mRunOptions {nullptr};
-    Ort::Env mEnv {};
+    Ort::RunOptions mRunOptions{nullptr};
+    Ort::Env mEnv{};
 
     // SCORE Model
     std::unique_ptr<Ort::Session> mScoreEncoder, mScoreDecoder;
@@ -139,9 +150,6 @@ private:
     std::vector<float> mFullZ, mFullOutput;
     std::vector<Ort::Value> mFullZTensor, mFullOutputTensor;
 
-
-
-
     std::vector<GrooveEvent> fGroove;
     float fScore[16][9];
     float fDrumPattern[16][30][3];
@@ -159,7 +167,6 @@ private:
 
     friend class WAIVEMidiUI;
 };
-
 
 END_NAMESPACE_DISTRHO
 #endif

@@ -3,14 +3,14 @@ set(CMAKE_CXX_STANDARD 17)
 dpf_add_plugin(
   WAIVE_Midi
   TARGETS 
-    #   jack
+      jack
       vst3
       vst2
       clap
   FILES_DSP
       WAIVEMidi.cpp
-      model_utils.cpp
-      ../../common/src/Notes.cpp
+      ./components/Notes.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/model_utils.cpp
       ./models/score_decoder.onnx.c
       ./models/score_encoder.onnx.c
       ./models/groove_decoder.onnx.c
@@ -18,17 +18,20 @@ dpf_add_plugin(
       ./models/full_groove_model.onnx.c
   FILES_UI
       WAIVEMidiUI.cpp
-      ../../common/fonts.h
-      ../../common/src/HBox.cpp
-      ../../common/src/VBox.cpp
-      ../../common/src/Notes.cpp
-      ../../common/src/Slider.cpp
-      ../../common/src/VSlider.cpp
-      ../../common/src/Playhead.cpp
-      ../../common/src/ScoreGrid.cpp
-      ../../common/src/GrooveGraph.cpp
-      ../../common/src/DrumPattern.cpp
-      ../../common/src/SimpleButton.cpp
+      ./components/Notes.cpp
+      ./components/ScoreGrid.cpp
+      ./components/GrooveGraph.cpp
+      ./components/DrumPattern.cpp
+      ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
+      ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Slider.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/VSlider.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Playhead.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
 )
 
 find_library(FOUNDATION Foundation)
@@ -37,7 +40,7 @@ find_library(COREFOUNDATION CoreFoundation)
 target_link_libraries(
     WAIVE_Midi 
     PUBLIC 
-    ${PROJECT_SOURCE_DIR}/plugins/WAIVE_Midi/lib/libonnxruntime.a
+    ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
     ${CoreFoundation}
     ${Foundation}
 )
@@ -47,6 +50,9 @@ target_include_directories(
   PUBLIC 
     .
     ./models
-    ./include
-    ../../common
+    ./components
+    ${CMAKE_SOURCE_DIR}/common
+    ${CMAKE_SOURCE_DIR}/common/fonts
+    ${CMAKE_SOURCE_DIR}/common/icons
+    ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
 )

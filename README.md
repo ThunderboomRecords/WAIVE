@@ -4,6 +4,7 @@
 AI x Archive music tools
 </p>
 
+
 <p align="center">
     <img 
         src="assets/screenshot.png" 
@@ -12,29 +13,43 @@ AI x Archive music tools
     >
 </p>
 
+<p align="center">
+    <img 
+        src="assets/WAIVE_Sampler_Latest.png" 
+        style="border-radius: 4px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);"
+        width="500"
+    >
+</p>
+
 A plugin suite that combines music, sound and MIDI generation with European cultural archives. 
 Aims to be an offline, modular version of [WAIVE-studio](https://www.waive.studio/) that can be integrated into your DAW.
-Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX Runtime](https://github.com/microsoft/onnxruntime). 
+Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX Runtime](https://github.com/microsoft/onnxruntime).
+
+- **WAIVE-Midi**: a rhythmic pattern generator
+- **WAIVE-Sampler**: a sample player, sample library and sample generator in one
 
 ### Installation
-1. Download and extract the zip archive containing the binaries for you system in the [Releases](https://github.com/ThunderboomRecords/WAIVE/releases) page, under the heading "Assets".
-    - Current supported platforms: MacOS (Apple silicon) and Linux x86_64.
-2. Choose which plugin format you prefer and place it in your plugins path of your DAW. 
+
+> :warning: *Currently pre-built binaries are not available Follow build instructions below*.
+
+1. Choose which plugin format you prefer and place it in your plugins path of your DAW. 
     - Current formats: VST2, VST3, CLAP, and a Standalone (JACK) app.
     - Common (system-wide) plugin paths:
       
-        |          |  VST2  |  VST3*  |  CLAP |
-        |----------|--------|---------|-------|
-        | macOS    | `Library/Audio/Plug-ins/VST3` | `Library/Audio/Plug-ins/VST3` | `Library/Audio/Plug-ins/CLAP` |
-        | Linux    |  `/usr/lib/vst` | `/usr/lib/vst3` |  `/usr/lib/clap`     |
+        |          |  VST2                                 |  VST3*                               |  CLAP                                 |
+        |----------|---------------------------------------|--------------------------------------|---------------------------------------|
+        | macOS    | `Library/Audio/Plug-ins/VST3`         | `Library/Audio/Plug-ins/VST3`        | `Library/Audio/Plug-ins/CLAP`         |
+        | Linux    | `/usr/lib/vst`                        | `/usr/lib/vst3`                      |  `/usr/lib/clap`                      |
         | Windows  | `C:\Program Files\Common Files\VST2`  | `C:\Program Files\Common Files\VST3` | `C:\Program Files\Common Files\CLAP`  |
       
-       \* for VST3, move the whole `WAIVE_Midi.vst/` folder here. 
+       \* for VST3, move the whole `.vst` folders here. 
    
 4. In your DAW, rescan plugins if it does not automatically. 
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
+
+*TODO: static library builds*
 
 #### Pre-requisites
 Requires statically built onnxruntime for your platform. You can download pre-built libraries from [csukuangfj/onnxruntime-libs](https://huggingface.co/csukuangfj/onnxruntime-libs/tree/main), or build them yourself (such as with [ort-builder](https://github.com/olilarkin/ort-builder/tree/bfbd362c9660fce9600a43732e3f8b53d5fb243a)).
@@ -45,13 +60,17 @@ Requires cmake:
 - on Linux: use your distributions package manager
 - Windows: *TODO*
 
+Requires already installed:
+- [`libsndfile`](https://libsndfile.github.io/libsndfile/)
+- [`fmt`](https://fmt.dev/latest/index.html) 
+
 #### Linux/macOS
 ```shell
 $ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git
 $ cd WAIVE/
 
-# copy lib/ and include/ from static built onnxruntime into plugins/WAIVE_Midi,
-# then from project root:
+# copy `lib/` and `include/` from static built onnxruntime into a new folder 
+# `external/onnxruntime/`, then from project root:
 
 $ mkdir build
 $ cd build
@@ -61,10 +80,22 @@ $ cmake --build . --config Release
 
 The plugins are found in ```build/bin``` folder. Move your prefered format binary to your plugins folder (see [instructions](#installation) above).
 
-*TODO:* installation instructions.
-
 #### Windows
 
 *TODO*
 
 
+### Licenses
+
+- [DPF](https://github.com/DISTRHO/DPF?tab=ISC-1-ov-file) ISC license
+- [ONNX Runtime](https://github.com/microsoft/onnxruntime) MIT
+- [libsndfile](https://github.com/libsndfile/libsndfile?tab=LGPL-2.1-1-ov-file) LGPL-2.1 
+- [VG5000 font](https://velvetyne.fr/fonts/vg5000/) SIL Open Font License, Version 1.1
+- [kissfft](https://github.com/mborgerding/kissfft) BSD-3-Clause
+- [Gist](https://github.com/adamstark/Gist) GPL-3.0 license
+- [libsamplerate](https://github.com/libsndfile/libsamplerate) BSD-3-Clause
+- [nlohmann/json](https://github.com/nlohmann/json) MIT
+- [TinyOSC](https://github.com/mhroth/tinyosc/tree/master) ISC license
+- [tinyfiledialogs](https://sourceforge.net/projects/tinyfiledialogs/) zlib/libpng license
+- [cpp-httplib](https://github.com/yhirose/cpp-httplib) MIT
+- [POCO](https://github.com/pocoproject/poco) Boost Software License

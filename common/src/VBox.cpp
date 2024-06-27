@@ -2,9 +2,8 @@
 
 START_NAMESPACE_DISTRHO
 
-
 VBox::VBox(Widget *widget) noexcept
-    : NanoSubWidget(widget),
+    : WidgetGroup(widget),
       align_items(Align_Items::middle),
       justify_content(Justify_Content::space_between),
       padding(0)
@@ -12,8 +11,9 @@ VBox::VBox(Widget *widget) noexcept
     setHeight(widget->getHeight());
 }
 
-void VBox::addWidget(SubWidget *widget)
+void VBox::addWidget(NanoSubWidget *widget)
 {
+    addChildWidget(widget);
     items_.emplace_back(Item(widget));
 
     const uint box_width = getWidth();
@@ -70,9 +70,8 @@ void VBox::positionWidgets()
     const uint box_x = getAbsoluteX();
     const uint box_y = getAbsoluteY();
 
-    printf("VBox::positionWidgets()\n  width = %d height = %d  box_x = %d box_y = %d\n", width, height, box_x, box_y);
-
-    if(items_.size() == 0) return;
+    if (items_.size() == 0)
+        return;
 
     switch (justify_content)
     {
@@ -120,7 +119,9 @@ void VBox::positionWidgets()
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             combined_widget_height += it->widget->getHeight();
+            combined_widget_height += padding;
         }
+        combined_widget_height -= padding;
 
         int startY = box_y + height / 2 - combined_widget_height / 2;
         for (auto it = items_.begin(); it != items_.end(); it++)
@@ -130,6 +131,7 @@ void VBox::positionWidgets()
             it->y = startY;
             const uint wh = it->widget->getHeight();
             startY += wh;
+            startY += padding;
             it->height = wh;
         }
         break;
@@ -174,15 +176,16 @@ void VBox::positionWidgets()
 
         int space_left = height - combined_widget_height;
         int space_between = 0;
-        if(number_of_items <= 1) 
+        if (number_of_items <= 1)
         {
             space_between = space_left;
         }
-        else 
+        else
         {
             space_between = space_left / (number_of_items - 1);
         }
-        if(space_between < 0) space_between = 0;
+        if (space_between < 0)
+            space_between = 0;
 
         int startY = box_y;
         for (auto it = items_.begin(); it != items_.end(); it++)
@@ -272,6 +275,22 @@ void VBox::positionWidgets()
     }
 }
 
-void VBox::onNanoDisplay(){ }
+void VBox::resizeToFit()
+{
+    float height = 0.0f;
+    float width = 0.0f;
+
+    for (auto it = items_.begin(); it != items_.end(); it++)
+    {
+        height += it->widget->getHeight();
+        width = std::max(width, (float)it->widget->getWidth());
+    }
+
+    if (items_.size() > 0)
+        height += (items_.size() - 1) * padding;
+
+    setHeight(height);
+    setWidth(width);
+}
 
 END_NAMESPACE_DISTRHO
