@@ -255,7 +255,7 @@ void TagMap::onNanoDisplay()
         }
     }
 
-    if (highlighted != nullptr)
+    if (highlighted != nullptr && highlighted->name.size() != 0)
     {
         Rectangle<float> bounds;
         fontSize(font_size);

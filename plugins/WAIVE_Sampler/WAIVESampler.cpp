@@ -367,7 +367,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     }
 
     // OSC Test
-    oscClient.sendMessage("/WAIVE_Sampler", {"WAIVESampler started"});
+    oscClient.sendMessage("/WAIVE_Sampler/Started", {"WAIVESampler started"});
 }
 
 WAIVESampler::~WAIVESampler()
@@ -713,7 +713,7 @@ void WAIVESampler::run(
                         samplePlayers[j].state = PlayState::TRIGGERED;
                         samplePlayers[j].velocity = (float)velocity / 128;
 
-                        oscClient.sendMessage("/WAIVE_Sampler", {samplePlayers[j].sampleInfo->name, samplePlayers[j].sampleInfo->tagString, samplePlayers[j].midi});
+                        oscClient.sendMessage("/WAIVE_Sampler/Sample", {samplePlayers[j].sampleInfo->name, samplePlayers[j].sampleInfo->tagString, samplePlayers[j].midi});
                     }
                 }
             }

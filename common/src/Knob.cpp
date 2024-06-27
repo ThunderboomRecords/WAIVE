@@ -36,6 +36,9 @@ std::string Knob::getFormat() noexcept
 void Knob::setRadius(float r)
 {
     radius = r;
+    if (label.size() == 0)
+        return;
+
     fontSize(font_size);
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
@@ -213,6 +216,9 @@ void Knob::drawIndicator()
 
 void Knob::drawLabel()
 {
+    if (label.size() == 0)
+        return;
+
     beginPath();
     fillColor(text_color);
     fontFaceId(font);
