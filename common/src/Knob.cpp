@@ -221,7 +221,7 @@ void Knob::drawLabel()
 
     beginPath();
     fillColor(text_color);
-    fontFaceId(font);
+    // fontFaceId(font);
     textAlign(Align::ALIGN_CENTER | Align::ALIGN_BOTTOM);
     fontSize(font_size);
     text(getWidth() / 2.0f, getHeight(), label.c_str(), nullptr);

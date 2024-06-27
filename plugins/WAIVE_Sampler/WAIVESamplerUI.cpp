@@ -207,7 +207,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f);
     volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f);
-    percussionBoost = createWAIVEKnob(this, kPercussiveBoost, "perc.", 0.0f, 1.0f, 1.0f);
+    percussionBoost = createWAIVEKnob(this, kPercussiveBoost, "perc.", 0.0f, 2.0f, 0.5f);
 
     ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 10.0f);
     ampAttack->format = "{:.0f}ms";
@@ -1095,7 +1095,7 @@ Knob *createWAIVEKnob(
     knob->setValue(value);
     knob->gauge_width = 3.0f;
     knob->setCallback(parent);
-    knob->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    // knob->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     knob->font_size = 12.f;
 
     return knob;
