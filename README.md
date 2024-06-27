@@ -4,9 +4,18 @@
 AI x Archive music tools
 </p>
 
+
 <p align="center">
     <img 
         src="assets/screenshot.png" 
+        style="border-radius: 4px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);"
+        width="500"
+    >
+</p>
+
+<p align="center">
+    <img 
+        src="assets/WAIVE_Sampler_Latest.png" 
         style="border-radius: 4px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);"
         width="500"
     >
@@ -20,9 +29,10 @@ Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX 
 - **WAIVE-Sampler**: a sample player, sample library and sample generator in one
 
 ### Installation
-1. Download and extract the zip archive containing the binaries for you system in the [Releases](https://github.com/ThunderboomRecords/WAIVE/releases) page, under the heading "Assets".
-    - Current supported platforms: MacOS (Apple silicon) and Linux x86_64.
-2. Choose which plugin format you prefer and place it in your plugins path of your DAW. 
+
+> :warning: *Currently pre-built binaries are not available Follow build instructions below*.
+
+1. Choose which plugin format you prefer and place it in your plugins path of your DAW. 
     - Current formats: VST2, VST3, CLAP, and a Standalone (JACK) app.
     - Common (system-wide) plugin paths:
       
@@ -38,6 +48,8 @@ Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX 
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
+
+*TODO: static library builds*
 
 #### Pre-requisites
 Requires statically built onnxruntime for your platform. You can download pre-built libraries from [csukuangfj/onnxruntime-libs](https://huggingface.co/csukuangfj/onnxruntime-libs/tree/main), or build them yourself (such as with [ort-builder](https://github.com/olilarkin/ort-builder/tree/bfbd362c9660fce9600a43732e3f8b53d5fb243a)).
