@@ -14,22 +14,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     float height = UI_H * fScaleFactor;
     float padding = 4.f;
 
-    // register notifications
-    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
-    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
-    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
-    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
-    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
-
-    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
-    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
-    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
-    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
-    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
-
-    plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
-    plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
-
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
 
     float panelWidths = width - 3.f * padding;
@@ -376,7 +360,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     // 5 ----- Sample Map
     sampleBrowserRoot = new SampleBrowserRoot(getApp(), UI_W, UI_H - 40);
     sampleBrowserRoot->setTitle("Browse samples");
-    sampleBrowserRoot->setCallback(this);
+    // sampleBrowserRoot->setCallback(this);
 
     sampleBrowser = new SampleBrowser(*sampleBrowserRoot, &plugin->sd);
     sampleBrowser->setCallback(this);
@@ -384,7 +368,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     // 6 ----- Sample Map
     tagRoot = new SampleBrowserRoot(getApp(), 300, 300);
     tagRoot->setTitle("Browse tags");
-    tagRoot->setCallback(this);
+    // tagRoot->setCallback(this);
 
     tagBrowser = new TagBrowser(*tagRoot, &plugin->sd);
 
@@ -393,8 +377,25 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     if (fScaleFactor != 1.0)
         setSize(width, height);
 
+    // register notifications
+    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+
+    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+
+    plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
+    plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
+
     printf("WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
 
+    // should be done by plugin itself?
     plugin->sd.checkLatestRemoteVersion();
 }
 
@@ -663,7 +664,7 @@ void WAIVESamplerUI::mapSampleImport()
 
 void WAIVESamplerUI::beginOpenFileBrowser(const std::string &state, bool multiple)
 {
-    if (filebrowserOpen)
+    if (filebrowserOpen.load(std::memory_order_acquire))
         return;
 
     if (open_dialog.joinable())
@@ -672,8 +673,13 @@ void WAIVESamplerUI::beginOpenFileBrowser(const std::string &state, bool multipl
     open_dialog = std::thread(
         [this, state, multiple]()
         {
-            filebrowserOpen = true;
-            char const *filename;
+            {
+                std::lock_guard<std::mutex> lock(fileBrowserOpenMtx);
+                filebrowserOpen.store(true, std::memory_order_release);
+            }
+
+            // filebrowserOpen = true;
+            char const *filename = nullptr;
             char const *filterPatterns[2] = {"*.mp3", "*.wav"};
             filename = tinyfd_openFileDialog(
                 "Open audio file...",
@@ -683,14 +689,22 @@ void WAIVESamplerUI::beginOpenFileBrowser(const std::string &state, bool multipl
                 "Audio files",
                 multiple);
 
+            {
+                std::lock_guard<std::mutex> lock(fileBrowserOpenMtx);
+                filebrowserOpen.store(false, std::memory_order_release);
+            }
+            fileBrowserCV.notify_one();
+
             std::cout << filename << std::endl;
             if (filename)
                 setState(state.c_str(), filename);
             else
                 std::cout << "No file selected" << std::endl;
-
-            filebrowserOpen = false;
         });
+
+    std::unique_lock<std::mutex> lock(fileBrowserOpenMtx);
+    fileBrowserCV.wait(lock, [this]
+                       { return !filebrowserOpen.load(std::memory_order_acquire); });
 }
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
@@ -935,7 +949,7 @@ void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
 void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    printf("WAIVESamplerUI::onTaskProgress: %s progress %.4f\n", pTask->name().c_str(), pTask->progress());
+    // printf("WAIVESamplerUI::onTaskProgress: %s progress %.4f\n", pTask->name().c_str(), pTask->progress());
 
     if (pTask->name().compare("FeatureExtractorTask") == 0)
     {

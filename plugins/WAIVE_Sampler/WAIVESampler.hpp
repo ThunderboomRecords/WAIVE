@@ -33,6 +33,7 @@
 #include <Poco/Observer.h>
 #include "Poco/BasicEvent.h"
 #include "Poco/Delegate.h"
+#include "Poco/Exception.h"
 
 #include "model_utils.hpp"
 #include "onnxruntime_cxx_api.h"
@@ -83,7 +84,7 @@ struct SamplePlayer
 };
 
 int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags = 0);
-bool saveWaveform(const char *fp, float *buffer, sf_count_t size, int sampleRate);
+bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int sampleRate);
 
 class WAIVESampler : public Plugin
 {
@@ -181,6 +182,7 @@ private:
     ImporterTask *importerTask;
     WaveformLoaderTask *waveformLoaderTask;
     std::shared_ptr<std::vector<float>> tempBuffer;
+    std::mutex tempBufferMutex;
     ThreadsafeQueue<std::string> import_queue;
     std::string fSourcePath;
     Poco::BasicEvent<const PluginUpdate> pluginUpdate;
@@ -254,12 +256,13 @@ private:
 class WaveformLoaderTask : public Poco::Task
 {
 public:
-    WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, const std::string &_fp, int sampleRate);
+    WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex &_mutex, const std::string &_fp, int sampleRate);
     void runTask() override;
     std::string fp;
 
 private:
     std::shared_ptr<std::vector<float>> buffer;
+    std::mutex &mutex;
     int sampleRate, flags;
 };
 

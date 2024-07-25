@@ -65,7 +65,12 @@ void ImporterTask::import(const std::string &fp)
 
     _ws->sd.addToLibrary(info);
 
-    saveWaveform(_ws->sd.getFullSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength, _ws->getSampleRate());
+    bool result = saveWaveform(_ws->sd.getFullSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength, _ws->getSampleRate());
+    if (!result)
+    {
+        throw Poco::Exception("Failed to save waveform");
+    }
+
     std::cout << " - import done\n";
 };
 
@@ -86,7 +91,7 @@ void FeatureExtractorTask::runTask()
     long length = _ws->fSourceLength;
     Gist<float> gist(128, (int)_ws->getSampleRate());
 
-    _ws->sourceFeaturesMtx.lock();
+    std::lock_guard<std::mutex> lock(_ws->sourceFeaturesMtx);
     _ws->fSourceFeatures.clear();
     _ws->fSourceMeasurements.clear();
 
@@ -136,17 +141,21 @@ void FeatureExtractorTask::runTask()
 
     // TODO: cache features here (if not cancelled)
 
-    _ws->sourceFeaturesMtx.unlock();
     setProgress(1.0f);
 }
 
-WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, const std::string &_fp, int _sampleRate)
-    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), fp(_fp), sampleRate(_sampleRate){};
+WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex &_mutex, const std::string &_fp, int _sampleRate)
+    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), mutex(_mutex), fp(_fp), sampleRate(_sampleRate){};
 
 void WaveformLoaderTask::runTask()
 {
     // std::cout << "WaveformLoaderTask::runTask()\n";
     SndfileHandle fileHandle(fp, SFM_READ);
+    if (fileHandle.error())
+    {
+        std::cerr << "Error: Unable to open input file " << fp << "\n  error: " << sf_error_number(fileHandle.error()) << std::endl;
+    }
+
     size_t sampleLength = fileHandle.frames();
 
     if (sampleLength == 0)
@@ -162,7 +171,7 @@ void WaveformLoaderTask::runTask()
 
     std::vector<float> sample;
     sample.resize(sampleLength * sampleChannels);
-    fileHandle.read(&sample.at(0), sampleLength * sampleChannels);
+    fileHandle.read(sample.data(), sampleLength * sampleChannels);
 
     std::vector<float> sample_tmp;
     size_t new_size = sampleLength;
@@ -171,7 +180,11 @@ void WaveformLoaderTask::runTask()
         return;
 
     // resample data
-    if (fileSampleRate != sampleRate)
+    if (fileSampleRate == sampleRate)
+    {
+        sample_tmp.swap(sample);
+    }
+    else
     {
         double src_ratio = (double)sampleRate / fileSampleRate;
         new_size = (size_t)(sampleLength * src_ratio + 1);
@@ -193,12 +206,20 @@ void WaveformLoaderTask::runTask()
         double progress = 0.0f;
         int error;
 
-        SRC_STATE *converter = src_new(SRC_SINC_BEST_QUALITY, sampleChannels, &error);
-        if (converter == NULL)
+        // Use a smart pointer to ensure src_delete is called even if an exception is thrown.
+        std::unique_ptr<SRC_STATE, decltype(&src_delete)> converter(src_new(SRC_SINC_BEST_QUALITY, sampleChannels, &error), &src_delete);
+        if (!converter)
         {
-            std::cout << "Could not init samplerate converter, reason: " << sf_error_number(error) << std::endl;
+            std::cerr << "Could not init samplerate converter, reason: " << sf_error_number(error) << std::endl;
             return;
         }
+
+        // SRC_STATE *converter = src_new(SRC_SINC_BEST_QUALITY, sampleChannels, &error);
+        // if (converter == NULL)
+        // {
+        //     std::cout << "Could not init samplerate converter, reason: " << sf_error_number(error) << std::endl;
+        //     return;
+        // }
 
         setProgress(progress);
 
@@ -207,14 +228,8 @@ void WaveformLoaderTask::runTask()
 
         size_t inputPos = 0;
         double pStep = (double)(chunk * sampleChannels) / sample.size();
-        while (inputPos < sample.size())
+        while (inputPos < sample.size() && !isCancelled())
         {
-            if (isCancelled())
-            {
-                src_delete(converter);
-                return;
-            }
-
             size_t currentChunkSize = std::min(chunk, (sample.size() - inputPos) / sampleChannels);
 
             src_data.data_in = sample.data() + inputPos;
@@ -222,11 +237,10 @@ void WaveformLoaderTask::runTask()
             src_data.data_out = outputChunk.data();
             src_data.output_frames = outputChunk.size() / sampleChannels;
 
-            error = src_process(converter, &src_data);
+            error = src_process(converter.get(), &src_data);
             if (error)
             {
                 std::cout << "Error during sample rate conversion: " << src_strerror(error) << std::endl;
-                src_delete(converter);
                 return;
             }
 
@@ -238,15 +252,12 @@ void WaveformLoaderTask::runTask()
             inputPos += currentChunkSize * sampleChannels;
         }
         std::cout << "DONE" << std::endl;
-
-        src_delete(converter);
     }
-    else
-        sample_tmp = sample;
 
     if (isCancelled())
         return;
 
+    std::lock_guard<std::mutex> lock(mutex);
     buffer->resize(new_size);
 
     //  TODO: mix to Mono before sample rate conversion??
@@ -264,6 +275,21 @@ void WaveformLoaderTask::runTask()
     {
         std::copy(sample_tmp.begin(), sample_tmp.begin() + new_size, buffer->begin());
     }
+    // if (sampleChannels > 1)
+    // {
+    //     for (size_t i = 0; i < new_size; ++i)
+    //     {
+    //         float sum = 0.0f;
+    //         for (int ch = 0; ch < sampleChannels; ++ch)
+    //             sum += sample_tmp[i * sampleChannels + ch];
+    //         buffer->at(i) = sum / sampleChannels;
+    //     }
+    // }
+    // else
+    // {
+    //     std::copy(sample_tmp.begin(), sample_tmp.begin() + new_size, buffer->begin());
+    // }
+
     // std::cout << "Finished loading waveform. new_size: " << new_size << std::endl;
 }
 
@@ -296,8 +322,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                sd(&httpClient),
                                fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow),
                                importerTask(new ImporterTask(this, &import_queue)),
-                               waveformLoaderTask(nullptr),
-                               tempBuffer(std::make_shared<std::vector<float>>())
+                               waveformLoaderTask(nullptr)
 {
     if (isDummyInstance())
     {
@@ -365,6 +390,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     {
         std::cerr << e.what() << '\n';
     }
+
+    std::lock_guard<std::mutex> lock(tempBufferMutex);
+    tempBuffer = std::make_shared<std::vector<float>>();
 
     // OSC Test
     oscClient.sendMessage("/WAIVE_Sampler/Started", {"WAIVESampler started"});
@@ -673,7 +701,7 @@ void WAIVESampler::run(
     uint32_t midiEventCount      // Number of MIDI events in block
 )
 {
-    samplePlayerMtx.lock();
+    std::lock_guard<std::mutex> lock(samplePlayerMtx);
 
     int bundle_length = 0;
 
@@ -760,8 +788,6 @@ void WAIVESampler::run(
         outputs[0][i] = y;
         outputs[1][i] = y;
     }
-
-    samplePlayerMtx.unlock();
 }
 
 void WAIVESampler::loadSource(const char *fp)
@@ -773,7 +799,7 @@ void WAIVESampler::loadSource(const char *fp)
     converterManager.cancelAll();
     converterManager.joinAll();
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
-    waveformLoaderTask = new WaveformLoaderTask(tempBuffer, std::string(fp), sampleRate);
+    waveformLoaderTask = new WaveformLoaderTask(tempBuffer, tempBufferMutex, std::string(fp), sampleRate);
     taskManager.start(waveformLoaderTask);
 }
 
@@ -859,12 +885,12 @@ void WAIVESampler::loadSamplePreview(int id)
 void WAIVESampler::loadSourcePreview(const std::string &fp)
 {
     stopSourcePreview();
-    samplePlayerMtx.lock();
+    std::lock_guard<std::mutex> lock(samplePlayerMtx);
+
     int size = loadWaveform(fp.c_str(), *sourcePreviewWaveform, sampleRate);
     if (size == 0)
     {
         std::cout << fp << " not avaliable to load...\n";
-        samplePlayerMtx.unlock();
         return;
     }
     sourcePreviewPlayer->waveform = sourcePreviewWaveform;
@@ -872,7 +898,6 @@ void WAIVESampler::loadSourcePreview(const std::string &fp)
     sourcePreviewPlayer->length = size;
     sourcePreviewPlayer->active = true;
     sourcePreviewPlayer->state = PlayState::TRIGGERED;
-    samplePlayerMtx.unlock();
 }
 
 void WAIVESampler::playSourcePreview()
@@ -880,7 +905,7 @@ void WAIVESampler::playSourcePreview()
     if (!fSourceLoaded || fSourceWaveform.size() == 0)
         return;
 
-    samplePlayerMtx.lock();
+    std::lock_guard<std::mutex> lock(samplePlayerMtx);
     if (sourcePreviewPlayer->state == PlayState::PLAYING)
     {
         sourcePreviewPlayer->state = PlayState::STOPPED;
@@ -893,16 +918,14 @@ void WAIVESampler::playSourcePreview()
         sourcePreviewPlayer->active = true;
         sourcePreviewPlayer->state = PlayState::TRIGGERED;
     }
-    samplePlayerMtx.unlock();
 }
 
 void WAIVESampler::stopSourcePreview()
 {
-    samplePlayerMtx.lock();
+    std::lock_guard<std::mutex> lock(samplePlayerMtx);
     sourcePreviewPlayer->state = PlayState::STOPPED;
     sourcePreviewPlayer->active = false;
     sourcePreviewPlayer->ptr = 0;
-    samplePlayerMtx.unlock();
 }
 
 void WAIVESampler::loadSample(int id)
@@ -999,7 +1022,7 @@ void WAIVESampler::renderSample()
     if (!fSampleLoaded || fCurrentSample == nullptr || !fSourceLoaded)
         return;
 
-    samplePlayerMtx.lock();
+    std::lock_guard<std::mutex> lock(samplePlayerMtx);
 
     fCurrentSample->sampleLength = ampEnvGen.getLength(fCurrentSample->sustainLength);
     fCurrentSample->sampleLength = std::min(fCurrentSample->sampleLength, fSourceLength - fCurrentSample->sourceStart);
@@ -1077,7 +1100,6 @@ void WAIVESampler::renderSample()
     editorPreviewPlayer->active = true;
 
     fSampleLoaded = true;
-    samplePlayerMtx.unlock();
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
@@ -1090,7 +1112,7 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
         return;
     }
 
-    samplePlayerMtx.lock();
+    std::lock_guard<std::mutex> lock(samplePlayerMtx);
 
     sp.state = PlayState::STOPPED;
     sp.ptr = 0;
@@ -1099,7 +1121,6 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
     if (length == 0)
     {
         sp.active = false;
-        samplePlayerMtx.unlock();
         std::cerr << "WAIVESampler::loadSamplePlayer: Sample waveform length 0" << std::endl;
         return;
     }
@@ -1110,19 +1131,17 @@ void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlay
     sp.sampleInfo->tagString.assign(info->tagString); // no idea why we must do this only for tagString...
 
     pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
-    samplePlayerMtx.unlock();
 }
 
 void WAIVESampler::clearSamplePlayer(SamplePlayer &sp)
 {
     std::cout << "WAIVESampler::clearSamplePlayer\n";
-    samplePlayerMtx.lock();
+    std::lock_guard<std::mutex> lock(samplePlayerMtx);
     sp.state = PlayState::STOPPED;
     sp.active = false;
     sp.sampleInfo = nullptr;
     sp.length = 0;
     pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
-    samplePlayerMtx.unlock();
 }
 
 void WAIVESampler::loadSlot(int slot, int id)
@@ -1346,7 +1365,7 @@ int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int
     return sampleLength;
 }
 
-bool saveWaveform(const char *fp, float *buffer, sf_count_t size, int sampleRate)
+bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int sampleRate)
 {
     std::cout << "WAIVESampler::saveWaveform to " << fp << std::endl;
 
@@ -1357,7 +1376,18 @@ bool saveWaveform(const char *fp, float *buffer, sf_count_t size, int sampleRate
         1,
         sampleRate);
 
-    file.write(buffer, size);
+    if (file.error())
+    {
+        std::cerr << "Error: Unable to open output file " << fp << " for writing\n  error: " << sf_error_number(file.error()) << std::endl;
+        return false;
+    }
+
+    sf_count_t writtenFrames = file.write(buffer, size);
+    if (writtenFrames != size)
+    {
+        std::cerr << "Error: Failed to write all frames to " << fp << std::endl;
+        return false;
+    }
 
     return true;
 }
