@@ -234,7 +234,7 @@ public:
     void downloadSourceFile(int index);
     void playTempSourceFile(int index);
     void getTagList();
-    std::vector<std::string> getArchiveList() const;
+    void getArchiveList();
     void filterSources();
 
     // CALLBACKS
@@ -254,6 +254,7 @@ public:
 
     Poco::TaskManager taskManager;
     std::vector<Tag> tagList;
+    std::vector<std::string> archives;
 
 private:
     Poco::Data::Session *session;
@@ -266,6 +267,6 @@ private:
     HTTPClient *httpClient;
 };
 
-std::string makeTagString(const std::vector<Tag> tags);
+std::string makeTagString(const std::vector<Tag> &tags);
 
 #endif

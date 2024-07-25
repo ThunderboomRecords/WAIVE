@@ -5,6 +5,8 @@
 #include <memory>
 #include <thread>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 #include "DistrhoUI.hpp"
 #include "NanoVG.hpp"
@@ -74,7 +76,6 @@ class WAIVESamplerUI : public UI,
                        public TextInput::Callback,
                        public DropDown::Callback,
                        public SampleSlot::Callback,
-                       public SampleBrowserRoot::Callback,
                        public SourceList::Callback
 {
 public:
@@ -131,6 +132,8 @@ private:
 
     std::thread open_dialog;
     std::atomic<bool> filebrowserOpen;
+    std::mutex fileBrowserOpenMtx;
+    std::condition_variable fileBrowserCV;
 
     Panel *sourceBrowserPanel, *sampleEditorPanel, *samplePanel, *samplePlayerPanel;
 

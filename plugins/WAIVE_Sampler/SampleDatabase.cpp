@@ -53,7 +53,7 @@ void SampleInfo::setTags(std::vector<Tag> tags_)
 {
     std::cout << "setTags\n";
     tags = tags_;
-    tagString = makeTagString(tags);
+    tagString = makeTagString(tags_);
 }
 
 void SampleInfo::print() const
@@ -185,22 +185,46 @@ SampleDatabase::~SampleDatabase()
 void SampleDatabase::loadSampleDatabase()
 {
     Poco::Data::Statement select(*session);
-    select << "SELECT * FROM Samples", Poco::Data::Keywords::now;
+    try
+    {
+        select << "SELECT * FROM Samples", Poco::Data::Keywords::now;
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Database query failed: " << e.what() << std::endl;
+        return;
+    }
 
     Poco::Data::RecordSet rs(select);
     std::size_t cols = rs.columnCount();
+    if (cols < 5)
+    {
+        std::cerr << "Unexpected number of columns in the result set." << std::endl;
+        return;
+    }
 
     fAllSamples.clear();
     points.clear();
 
-    for (Poco::Data::RecordSet::Iterator it = rs.begin(); it != rs.end(); ++it)
+    for (auto &row : rs)
     {
-        int id = it->get(0);
-        std::string name = it->get(1);
-        std::string path = it->get(2);
-        std::string source = it->get(3);
-        std::string parameters = it->get(4);
-        json data = json::parse(parameters);
+        int id = row.get(0);
+        std::string name = row.get(1).convert<std::string>();
+        std::string path = row.get(2).convert<std::string>();
+        std::string source = row.get(3).convert<std::string>();
+        std::string parameters = row.get(4).convert<std::string>();
+
+        json data;
+        try
+        {
+            data = json::parse(parameters);
+        }
+        catch (const json::parse_error &e)
+        {
+            std::cerr << "JSON parsing error: " << e.what() << std::endl;
+            continue;
+        }
+
         data["id"] = id;
         data["name"] = name;
         data["path"] = path;
@@ -209,8 +233,8 @@ void SampleDatabase::loadSampleDatabase()
         std::shared_ptr<SampleInfo> s = deserialiseSampleInfo(data);
         if (s == nullptr)
         {
-            std::cout << "Could not parse row:\n"
-                      << *it << std::endl;
+            std::cerr << "Could not parse row:\n"
+                      << row << std::endl;
             continue;
         }
 
@@ -554,21 +578,36 @@ std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<
 void SampleDatabase::checkLatestRemoteVersion()
 {
     int user_version;
-    *session << "PRAGMA user_version",
-        Poco::Data::Keywords::into(user_version),
-        Poco::Data::Keywords::now;
+    try
+    {
+        *session << "PRAGMA user_version",
+            Poco::Data::Keywords::into(user_version),
+            Poco::Data::Keywords::now;
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Failed to retrieve user version: " << e.what() << std::endl;
+        return;
+    }
 
     std::cout << "user_version: " << user_version << std::endl;
 
     // check if "Sources" table exists
     std::string exists;
-    *session
-        << "SELECT name FROM sqlite_master WHERE type='table' AND name='Sources'",
-        Poco::Data::Keywords::into(exists),
-        Poco::Data::Keywords::range(0, 1),
-        Poco::Data::Keywords::now;
+    try
+    {
+        *session << "SELECT name FROM sqlite_master WHERE type='table' AND name='Sources'",
+            Poco::Data::Keywords::into(exists),
+            Poco::Data::Keywords::range(0, 1),
+            Poco::Data::Keywords::now;
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Failed to check if 'Sources' table exists: " << e.what() << std::endl;
+        return;
+    }
 
-    sourceDatabaseInitialised = exists.size() > 0;
+    sourceDatabaseInitialised = !exists.empty();
 
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKING_UPDATE);
@@ -577,6 +616,8 @@ void SampleDatabase::checkLatestRemoteVersion()
         "CheckDatabaseVersion",
         WAIVE_SERVER, "/latest", [this, user_version](const std::string &response)
         { 
+            try {
+
             json result = json::parse(response); 
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKED_UPDATE);
 
@@ -585,8 +626,13 @@ void SampleDatabase::checkLatestRemoteVersion()
             {
                 return;
             }
+            this->updateDatabaseVersion(latest_version);
 
-            this->updateDatabaseVersion(latest_version); },
+            } catch(json::parse_error &e) {
+                std::cerr << "JSON parsing error: " << e.what() << std::endl;
+            } catch(const std::exception &e){
+                std::cerr << "Unexpected error: " << e.what() << std::endl;
+            } },
         [this]()
         {
             std::cout << "cannot connect to remote database and verify if up-to-date." << std::endl;
@@ -600,12 +646,20 @@ void SampleDatabase::updateDatabaseVersion(int new_version)
 {
     std::cout << "SampleDatabase::updateDatabaseVersion, new_version: " << new_version << std::endl;
 
-    Poco::Data::Statement pragma(*session);
-    pragma << "PRAGMA user_version = " << new_version;
+    try
+    {
 
-    std::cout << pragma.toString() << std::endl;
+        Poco::Data::Statement pragma(*session);
+        pragma << "PRAGMA user_version = " << new_version;
 
-    pragma.execute();
+        std::cout << pragma.toString() << std::endl;
+
+        pragma.execute();
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Error updating PRAGMA user_version: " << e.what() << std::endl;
+    }
 
     downloadSourcesList();
 }
@@ -789,7 +843,7 @@ void SampleDatabase::downloadSourceFile(int i)
             bool res = fp.createFile();
             if(!res)
             {
-                std::cout << "cannot create file\n";
+                std::cerr << "Cannot create download to file: " << fp.path() << std::endl;
                 return;
             }
             
@@ -838,13 +892,22 @@ void SampleDatabase::playTempSourceFile(int i)
 
             if (!tmp.createFile())
             {
-                std::cerr << "FAILED to open filestream\n";
+                std::cerr << "Failed to open tmp file" << tmp.path() << std::endl;
                 return;
             }
 
-            Poco::FileOutputStream out = Poco::FileOutputStream(tmp.path());
-            out << response;
-            out.close();
+            try {
+                Poco::FileOutputStream out = Poco::FileOutputStream(tmp.path());
+                out << response;
+                out.close();
+
+                if(out.fail()) {
+                    throw std::runtime_error("Failed to write response to file: " + tmp.path());
+                }
+            } catch (std::exception&e) {
+                std::cerr << "Error: " << e.what() << std::endl;
+
+            }
 
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED);
             
@@ -937,40 +1000,55 @@ void SampleDatabase::getTagList()
         return;
 
     tagList.clear();
-    Poco::Data::Statement select(*session);
-    int tagId;
-    std::string tag;
-    float embedX, embedY;
-    select << "SELECT id, tag, embedX, embedY FROM Tags",
-        Poco::Data::Keywords::into(tagId),
-        Poco::Data::Keywords::into(tag),
-        Poco::Data::Keywords::into(embedX),
-        Poco::Data::Keywords::into(embedY),
-        Poco::Data::Keywords::range(0, 1);
 
-    while (!select.done())
+    try
     {
-        if (select.execute())
-            tagList.push_back({tagId, std::string(tag), float(embedX), float(embedY)});
+        Poco::Data::Statement select(*session);
+        int tagId;
+        std::string tag;
+        float embedX, embedY;
+        select << "SELECT id, tag, embedX, embedY FROM Tags",
+            Poco::Data::Keywords::now;
+
+        Poco::Data::RecordSet rs(select);
+        std::size_t rows = rs.rowCount();
+
+        for (std::size_t i = 0; i < rows; ++i)
+        {
+            tagId = rs.value(0, i).convert<int>();
+            tag = rs.value(1, i).convert<std::string>();
+            embedX = rs.value(2, i).convert<float>();
+            embedY = rs.value(3, i).convert<float>();
+
+            tagList.push_back({tagId, tag, embedX, embedY});
+        }
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Failed to fetch tags from database: " << e.what() << std::endl;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Unexpected error: " << e.what() << std::endl;
     }
 }
 
-std::vector<std::string> SampleDatabase::getArchiveList() const
+void SampleDatabase::getArchiveList()
 {
-    std::vector<std::string> archives;
+    archives.clear();
     Poco::Data::Statement select(*session);
     std::string archive;
     select << "SELECT DISTINCT archive from Sources",
-        Poco::Data::Keywords::into(archive),
-        Poco::Data::Keywords::range(0, 1);
+        Poco::Data::Keywords::now;
 
-    while (!select.done())
+    Poco::Data::RecordSet rs(select);
+    std::size_t rows = rs.rowCount();
+
+    for (std::size_t i = 0; i < rows; ++i)
     {
-        if (select.execute())
-            archives.push_back(std::string(archive));
+        archive = rs.value(0, i).convert<std::string>();
+        archives.push_back(archive);
     }
-
-    return archives;
 }
 
 void SampleDatabase::filterSources()
@@ -979,7 +1057,7 @@ void SampleDatabase::filterSources()
         return;
 
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_FILTER_START);
-    sourceListMutex.lock();
+    std::lock_guard<std::mutex> lock(sourceListMutex);
     sourcesList.clear();
 
     std::vector<std::string> conditions = {};
@@ -1085,7 +1163,6 @@ void SampleDatabase::filterSources()
     }
     catch (const Poco::DataException &e)
     {
-        sourceListMutex.unlock();
         databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_QUERY_ERROR);
         std::cerr << e.displayText() << std::endl;
         return;
@@ -1093,7 +1170,6 @@ void SampleDatabase::filterSources()
 
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_FILTER_END);
 
-    sourceListMutex.unlock();
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_UPDATED);
 }
 
@@ -1149,6 +1225,7 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
         getTagList();
+        getArchiveList();
         filterSources();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
@@ -1168,17 +1245,32 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
     }
 }
 
-std::string makeTagString(const std::vector<Tag> tags)
+std::string makeTagString(const std::vector<Tag> &tags)
 {
     std::cout << "makeTagString " << tags.size() << std::endl;
-    std::string tagString = "";
-    for (int i = 0; i < tags.size(); i++)
+    if (tags.empty())
+        return "";
+
+    std::ostringstream tagStream;
+    for (const auto &tag : tags)
     {
-        if (tagString.size() > 0)
-            tagString += "|";
-        tagString += tags[i].name;
+        if (&tag != &tags[0])
+            tagStream << "|";
+        tagStream << tag.name;
     }
 
+    std::string tagString = tagStream.str();
     std::cout << tagString << std::endl;
+
     return tagString;
+    // std::string tagString = "";
+    // for (int i = 0; i < tags.size(); i++)
+    // {
+    //     if (tagString.size() > 0)
+    //         tagString += "|";
+    //     tagString += tags[i].name;
+    // }
+
+    // std::cout << tagString << std::endl;
+    // return tagString;
 }
