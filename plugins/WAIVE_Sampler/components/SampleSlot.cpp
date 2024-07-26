@@ -28,7 +28,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     for (int i = 1; i < 128; i++)
         midiSelect->addItem(fmt::format("{:d}", i).c_str());
     midiSelect->setDisplayNumber(6);
-    midiSelect->font_size = 16.0f;
+    midiSelect->setFontSize(16.0f);
     midiSelect->setSize(35, 20);
 
     addChildWidget(triggerBtn, {triggerBtn, this, Position::ON_TOP, Widget_Align::START, Widget_Align::CENTER, 5});
@@ -103,7 +103,7 @@ void SampleSlot::onNanoDisplay()
         std::string info = samplePlayer->sampleInfo->name;
 
         beginPath();
-        fontSize(font_size);
+        fontSize(getFontSize());
         fillColor(text_color);
         textAlign(Align::ALIGN_MIDDLE);
         fontFaceId(font);

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 set(CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED OFF)
+set(POSITION_INDEPENDENT_CODE ON)
 
 project(
     WAIVE_Plugins VERSION 0.12.0
@@ -11,6 +12,12 @@ include_directories(
     ${CMAKE_BINARY_DIR}/generated/
     external/Gist/libs/kiss_fft130
 )
+
+set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
+set(OPENSSL_LIBRARIES /usr/local/opt/openssl/lib)
+add_subdirectory(external/poco)
+add_subdirectory(external/libsamplerate)
+
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_compile_options(-DUSE_KISS_FFT)

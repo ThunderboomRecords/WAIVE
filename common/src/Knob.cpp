@@ -39,7 +39,7 @@ void Knob::setRadius(float r)
     if (label.size() == 0)
         return;
 
-    fontSize(font_size);
+    fontSize(getFontSize());
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
@@ -223,7 +223,7 @@ void Knob::drawLabel()
     fillColor(text_color);
     // fontFaceId(font);
     textAlign(Align::ALIGN_CENTER | Align::ALIGN_BOTTOM);
-    fontSize(font_size);
+    fontSize(getFontSize());
     text(getWidth() / 2.0f, getHeight(), label.c_str(), nullptr);
 
     closePath();

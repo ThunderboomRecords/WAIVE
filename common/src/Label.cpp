@@ -28,7 +28,7 @@ void Label::resizeToFit()
     if (label.length() == 0)
         return;
 
-    fontSize(font_size);
+    fontSize(getFontSize());
     fontFaceId(font);
 
     Rectangle<float> bounds;
@@ -51,7 +51,7 @@ void Label::onNanoDisplay()
     beginPath();
     fillColor(text_color);
     textAlign(text_align);
-    fontSize(font_size);
+    fontSize(getFontSize());
     fontFaceId(font);
     text(0, getHeight(), label.c_str(), NULL);
     closePath();

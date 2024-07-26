@@ -14,6 +14,7 @@ WAIVEWidget::WAIVEWidget(Widget *widget, int flags) noexcept
       font(0),
       renderDebug(false)
 {
+    loadSharedResources();
     scale_factor = getWindow().getScaleFactor();
 }
 
@@ -58,14 +59,22 @@ void WAIVEWidget::setSize(const Size<uint> &size, bool ignore_sf)
         NanoSubWidget::setSize(size.getWidth() * scale_factor, size.getHeight() * scale_factor);
 }
 
-void WAIVEWidget::fontSize(float size)
-{
-    NanoSubWidget::fontSize(size * scale_factor);
-}
-
 void WAIVEWidget::setFont(const char *name, const uchar *data, uint size)
 {
     font = createFontFromMemory(name, data, size, false);
+}
+
+void WAIVEWidget::setFontSize(float size)
+{
+    font_size = size;
+}
+
+float WAIVEWidget::getFontSize(bool ignore_sf) const
+{
+    if(ignore_sf)
+        return font_size;
+
+    return font_size * scale_factor;
 }
 
 END_NAMESPACE_DISTRHO

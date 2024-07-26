@@ -35,7 +35,7 @@ void CheckboxGroup::onNanoDisplay()
     beginPath();
     fillColor(text_color);
     textAlign(Align::ALIGN_TOP | Align::ALIGN_CENTER);
-    fontSize(font_size);
+    fontSize(getFontSize());
     text(width / 2.0f, 5.0f, label.c_str(), nullptr);
     closePath();
 }
@@ -70,13 +70,13 @@ std::map<Checkbox *, CheckboxGroup::CheckboxData> CheckboxGroup::getCheckboxData
 void CheckboxGroup::buttonClicked(Button *button)
 {
     std::cout << "CheckboxGroup::buttonClicked\n";
-    if (button = check_all)
+    if (button == check_all)
     {
         checkAll(true, false);
         if (callback != nullptr)
             callback->checkboxesUpdated(this);
     }
-    else if (button = check_none)
+    else if (button == check_none)
     {
         checkAll(false, false);
         if (callback != nullptr)

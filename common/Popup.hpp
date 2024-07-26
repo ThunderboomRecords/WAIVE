@@ -22,7 +22,7 @@ public:
 protected:
     void onNanoDisplay() override;
     void buttonClicked(Button *button) override;
-    bool onMouse(const MouseEvent &ev);
+    bool onMouse(const MouseEvent &ev) override;
 
 private:
     Button *close_btn;

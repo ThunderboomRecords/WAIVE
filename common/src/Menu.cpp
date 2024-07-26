@@ -79,7 +79,7 @@ void Menu::onNanoDisplay()
     for (int i = 0; i < std::min(display_number, (int)items.size()); i++)
     {
         beginPath();
-        fontSize(font_size);
+        fontSize(getFontSize());
         fontFaceId(font);
         fillColor(text_color);
         textAlign(Align::ALIGN_LEFT | Align::ALIGN_TOP);
@@ -252,7 +252,7 @@ int Menu::getNumberItems() const
 void Menu::calculateHeight()
 {
     Rectangle<float> bounds;
-    fontSize(font_size);
+    fontSize(getFontSize());
     fontFaceId(font);
     textBounds(0, 0, "item 1", nullptr, bounds);
 

@@ -41,7 +41,7 @@ void ValueIndicator::onNanoDisplay()
     beginPath();
     fillColor(text_color);
     textAlign(Align::ALIGN_CENTER | Align::ALIGN_MIDDLE);
-    fontSize(font_size);
+    fontSize(getFontSize());
     fontFaceId(font);
     text(width / 2, height / 2, textString.c_str(), nullptr);
     closePath();

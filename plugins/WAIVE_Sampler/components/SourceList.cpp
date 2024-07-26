@@ -43,7 +43,7 @@ void SourceList::onNanoDisplay()
         return;
 
     float rowWidth = width - 2.f * padding - scrollBarWidth;
-    rowHeight = 2.f * font_size;
+    rowHeight = 2.f * getFontSize();
 
     int maxDisplay = height / (rowHeight + margin);
 
@@ -59,7 +59,7 @@ void SourceList::onNanoDisplay()
     {
         beginPath();
         fillColor(text_color);
-        fontSize(font_size);
+        fontSize(getFontSize());
         textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_CENTER);
         text(width / 2.f, height / 2.f, info.c_str(), nullptr);
         closePath();
@@ -134,7 +134,7 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
 
     beginPath();
     fillColor(text_color);
-    fontSize(font_size);
+    fontSize(getFontSize());
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
     fontFaceId(font);
     text(30.f, height / 2.0f, info.description.c_str(), nullptr);
@@ -170,7 +170,7 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
     // license info button
     beginPath();
     fillColor(text_color);
-    fontSize(font_size * 0.8f);
+    fontSize(getFontSize() * 0.8f);
     textAlign(Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE);
     text(width - 26.f - 2.f * scrollBarWidth, height / 2.f, "License", nullptr);
     closePath();
@@ -265,6 +265,9 @@ bool SourceList::onMouse(const MouseEvent &ev)
     if (!isVisible())
         return false;
 
+    if(source_info->empty())
+        return true;
+
     if (!scrolling && ev.press && contains(ev.pos))
     {
         if (ev.pos.getX() > getWidth() - scrollBarWidth)
@@ -275,25 +278,43 @@ bool SourceList::onMouse(const MouseEvent &ev)
 
         if (ev.pos.getX() > getWidth() - 26.f - 2.f * scrollBarWidth - 50)
         {
+            try
+            {
             std::cout << "License: " << source_info->at(highlighting).license << std::endl;
             SystemOpenURL(source_info->at(highlighting).license);
             return true;
+            }
+            catch(const std::out_of_range& e)
+            {
+                std::cerr << e.what() << '\n';
+                return true;
+            }
+            
         }
 
         if (ev.pos.getX() > 30)
         {
-            if (source_info->at(highlighting).downloaded == DownloadState::DOWNLOADED)
+            try
             {
-                if (callback != nullptr)
-                    callback->sourceLoad(highlighting);
-                return true;
+                if (source_info->at(highlighting).downloaded == DownloadState::DOWNLOADED)
+                {
+                    if (callback != nullptr)
+                        callback->sourceLoad(highlighting);
+                    return true;
+                }
+                else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
+                {
+                    if (callback != nullptr)
+                        callback->sourceDownload(highlighting);
+                    return true;
+                }
+                
             }
-            else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
+            catch(const std::out_of_range& e)
             {
-                if (callback != nullptr)
-                    callback->sourceDownload(highlighting);
-                return true;
+                std::cerr << e.what() << '\n';
             }
+            
             return false;
         }
 

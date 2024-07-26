@@ -43,7 +43,7 @@ void DropDown::onNanoDisplay()
         beginPath();
         fillColor(text_color);
         fontFaceId(font);
-        fontSize(font_size);
+        fontSize(getFontSize());
         textAlign(Align::ALIGN_MIDDLE);
         text(2, height / 2, currentItem.c_str(), nullptr);
         closePath();
