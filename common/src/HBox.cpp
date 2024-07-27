@@ -16,8 +16,8 @@ void HBox::addWidget(NanoSubWidget *widget)
     addChildWidget(widget);
     items_.emplace_back(Item(widget));
 
-    const uint box_height = getHeight();
-    const uint wh = widget->getHeight();
+    const float box_height = getHeight();
+    const float wh = widget->getHeight();
     if (wh > box_height)
         setHeight(wh);
 
@@ -65,12 +65,13 @@ void HBox::removeWidget(uint id)
 
 void HBox::positionWidgets()
 {
-    const uint width = getWidth();
-    const uint height = getHeight();
-    const uint box_x = getAbsoluteX();
-    const uint box_y = getAbsoluteY();
+    // std::cout << "HBox::positionWidgets()" << std::endl;
+    const float width = getWidth();
+    const float height = getHeight();
+    const float box_x = getAbsoluteX();
+    const float box_y = getAbsoluteY();
 
-    // printf("HBox::positionWidgets()\n  width = %d height = %d  box_x = %d box_y = %d\n", width, height, box_x, box_y);
+    // printf("HBox::positionWidgets()\n  width = %.2f height = %.2f  box_x = %.2f box_y = %.2f\n", width, height, box_x, box_y);
 
     if (items_.size() == 0)
         return;
@@ -79,13 +80,13 @@ void HBox::positionWidgets()
     {
     case Justify_Content::left:
     {
-        uint step = 0;
+        float step = 0;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             it->x = box_x + step;
             it->widget->setAbsoluteX(it->x);
             it->widget->setAbsoluteY(box_y);
-            const uint ww = it->widget->getWidth();
+            const float ww = it->widget->getWidth();
             step += ww;
             step += padding;
             it->width = ww;
@@ -94,20 +95,20 @@ void HBox::positionWidgets()
     }
     case Justify_Content::right:
     {
-        uint combined_widget_width = 0;
+        float combined_widget_width = 0;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             combined_widget_width += it->widget->getWidth();
             combined_widget_width += padding;
         }
         combined_widget_width -= padding;
-        uint startX = box_x + width - combined_widget_width;
+        float startX = box_x + width - combined_widget_width;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             it->widget->setAbsoluteX(startX);
             it->widget->setAbsoluteY(box_y);
             it->x = startX;
-            const uint ww = it->widget->getWidth();
+            const float ww = it->widget->getWidth();
             startX += ww;
             startX += padding;
             it->width = ww;
@@ -117,7 +118,7 @@ void HBox::positionWidgets()
     }
     case Justify_Content::center:
     {
-        uint combined_widget_width = 0;
+        float combined_widget_width = 0;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             combined_widget_width += it->widget->getWidth();
@@ -132,7 +133,7 @@ void HBox::positionWidgets()
             it->widget->setAbsoluteX(startX);
             it->widget->setAbsoluteY(box_y);
             it->x = startX;
-            const uint ww = it->widget->getWidth();
+            const float ww = it->widget->getWidth();
             startX += ww;
             startX += padding;
             it->width = ww;
@@ -141,9 +142,9 @@ void HBox::positionWidgets()
     }
     case Justify_Content::space_evenly:
     {
-        uint number_of_items = items_.size();
-        uint item_width = width / number_of_items;
-        uint step = 0;
+        float number_of_items = items_.size();
+        float item_width = width / number_of_items;
+        float step = 0;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             switch (it->justify_content)
@@ -158,7 +159,7 @@ void HBox::positionWidgets()
             case Justify_Content::space_evenly:
             case Justify_Content::none:
             default:
-                const uint ww = it->widget->getWidth();
+                const float ww = it->widget->getWidth();
                 it->widget->setAbsoluteX(box_x + step + (item_width / 2 - ww / 2));
                 break;
             }
@@ -170,8 +171,8 @@ void HBox::positionWidgets()
     }
     case Justify_Content::space_between:
     {
-        uint number_of_items = items_.size();
-        uint combined_widget_width = 0;
+        float number_of_items = items_.size();
+        float combined_widget_width = 0;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             combined_widget_width += it->widget->getWidth();
@@ -196,7 +197,7 @@ void HBox::positionWidgets()
             it->widget->setAbsoluteX(startX);
             it->widget->setAbsoluteY(box_y);
             it->x = startX;
-            const uint ww = it->widget->getWidth();
+            const float ww = it->widget->getWidth();
             startX += ww + space_between;
             it->width = ww;
         }
@@ -257,8 +258,8 @@ void HBox::positionWidgets()
 
     for (auto it = items_.begin(); it != items_.end(); it++)
     {
-        uint item_x = it->x;
-        uint item_w = it->width;
+        float item_x = it->x;
+        float item_w = it->width;
         switch (it->justify_content)
         {
         case Justify_Content::left:

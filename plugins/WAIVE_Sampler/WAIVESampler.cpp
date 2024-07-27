@@ -78,18 +78,26 @@ FeatureExtractorTask::FeatureExtractorTask(WAIVESampler *ws) : Poco::Task("Featu
 
 void FeatureExtractorTask::runTask()
 {
+    std::cout << "FeatureExtractorTask::runTask()" << std::endl;
     if (_ws->fSourceLength == 0)
         return;
 
     // TODO: check and load cached features
-    Poco::File cachedir = Poco::Path(Poco::Path::cacheHome()).append("WAIVE").append("SourceAnalysis");
-    if (!cachedir.exists())
-        cachedir.createDirectories();
+    try {
+        Poco::File cachedir(Poco::Path(Poco::Path::cacheHome()).append("WAIVE").append("SourceAnalysis"));
+        if (!cachedir.exists()) {
+            cachedir.createDirectories();
+        }
+    } catch (const Poco::Exception& e) {
+        std::cerr << "Error creating cache directories: " << e.displayText() << std::endl;
+        return;
+    }
 
     int frameIndex = 0;
     long frame = 0;
     long length = _ws->fSourceLength;
     Gist<float> gist(128, (int)_ws->getSampleRate());
+    const int frameSize = gist.getAudioFrameSize();
 
     std::lock_guard<std::mutex> lock(_ws->sourceFeaturesMtx);
     _ws->fSourceFeatures.clear();
@@ -100,10 +108,10 @@ void FeatureExtractorTask::runTask()
 
     long lastOnset = -5000;
 
-    while (frame < length - gist.getAudioFrameSize() && !isCancelled())
+    while (frame < length - frameSize && !isCancelled())
     {
         WaveformMeasurements m;
-        gist.processAudioFrame(&_ws->fSourceWaveform.at(frame), gist.getAudioFrameSize());
+        gist.processAudioFrame(&_ws->fSourceWaveform.at(frame), frameSize);
 
         m.frame = frame;
         m.rms = gist.rootMeanSquare();
@@ -149,12 +157,14 @@ WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buff
 
 void WaveformLoaderTask::runTask()
 {
-    // std::cout << "WaveformLoaderTask::runTask()\n";
+    std::cout << "WaveformLoaderTask::runTask()" << std::endl;
     SndfileHandle fileHandle(fp, SFM_READ);
     if (fileHandle.error())
     {
         std::cerr << "Error: Unable to open input file " << fp << "\n  error: " << sf_error_number(fileHandle.error()) << std::endl;
+        return;
     }
+    std::cout << " - fileHandle created" << std::endl;
 
     size_t sampleLength = fileHandle.frames();
 
@@ -166,12 +176,18 @@ void WaveformLoaderTask::runTask()
         return;
     }
 
+    std::cout << " - sampleLength: " << sampleLength << std::endl;
+
     int sampleChannels = fileHandle.channels();
     int fileSampleRate = fileHandle.samplerate();
 
+    std::cout << " - allocating sample buffer..." << std::endl;
     std::vector<float> sample;
     sample.resize(sampleLength * sampleChannels);
+
+    std::cout << " - reading data into sample buffer" << std::endl;
     fileHandle.read(sample.data(), sampleLength * sampleChannels);
+    std::cout << " - done" << std::endl;
 
     std::vector<float> sample_tmp;
     size_t new_size = sampleLength;
@@ -182,10 +198,13 @@ void WaveformLoaderTask::runTask()
     // resample data
     if (fileSampleRate == sampleRate)
     {
+        std::cout << " - fileSampleRate == sampleRate" << std::endl;
         sample_tmp.swap(sample);
     }
     else
     {
+        std::cout << " - fileSampleRate != sampleRate" << std::endl;
+
         double src_ratio = (double)sampleRate / fileSampleRate;
         new_size = (size_t)(sampleLength * src_ratio + 1);
         sample_tmp.reserve(new_size * sampleChannels + sampleChannels);
@@ -257,12 +276,15 @@ void WaveformLoaderTask::runTask()
     if (isCancelled())
         return;
 
+    std::cout << " - resizing target buffer" << std::endl;
+
     std::lock_guard<std::mutex> lock(mutex);
     buffer->resize(new_size);
 
     //  TODO: mix to Mono before sample rate conversion??
     if (sampleChannels > 1)
     {
+        std::cout << " - downmixing to mono";
         for (size_t i = 0; i < new_size; ++i)
         {
             float sum = 0.0f;
@@ -273,24 +295,11 @@ void WaveformLoaderTask::runTask()
     }
     else
     {
+        std::cout << " - copying into target buffer" << std::endl;
         std::copy(sample_tmp.begin(), sample_tmp.begin() + new_size, buffer->begin());
     }
-    // if (sampleChannels > 1)
-    // {
-    //     for (size_t i = 0; i < new_size; ++i)
-    //     {
-    //         float sum = 0.0f;
-    //         for (int ch = 0; ch < sampleChannels; ++ch)
-    //             sum += sample_tmp[i * sampleChannels + ch];
-    //         buffer->at(i) = sum / sampleChannels;
-    //     }
-    // }
-    // else
-    // {
-    //     std::copy(sample_tmp.begin(), sample_tmp.begin() + new_size, buffer->begin());
-    // }
 
-    // std::cout << "Finished loading waveform. new_size: " << new_size << std::endl;
+    std::cout << " - Finished loading waveform. new_size: " << new_size << std::endl;
 }
 
 void SamplePlayer::clear()
@@ -1224,23 +1233,34 @@ void WAIVESampler::sampleRateChanged(double newSampleRate)
 void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    // std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << " isCancelled: " << pTask->isCancelled() << std::endl;
-    if (pTask->name() == "WaveformLoaderTask")
+    if (pTask == nullptr) {
+        std::cerr << "Error: Task is null" << std::endl;
+        return;
+    }
+    std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << " isCancelled: " << pTask->isCancelled() << std::endl;
+
+    const std::string taskName = pTask->name();
+
+
+    if (taskName == "WaveformLoaderTask")
     {
         if (pTask->isCancelled())
         {
             fCurrentSample->source = "";
             fSourcePath = "";
             fSourceLength = 0;
+            pNf->release();
             return;
         }
+
+        std::lock_guard<std::mutex> lock(tempBufferMutex);
 
         fSourceLength = tempBuffer->size();
         fSourceWaveform.resize(fSourceLength);
 
         std::copy(tempBuffer->begin(), tempBuffer->begin() + fSourceLength, fSourceWaveform.begin());
 
-        if (fCurrentSample == nullptr)
+        if (!fCurrentSample)
             newSample();
 
         if (fSourceLength > 0)
@@ -1251,19 +1271,22 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
             selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
 
             taskManager.start(new FeatureExtractorTask(this));
+            pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
         }
         else
         {
-            std::cerr << "Source failed to load\n";
+            std::cerr << "Source failed to load" << std::endl;
             fCurrentSample->source = "";
             fCurrentSample->tagString = "";
             fSourcePath = "";
         }
-        waveformLoaderTask->release();
-        pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
+
+        //waveformLoaderTask->release();
     }
 
-    pTask->release();
+    std::cout << "WAIVESampler::onTaskFinished Done" << std::endl;
+
+    pNf->release();
 }
 
 void WAIVESampler::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)

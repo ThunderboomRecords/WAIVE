@@ -8,7 +8,6 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
       lastPlaying(PlayState::STOPPED),
       callback(nullptr)
 {
-    loadSharedResources();
     contextMenu = new Menu(parent);
     contextMenu->addItem("Clear");
     contextMenu->setCallback(this);
@@ -101,13 +100,13 @@ void SampleSlot::onNanoDisplay()
     if (samplePlayer != nullptr && samplePlayer->active && samplePlayer->sampleInfo != nullptr)
     {
         std::string info = samplePlayer->sampleInfo->name;
-
+        float x = triggerBtn->getWidth() + 10;
         beginPath();
         fontSize(getFontSize());
         fillColor(text_color);
         textAlign(Align::ALIGN_MIDDLE);
         fontFaceId(font);
-        text(26, height / 2, info.c_str(), nullptr);
+        text(x, height / 2, info.c_str(), nullptr);
         closePath();
     }
 }

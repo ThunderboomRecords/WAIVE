@@ -339,6 +339,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, samplePlayerPanel->getFontSize() * 2.f);
     sampleSlotsContainer->setHeight(Layout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - padding);
     samplePlayerPanel->addChildWidget(sampleSlotsContainer);
+    std::cout << sampleSlotsContainer->getWidth() << std::endl;
 
     for (int i = 0; i < 8; i++)
     {
@@ -346,7 +347,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         slot->setSamplePlayer(&plugin->samplePlayers[i]);
         slot->setCallback(this);
         slot->slotId = i;
-        slot->setSize(sampleSlotsContainer->getWidth(), 35);
+        slot->setSize(sampleSlotsContainer->getWidth(), 35, true);
         slot->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
 
         sampleSlotsContainer->addWidget(slot);
@@ -360,15 +361,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     // 5 ----- Sample Map
     sampleBrowserRoot = new SampleBrowserRoot(getApp(), UI_W, UI_H - 40);
     sampleBrowserRoot->setTitle("Browse samples");
-    // sampleBrowserRoot->setCallback(this);
 
     sampleBrowser = new SampleBrowser(*sampleBrowserRoot, &plugin->sd);
     sampleBrowser->setCallback(this);
 
     // 6 ----- Sample Map
-    tagRoot = new SampleBrowserRoot(getApp(), 300, 300);
+    tagRoot = new SampleBrowserRoot(getApp(), 300 * fScaleFactor, 300 * fScaleFactor);
     tagRoot->setTitle("Browse tags");
-    // tagRoot->setCallback(this);
 
     tagBrowser = new TagBrowser(*tagRoot, &plugin->sd);
 
@@ -945,7 +944,7 @@ void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
         progress->resizeToFit();
         progress->setVisible(true);
     }
-    pTask->release();
+    pNf->release();
 }
 
 void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
@@ -979,14 +978,14 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
         databaseProgress->resizeToFit();
         databaseProgress->setVisible(true);
     }
-    pTask->release();
+    pNf->release();
 }
 
 void WAIVESamplerUI::onTaskCancelled(Poco::TaskCancelledNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
     std::cout << "WAIVESamplerUI::onTaskCancelled: " << pTask->name() << std::endl;
-    pTask->release();
+    pNf->release();
 }
 
 void WAIVESamplerUI::onTaskFailed(Poco::TaskFailedNotification *pNf)
@@ -994,34 +993,43 @@ void WAIVESamplerUI::onTaskFailed(Poco::TaskFailedNotification *pNf)
     Poco::Task *pTask = pNf->task();
     std::cerr << "WAIVESamplerUI::onTaskFailed: " << pTask->name() << std::endl;
     std::cerr << "Reason: " << pNf->reason().displayText() << std::endl;
-    pTask->release();
+    pNf->release();
 }
 
 void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    if (pTask->name().compare("ImporterTask") == 0)
+    if(!pTask)
+    {
+        std::cerr << "Error: pTask is null" << std::endl;
+        return;
+    }
+
+    const std::string &taskName = pTask->name();
+    std::cout << "WAIVESamplerUI::onTaskFinished: " << taskName << std::endl;
+
+    if (taskName == "ImporterTask")
         sampleBrowser->loading->setLoading(false);
-    else if (pTask->name().compare("WaveformLoaderTask") == 0)
+    else if (taskName == "WaveformLoaderTask")
     {
         sourceLoading->setLoading(false);
         progress->setVisible(false);
     }
-    else if (pTask->name().compare("FeatureExtractorTask") == 0)
+    else if (taskName == "FeatureExtractorTask")
     {
         sourceLoading->setLoading(false);
         progress->setVisible(false);
     }
-    else if (pTask->name().compare("ParseSourceList") == 0)
+    else if (taskName == "ParseSourceList")
     {
         databaseProgress->hide();
     }
-    else if (pTask->name().compare("ParseTagsList") == 0)
+    else if (taskName == "ParseTagsList")
     {
         databaseProgress->hide();
     }
 
-    pTask->release();
+    pNf->release();
 }
 
 void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
@@ -1111,7 +1119,7 @@ Knob *createWAIVEKnob(
     knob->setValue(value);
     knob->gauge_width = 3.0f;
     knob->setCallback(parent);
-    // knob->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    knob->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     knob->setFontSize(12.f);
 
     return knob;

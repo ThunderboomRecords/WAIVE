@@ -20,7 +20,6 @@ Knob::Knob(Widget *parent) noexcept
       radius(25.0f),
       integer(false)
 {
-    loadSharedResources();
 }
 
 float Knob::getValue() noexcept
@@ -33,9 +32,12 @@ std::string Knob::getFormat() noexcept
     return format;
 }
 
-void Knob::setRadius(float r)
+void Knob::setRadius(float r, bool ignore_sf)
 {
     radius = r;
+    if(!ignore_sf)
+        radius *= scale_factor;
+
     if (label.size() == 0)
         return;
 
@@ -43,7 +45,7 @@ void Knob::setRadius(float r)
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
-    setSize(std::max(2 * radius, bounds.getWidth()), 2 * radius + bounds.getHeight() * 1.5);
+    setSize(std::max(2 * radius, bounds.getWidth()), 2 * radius + bounds.getHeight() * 1.5, true);
 }
 
 void Knob::setValue(float val, bool sendCallback) noexcept
@@ -221,7 +223,7 @@ void Knob::drawLabel()
 
     beginPath();
     fillColor(text_color);
-    // fontFaceId(font);
+    fontFaceId(font);
     textAlign(Align::ALIGN_CENTER | Align::ALIGN_BOTTOM);
     fontSize(getFontSize());
     text(getWidth() / 2.0f, getHeight(), label.c_str(), nullptr);

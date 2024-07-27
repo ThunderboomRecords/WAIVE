@@ -16,8 +16,8 @@ void VBox::addWidget(NanoSubWidget *widget)
     addChildWidget(widget);
     items_.emplace_back(Item(widget));
 
-    const uint box_width = getWidth();
-    const uint ww = widget->getWidth();
+    const float box_width = getWidth();
+    const float ww = widget->getWidth();
     if (ww > box_width)
         setWidth(ww);
 
@@ -65,10 +65,14 @@ void VBox::removeWidget(uint id)
 
 void VBox::positionWidgets()
 {
-    const uint width = getWidth();
-    const uint height = getHeight();
-    const uint box_x = getAbsoluteX();
-    const uint box_y = getAbsoluteY();
+    std::cout << "VBox::positionWidgets()" << std::endl;
+    const float width = getWidth();
+    const float height = getHeight();
+    const float box_x = getAbsoluteX();
+    const float box_y = getAbsoluteY();
+
+    printf("VBox::positionWidgets()\n  width = %.2f height = %.2f  box_x = %.2f box_y = %.2f\n", width, height, box_x, box_y);
+
 
     if (items_.size() == 0)
         return;
@@ -77,13 +81,13 @@ void VBox::positionWidgets()
     {
     case Justify_Content::top:
     {
-        uint step = 0;
+        float step = 0;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             it->y = box_y + step;
             it->widget->setAbsoluteX(box_x);
             it->widget->setAbsoluteY(it->y);
-            const uint wh = it->widget->getHeight();
+            const float wh = it->widget->getHeight();
             step += wh;
             step += padding;
             it->height = wh;
@@ -92,20 +96,20 @@ void VBox::positionWidgets()
     }
     case Justify_Content::bottom:
     {
-        uint combined_widget_height = 0;
+        float combined_widget_height = 0;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             combined_widget_height += it->widget->getHeight();
             combined_widget_height += padding;
         }
         combined_widget_height -= padding;
-        uint startY = box_y + height - combined_widget_height;
+        float startY = box_y + height - combined_widget_height;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             it->widget->setAbsoluteY(startY);
             it->widget->setAbsoluteX(box_x);
             it->y = startY;
-            const uint wh = it->widget->getHeight();
+            const float wh = it->widget->getHeight();
             startY += wh;
             startY += padding;
             it->height = wh;
@@ -115,7 +119,7 @@ void VBox::positionWidgets()
     }
     case Justify_Content::center:
     {
-        uint combined_widget_height = 0;
+        float combined_widget_height = 0;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             combined_widget_height += it->widget->getHeight();
@@ -129,7 +133,7 @@ void VBox::positionWidgets()
             it->widget->setAbsoluteY(startY);
             it->widget->setAbsoluteX(box_x);
             it->y = startY;
-            const uint wh = it->widget->getHeight();
+            const float wh = it->widget->getHeight();
             startY += wh;
             startY += padding;
             it->height = wh;
@@ -138,9 +142,9 @@ void VBox::positionWidgets()
     }
     case Justify_Content::space_evenly:
     {
-        uint number_of_items = items_.size();
-        uint item_height = height / number_of_items;
-        uint step = 0;
+        float number_of_items = items_.size();
+        float item_height = height / number_of_items;
+        float step = 0;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             switch (it->justify_content)
@@ -155,7 +159,7 @@ void VBox::positionWidgets()
             case Justify_Content::space_evenly:
             case Justify_Content::none:
             default:
-                const uint wh = it->widget->getHeight();
+                const float wh = it->widget->getHeight();
                 it->widget->setAbsoluteY(box_y + step + (item_height / 2 - wh / 2));
                 break;
             }
@@ -167,8 +171,8 @@ void VBox::positionWidgets()
     }
     case Justify_Content::space_between:
     {
-        uint number_of_items = items_.size();
-        uint combined_widget_height = 0;
+        float number_of_items = items_.size();
+        float combined_widget_height = 0;
         for (auto it = items_.begin(); it != items_.end(); it++)
         {
             combined_widget_height += it->widget->getHeight();
@@ -193,7 +197,7 @@ void VBox::positionWidgets()
             it->widget->setAbsoluteY(startY);
             it->widget->setAbsoluteX(box_x);
             it->y = startY;
-            const uint wh = it->widget->getHeight();
+            const float wh = it->widget->getHeight();
             startY += wh + space_between;
             it->height = wh;
         }
@@ -254,8 +258,8 @@ void VBox::positionWidgets()
 
     for (auto it = items_.begin(); it != items_.end(); it++)
     {
-        uint item_y = it->y;
-        uint item_h = it->height;
+        float item_y = it->y;
+        float item_h = it->height;
         switch (it->justify_content)
         {
         case Justify_Content::top:

@@ -29,7 +29,7 @@ public:
     float getValue() noexcept;
     std::string getFormat() noexcept;
     void idleCallback() override;
-    void setRadius(float r);
+    void setRadius(float r, bool ignore_sf = false);
 
     float radius;
     float min, max;
