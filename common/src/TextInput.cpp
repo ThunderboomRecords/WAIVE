@@ -14,7 +14,6 @@ TextInput::TextInput(Widget *parent) noexcept
       align(Align::ALIGN_LEFT),
       callback(nullptr)
 {
-    loadSharedResources();
 }
 
 void TextInput::setText(const char *newText, bool sendCallback)

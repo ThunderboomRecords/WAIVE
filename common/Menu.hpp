@@ -20,7 +20,6 @@ public:
 
     explicit Menu(Widget *parent) noexcept;
 
-    void setFont(const char *name, const uchar *data, uint dataSize);
     void setCallback(Callback *cb);
     void addItem(const std::string &item);
     void clear();

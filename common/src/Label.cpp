@@ -8,7 +8,6 @@ Label::Label(Widget *parent, std::string text) noexcept
       label(text),
       callback(nullptr)
 {
-    loadSharedResources();
 }
 
 void Label::setLabel(std::string text)

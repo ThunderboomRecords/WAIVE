@@ -7,14 +7,7 @@ Menu::Menu(Widget *parent) noexcept
       display_number(4),
       has_focus(false)
 {
-    loadSharedResources();
     hide();
-}
-
-void Menu::setFont(const char *name, const uchar *data, uint size)
-{
-    font = createFontFromMemory(name, data, size, false);
-    repaint();
 }
 
 void Menu::clear()
@@ -60,8 +53,11 @@ void Menu::onNanoDisplay()
 
     beginPath();
     fillColor(background_color);
+    strokeColor(foreground_color);
+    strokeWidth(1);
     rect(0, 0, width, height);
     fill();
+    stroke();
     closePath();
 
     if (items.size() == 0)

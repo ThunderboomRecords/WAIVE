@@ -81,7 +81,7 @@ endif()
 
 find_package(fmt REQUIRED)
 
-find_package(Poco REQUIRED COMPONENTS NetSSL Crypto Net Foundation DataSQLite Data)
+# find_package(Poco REQUIRED COMPONENTS NetSSL Crypto Net Foundation DataSQLite Data)
 
 target_include_directories(
   WAIVE_Sampler
@@ -99,7 +99,7 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs
     ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
     ${CMAKE_SOURCE_DIR}/external/cpp-httplib
-    ${Poco_INCLUDE_DIRS}
+    # ${Poco_INCLUDE_DIRS}
 )
 
 target_link_libraries(
@@ -109,7 +109,13 @@ target_link_libraries(
     ${Foundation}
     ${SNDFILE_LIBRARY}
     fmt::fmt
-    ${Poco_LIBRARIES}
+    # ${Poco_LIBRARIES}
+    Poco::Foundation
+    Poco::Data
+    Poco::DataSQLite
+    Poco::NetSSL
+    Poco::Net
+    Poco::Crypto
     samplerate
     Gist
     PRIVATE

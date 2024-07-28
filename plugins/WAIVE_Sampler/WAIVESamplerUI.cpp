@@ -14,7 +14,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     float height = UI_H * fScaleFactor;
     float padding = 4.f;
 
-    logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
+    fontTitle = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
+    fontMain = createFontFromMemory("Poppins-Light", Poppins_Light, Poppins_Light_len, false);
 
     float panelWidths = width - 3.f * padding;
     float panelHeights = height - 3.f * padding;
@@ -189,26 +190,28 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     presetButtons->setVisible(false);
 
-    pitch = createWAIVEKnob(this, kSamplePitch, "pitch", 0.25f, 4.f, 1.0f);
-    volume = createWAIVEKnob(this, kSampleVolume, "volume", 0.0f, 2.0f, 1.0f);
-    percussionBoost = createWAIVEKnob(this, kPercussiveBoost, "perc.", 0.0f, 2.0f, 0.5f);
+    pitch = createWAIVEKnob(kSamplePitch, "pitch", 0.25f, 4.f, 1.0f);
+    volume = createWAIVEKnob(kSampleVolume, "volume", 0.0f, 2.0f, 1.0f);
+    percussionBoost = createWAIVEKnob(kPercussiveBoost, "perc.", 0.0f, 2.0f, 0.5f);
 
-    ampAttack = createWAIVEKnob(this, kAmpAttack, "attack", 0.0f, 500.0f, 10.0f);
+    ampAttack = createWAIVEKnob(kAmpAttack, "attack", 0.0f, 500.0f, 10.0f);
     ampAttack->format = "{:.0f}ms";
-    ampDecay = createWAIVEKnob(this, kAmpDecay, "decay", 0.0f, 500.0f, 50.0f);
+    ampDecay = createWAIVEKnob(kAmpDecay, "decay", 0.0f, 500.0f, 50.0f);
     ampDecay->format = "{:.0f}ms";
-    ampSustain = createWAIVEKnob(this, kAmpSustain, "sustain", 0.0f, 1.0f, 0.7f);
-    ampRelease = createWAIVEKnob(this, kAmpRelease, "release", 0.0f, 500.0f, 100.0f);
+    ampSustain = createWAIVEKnob(kAmpSustain, "sustain", 0.0f, 1.0f, 0.7f);
+    ampRelease = createWAIVEKnob(kAmpRelease, "release", 0.0f, 500.0f, 100.0f);
     ampRelease->format = "{:.0f}ms";
-    sustainLength = createWAIVEKnob(this, kSustainLength, "length", 0.0f, 1000.0f, 100.f);
+    sustainLength = createWAIVEKnob(kSustainLength, "length", 0.0f, 1000.0f, 100.f);
     sustainLength->format = "{:.0f}ms";
 
-    filterCutoff = createWAIVEKnob(this, kFilterCutoff, "cutoff", 0.0, 0.999, 0.999);
-    filterResonance = createWAIVEKnob(this, kFilterResonance, "res.", 0.0, 1.0, 0.0);
+    filterCutoff = createWAIVEKnob(kFilterCutoff, "cutoff", 0.0, 0.999, 0.999);
+    filterResonance = createWAIVEKnob(kFilterResonance, "res.", 0.0, 1.0, 0.0);
 
     filterType = new DropDown(this);
     filterType->setFontSize(16.0f);
     filterType->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    filterType->menu->setFontSize(16.0f);
+    filterType->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     filterType->addItem("LP");
     filterType->addItem("HP");
     filterType->addItem("BP");
@@ -239,7 +242,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     editorKnobs->setVisible(false);
 
-    instructions = new Label(this, "Load a source or inport your own audio to extract samples from.");
+    instructions = new Label(this, "Load a source or import your own audio to extract samples from.");
     instructions->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     instructions->resizeToFit();
     instructions->below(sourceWaveformDisplay, CENTER, Layout::measureVertical(sourceWaveformDisplay, END, sampleEditorPanel, END) / 2.f);
@@ -395,7 +398,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     printf("WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
 
     // should be done by plugin itself?
-    //plugin->sd.checkLatestRemoteVersion();
+    plugin->sd.checkLatestRemoteVersion();
 }
 
 WAIVESamplerUI::~WAIVESamplerUI()
@@ -999,14 +1002,13 @@ void WAIVESamplerUI::onTaskFailed(Poco::TaskFailedNotification *pNf)
 void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    if(!pTask)
+    if (!pTask)
     {
         std::cerr << "Error: pTask is null" << std::endl;
         return;
     }
 
     const std::string &taskName = pTask->name();
-    std::cout << "WAIVESamplerUI::onTaskFinished: " << taskName << std::endl;
 
     if (taskName == "ImporterTask")
         sampleBrowser->loading->setLoading(false);
@@ -1102,25 +1104,26 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     repaint();
 }
 
-Knob *createWAIVEKnob(
-    WAIVESamplerUI *parent,
+Knob *WAIVESamplerUI::createWAIVEKnob(
     Parameters param,
     std::string label,
     float min,
     float max,
     float value)
 {
-    Knob *knob = new Knob(parent);
+    Knob *knob = new Knob(this);
     knob->setId(param);
     knob->label = label;
-    knob->setRadius(16.f);
     knob->min = min;
     knob->max = max;
     knob->setValue(value);
     knob->gauge_width = 3.0f;
-    knob->setCallback(parent);
+    knob->setCallback(this);
+    knob->setFontSize(14.f);
     knob->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    knob->setFontSize(12.f);
+    knob->setRadius(16.f);
+    knob->resizeToFit();
+    knob->renderDebug = true;
 
     return knob;
 }

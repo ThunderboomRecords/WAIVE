@@ -10,7 +10,6 @@ Button::Button(Widget *parent)
       fEnabled(true),
       drawBackground(true)
 {
-    loadSharedResources();
     background_color = WaiveColors::grey2;
 }
 

@@ -4,10 +4,8 @@ START_NAMESPACE_DISTRHO
 
 Checkbox::Checkbox(Widget *parent)
     : WAIVEWidget(parent),
-      checked(true)
-{
-    loadSharedResources();
-};
+      checked(true) {
+      };
 
 void Checkbox::onNanoDisplay()
 {

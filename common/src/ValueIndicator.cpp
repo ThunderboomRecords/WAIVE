@@ -9,7 +9,6 @@ ValueIndicator::ValueIndicator(Widget *parent) noexcept
       fFormat("%.2f"),
       fValue(0.0f)
 {
-    loadSharedResources();
 }
 
 void ValueIndicator::setFormatString(std::string fmt)

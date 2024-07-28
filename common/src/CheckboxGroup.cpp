@@ -6,8 +6,6 @@ CheckboxGroup::CheckboxGroup(
     Widget *widget, float x, float y, float width, float height)
     : WidgetGroup(widget, x, y, width, height)
 {
-    loadSharedResources();
-
     check_all = new Button(widget);
     check_all->setLabel("all");
     check_all->setSize(30, 16);

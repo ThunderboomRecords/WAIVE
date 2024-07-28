@@ -9,8 +9,6 @@ CheckboxList::CheckboxList(Widget *widget)
       padding(5.0f),
       label("")
 {
-    loadSharedResources();
-
     check_all = new Button(widget);
     check_all->setLabel("all");
     check_all->setSize(40, 16);

@@ -15,7 +15,7 @@ Knob::Knob(Widget *parent) noexcept
       sensitive(false),
       callback(nullptr),
       format("{:.2f}"),
-      label("knob"),
+      label(""),
       enabled(true),
       radius(25.0f),
       integer(false)
@@ -35,12 +35,19 @@ std::string Knob::getFormat() noexcept
 void Knob::setRadius(float r, bool ignore_sf)
 {
     radius = r;
-    if(!ignore_sf)
+    if (!ignore_sf)
         radius *= scale_factor;
+}
 
+void Knob::resizeToFit()
+{
     if (label.size() == 0)
+    {
+        setSize(2 * radius, 2 * radius, true);
         return;
+    }
 
+    fontFaceId(font);
     fontSize(getFontSize());
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
@@ -221,6 +228,8 @@ void Knob::drawLabel()
     if (label.size() == 0)
         return;
 
+    std::cout << "Knob::drawLabel() font: " << font << std::endl;
+
     beginPath();
     fillColor(text_color);
     fontFaceId(font);
@@ -229,10 +238,6 @@ void Knob::drawLabel()
     text(getWidth() / 2.0f, getHeight(), label.c_str(), nullptr);
 
     closePath();
-}
-
-void Knob::idleCallback()
-{
 }
 
 void Knob::setCallback(Callback *cb)

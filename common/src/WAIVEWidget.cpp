@@ -71,7 +71,7 @@ void WAIVEWidget::setFontSize(float size)
 
 float WAIVEWidget::getFontSize(bool ignore_sf) const
 {
-    if(ignore_sf)
+    if (ignore_sf)
         return font_size;
 
     return font_size * scale_factor;

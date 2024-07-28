@@ -14,8 +14,8 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     contextMenu->setDisplayNumber(1);
     contextMenu->setSize(100, 30);
     contextMenu->setFont("VG5000", VG5000, VG5000_len);
-    contextMenu->hide();
     contextMenu->calculateHeight();
+    contextMenu->hide();
 
     triggerBtn = new Button(parent);
     triggerBtn->setCallback(this);
@@ -28,6 +28,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
         midiSelect->addItem(fmt::format("{:d}", i).c_str());
     midiSelect->setDisplayNumber(6);
     midiSelect->setFontSize(16.0f);
+    midiSelect->setFont("VG5000", VG5000, VG5000_len);
     midiSelect->setSize(35, 20);
 
     addChildWidget(triggerBtn, {triggerBtn, this, Position::ON_TOP, Widget_Align::START, Widget_Align::CENTER, 5});

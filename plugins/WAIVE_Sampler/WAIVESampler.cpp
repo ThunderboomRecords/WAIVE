@@ -4,7 +4,7 @@ START_NAMESPACE_DISTRHO
 
 uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 
-ImporterTask::ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *queue) : Poco::Task("ImporterTask"), _ws(ws), _queue(queue){};
+ImporterTask::ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *queue) : Poco::Task("ImporterTask"), _ws(ws), _queue(queue) {};
 
 void ImporterTask::runTask()
 {
@@ -83,12 +83,16 @@ void FeatureExtractorTask::runTask()
         return;
 
     // TODO: check and load cached features
-    try {
+    try
+    {
         Poco::File cachedir(Poco::Path(Poco::Path::cacheHome()).append("WAIVE").append("SourceAnalysis"));
-        if (!cachedir.exists()) {
+        if (!cachedir.exists())
+        {
             cachedir.createDirectories();
         }
-    } catch (const Poco::Exception& e) {
+    }
+    catch (const Poco::Exception &e)
+    {
         std::cerr << "Error creating cache directories: " << e.displayText() << std::endl;
         return;
     }
@@ -153,7 +157,7 @@ void FeatureExtractorTask::runTask()
 }
 
 WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex &_mutex, const std::string &_fp, int _sampleRate)
-    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), mutex(_mutex), fp(_fp), sampleRate(_sampleRate){};
+    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), mutex(_mutex), fp(_fp), sampleRate(_sampleRate) {};
 
 void WaveformLoaderTask::runTask()
 {
@@ -1233,14 +1237,14 @@ void WAIVESampler::sampleRateChanged(double newSampleRate)
 void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    if (pTask == nullptr) {
+    if (pTask == nullptr)
+    {
         std::cerr << "Error: Task is null" << std::endl;
         return;
     }
     std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << " isCancelled: " << pTask->isCancelled() << std::endl;
 
     const std::string taskName = pTask->name();
-
 
     if (taskName == "WaveformLoaderTask")
     {
@@ -1281,10 +1285,8 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
             fSourcePath = "";
         }
 
-        //waveformLoaderTask->release();
+        // waveformLoaderTask->release();
     }
-
-    std::cout << "WAIVESampler::onTaskFinished Done" << std::endl;
 
     pNf->release();
 }
