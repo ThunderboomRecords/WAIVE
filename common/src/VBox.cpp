@@ -65,14 +65,12 @@ void VBox::removeWidget(uint id)
 
 void VBox::positionWidgets()
 {
-    std::cout << "VBox::positionWidgets()" << std::endl;
     const float width = getWidth();
     const float height = getHeight();
     const float box_x = getAbsoluteX();
     const float box_y = getAbsoluteY();
 
-    printf("VBox::positionWidgets()\n  width = %.2f height = %.2f  box_x = %.2f box_y = %.2f\n", width, height, box_x, box_y);
-
+    // printf("VBox::positionWidgets()\n  width = %.2f height = %.2f  box_x = %.2f box_y = %.2f\n", width, height, box_x, box_y);
 
     if (items_.size() == 0)
         return;

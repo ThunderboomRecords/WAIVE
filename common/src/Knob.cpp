@@ -228,8 +228,6 @@ void Knob::drawLabel()
     if (label.size() == 0)
         return;
 
-    std::cout << "Knob::drawLabel() font: " << font << std::endl;
-
     beginPath();
     fillColor(text_color);
     fontFaceId(font);

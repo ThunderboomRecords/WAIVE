@@ -342,7 +342,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, samplePlayerPanel->getFontSize() * 2.f);
     sampleSlotsContainer->setHeight(Layout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - padding);
     samplePlayerPanel->addChildWidget(sampleSlotsContainer);
-    std::cout << sampleSlotsContainer->getWidth() << std::endl;
 
     for (int i = 0; i < 8; i++)
     {
@@ -524,7 +523,6 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->newSample();
     else if (button == makeKick)
     {
-        std::cout << "Make kick...\n";
         // 0. Check if a source is loaded
         if (!plugin->fSourceLoaded)
             return;
@@ -554,7 +552,6 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
     else if (button == makeSnare)
     {
-        std::cout << "Make snare...\n";
         // 0. Check if a source is loaded
         if (!plugin->fSourceLoaded)
             return;
@@ -570,7 +567,6 @@ void WAIVESamplerUI::buttonClicked(Button *button)
             }
         }
 
-        std::cout << "options: " << starts.size() << std::endl;
         if (starts.size() == 0)
         {
             return;
@@ -587,7 +583,6 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
     else if (button == makeHihat)
     {
-        std::cout << "Make hihat...\n";
         // 0. Check if a source is loaded
         if (!plugin->fSourceLoaded)
             return;
@@ -603,7 +598,6 @@ void WAIVESamplerUI::buttonClicked(Button *button)
             }
         }
 
-        std::cout << "options: " << starts.size() << std::endl;
         if (starts.size() == 0)
         {
             return;
@@ -620,7 +614,6 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
     else if (button == makeClap)
     {
-        std::cout << "Make clap...\n";
         // 0. Check if a source is loaded
         if (!plugin->fSourceLoaded)
             return;
@@ -636,7 +629,6 @@ void WAIVESamplerUI::buttonClicked(Button *button)
             }
         }
 
-        std::cout << "options: " << starts.size() << std::endl;
         if (starts.size() == 0)
         {
             return;
@@ -702,8 +694,6 @@ void WAIVESamplerUI::beginOpenFileBrowser(const std::string &state, bool multipl
                 std::cout << filename << std::endl;
                 setState(state.c_str(), filename);
             }
-            else
-                std::cout << "No file selected" << std::endl;
         });
 
     std::unique_lock<std::mutex> lock(fileBrowserOpenMtx);
@@ -914,7 +904,6 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
 
         break;
     case WAIVESampler::kSlotLoaded:
-        std::cout << "onPluginUpdated: kSlotLoaded\n";
         for (int i = 0; i < sampleSlots.size(); i++)
         {
             sampleSlots[i]->repaint();
@@ -987,7 +976,7 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
 void WAIVESamplerUI::onTaskCancelled(Poco::TaskCancelledNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    std::cout << "WAIVESamplerUI::onTaskCancelled: " << pTask->name() << std::endl;
+    // std::cout << "WAIVESamplerUI::onTaskCancelled: " << pTask->name() << std::endl;
     pNf->release();
 }
 
@@ -1123,7 +1112,6 @@ Knob *WAIVESamplerUI::createWAIVEKnob(
     knob->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     knob->setRadius(16.f);
     knob->resizeToFit();
-    knob->renderDebug = true;
 
     return knob;
 }

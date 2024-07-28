@@ -4,7 +4,7 @@ set(CXX_STANDARD_REQUIRED ON)
 set(POSITION_INDEPENDENT_CODE ON)
 
 project(
-    WAIVE_Plugins VERSION 0.13.0
+    WAIVE_Plugins VERSION 0.13.3
 )
 
 configure_file(version_config.h.in ${CMAKE_BINARY_DIR}/generated/version_config.h)
@@ -22,8 +22,8 @@ set(BUILD_SHARED_LIBS OFF)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_compile_options(-DUSE_KISS_FFT)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
-set(LIBSAMPLERATE_EXAMPLES OFF BOOL "Build libsamplerate examples")
-set(BUILD_TESTING OFF BOOL "Enable libsamplerate tests")
+set(LIBSAMPLERATE_EXAMPLES OFF CACHE BOOL "Build libsamplerate examples")
+set(BUILD_TESTING OFF CACHE BOOL "Enable libsamplerate tests")
 message(STATUS "BUILD_TESTING: ${BUILD_TESTING}")
 
 

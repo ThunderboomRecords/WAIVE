@@ -4,7 +4,7 @@ START_NAMESPACE_DISTRHO
 
 uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 
-ImporterTask::ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *queue) : Poco::Task("ImporterTask"), _ws(ws), _queue(queue) {};
+ImporterTask::ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *queue) : Poco::Task("ImporterTask"), _ws(ws), _queue(queue){};
 
 void ImporterTask::runTask()
 {
@@ -157,18 +157,16 @@ void FeatureExtractorTask::runTask()
 }
 
 WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex &_mutex, const std::string &_fp, int _sampleRate)
-    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), mutex(_mutex), fp(_fp), sampleRate(_sampleRate) {};
+    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), mutex(_mutex), fp(_fp), sampleRate(_sampleRate){};
 
 void WaveformLoaderTask::runTask()
 {
-    std::cout << "WaveformLoaderTask::runTask()" << std::endl;
     SndfileHandle fileHandle(fp, SFM_READ);
     if (fileHandle.error())
     {
         std::cerr << "Error: Unable to open input file " << fp << "\n  error: " << sf_error_number(fileHandle.error()) << std::endl;
         return;
     }
-    std::cout << " - fileHandle created" << std::endl;
 
     size_t sampleLength = fileHandle.frames();
 
@@ -180,18 +178,13 @@ void WaveformLoaderTask::runTask()
         return;
     }
 
-    std::cout << " - sampleLength: " << sampleLength << std::endl;
-
     int sampleChannels = fileHandle.channels();
     int fileSampleRate = fileHandle.samplerate();
 
-    std::cout << " - allocating sample buffer..." << std::endl;
     std::vector<float> sample;
     sample.resize(sampleLength * sampleChannels);
 
-    std::cout << " - reading data into sample buffer" << std::endl;
     fileHandle.read(sample.data(), sampleLength * sampleChannels);
-    std::cout << " - done" << std::endl;
 
     std::vector<float> sample_tmp;
     size_t new_size = sampleLength;
@@ -202,13 +195,10 @@ void WaveformLoaderTask::runTask()
     // resample data
     if (fileSampleRate == sampleRate)
     {
-        std::cout << " - fileSampleRate == sampleRate" << std::endl;
         sample_tmp.swap(sample);
     }
     else
     {
-        std::cout << " - fileSampleRate != sampleRate" << std::endl;
-
         double src_ratio = (double)sampleRate / fileSampleRate;
         new_size = (size_t)(sampleLength * src_ratio + 1);
         sample_tmp.reserve(new_size * sampleChannels + sampleChannels);
@@ -274,13 +264,10 @@ void WaveformLoaderTask::runTask()
 
             inputPos += currentChunkSize * sampleChannels;
         }
-        std::cout << "DONE" << std::endl;
     }
 
     if (isCancelled())
         return;
-
-    std::cout << " - resizing target buffer" << std::endl;
 
     std::lock_guard<std::mutex> lock(mutex);
     buffer->resize(new_size);
@@ -288,7 +275,6 @@ void WaveformLoaderTask::runTask()
     //  TODO: mix to Mono before sample rate conversion??
     if (sampleChannels > 1)
     {
-        std::cout << " - downmixing to mono";
         for (size_t i = 0; i < new_size; ++i)
         {
             float sum = 0.0f;
@@ -299,11 +285,8 @@ void WaveformLoaderTask::runTask()
     }
     else
     {
-        std::cout << " - copying into target buffer" << std::endl;
         std::copy(sample_tmp.begin(), sample_tmp.begin() + new_size, buffer->begin());
     }
-
-    std::cout << " - Finished loading waveform. new_size: " << new_size << std::endl;
 }
 
 void SamplePlayer::clear()

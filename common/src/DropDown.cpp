@@ -3,7 +3,8 @@
 DropDown::DropDown(Widget *parent) noexcept
     : WAIVEWidget(parent),
       selected_item(0),
-      callback(nullptr)
+      callback(nullptr),
+      hover(false)
 {
     menu = new Menu(parent);
     menu->setCallback(this);
