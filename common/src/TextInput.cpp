@@ -14,7 +14,6 @@ TextInput::TextInput(Widget *parent) noexcept
       align(Align::ALIGN_LEFT),
       callback(nullptr)
 {
-    loadSharedResources();
 }
 
 void TextInput::setText(const char *newText, bool sendCallback)
@@ -64,6 +63,7 @@ void TextInput::onNanoDisplay()
         fillColor(foreground_color);
         textAlign(ALIGN_MIDDLE | align);
         fontFaceId(font);
+        fontSize(getFontSize());
         if (align == Align::ALIGN_CENTER)
             text(width / 2, height / 2, placeholder.c_str(), nullptr);
         else if (align == Align::ALIGN_LEFT)
@@ -82,6 +82,7 @@ void TextInput::onNanoDisplay()
         fillColor(text_color);
         textAlign(ALIGN_MIDDLE | align);
         fontFaceId(font);
+        fontSize(getFontSize());
         if (align == Align::ALIGN_CENTER)
             textBounds(width / 2, height / 2, textValue.c_str(), nullptr, bounds);
         else if (align == Align::ALIGN_LEFT)
@@ -130,35 +131,16 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
     if (!hasKeyFocus || !isVisible())
         return false;
 
+    std::cout << "TextInput::onCharacterInput: ev.keycode = " << ev.keycode << std::endl;
+
     switch (ev.keycode)
     {
     case 36:
-        // enter
-        if (callback != nullptr && textValue.compare(lastTextValue) != 0)
-            callback->textEntered(this, textValue);
-
-        hasKeyFocus = false;
-        break;
-    case 22:
-        // backspace
-        if (position > 0)
-        {
-            textValue.erase(textValue.begin() + position - 1, textValue.begin() + position);
-            position = position - 1;
-        }
         break;
     case 65:
         // space
         textValue.insert(textValue.begin() + position, ev.string[0]);
         position += 1;
-        break;
-    case 119:
-        // delete key
-        if (position < textValue.size())
-            textValue.erase(textValue.begin() + position, textValue.begin() + position + 1);
-        break;
-    case 23:
-        // tab key
         break;
     default:
         // other characters
@@ -200,6 +182,23 @@ bool TextInput::onKeyboard(const KeyboardEvent &ev)
         textValue.assign(lastTextValue);
         if (callback != nullptr)
             callback->textInputChanged(this, textValue);
+        break;
+    case kKeyBackspace:
+        if (position > 0)
+        {
+            textValue.erase(textValue.begin() + position - 1, textValue.begin() + position);
+            position = position - 1;
+        }
+        break;
+    case kKeyDelete:
+        if (position < textValue.size())
+            textValue.erase(textValue.begin() + position, textValue.begin() + position + 1);
+        break;
+    case kKeyEnter:
+        if (callback != nullptr && textValue.compare(lastTextValue) != 0)
+            callback->textEntered(this, textValue);
+
+        hasKeyFocus = false;
         break;
     default:
         return false;

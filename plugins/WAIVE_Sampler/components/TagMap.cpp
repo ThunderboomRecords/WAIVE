@@ -258,7 +258,7 @@ void TagMap::onNanoDisplay()
     if (highlighted != nullptr && highlighted->name.size() != 0)
     {
         Rectangle<float> bounds;
-        fontSize(font_size);
+        fontSize(getFontSize());
         fontFaceId(font);
         textBounds(0, 0, highlighted->name.c_str(), nullptr, bounds);
 

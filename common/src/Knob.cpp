@@ -15,12 +15,11 @@ Knob::Knob(Widget *parent) noexcept
       sensitive(false),
       callback(nullptr),
       format("{:.2f}"),
-      label("knob"),
+      label(""),
       enabled(true),
       radius(25.0f),
       integer(false)
 {
-    loadSharedResources();
 }
 
 float Knob::getValue() noexcept
@@ -33,17 +32,27 @@ std::string Knob::getFormat() noexcept
     return format;
 }
 
-void Knob::setRadius(float r)
+void Knob::setRadius(float r, bool ignore_sf)
 {
     radius = r;
-    if (label.size() == 0)
-        return;
+    if (!ignore_sf)
+        radius *= scale_factor;
+}
 
-    fontSize(font_size);
+void Knob::resizeToFit()
+{
+    if (label.size() == 0)
+    {
+        setSize(2 * radius, 2 * radius, true);
+        return;
+    }
+
+    fontFaceId(font);
+    fontSize(getFontSize());
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
-    setSize(std::max(2 * radius, bounds.getWidth()), 2 * radius + bounds.getHeight() * 1.5);
+    setSize(std::max(2 * radius, bounds.getWidth()), 2 * radius + bounds.getHeight() * 1.5, true);
 }
 
 void Knob::setValue(float val, bool sendCallback) noexcept
@@ -221,16 +230,12 @@ void Knob::drawLabel()
 
     beginPath();
     fillColor(text_color);
-    // fontFaceId(font);
+    fontFaceId(font);
     textAlign(Align::ALIGN_CENTER | Align::ALIGN_BOTTOM);
-    fontSize(font_size);
+    fontSize(getFontSize());
     text(getWidth() / 2.0f, getHeight(), label.c_str(), nullptr);
 
     closePath();
-}
-
-void Knob::idleCallback()
-{
 }
 
 void Knob::setCallback(Callback *cb)

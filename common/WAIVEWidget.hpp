@@ -35,19 +35,25 @@ public:
     void setSize(const Size<uint> &size, bool ignore_sf = false);
 
     // Drawing
-    void fontSize(float size);
     void setFont(const char *name, const uchar *data, uint size);
+
+    // Properties
+    void setFontSize(float size);
+    float getFontSize(bool ignore_sf = false) const;
 
     // Color values
     Color background_color, foreground_color, highlight_color, accent_color;
     Color text_color;
-    float font_size;
     FontId font;
 
     bool renderDebug;
 
 protected:
     float scale_factor;
+
+private:
+    float font_size;
+    
 };
 
 END_NAMESPACE_DISTRHO

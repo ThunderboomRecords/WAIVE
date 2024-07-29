@@ -42,7 +42,7 @@ protected:
     bool onMotion(const MotionEvent &) override;
     bool onScroll(const ScrollEvent &) override;
     void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
-    void buttonClicked(Button *btn);
+    void buttonClicked(Button *btn) override;
 
 private:
     enum DragAction

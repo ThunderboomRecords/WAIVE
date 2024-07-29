@@ -9,8 +9,6 @@ CheckboxList::CheckboxList(Widget *widget)
       padding(5.0f),
       label("")
 {
-    loadSharedResources();
-
     check_all = new Button(widget);
     check_all->setLabel("all");
     check_all->setSize(40, 16);
@@ -68,7 +66,7 @@ void CheckboxList::onNanoDisplay()
     const float height = getHeight();
 
     float colWidth = (width - 2 * padding - (columns - 1) * margin) / columns;
-    float rowHeight = 1.5f * font_size;
+    float rowHeight = 1.5f * getFontSize();
 
     beginPath();
     fillColor(background_color);
@@ -102,7 +100,7 @@ void CheckboxList::onNanoDisplay()
 
 void CheckboxList::drawCheckbox(CheckboxData *data, float x, float y, float width, float height)
 {
-    float r = font_size / 2.0f;
+    float r = getFontSize() / 2.0f;
 
     data->rect.setRectangle({x, y}, {width, height});
 
@@ -123,7 +121,7 @@ void CheckboxList::drawCheckbox(CheckboxData *data, float x, float y, float widt
     // label:
     beginPath();
     fillColor(text_color);
-    fontSize(font_size);
+    fontSize(getFontSize());
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
     text(2 * r + 4.0f, height / 2.0f, data->data.c_str(), nullptr);
     closePath();

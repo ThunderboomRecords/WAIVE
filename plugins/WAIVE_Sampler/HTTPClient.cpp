@@ -25,15 +25,10 @@ void HTTPRequestTask::runTask()
             _path = '/' + _path;
 
         Poco::URI uri(_host + _path);
-        // std::cout << uri.toString() << std::endl;
 
         std::string path(uri.getPathAndQuery());
         if (path.empty())
             path = "/";
-
-        // std::cout << "- URI:\n";
-        // std::cout << uri.toString() << std::endl;
-        // std::cout << uri.getHost() << " " << uri.getPort() << " " << path << std::endl;
 
         Poco::Net::HTTPSClientSession session(uri.getHost(), uri.getPort());
         session.setTimeout(Poco::Timespan(10, 0));
@@ -43,8 +38,6 @@ void HTTPRequestTask::runTask()
 
         Poco::Net::HTTPResponse response;
         std::istream &resStream = session.receiveResponse(response);
-
-        // std::cout << "HTTPRequestTask " << _host << _path << " " << response.getStatus() << ": " << response.getReason() << std::endl;
 
         std::stringstream responseString;
         Poco::StreamCopier::copyStream(resStream, responseString);

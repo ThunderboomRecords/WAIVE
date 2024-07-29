@@ -27,8 +27,8 @@ public:
     void addChildWidget(NanoSubWidget *widget);
     void addChildWidget(NanoSubWidget *widget, WidgetPosition position);
     void setVisible(bool visible);
-    void toFront();
-    void toBottom();
+    void toFront() override;
+    void toBottom() override;
 
     void computeSize();
     void repositionWidgets();

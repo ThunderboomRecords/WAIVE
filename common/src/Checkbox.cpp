@@ -4,10 +4,8 @@ START_NAMESPACE_DISTRHO
 
 Checkbox::Checkbox(Widget *parent)
     : WAIVEWidget(parent),
-      checked(true)
-{
-    loadSharedResources();
-};
+      checked(true) {
+      };
 
 void Checkbox::onNanoDisplay()
 {
@@ -38,7 +36,7 @@ void Checkbox::onNanoDisplay()
     // label:
     beginPath();
     fillColor(text_color);
-    fontSize(font_size);
+    fontSize(getFontSize());
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
     text(2 * r + 4.0f, height / 2.0f, label.c_str(), nullptr);
     closePath();
@@ -102,11 +100,11 @@ void Checkbox::setCallback(Callback *cb)
 
 void Checkbox::resize()
 {
-    float height = font_size * 1.5f;
+    float height = getFontSize() * 1.5f;
     float r = height / 2.0f - 1.0f;
 
     Rectangle<float> bounds;
-    fontSize(font_size);
+    fontSize(getFontSize());
     textBounds(0, 0, label.c_str(), nullptr, bounds);
     printf("%.2f %.2f\n", bounds.getWidth(), bounds.getHeight());
 

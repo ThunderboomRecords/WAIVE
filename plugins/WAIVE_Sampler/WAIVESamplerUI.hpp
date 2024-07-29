@@ -60,14 +60,6 @@ const unsigned int UI_H = 582;
 
 class WAIVESamplerUI;
 
-Knob *createWAIVEKnob(
-    WAIVESamplerUI *parent,
-    Parameters param,
-    std::string label,
-    float min,
-    float max,
-    float value);
-
 class WAIVESamplerUI : public UI,
                        public Button::Callback,
                        public Waveform::Callback,
@@ -121,14 +113,21 @@ protected:
 private:
     void beginOpenFileBrowser(const std::string &state, bool multiple);
 
+    Knob *createWAIVEKnob(
+        Parameters param,
+        std::string label,
+        float min,
+        float max,
+        float value);
+
     float fScale;
     double fScaleFactor;
+
+    FontId fontTitle, fontMain;
 
     WAIVESampler *plugin;
 
     Poco::Random random;
-
-    FontId logo_font;
 
     std::thread open_dialog;
     std::atomic<bool> filebrowserOpen;

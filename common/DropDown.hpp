@@ -25,6 +25,8 @@ public:
     void setDisplayNumber(int number);
     void setItem(int item, bool sendCallback);
 
+    Menu *menu;
+
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &ev) override;
@@ -34,7 +36,6 @@ protected:
 private:
     Callback *callback;
 
-    Menu *menu;
     std::string currentItem;
     // std::vector<std::string> items;
     int selected_item, display_number;

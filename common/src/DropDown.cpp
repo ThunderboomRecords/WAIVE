@@ -3,9 +3,9 @@
 DropDown::DropDown(Widget *parent) noexcept
     : WAIVEWidget(parent),
       selected_item(0),
-      callback(nullptr)
+      callback(nullptr),
+      hover(false)
 {
-    loadSharedResources();
     menu = new Menu(parent);
     menu->setCallback(this);
 }
@@ -38,12 +38,22 @@ void DropDown::onNanoDisplay()
         closePath();
     }
 
+    if (hover)
+    {
+        beginPath();
+        strokeColor(highlight_color);
+        strokeWidth(2.0f);
+        rect(0, 0, width, height);
+        stroke();
+        closePath();
+    }
+
     if (currentItem.size() > 0)
     {
         beginPath();
         fillColor(text_color);
         fontFaceId(font);
-        fontSize(font_size);
+        fontSize(getFontSize());
         textAlign(Align::ALIGN_MIDDLE);
         text(2, height / 2, currentItem.c_str(), nullptr);
         closePath();
@@ -75,6 +85,7 @@ bool DropDown::onMotion(const MotionEvent &ev)
         {
             getWindow().setCursor(kMouseCursorHand);
             hover = true;
+            repaint();
         }
         return false;
     }
@@ -84,6 +95,7 @@ bool DropDown::onMotion(const MotionEvent &ev)
         {
             getWindow().setCursor(kMouseCursorArrow);
             hover = false;
+            repaint();
         }
         return false;
     }

@@ -5,7 +5,7 @@ START_NAMESPACE_DISTRHO
 Panel::Panel(Widget *widget)
     : WidgetGroup(widget), padding(10.f), radius(10.f)
 {
-    font_size = 18.f;
+    // font_size = 18.f;
 }
 
 void Panel::onNanoDisplay()
@@ -24,7 +24,7 @@ void Panel::onNanoDisplay()
         beginPath();
         fillColor(text_color);
         fontFaceId(font);
-        fontSize(font_size);
+        fontSize(getFontSize());
         textAlign(ALIGN_TOP | ALIGN_LEFT);
         text(padding, padding, label.c_str(), nullptr);
         closePath();
@@ -35,7 +35,7 @@ void Panel::onNanoDisplay()
         beginPath();
         fillColor(text_color);
         fontFaceId(font);
-        fontSize(font_size);
+        fontSize(getFontSize());
         textAlign(ALIGN_TOP | ALIGN_CENTER);
         text(width * 0.5f, padding, title.c_str(), nullptr);
         closePath();

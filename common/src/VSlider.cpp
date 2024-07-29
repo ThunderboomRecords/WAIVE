@@ -4,12 +4,9 @@ START_NAMESPACE_DISTRHO
 
 using DGL_NAMESPACE::Color;
 
-
 VSlider::VSlider(Widget *parent) noexcept
     : Slider(parent)
 {
-    loadSharedResources();
-
     dragging_ = false;
     value_ = 0.0f;
     min = 0.0f;
@@ -26,11 +23,12 @@ float VSlider::getValue() noexcept
 
 void VSlider::setValue(float val, bool sendCallback) noexcept
 {
-    if(val == value_) return;
+    if (val == value_)
+        return;
 
     value_ = std::max(min, std::min(max, val));
 
-    if(sendCallback && callback != nullptr)
+    if (sendCallback && callback != nullptr)
     {
         callback->sliderValueChanged(this, value_);
     }
@@ -38,21 +36,23 @@ void VSlider::setValue(float val, bool sendCallback) noexcept
 
 bool VSlider::onMouse(const MouseEvent &ev)
 {
-    if(!isVisible() || ev.button != 1) return false;
+    if (!isVisible() || ev.button != 1)
+        return false;
 
-    if(ev.press)
+    if (ev.press)
     {
-        if(!contains(ev.pos)) return false;
+        if (!contains(ev.pos))
+            return false;
 
         dragging_ = true;
 
-        if(callback != nullptr)
+        if (callback != nullptr)
         {
             callback->sliderDragStarted(this);
         }
         repaint();
-    } 
-    else if(dragging_)
+    }
+    else if (dragging_)
     {
         dragging_ = false;
         callback->sliderDragFinished(this, value_);
@@ -63,16 +63,21 @@ bool VSlider::onMouse(const MouseEvent &ev)
 
 bool VSlider::onMotion(const MotionEvent &ev)
 {
-    if(!isVisible()) return false;
-    
-    if(!dragging_) return false;
+    if (!isVisible())
+        return false;
+
+    if (!dragging_)
+        return false;
 
     Window &window = getWindow();
-    if(contains(ev.pos)){
+    if (contains(ev.pos))
+    {
         window.setCursor(kMouseCursorHand);
-    } else {
+    }
+    else
+    {
         window.setCursor(kMouseCursorArrow);
-        return false; 
+        return false;
     }
 
     const float height = getHeight();
@@ -99,9 +104,9 @@ void VSlider::onNanoDisplay()
     const float height = getHeight();
 
     float normValue = (value_ - min) / (max - min);
-    if(normValue < 0.0f) normValue = 0.0f;
+    if (normValue < 0.0f)
+        normValue = 0.0f;
 
-    
     beginPath();
     fillColor(background_color);
     strokeColor(foreground_color);
@@ -112,14 +117,14 @@ void VSlider::onNanoDisplay()
 
     beginPath();
     strokeColor(foreground_color);
-    moveTo(width/2.0f, height);
-    lineTo(width/2.0f, (1.0f - normValue)*height);
+    moveTo(width / 2.0f, height);
+    lineTo(width / 2.0f, (1.0f - normValue) * height);
     stroke();
     closePath();
 
     beginPath();
     fillColor(marker_color);
-    circle(width/2.0f, (1.0f - normValue)*height, 5);
+    circle(width / 2.0f, (1.0f - normValue) * height, 5);
     fill();
     closePath();
 }

@@ -177,7 +177,7 @@ public:
         case SOURCE_PREVIEW_READY:
             return "SOURCE_PREVIEW_READY";
         default:
-            return "Unknown: " + v;
+            return "<UNKNOWN ENUM>  " + std::to_string(v);
         }
     }
 

@@ -9,8 +9,7 @@
 
 START_NAMESPACE_DISTRHO
 
-class Knob : public WAIVEWidget,
-             public IdleCallback
+class Knob : public WAIVEWidget
 {
 public:
     class Callback
@@ -28,8 +27,8 @@ public:
     void setValue(float val, bool sendCallback = false) noexcept;
     float getValue() noexcept;
     std::string getFormat() noexcept;
-    void idleCallback() override;
-    void setRadius(float r);
+    void setRadius(float r, bool ignore_sf = false);
+    void resizeToFit();
 
     float radius;
     float min, max;
@@ -39,7 +38,6 @@ public:
     bool enabled;
     bool integer;
 
-    FontId font;
     std::string label;
 
 protected:

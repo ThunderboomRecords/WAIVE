@@ -33,15 +33,15 @@ void Spinner::onNanoDisplay()
     if (!loading)
         return;
 
-    const float width = getWidth() * scale_factor;
-    const float height = getHeight() * scale_factor;
+    const float width = getWidth();
+    const float height = getHeight();
 
     const float center_x = width / 2.0f;
     const float center_y = height / 2.0f;
     const float radius = std::min(center_x, center_y);
 
     beginPath();
-    strokeWidth(4);
+    strokeWidth(4 * scale_factor);
     strokeColor(foreground_color);
     arc(center_x, center_y, radius - 2, angle * M_PI, (angle + 1.5f) * M_PI, NanoVG::CW);
     stroke();

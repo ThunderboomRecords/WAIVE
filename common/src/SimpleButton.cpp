@@ -10,7 +10,6 @@ Button::Button(Widget *parent)
       fEnabled(true),
       drawBackground(true)
 {
-    loadSharedResources();
     background_color = WaiveColors::grey2;
 }
 
@@ -25,7 +24,7 @@ void Button::resizeToFit()
     if (label.length() == 0)
         return;
 
-    fontSize(font_size);
+    fontSize(getFontSize());
     fontFaceId(font);
 
     Rectangle<float> bounds;
@@ -68,7 +67,7 @@ void Button::onNanoDisplay()
 
     // Label
     beginPath();
-    fontSize(font_size);
+    fontSize(getFontSize());
     fontFaceId(font);
     fillColor(text_color);
     textAlign(ALIGN_CENTER | ALIGN_MIDDLE);

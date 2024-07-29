@@ -4,12 +4,9 @@ START_NAMESPACE_DISTRHO
 
 using DGL_NAMESPACE::Color;
 
-
 XYSlider::XYSlider(Widget *parent) noexcept
     : NanoSubWidget(parent)
 {
-    loadSharedResources();
-
     dragging_ = false;
     value_x_ = 0.0f;
     value_y_ = 0.0f;
@@ -33,7 +30,7 @@ void XYSlider::setXValue(float x, bool sendCallback) noexcept
 {
     value_x_ = x;
 
-    if(sendCallback && callback != nullptr)
+    if (sendCallback && callback != nullptr)
     {
         callback->xyValueChanged(this, value_x_, value_y_);
     }
@@ -43,7 +40,7 @@ void XYSlider::setYValue(float y, bool sendCallback) noexcept
 {
     value_y_ = y;
 
-    if(sendCallback && callback != nullptr)
+    if (sendCallback && callback != nullptr)
     {
         callback->xyValueChanged(this, value_x_, value_y_);
     }
@@ -51,15 +48,17 @@ void XYSlider::setYValue(float y, bool sendCallback) noexcept
 
 bool XYSlider::onMouse(const MouseEvent &ev)
 {
-    if(!isVisible() || ev.button != 1) return false;
+    if (!isVisible() || ev.button != 1)
+        return false;
 
-    if(ev.press)
+    if (ev.press)
     {
-        if(!contains(ev.pos)) return false;
+        if (!contains(ev.pos))
+            return false;
 
         dragging_ = true;
 
-        if(callback != nullptr)
+        if (callback != nullptr)
         {
             callback->xyDragStarted(this);
         }
@@ -67,7 +66,7 @@ bool XYSlider::onMouse(const MouseEvent &ev)
         updateXY(ev.pos);
         return false;
     }
-    else if(dragging_)
+    else if (dragging_)
     {
         dragging_ = false;
     }
@@ -77,13 +76,15 @@ bool XYSlider::onMouse(const MouseEvent &ev)
 
 bool XYSlider::onMotion(const MotionEvent &ev)
 {
-    if(!isVisible()) return false;
+    if (!isVisible())
+        return false;
 
-    if(!dragging_) return false;
+    if (!dragging_)
+        return false;
 
     updateXY(ev.pos);
     repaint();
-    
+
     return false;
 }
 
@@ -125,21 +126,21 @@ void XYSlider::onNanoDisplay()
 
     beginPath();
     fillColor(marker_color);
-    circle(x_*width, y_*height, 5);
+    circle(x_ * width, y_ * height, 5);
     fill();
     closePath();
 
     beginPath();
     strokeColor(fg_color);
-    moveTo(0, y_*height);
-    lineTo(width, y_*height);
+    moveTo(0, y_ * height);
+    lineTo(width, y_ * height);
     stroke();
     closePath();
 
     beginPath();
     strokeColor(fg_color);
-    moveTo(x_*width, 0);
-    lineTo(x_*width, height);
+    moveTo(x_ * width, 0);
+    lineTo(x_ * width, height);
     stroke();
     closePath();
 }
@@ -148,6 +149,5 @@ void XYSlider::setCallback(Callback *cb)
 {
     callback = cb;
 }
-
 
 END_NAMESPACE_DISTRHO

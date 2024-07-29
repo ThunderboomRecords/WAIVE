@@ -77,7 +77,7 @@ void SampleInfo::print() const
 
     printf("================\n");
     printf("SampleInfo: %d (waive: %d)\n", id, waive);
-    printf(" - source: %s\n - sourceStart: %d\n - sampleLength: \n", source.c_str(), sourceStart, sampleLength);
+    printf(" - source: %s\n - sourceStart: %ld\n - sampleLength: %ld\n", source.c_str(), sourceStart, sampleLength);
     printf(" - embedding: %.3f %.3f\n", embedX, embedY);
     printf(" - Parameters:\n   volume: %.3f  percussiveBoost: %.3f  pitch: %.3f\n", volume, percussiveBoost, pitch);
     printf(" - ADSR:\n    A: %.3fms  D: %.3fms  S:  %.3f (length %.1fms) R: %.3fms\n", adsr.attack, adsr.decay, adsr.sustain, sustainLength, adsr.release);
@@ -152,21 +152,35 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     Poco::Data::SQLite::Connector::registerConnector();
     session = new Poco::Data::Session("SQLite", db.path());
 
-    *session << "CREATE TABLE IF NOT EXISTS Samples ("
-                "id INTEGER PRIMARY KEY, "
-                "name TEXT, "
-                "path TEXT, "
-                "source TEXT, "
-                "parameters TEXT)",
-        Poco::Data::Keywords::now;
+    try
+    {
+        *session << "CREATE TABLE IF NOT EXISTS Samples ("
+                    "id INTEGER PRIMARY KEY, "
+                    "name TEXT, "
+                    "path TEXT, "
+                    "source TEXT, "
+                    "parameters TEXT)",
+            Poco::Data::Keywords::now;
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Error initialising Samples table: " << e.what() << std::endl;
+    }
 
-    *session << "CREATE TABLE IF NOT EXISTS SamplesTags ("
-                "sample_id INT, "
-                "tag_id INT, "
-                "FOREIGN KEY (sample_id) REFERENCES Samples(id), "
-                "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
-                "PRIMARY KEY (sample_id, tag_id))",
-        Poco::Data::Keywords::now;
+    try
+    {
+        *session << "CREATE TABLE IF NOT EXISTS SamplesTags ("
+                    "sample_id INT, "
+                    "tag_id INT, "
+                    "FOREIGN KEY (sample_id) REFERENCES Samples(id), "
+                    "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
+                    "PRIMARY KEY (sample_id, tag_id))",
+            Poco::Data::Keywords::now;
+    }
+    catch (const Poco::DataException &e)
+    {
+        std::cerr << "Error initialising SamplesTags table: " << e.what() << std::endl;
+    }
 
     databaseUpdate += Poco::delegate(this, &SampleDatabase::onDatabaseChanged);
 
@@ -358,9 +372,13 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
         newTag(t.name);
     }
 
-    databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_UPDATED);
+    if (n > 0)
+    {
+        databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_UPDATED);
+        return true;
+    }
 
-    return n == 1;
+    return false;
 }
 
 void SampleDatabase::newTag(std::string &tag)
@@ -614,19 +632,19 @@ void SampleDatabase::checkLatestRemoteVersion()
 
     httpClient->sendRequest(
         "CheckDatabaseVersion",
-        WAIVE_SERVER, "/latest", [this, user_version](const std::string &response)
+        WAIVE_SERVER,
+        "/latest",
+        [this, user_version](const std::string &response)
         { 
             try {
+                json result = json::parse(response); 
+                databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKED_UPDATE);
 
-            json result = json::parse(response); 
-            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKED_UPDATE);
-
-            int latest_version = result["version"];
-            if(latest_version <= user_version)
-            {
-                return;
-            }
-            this->updateDatabaseVersion(latest_version);
+                int latest_version = result["version"];
+                if(latest_version <= user_version)
+                    return;
+                
+                this->updateDatabaseVersion(latest_version);
 
             } catch(json::parse_error &e) {
                 std::cerr << "JSON parsing error: " << e.what() << std::endl;
@@ -686,7 +704,7 @@ void SampleDatabase::downloadSourcesList()
         {
             // std::cout << "/sources not avaliable" << std::endl;
             // wait 1 second before reporting connection error...
-            sleep(1);
+            Poco::Thread::sleep(1000);
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
         });
 }
@@ -924,16 +942,31 @@ void SampleDatabase::makeTagSourcesTable()
 {
     std::cout << "SampleDatabase::makeTagSourcesTable()" << std::endl;
 
-    *session << "DROP TABLE IF EXISTS SourcesTags",
-        Poco::Data::Keywords::now;
+    try
+    {
+        *session << "DROP TABLE IF EXISTS SourcesTags",
+            Poco::Data::Keywords::now;
+    }
+    catch (const Poco::DataException &e)
+    {
+        std::cerr << "Error updating SourcesTags: " << e.what() << std::endl;
+        return;
+    }
 
-    *session << "CREATE TABLE IF NOT EXISTS SourcesTags ("
-                "source_id INT, "
-                "tag_id INT, "
-                "FOREIGN KEY (source_id) REFERENCES Sources(id), "
-                "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
-                "PRIMARY KEY (source_id, tag_id))",
-        Poco::Data::Keywords::now;
+    try
+    {
+        *session << "CREATE TABLE IF NOT EXISTS SourcesTags ("
+                    "source_id INT, "
+                    "tag_id INT, "
+                    "FOREIGN KEY (source_id) REFERENCES Sources(id), "
+                    "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
+                    "PRIMARY KEY (source_id, tag_id))",
+            Poco::Data::Keywords::now;
+    }
+    catch (const Poco::DataException &e)
+    {
+        std::cerr << "Error creating SourcesTags: " << e.what() << std::endl;
+    }
 
     // prepare statement for selecting all Sources
     Poco::Data::Statement selectSource(*session);
@@ -962,27 +995,36 @@ void SampleDatabase::makeTagSourcesTable()
 
     int count = 0;
 
-    while (selectSource.execute())
+    try
     {
-        if (selectSource.done())
-            return;
 
-        Poco::StringTokenizer tokenizer(tags, "|", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
-        for (size_t i = 0; i < tokenizer.count(); ++i)
+        while (selectSource.execute())
         {
-            tag.assign(tokenizer[i]);
-            if (selectTag.execute())
+            if (selectSource.done())
+                return;
+
+            Poco::StringTokenizer tokenizer(tags, "|", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
+            for (size_t i = 0; i < tokenizer.count(); ++i)
             {
-                insertTagSource.execute();
-                count++;
-                if (count % 1000 == 0)
+                tag.assign(tokenizer[i]);
+                if (selectTag.execute())
                 {
-                    std::cout << "committing at " << count << std::endl;
-                    session->commit();
-                    session->begin();
+                    insertTagSource.execute();
+                    count++;
+                    if (count % 1000 == 0)
+                    {
+                        std::cout << "committing at " << count << std::endl;
+                        session->commit();
+                        session->begin();
+                    }
                 }
             }
         }
+    }
+    catch (const Poco::DataException &e)
+    {
+        std::cerr << "Error populating SourcesTags: " << e.what() << std::endl;
+        return;
     }
 
     if (count % 1000 != 0)
@@ -996,6 +1038,7 @@ void SampleDatabase::makeTagSourcesTable()
 
 void SampleDatabase::getTagList()
 {
+    std::cout << "SampleDatabase::getTagList()" << std::endl;
     if (!sourceDatabaseInitialised)
         return;
 
@@ -1029,32 +1072,68 @@ void SampleDatabase::getTagList()
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Unexpected error: " << e.what() << std::endl;
+        std::cerr << "Unexpected error in SampleDatabase::getTagsList(): " << e.what() << std::endl;
     }
 }
 
 void SampleDatabase::getArchiveList()
 {
+    std::cout << "SampleDatabase::getArchiveList()" << std::endl;
+
     archives.clear();
-    Poco::Data::Statement select(*session);
-    std::string archive;
-    select << "SELECT DISTINCT archive from Sources",
-        Poco::Data::Keywords::now;
 
-    Poco::Data::RecordSet rs(select);
-    std::size_t rows = rs.rowCount();
-
-    for (std::size_t i = 0; i < rows; ++i)
+    try
     {
-        archive = rs.value(0, i).convert<std::string>();
-        archives.push_back(archive);
+        Poco::Data::Statement select(*session);
+        std::string archive;
+        select << "SELECT DISTINCT archive from Sources",
+            Poco::Data::Keywords::now;
+
+        Poco::Data::RecordSet rs(select);
+        std::size_t rows = rs.rowCount();
+
+        for (std::size_t i = 0; i < rows; ++i)
+        {
+            archive = rs.value(0, i).convert<std::string>();
+            archives.push_back(archive);
+        }
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Failed to fetch archives from database: " << e.what() << std::endl;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Unexpected error in SampleDatabase::getArchivesList(): " << e.what() << std::endl;
     }
 }
 
 void SampleDatabase::filterSources()
 {
+    std::cout << "SampleDatabase::filterSources()" << std::endl;
     if (!sourceDatabaseInitialised)
         return;
+
+    std::string exists;
+    try
+    {
+        *session << "SELECT name FROM sqlite_master WHERE type='table' AND name='Sources'",
+            Poco::Data::Keywords::into(exists),
+            Poco::Data::Keywords::range(0, 1),
+            Poco::Data::Keywords::now;
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Failed to check if 'Sources' table exists: " << e.what() << std::endl;
+        return;
+    }
+
+    std::cout << "Sources table exists: " << exists << std::endl;
+    if (exists.empty())
+    {
+        sourceDatabaseInitialised = false;
+        return;
+    }
 
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_FILTER_START);
     std::lock_guard<std::mutex> lock(sourceListMutex);
@@ -1072,9 +1151,11 @@ void SampleDatabase::filterSources()
 
     if (filterConditions.searchString.length() > 0)
     {
+        // conditions.push_back(
+        //     fmt::format("(Sources.filename LIKE \"%{0}%\" OR Sources.description LIKE \"%{0}%\")",
+        //                 filterConditions.searchString));
         conditions.push_back(
-            fmt::format("(Sources.filename LIKE \"%{0}%\" OR Sources.description LIKE \"%{0}%\")",
-                        filterConditions.searchString));
+            "(Sources.filename LIKE \"" + filterConditions.searchString + "\" OR Sources.description LIKE \"" + filterConditions.searchString + "\")");
     }
 
     std::string where = "";
@@ -1096,8 +1177,8 @@ void SampleDatabase::filterSources()
         select << "SELECT Sources.id, Sources.filename, Sources.archive, Sources.description, Sources.url, Sources.license "
                   "FROM Sources "
                   "JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
-                  "JOIN Tags ON Tags.id = SourcesTags.tag_id "
-               << where,
+                  "JOIN Tags ON Tags.id = SourcesTags.tag_id " +
+                      where,
             Poco::Data::Keywords::into(id),
             Poco::Data::Keywords::into(filename),
             Poco::Data::Keywords::into(archive),
@@ -1225,7 +1306,7 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
         getTagList();
-        getArchiveList();
+        // getArchiveList();
         filterSources();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:

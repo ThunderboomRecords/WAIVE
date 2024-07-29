@@ -7,14 +7,7 @@ Menu::Menu(Widget *parent) noexcept
       display_number(4),
       has_focus(false)
 {
-    loadSharedResources();
     hide();
-}
-
-void Menu::setFont(const char *name, const uchar *data, uint size)
-{
-    font = createFontFromMemory(name, data, size, false);
-    repaint();
 }
 
 void Menu::clear()
@@ -60,8 +53,11 @@ void Menu::onNanoDisplay()
 
     beginPath();
     fillColor(background_color);
+    strokeColor(foreground_color);
+    strokeWidth(1);
     rect(0, 0, width, height);
     fill();
+    stroke();
     closePath();
 
     if (items.size() == 0)
@@ -79,7 +75,7 @@ void Menu::onNanoDisplay()
     for (int i = 0; i < std::min(display_number, (int)items.size()); i++)
     {
         beginPath();
-        fontSize(font_size);
+        fontSize(getFontSize());
         fontFaceId(font);
         fillColor(text_color);
         textAlign(Align::ALIGN_LEFT | Align::ALIGN_TOP);
@@ -252,7 +248,7 @@ int Menu::getNumberItems() const
 void Menu::calculateHeight()
 {
     Rectangle<float> bounds;
-    fontSize(font_size);
+    fontSize(getFontSize());
     fontFaceId(font);
     textBounds(0, 0, "item 1", nullptr, bounds);
 

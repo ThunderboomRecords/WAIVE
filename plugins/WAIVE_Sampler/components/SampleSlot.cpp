@@ -8,15 +8,14 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
       lastPlaying(PlayState::STOPPED),
       callback(nullptr)
 {
-    loadSharedResources();
     contextMenu = new Menu(parent);
     contextMenu->addItem("Clear");
     contextMenu->setCallback(this);
     contextMenu->setDisplayNumber(1);
     contextMenu->setSize(100, 30);
     contextMenu->setFont("VG5000", VG5000, VG5000_len);
-    contextMenu->hide();
     contextMenu->calculateHeight();
+    contextMenu->hide();
 
     triggerBtn = new Button(parent);
     triggerBtn->setCallback(this);
@@ -28,7 +27,8 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     for (int i = 1; i < 128; i++)
         midiSelect->addItem(fmt::format("{:d}", i).c_str());
     midiSelect->setDisplayNumber(6);
-    midiSelect->font_size = 16.0f;
+    midiSelect->setFontSize(16.0f);
+    midiSelect->setFont("VG5000", VG5000, VG5000_len);
     midiSelect->setSize(35, 20);
 
     addChildWidget(triggerBtn, {triggerBtn, this, Position::ON_TOP, Widget_Align::START, Widget_Align::CENTER, 5});
@@ -101,13 +101,13 @@ void SampleSlot::onNanoDisplay()
     if (samplePlayer != nullptr && samplePlayer->active && samplePlayer->sampleInfo != nullptr)
     {
         std::string info = samplePlayer->sampleInfo->name;
-
+        float x = triggerBtn->getWidth() + 10;
         beginPath();
-        fontSize(font_size);
+        fontSize(getFontSize());
         fillColor(text_color);
         textAlign(Align::ALIGN_MIDDLE);
         fontFaceId(font);
-        text(26, height / 2, info.c_str(), nullptr);
+        text(x, height / 2, info.c_str(), nullptr);
         closePath();
     }
 }
