@@ -9,6 +9,8 @@ HBox::HBox(Widget *widget) noexcept
       padding(0)
 {
     // setWidth(widget->getWidth());
+    setHeight(50);
+    setWidth(50);
 }
 
 void HBox::addWidget(NanoSubWidget *widget)

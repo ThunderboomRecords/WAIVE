@@ -11,7 +11,6 @@ Knob::Knob(Widget *parent) noexcept
       value_(0.0f),
       min(0.0f),
       max(1.0f),
-      gauge_width(10.0f),
       sensitive(false),
       callback(nullptr),
       format("{:.2f}"),
@@ -20,6 +19,7 @@ Knob::Knob(Widget *parent) noexcept
       radius(25.0f),
       integer(false)
 {
+    gauge_width = 8.f * scale_factor;
 }
 
 float Knob::getValue() noexcept
