@@ -11,11 +11,11 @@ public:
     class Callback
     {
     public:
-        ~Callback(){};
+        ~Callback() {};
         virtual void labelClicked(Label *label) = 0;
     };
 
-    explicit Label(Widget *widget, std::string text) noexcept;
+    explicit Label(Widget *widget, std::string text = "") noexcept;
     void setCallback(Callback *cb);
 
     void setLabel(std::string);

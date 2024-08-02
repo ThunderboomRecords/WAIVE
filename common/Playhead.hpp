@@ -1,14 +1,11 @@
 #ifndef PLAYHEAD_HPP_INCLUDED
 #define PLAYHEAD_HPP_INCLUDED
 
-#include "Window.hpp"
-#include "Widget.hpp"
-#include "NanoVG.hpp"
+#include "WAIVEWidget.hpp"
 
 START_NAMESPACE_DISTRHO
 
-
-class Playhead : public NanoSubWidget, public IdleCallback
+class Playhead : public WAIVEWidget, public IdleCallback
 {
 public:
     explicit Playhead(Widget *widget) noexcept;
@@ -18,14 +15,12 @@ protected:
     void idleCallback() override;
 
 private:
-
     float *progress;
-    
+
     DISTRHO_LEAK_DETECTOR(Playhead);
 
     friend class WAIVEMidiUI;
 };
-
 
 END_NAMESPACE_DISTRHO
 

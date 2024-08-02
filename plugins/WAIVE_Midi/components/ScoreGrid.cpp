@@ -2,50 +2,57 @@
 
 START_NAMESPACE_DISTRHO
 
-
 ScoreGrid::ScoreGrid(Widget *parent) noexcept
-    : NanoSubWidget(parent),
+    : WAIVEWidget(parent),
       selected_16th(-1),
       selected_ins(-1)
 {
-
 }
 
-bool ScoreGrid::onMouse(const MouseEvent &ev){
-    if(!contains(ev.pos) || !ev.press) return false;
+bool ScoreGrid::onMouse(const MouseEvent &ev)
+{
+    if (!contains(ev.pos) || !ev.press)
+        return false;
 
-    if(selected_16th != -1 && selected_ins != -1){
+    if (selected_16th != -1 && selected_ins != -1)
+    {
 
-        if((*fScore)[selected_16th][selected_ins] < 0.5){
+        if ((*fScore)[selected_16th][selected_ins] < 0.5)
+        {
             (*fScore)[selected_16th][selected_ins] = 1.0f;
-        } else {
+        }
+        else
+        {
             (*fScore)[selected_16th][selected_ins] = 0.0f;
         }
 
         repaint();
 
-        ui->setState("score", "new");        
+        ui->setState("score", "new");
     }
 
     return true;
 }
 
-bool ScoreGrid::onMotion(const MotionEvent &ev){ 
+bool ScoreGrid::onMotion(const MotionEvent &ev)
+{
     Window &window = getWindow();
 
-    if(contains(ev.pos)){
+    if (contains(ev.pos))
+    {
         window.setCursor(kMouseCursorHand);
 
         const float width = getWidth();
         const float height = getHeight();
 
-        int i = (int) std::floor(16.0f * ev.pos.getX() / width);
-        int j = 8 - (int) std::floor(9.0f * ev.pos.getY() / height);
+        int i = (int)std::floor(16.0f * ev.pos.getX() / width);
+        int j = 8 - (int)std::floor(9.0f * ev.pos.getY() / height);
 
         i = std::min(std::max(i, 0), 15);
         j = std::min(std::max(j, 0), 8);
 
-        if(selected_16th != i || selected_ins != j){
+        if (selected_16th != i || selected_ins != j)
+        {
             selected_16th = i;
             selected_ins = j;
 
@@ -53,17 +60,20 @@ bool ScoreGrid::onMotion(const MotionEvent &ev){
         }
 
         return true;
-    } else {
+    }
+    else
+    {
         window.setCursor(kMouseCursorArrow);
 
-        if(selected_16th != -1 || selected_ins != -1){
+        if (selected_16th != -1 || selected_ins != -1)
+        {
             selected_16th = -1;
             selected_ins = -1;
 
             repaint();
         }
     }
-    return false; 
+    return false;
 }
 
 void ScoreGrid::onNanoDisplay()
@@ -71,53 +81,54 @@ void ScoreGrid::onNanoDisplay()
     const float width = getWidth();
     const float height = getHeight();
 
-    const float gridWidth = width/16.0f;
-    const float gridHeight = height/9.0f;
+    const float gridWidth = width / 16.0f;
+    const float gridHeight = height / 9.0f;
 
     beginPath();
-    fillColor(Color(40, 40, 40));
+    fillColor(background_color);
     rect(0, 0, width, height);
     fill();
     closePath();
 
     beginPath();
     fillColor(60, 60, 60);
-    rect(4*gridWidth, 0, 4*gridWidth, height);
-    rect(12*gridWidth, 0, 4*gridWidth, height);
+    rect(4 * gridWidth, 0, 4 * gridWidth, height);
+    rect(12 * gridWidth, 0, 4 * gridWidth, height);
     fill();
     closePath();
 
     beginPath();
     strokeColor(80, 80, 80);
-    for(int i = 1; i < 16; i++)
+    for (int i = 1; i < 16; i++)
     {
-        moveTo(i*gridWidth, 0);
-        lineTo(i*gridWidth, height);
+        moveTo(i * gridWidth, 0);
+        lineTo(i * gridWidth, height);
     }
-    
-    for(int i = 1; i < 9; i++)
+
+    for (int i = 1; i < 9; i++)
     {
-        moveTo(0, i*gridHeight);
-        lineTo(width, i*gridHeight);
+        moveTo(0, i * gridHeight);
+        lineTo(width, i * gridHeight);
     }
     stroke();
     closePath();
 
-    for(int i = 0; i < 16; i++)
+    for (int i = 0; i < 16; i++)
     {
-        for(int j = 0; j < 9; j++)
+        for (int j = 0; j < 9; j++)
         {
-            if((*fScore)[i][j] < 0.5f) {
+            if ((*fScore)[i][j] < 0.5f)
+            {
                 continue;
             }
 
-            float x = i*gridWidth;
-            float y = (8 - j)*gridHeight;
+            float x = i * gridWidth;
+            float y = (8 - j) * gridHeight;
 
             beginPath();
-            strokeColor(40, 40, 40);
+            strokeColor(foreground_color);
 
-            float hue = (8 - j)/10.0f;
+            float hue = (8 - j) / 10.0f;
 
             fillColor(Color::fromHSL(hue, 0.8f, 0.7f));
             rect(x, y, gridWidth, gridHeight);
@@ -129,7 +140,7 @@ void ScoreGrid::onNanoDisplay()
 
     // round off corners
     float r = 8.0f;
-    fillColor(240, 240, 240);
+    fillColor(WaiveColors::dark);
     strokeColor(255, 0, 0);
 
     // top left
@@ -142,40 +153,40 @@ void ScoreGrid::onNanoDisplay()
 
     // top right
     beginPath();
-    moveTo(width+1, -1);
-    lineTo(width+1, r);
-    arcTo(width+1, -1, width - r, -1, r);
+    moveTo(width + 1, -1);
+    lineTo(width + 1, r);
+    arcTo(width + 1, -1, width - r, -1, r);
     closePath();
     fill();
 
     // bottom left
     beginPath();
-    moveTo(-1, height+1);
-    lineTo(-1, height-r);
-    arcTo(-1, height+1, r, height+1, r);
+    moveTo(-1, height + 1);
+    lineTo(-1, height - r);
+    arcTo(-1, height + 1, r, height + 1, r);
     closePath();
     fill();
 
     // bottom right
     beginPath();
-    moveTo(width+1, height+1);
-    lineTo(width+1, height-r);
-    arcTo(width+1, height+1, width-r, height+1, r);
+    moveTo(width + 1, height + 1);
+    lineTo(width + 1, height - r);
+    arcTo(width + 1, height + 1, width - r, height + 1, r);
     closePath();
     fill();
 
-    if(selected_16th >= 0 && selected_ins >= 0){
-        float x = selected_16th*gridWidth;
-        float y = (8 - selected_ins)*gridHeight;
+    if (selected_16th >= 0 && selected_ins >= 0)
+    {
+        float x = selected_16th * gridWidth;
+        float y = (8 - selected_ins) * gridHeight;
 
         beginPath();
-        strokeColor(255, 255, 255);
+        strokeColor(accent_color);
         strokeWidth(3);
         rect(x, y, gridWidth, gridHeight);
         stroke();
         closePath();
     }
-
 }
 
 END_NAMESPACE_DISTRHO

@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <map>
 
-struct GrooveEvent {
+struct GrooveEvent
+{
     float position;
     float velocity;
 };
@@ -15,8 +16,8 @@ struct GrooveEvent {
 */
 bool compareGrooveEvents(GrooveEvent g0, GrooveEvent g1);
 
-
-struct Note {
+struct Note
+{
     int tick;
     uint8_t velocity;
     uint8_t midiNote;
@@ -25,14 +26,14 @@ struct Note {
 };
 
 /**
-   For sorting Note structs by time, noteOn/Off, then by 
+   For sorting Note structs by time, noteOn/Off, then by
    midiNote number
 */
 bool compareNotes(Note n0, Note n1);
 
 static uint8_t midiMap[9] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 
-static char* labels[9] = {
+static char *midiNoteLabels[9] = {
     (char *)"kick",
     (char *)"snare",
     (char *)"mid tom",
@@ -41,8 +42,6 @@ static char* labels[9] = {
     (char *)"hihat closed",
     (char *)"hihat open",
     (char *)"ride",
-    (char *)"crash"
-};
-
+    (char *)"crash"};
 
 #endif

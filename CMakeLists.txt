@@ -54,5 +54,5 @@ add_subdirectory(dpf)
 
 message(STATUS "BUILD_TESTING: ${BUILD_TESTING}")
 
-add_subdirectory(plugins/WAIVE_Sampler)
-# add_subdirectory(plugins/WAIVE_Midi)
+# add_subdirectory(plugins/WAIVE_Sampler)
+add_subdirectory(plugins/WAIVE_Midi)

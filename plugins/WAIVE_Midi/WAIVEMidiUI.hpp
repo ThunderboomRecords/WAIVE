@@ -5,13 +5,13 @@
 #include "NanoVG.hpp"
 #include "Window.hpp"
 
-#include "HBox.hpp"
 #include "VBox.hpp"
-#include "VSlider.hpp"
+#include "Label.hpp"
 #include "Playhead.hpp"
 #include "ScoreGrid.hpp"
 #include "GrooveGraph.hpp"
 #include "DrumPattern.hpp"
+#include "SimpleButton.hpp"
 
 #include "fonts.h"
 #include "WAIVEColors.hpp"
@@ -20,8 +20,8 @@
 
 START_NAMESPACE_DISTRHO
 
-const unsigned int UI_W = 840;
-const unsigned int UI_H = 380;
+const unsigned int UI_W = 860;
+const unsigned int UI_H = 435;
 
 class WAIVEMidiUI : public UI,
                     public GrooveGraph::Callback
@@ -38,16 +38,14 @@ protected:
     void uiScaleFactorChanged(const double scaleFactor) override;
 
 private:
-    float fScale;
     double fScaleFactor;
 
     WAIVEMidi *plugin;
-    VSlider *fThreshold;
-    HBox *hbox_controls;
-    VBox *vbox_container;
     ScoreGrid *score_grid;
     GrooveGraph *groove_graph;
     DrumPattern *drum_pattern;
+    Label *score_label, *groove_label, *drum_label;
+    std::vector<std::shared_ptr<Label>> drum_names;
 
     Playhead *drum_playhead;
 
