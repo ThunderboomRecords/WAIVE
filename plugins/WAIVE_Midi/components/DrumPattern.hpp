@@ -1,6 +1,8 @@
 #ifndef DRUMPATTERN_HPP_INCLUDED
 #define DRUMPATTERN_HPP_INCLUDED
 
+#include <mutex>
+
 #include "WAIVEWidget.hpp"
 #include "Notes.hpp"
 
@@ -16,6 +18,7 @@ protected:
     bool onMotion(const MotionEvent &) override;
 
 private:
+    std::mutex *noteMtx;
     std::vector<Note> *notes;
     std::map<uint8_t, int> midiToRow;
 

@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <random>
 #include <chrono>
+#include <mutex>
 
 #include "DistrhoPluginInfo.h"
 #include "DistrhoPlugin.hpp"
@@ -95,8 +96,12 @@ protected:
 
     void encodeGroove();
     void generateGroove();
+    void variationGroove();
+    void computeGroove();
     void encodeScore();
     void generateScore();
+    void variationScore();
+    void computeScore();
     void generateFullPattern();
 
     void computeNotes();
@@ -158,6 +163,7 @@ private:
     int s_map[9];
     int ticks_per_beat;
 
+    std::mutex noteMtx;
     std::vector<Note> notes;
     std::vector<Note>::iterator notesPointer;
     std::set<uint8_t> triggered;

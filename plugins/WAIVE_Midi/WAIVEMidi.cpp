@@ -173,6 +173,7 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
     {
     case kThreshold:
         fThreshold = value;
+        generateFullPattern();
         break;
     default:
         break;
@@ -275,10 +276,12 @@ void WAIVEMidi::run(
     MidiEvent me;
     me.size = 3;
 
+    std::lock_guard<std::mutex> lk(noteMtx);
+
     for (uint32_t i = 0; i < numFrames; i++)
     {
         me.frame = i;
-        while (notesPointer != notes.end() && (double)(*notesPointer).tick <= loopTick)
+        while (notesPointer < notes.end() && (double)(*notesPointer).tick <= loopTick)
         {
             me.data[1] = (*notesPointer).midiNote;
 
@@ -351,6 +354,23 @@ void WAIVEMidi::generateScore()
         mScoreZ[i] = z;
     }
 
+    computeScore();
+}
+
+void WAIVEMidi::variationScore()
+{
+    for (size_t i = 0; i < mScoreZ.size(); i++)
+    {
+        float z = distribution(generator);
+        z = z * score_stds[i % 64] * 0.1f;
+        mScoreZ[i] += z;
+    }
+
+    computeScore();
+}
+
+void WAIVEMidi::computeScore()
+{
     const char *inputNamesCstrs[] = {mScoreDecoderInputNames[0].c_str()};
     const char *outputNamesCstrs[] = {mScoreDecoderOutputNames[0].c_str()};
 
@@ -416,16 +436,30 @@ void WAIVEMidi::encodeGroove()
 
 void WAIVEMidi::generateGroove()
 {
-    // std::cout << "mGrooveZ: [";
     for (size_t i = 0; i < mGrooveZ.size(); i++)
     {
         float z = distribution(generator);
         z = z * groove_stds[i % 32] + groove_means[i % 32];
         mGrooveZ[i] = z;
-        // printf("%.3f, ", mGrooveZ[i]);
     }
-    // std::cout << "]" << std::endl;
 
+    computeGroove();
+}
+
+void WAIVEMidi::variationGroove()
+{
+    for (size_t i = 0; i < mGrooveZ.size(); i++)
+    {
+        float z = distribution(generator);
+        z = z * groove_stds[i % 32] * 0.1f;
+        mGrooveZ[i] += z;
+    }
+
+    computeGroove();
+}
+
+void WAIVEMidi::computeGroove()
+{
     const char *inputNamesCstrs[] = {mGrooveDecoderInputNames[0].c_str()};
     const char *outputNamesCstrs[] = {mGrooveDecoderOutputNames[0].c_str()};
 
@@ -465,20 +499,12 @@ void WAIVEMidi::generateGroove()
 
 void WAIVEMidi::generateFullPattern()
 {
-
     mFullZ.clear();
-    // std::cout << "mFullZ = [";
     for (const float z : mScoreZ)
-    {
         mFullZ.push_back(z);
-        // printf("%.2f, ", z);
-    }
+
     for (const float z : mGrooveZ)
-    {
         mFullZ.push_back(z);
-        // printf("%.2f, ", z);
-    }
-    // std::cout << "]" << std::endl;
 
     const char *inputNamesCstrs[] = {mFullDecoderInputNames[0].c_str()};
     const char *outputNamesCstrs[] = {mFullDecoderOutputNames[0].c_str()};
@@ -498,9 +524,7 @@ void WAIVEMidi::generateFullPattern()
         {
             for (int k = 0; k < 3; k++)
             {
-
                 int index = k + 3 * (j + 30 * i);
-
                 fDrumPattern[i][j][k] = mFullOutput[index];
             }
         }
@@ -511,13 +535,13 @@ void WAIVEMidi::generateFullPattern()
 
 void WAIVEMidi::computeNotes()
 {
+    std::lock_guard<std::mutex> lk(noteMtx);
+
     int tp16th = ticks_per_beat / 4;
 
     int nextTick = -1;
     if (notesPointer != notes.end())
-    {
         nextTick = (*notesPointer).tick;
-    }
 
     std::cout << "WAIVEMidi::computeNotes()\n  tp16th: " << tp16th << std::endl;
 
@@ -537,7 +561,7 @@ void WAIVEMidi::computeNotes()
             {
                 int index = s_map[j] + k;
 
-                if (fDrumPattern[i][index][0] < 0.3f)
+                if (fDrumPattern[i][index][0] < (1.f - fThreshold))
                     break;
 
                 float vel = fDrumPattern[i][index][1];
@@ -605,9 +629,7 @@ void WAIVEMidi::computeNotes()
     // advance pointer to reach time when computeNotes was called
     notesPointer = notes.begin();
     while (notesPointer != notes.end() && (*notesPointer).tick <= nextTick)
-    {
         notesPointer++;
-    }
 }
 
 void WAIVEMidi::sampleRateChanged(double newSampleRate)

@@ -63,6 +63,8 @@ void DrumPattern::onNanoDisplay()
     float tpb = 1920.0f;
     float beatWidth = width / 4.0f;
 
+    std::lock_guard<std::mutex> lk(*noteMtx);
+
     for (; noteStart != notes->end(); ++noteStart)
     {
         if ((*noteStart).noteOn)

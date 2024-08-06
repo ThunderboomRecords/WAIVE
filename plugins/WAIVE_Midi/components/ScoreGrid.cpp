@@ -11,7 +11,7 @@ ScoreGrid::ScoreGrid(Widget *parent) noexcept
 
 bool ScoreGrid::onMouse(const MouseEvent &ev)
 {
-    if (!contains(ev.pos) || !ev.press)
+    if (!contains(ev.pos) || !ev.press || ev.button != kMouseButtonLeft)
         return false;
 
     if (selected_16th != -1 && selected_ins != -1)
@@ -118,9 +118,7 @@ void ScoreGrid::onNanoDisplay()
         for (int j = 0; j < 9; j++)
         {
             if ((*fScore)[i][j] < 0.5f)
-            {
                 continue;
-            }
 
             float x = i * gridWidth;
             float y = (8 - j) * gridHeight;

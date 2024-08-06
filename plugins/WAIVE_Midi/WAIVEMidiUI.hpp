@@ -6,6 +6,7 @@
 #include "Window.hpp"
 
 #include "VBox.hpp"
+#include "Knob.hpp"
 #include "Label.hpp"
 #include "Playhead.hpp"
 #include "ScoreGrid.hpp"
@@ -24,7 +25,9 @@ const unsigned int UI_W = 860;
 const unsigned int UI_H = 435;
 
 class WAIVEMidiUI : public UI,
-                    public GrooveGraph::Callback
+                    public GrooveGraph::Callback,
+                    public Button::Callback,
+                    public Knob::Callback
 {
 public:
     WAIVEMidiUI();
@@ -34,18 +37,25 @@ protected:
     void parameterChanged(uint32_t index, float value) override;
     void stateChanged(const char *key, const char *value) override;
     void onNanoDisplay() override;
+    void buttonClicked(Button *button) override;
     void grooveClicked(GrooveGraph *graph) override;
+    void knobDragStarted(Knob *knob) override;
+    void knobDragFinished(Knob *knob, float value) override;
+    void knobValueChanged(Knob *knob, float value) override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
 private:
     double fScaleFactor;
 
     WAIVEMidi *plugin;
+
     ScoreGrid *score_grid;
     GrooveGraph *groove_graph;
     DrumPattern *drum_pattern;
     Label *score_label, *groove_label, *drum_label;
     std::vector<std::shared_ptr<Label>> drum_names;
+    Button *new_score, *var_score, *new_groove, *var_groove;
+    Knob *threshold;
 
     Playhead *drum_playhead;
 

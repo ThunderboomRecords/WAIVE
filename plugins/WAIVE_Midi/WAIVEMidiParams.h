@@ -4,7 +4,6 @@
 enum Parameters
 {
     kThreshold = 0,
-    kSixteenth,
     kParameterCount
 };
 
