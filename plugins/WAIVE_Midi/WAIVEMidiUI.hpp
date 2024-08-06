@@ -9,6 +9,7 @@
 #include "Knob.hpp"
 #include "Label.hpp"
 #include "Panel.hpp"
+#include "DropDown.hpp"
 #include "Playhead.hpp"
 #include "ScoreGrid.hpp"
 #include "GrooveGraph.hpp"
@@ -22,13 +23,14 @@
 
 START_NAMESPACE_DISTRHO
 
-const unsigned int UI_W = 860;
+const unsigned int UI_W = 890;
 const unsigned int UI_H = 460;
 
 class WAIVEMidiUI : public UI,
                     public GrooveGraph::Callback,
                     public Button::Callback,
-                    public Knob::Callback
+                    public Knob::Callback,
+                    public DropDown::Callback
 {
 public:
     WAIVEMidiUI();
@@ -43,6 +45,7 @@ protected:
     void knobDragStarted(Knob *knob) override;
     void knobDragFinished(Knob *knob, float value) override;
     void knobValueChanged(Knob *knob, float value) override;
+    void dropdownSelection(DropDown *widget, int item) override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
 private:
@@ -58,6 +61,7 @@ private:
     std::vector<std::shared_ptr<Label>> drum_names;
     Button *new_score, *var_score, *new_groove, *var_groove;
     Knob *threshold;
+    std::vector<std::shared_ptr<DropDown>> midi_notes;
 
     Playhead *drum_playhead;
 

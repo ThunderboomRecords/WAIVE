@@ -104,6 +104,7 @@ protected:
     void computeScore();
     void generateFullPattern();
 
+    void setMidiNote(int instrument, uint8_t midi);
     void computeNotes();
 
 private:
@@ -167,6 +168,7 @@ private:
     std::vector<Note> notes;
     std::vector<Note>::iterator notesPointer;
     std::set<uint8_t> triggered;
+    std::vector<uint8_t> midiNotes;
 
     float progress;
     double loopTick;

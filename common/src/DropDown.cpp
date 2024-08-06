@@ -4,7 +4,8 @@ DropDown::DropDown(Widget *parent) noexcept
     : WAIVEWidget(parent),
       selected_item(0),
       callback(nullptr),
-      hover(false)
+      hover(false),
+      alignment(Align::ALIGN_LEFT)
 {
     menu = new Menu(parent);
     menu->setCallback(this);
@@ -54,8 +55,16 @@ void DropDown::onNanoDisplay()
         fillColor(text_color);
         fontFaceId(font);
         fontSize(getFontSize());
-        textAlign(Align::ALIGN_MIDDLE);
-        text(2, height / 2, currentItem.c_str(), nullptr);
+        if (alignment == Align::ALIGN_LEFT)
+        {
+            textAlign(Align::ALIGN_LEFT | Align::ALIGN_MIDDLE);
+            text(2, height / 2, currentItem.c_str(), nullptr);
+        }
+        else
+        {
+            textAlign(Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE);
+            text(width - 6, height / 2, currentItem.c_str(), nullptr);
+        }
         closePath();
     }
 }

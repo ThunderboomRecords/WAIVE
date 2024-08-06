@@ -27,9 +27,11 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Knob.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Menu.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Label.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Panel.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Playhead.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/DropDown.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp

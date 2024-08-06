@@ -15,7 +15,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
 
     float padding = 10.f;
-    float col2_width = 350 * fScaleFactor + 2.f * padding;
+    float col2_width = (350 + 35) * fScaleFactor + 3.f * padding;
     float col1_width = width - col2_width - 3.f * padding;
     float col_height = height - 2.f * padding;
 
@@ -112,7 +112,36 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     drum_pattern->setSize(350, 250);
     drum_pattern->notes = &plugin->notes;
     drum_pattern->noteMtx = &plugin->noteMtx;
-    drum_pattern->onTop(result_panel, Widget_Align::CENTER, Widget_Align::START, padding, Layout::measureVertical(edit_panel, Widget_Align::START, score_grid, Widget_Align::START));
+    drum_pattern->onTop(result_panel, Widget_Align::START, Widget_Align::START, padding, Layout::measureVertical(edit_panel, Widget_Align::START, score_grid, Widget_Align::START));
+
+    VBox midiNoteSelects(this);
+    midiNoteSelects.setHeight(drum_pattern->getHeight());
+
+    midi_notes.reserve(9);
+    for (int i = 8; i >= 0; i--)
+    {
+        auto midiNote = std::make_shared<DropDown>(this);
+        for (int j = 0; j < 128; j++)
+            midiNote->addItem(std::to_string(j).c_str());
+        midiNote->setDisplayNumber(6);
+        midiNote->alignment = Align::ALIGN_RIGHT;
+        midiNote->setItem(midiMap[i], false);
+        midiNote->setFont("VG5000", VG5000, VG5000_len);
+        midiNote->menu->setFont("VG5000", VG5000, VG5000_len);
+        midiNote->menu->alignment = Align::ALIGN_RIGHT;
+        midiNote->setFontSize(16.f);
+        midiNote->setSize(35, 20);
+        midiNote->setId(i);
+        midiNote->setCallback(this);
+
+        midi_notes.push_back(std::move(midiNote));
+        midiNoteSelects.addWidget(midi_notes.back().get());
+    }
+
+    midiNoteSelects.align_items = VBox::Align_Items::left;
+    midiNoteSelects.justify_content = VBox::Justify_Content::space_evenly;
+    midiNoteSelects.rightOf(drum_pattern, Widget_Align::CENTER, padding);
+    midiNoteSelects.positionWidgets();
 
     threshold = new Knob(this);
     threshold->setId(kThreshold);
@@ -227,5 +256,13 @@ void WAIVEMidiUI::knobValueChanged(Knob *knob, float value)
         setParameterValue(kThreshold, value);
     }
 };
+
+void WAIVEMidiUI::dropdownSelection(DropDown *widget, int item)
+{
+    std::cout << widget->getId() << " set to " << item << std::endl;
+    // midiMap[widget->getId()] = item;
+    plugin->setMidiNote(widget->getId(), (uint8_t)item);
+    // plugin->computeNotes();
+}
 
 END_NAMESPACE_DISTRHO

@@ -14,7 +14,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void dropdownSelection(DropDown *widget, int item) = 0;
     };
 
@@ -26,6 +26,7 @@ public:
     void setItem(int item, bool sendCallback);
 
     Menu *menu;
+    Align alignment;
 
 protected:
     void onNanoDisplay() override;

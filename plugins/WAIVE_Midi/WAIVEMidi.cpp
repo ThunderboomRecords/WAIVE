@@ -127,10 +127,13 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
         return;
     }
 
+    midiNotes.resize(9);
+    for (int i = 0; i < 9; i++)
+        midiNotes[i] = midiMap[i];
+
     notes.reserve(16 * 9 * 3);
     notesPointer = notes.begin();
 
-    // generate
     generateScore();
     generateGroove();
     generateFullPattern();
@@ -534,6 +537,12 @@ void WAIVEMidi::generateFullPattern()
     computeNotes();
 }
 
+void WAIVEMidi::setMidiNote(int instrument, uint8_t midi)
+{
+    midiNotes[instrument] = midi;
+    computeNotes();
+}
+
 void WAIVEMidi::computeNotes()
 {
     std::lock_guard<std::mutex> lk(noteMtx);
@@ -576,7 +585,7 @@ void WAIVEMidi::computeNotes()
                 tickOn = std::max(tickOn, 0);
 
                 Note noteOn = {
-                    tickOn, velocity, midiMap[j], 9, true};
+                    tickOn, velocity, midiNotes[j], 9, true, j};
 
                 newNotes[j].push_back(noteOn);
             }
@@ -597,14 +606,14 @@ void WAIVEMidi::computeNotes()
             int noteOffTick = std::min(thisOnTick + tp16th, nextOnTick);
 
             Note noteOff = {
-                noteOffTick, 0, newNotes[j][i].midiNote, 9, false};
+                noteOffTick, 0, newNotes[j][i].midiNote, 9, false, j};
             newNotes[j].push_back(noteOff);
         }
 
         // add final noteOff
         int noteOffTick = std::min(newNotes[j][nNotes - 1].tick + tp16th, tp16th * 16 * 4 - 1);
         Note noteOff = {
-            noteOffTick, 0, newNotes[j][nNotes - 1].midiNote, 9, false};
+            noteOffTick, 0, newNotes[j][nNotes - 1].midiNote, 9, false, j};
         newNotes[j].push_back(noteOff);
 
         // then reorder again
@@ -625,7 +634,6 @@ void WAIVEMidi::computeNotes()
     }
 
     std::sort(notes.begin(), notes.end(), compareNotes);
-    notesPointer = notes.begin();
 
     // advance pointer to reach time when computeNotes was called
     notesPointer = notes.begin();

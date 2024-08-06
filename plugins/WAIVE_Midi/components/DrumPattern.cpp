@@ -79,7 +79,11 @@ void DrumPattern::onNanoDisplay()
                     // found noteOff, render rectangle
                     int startTick = (*noteStart).tick;
                     int endTick = (*noteEnd).tick;
-                    int row = midiToRow[currentNote];
+                    int row;
+                    if (noteStart->instrument >= 0)
+                        row = noteStart->instrument;
+                    else
+                        row = midiToRow[currentNote];
 
                     float x = beatWidth * (startTick / tpb);
                     float y = gridHeight * (8 - row);

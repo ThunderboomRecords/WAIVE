@@ -23,6 +23,7 @@ struct Note
     uint8_t midiNote;
     uint8_t channel;
     bool noteOn;
+    int instrument = -1;
 };
 
 /**

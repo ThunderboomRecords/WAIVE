@@ -5,7 +5,8 @@ Menu::Menu(Widget *parent) noexcept
       highlighted_item(-1),
       scroll_index(0),
       display_number(4),
-      has_focus(false)
+      has_focus(false),
+      alignment(Align::ALIGN_LEFT)
 {
     hide();
 }
@@ -53,10 +54,14 @@ void Menu::onNanoDisplay()
 
     beginPath();
     fillColor(background_color);
-    strokeColor(foreground_color);
-    strokeWidth(1);
     rect(0, 0, width, height);
     fill();
+    closePath();
+
+    beginPath();
+    strokeColor(highlight_color);
+    strokeWidth(2.0f);
+    rect(0, 0, width, height);
     stroke();
     closePath();
 
@@ -78,8 +83,16 @@ void Menu::onNanoDisplay()
         fontSize(getFontSize());
         fontFaceId(font);
         fillColor(text_color);
-        textAlign(Align::ALIGN_LEFT | Align::ALIGN_TOP);
-        text(2, i * item_height + 2, items[scroll_index + i].c_str(), NULL);
+        if (alignment == Align::ALIGN_LEFT)
+        {
+            textAlign(Align::ALIGN_LEFT | Align::ALIGN_TOP);
+            text(2, i * item_height + 2, items[scroll_index + i].c_str(), NULL);
+        }
+        else
+        {
+            textAlign(Align::ALIGN_RIGHT | Align::ALIGN_TOP);
+            text(width - 6, i * item_height + 2, items[scroll_index + i].c_str(), NULL);
+        }
         closePath();
     }
 

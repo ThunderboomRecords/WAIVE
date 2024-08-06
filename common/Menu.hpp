@@ -14,7 +14,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void onMenuItemSelection(Menu *menu, int item, const std::string &value) = 0;
     };
 
@@ -29,6 +29,8 @@ public:
     const std::string getItem(int item) const;
     void calculateHeight();
     void positionTo(NanoSubWidget *widget);
+
+    Align alignment;
 
 protected:
     void onNanoDisplay() override;
