@@ -141,15 +141,48 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
 void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
 {
+    std::cout << "WAIVEMidi::initParameter index " << index << std::endl;
     switch (index)
     {
     case kThreshold:
-        parameter.name = "Threshold";
-        parameter.symbol = "threshold";
+        parameter.name = "Complexity";
+        parameter.symbol = "complexity";
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 0.7f;
+        parameter.ranges.def = 0.5f;
         parameter.hints = kParameterIsAutomatable;
+        break;
+    case kGrooveNew:
+        parameter.name = "New Groove";
+        parameter.symbol = "new_groove";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
+        break;
+    case kGrooveVar:
+        parameter.name = "Variation Groove";
+        parameter.symbol = "variation_groove";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
+        break;
+    case kScoreNew:
+        parameter.name = "New Score";
+        parameter.symbol = "new_score";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
+        break;
+    case kScoreVar:
+        parameter.name = "Variation Score";
+        parameter.symbol = "variation_score";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
         break;
     default:
         break;
@@ -164,6 +197,12 @@ float WAIVEMidi::getParameterValue(uint32_t index) const
     case kThreshold:
         val = fThreshold;
         break;
+    case kScoreNew:
+    case kScoreVar:
+    case kGrooveNew:
+    case kGrooveVar:
+        val = 0.0f;
+        break;
     default:
         break;
     }
@@ -177,6 +216,30 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
     {
     case kThreshold:
         fThreshold = value;
+        generateFullPattern();
+        break;
+    case kGrooveNew:
+        if (value != 1.f)
+            break;
+        generateGroove();
+        generateFullPattern();
+        break;
+    case kGrooveVar:
+        if (value != 1.f)
+            break;
+        variationGroove();
+        generateFullPattern();
+        break;
+    case kScoreNew:
+        if (value != 1.f)
+            break;
+        generateScore();
+        generateFullPattern();
+        break;
+    case kScoreVar:
+        if (value != 1.f)
+            break;
+        variationScore();
         generateFullPattern();
         break;
     default:
