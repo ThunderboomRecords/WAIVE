@@ -127,6 +127,7 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
         return;
     }
 
+    notes.reserve(16 * 9 * 3);
     notesPointer = notes.begin();
 
     // generate
@@ -543,7 +544,7 @@ void WAIVEMidi::computeNotes()
     if (notesPointer != notes.end())
         nextTick = (*notesPointer).tick;
 
-    std::cout << "WAIVEMidi::computeNotes()\n  tp16th: " << tp16th << std::endl;
+    // std::cout << "WAIVEMidi::computeNotes()\n  tp16th: " << tp16th << std::endl;
 
     notes.clear();
 

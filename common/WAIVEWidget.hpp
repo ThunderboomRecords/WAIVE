@@ -18,11 +18,11 @@ class WAIVEWidget : public NanoSubWidget
 public:
     explicit WAIVEWidget(Widget *widget, int flags = CREATE_ANTIALIAS) noexcept;
 
-    void below(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, int padding = 10);
-    void above(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, int padding = 10);
-    void leftOf(NanoSubWidget *w, Widget_Align v_align = Widget_Align::CENTER, int padding = 10);
-    void rightOf(NanoSubWidget *w, Widget_Align v_align = Widget_Align::CENTER, int padding = 10);
-    void onTop(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, Widget_Align v_align = Widget_Align::CENTER, int padding = 10);
+    void below(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, float padding = 10.f);
+    void above(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, float padding = 10.f);
+    void leftOf(NanoSubWidget *w, Widget_Align v_align = Widget_Align::CENTER, float padding = 10.f);
+    void rightOf(NanoSubWidget *w, Widget_Align v_align = Widget_Align::CENTER, float padding = 10.f);
+    void onTop(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, Widget_Align v_align = Widget_Align::CENTER, float h_padding = 10.f, float v_padding = -1.f);
 
     /*
     GOTCHA: setSize() EXCLUDES scale factor, but getSize() INCLUDES scale factor
@@ -53,7 +53,6 @@ protected:
 
 private:
     float font_size;
-    
 };
 
 END_NAMESPACE_DISTRHO

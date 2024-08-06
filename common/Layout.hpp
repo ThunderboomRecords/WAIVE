@@ -24,17 +24,17 @@ START_NAMESPACE_DISTRHO
 
 namespace Layout
 {
-    void position(Position p, NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, int padding);
+    void position(Position p, NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, float padding);
 
-    void rightOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, int padding);
+    void rightOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding);
 
-    void leftOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, int padding);
+    void leftOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding);
 
-    void above(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, int padding);
+    void above(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding);
 
-    void below(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, int padding);
+    void below(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding);
 
-    void onTop(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, int padding);
+    void onTop(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, float h_padding, float v_padding);
 
     float measureVertical(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget *w2, Widget_Align a2);
 

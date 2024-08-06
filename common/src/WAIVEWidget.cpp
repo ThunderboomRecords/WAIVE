@@ -18,29 +18,31 @@ WAIVEWidget::WAIVEWidget(Widget *widget, int flags) noexcept
     scale_factor = getWindow().getScaleFactor();
 }
 
-void WAIVEWidget::above(NanoSubWidget *w, Widget_Align h_align, int padding)
+void WAIVEWidget::above(NanoSubWidget *w, Widget_Align h_align, float padding)
 {
     Layout::above(this, w, h_align, padding);
 }
 
-void WAIVEWidget::below(NanoSubWidget *w, Widget_Align h_align, int padding)
+void WAIVEWidget::below(NanoSubWidget *w, Widget_Align h_align, float padding)
 {
     Layout::below(this, w, h_align, padding);
 }
 
-void WAIVEWidget::leftOf(NanoSubWidget *w, Widget_Align v_align, int padding)
+void WAIVEWidget::leftOf(NanoSubWidget *w, Widget_Align v_align, float padding)
 {
     Layout::leftOf(this, w, v_align, padding);
 }
 
-void WAIVEWidget::rightOf(NanoSubWidget *w, Widget_Align v_align, int padding)
+void WAIVEWidget::rightOf(NanoSubWidget *w, Widget_Align v_align, float padding)
 {
     Layout::rightOf(this, w, v_align, padding);
 }
 
-void WAIVEWidget::onTop(NanoSubWidget *w, Widget_Align h_align, Widget_Align v_align, int padding)
+void WAIVEWidget::onTop(NanoSubWidget *w, Widget_Align h_align, Widget_Align v_align, float h_padding, float v_padding)
 {
-    Layout::onTop(this, w, h_align, v_align, padding);
+    if (v_padding < 0.f)
+        v_padding = h_padding;
+    Layout::onTop(this, w, h_align, v_align, h_padding, v_padding);
 }
 
 void WAIVEWidget::setSize(uint width, uint height, bool ignore_sf)

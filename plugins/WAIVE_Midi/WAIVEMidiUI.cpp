@@ -7,29 +7,44 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
 {
     plugin = static_cast<WAIVEMidi *>(getPluginInstancePointer());
 
+    float width = UI_W * fScaleFactor;
+    float height = UI_H * fScaleFactor;
+
     std::cout << "UI_W: " << UI_W << " UI_H: " << UI_H << std::endl;
 
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
 
     float padding = 10.f;
+    float col2_width = 350 * fScaleFactor + 2.f * padding;
+    float col1_width = width - col2_width - 3.f * padding;
+    float col_height = height - 2.f * padding;
+
+    edit_panel = new Panel(this);
+    edit_panel->setSize(col1_width, col_height, true);
+    edit_panel->setAbsolutePos(padding, padding);
+    edit_panel->setFont("VG5000", VG5000, VG5000_len);
+    edit_panel->label = "1";
+    edit_panel->title = "Edit";
 
     score_label = new Label(this, "score");
     score_label->setFont("VG5000", VG5000, VG5000_len);
     score_label->text_color = WaiveColors::text;
     score_label->resizeToFit();
-    score_label->setAbsolutePos(120 * fScaleFactor, 40 * fScaleFactor);
-
-    score_grid = new ScoreGrid(this);
-    score_grid->setSize(350, 250);
-    score_grid->below(score_label, Widget_Align::START, padding);
-    score_grid->fScore = &plugin->fScore;
-    score_grid->ui = this;
 
     new_score = new Button(this);
     new_score->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     new_score->setLabel("new");
     new_score->resizeToFit();
     new_score->setCallback(this);
+
+    score_grid = new ScoreGrid(this);
+    score_grid->setSize(350, 250);
+    score_grid->onTop(edit_panel, Widget_Align::END, Widget_Align::START, padding, edit_panel->getFontSize() * 2.f + new_score->getHeight() + padding);
+    score_grid->fScore = &plugin->fScore;
+    score_grid->ui = this;
+
+    score_label->above(score_grid, Widget_Align::START, padding);
+
     new_score->above(score_grid, Widget_Align::END, padding);
 
     var_score = new Button(this);
@@ -60,17 +75,17 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     labels.leftOf(score_grid, Widget_Align::START, padding);
     labels.positionWidgets();
 
-    groove_label = new Label(this, "groove");
-    groove_label->setFont("VG5000", VG5000, VG5000_len);
-    groove_label->text_color = WaiveColors::text;
-    groove_label->resizeToFit();
-    groove_label->below(score_grid, Widget_Align::START, padding * 2);
-
     groove_graph = new GrooveGraph(this);
     groove_graph->setSize(350, 50);
     groove_graph->fGroove = &plugin->fGroove;
     groove_graph->callback = this;
-    groove_graph->below(groove_label, Widget_Align::START, padding);
+    groove_graph->onTop(edit_panel, Widget_Align::END, Widget_Align::END, padding);
+
+    groove_label = new Label(this, "groove");
+    groove_label->setFont("VG5000", VG5000, VG5000_len);
+    groove_label->text_color = WaiveColors::text;
+    groove_label->resizeToFit();
+    groove_label->above(groove_graph, Widget_Align::START, padding * 2);
 
     new_groove = new Button(this);
     new_groove->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
@@ -86,11 +101,18 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     var_groove->setCallback(this);
     var_groove->leftOf(new_groove, Widget_Align::CENTER, padding);
 
+    result_panel = new Panel(this);
+    result_panel->setSize(col2_width, col_height, true);
+    result_panel->rightOf(edit_panel, Widget_Align::START, padding);
+    result_panel->setFont("VG5000", VG5000, VG5000_len);
+    result_panel->label = "2";
+    result_panel->title = "Result";
+
     drum_pattern = new DrumPattern(this);
     drum_pattern->setSize(350, 250);
     drum_pattern->notes = &plugin->notes;
     drum_pattern->noteMtx = &plugin->noteMtx;
-    drum_pattern->rightOf(score_grid, Widget_Align::START, padding * 2);
+    drum_pattern->onTop(result_panel, Widget_Align::CENTER, Widget_Align::START, padding, Layout::measureVertical(edit_panel, Widget_Align::START, score_grid, Widget_Align::START));
 
     threshold = new Knob(this);
     threshold->setId(kThreshold);
@@ -104,11 +126,11 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     threshold->resizeToFit();
     threshold->above(drum_pattern, Widget_Align::END, padding);
 
-    drum_label = new Label(this, "result");
-    drum_label->setFont("VG5000", VG5000, VG5000_len);
-    drum_label->text_color = WaiveColors::text;
-    drum_label->resizeToFit();
-    drum_label->above(drum_pattern, Widget_Align::START, padding);
+    threshold_label = new Label(this, "complexity");
+    threshold_label->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    threshold_label->text_color = WaiveColors::text;
+    threshold_label->resizeToFit();
+    threshold_label->leftOf(threshold, Widget_Align::CENTER, padding);
 
     drum_playhead = new Playhead(this);
     drum_playhead->setAbsolutePos(drum_pattern->getAbsolutePos());
@@ -116,10 +138,10 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     drum_playhead->progress = &plugin->progress;
     addIdleCallback(drum_playhead);
 
-    setGeometryConstraints(UI_W * fScaleFactor, UI_H * fScaleFactor, false, false);
+    setGeometryConstraints(width, height, false, false);
 
     if (fScaleFactor != 1.0)
-        setSize(UI_W * fScaleFactor, UI_H * fScaleFactor);
+        setSize(width, height);
 }
 
 WAIVEMidiUI::~WAIVEMidiUI() {}
@@ -151,44 +173,10 @@ void WAIVEMidiUI::onNanoDisplay()
     float height = getHeight();
 
     beginPath();
-    fillColor(WaiveColors::grey1);
+    fillColor(WaiveColors::dark);
     rect(0.0f, 0.0f, width, height);
     fill();
     closePath();
-
-    // beginPath();
-    // fillColor(WaiveColors::text);
-    // fontSize(32 * fScaleFactor);
-    // textAlign(Align::ALIGN_RIGHT | Align::ALIGN_TOP);
-    // fontFaceId(logo_font);
-    // text(width - 10 * fScaleFactor, 4 * fScaleFactor, "waive", nullptr);
-    // closePath();
-
-    // beginPath();
-    // fillColor(WaiveColors::text);
-    // fontSize(16 * fScaleFactor);
-    // textAlign(Align::ALIGN_LEFT | Align::ALIGN_BOTTOM);
-    // fontFaceId(logo_font);
-    // text(score_grid->getAbsoluteX(), score_grid->getAbsoluteY(), "score:", nullptr);
-    // text(groove_graph->getAbsoluteX(), groove_graph->getAbsoluteY(), "groove:", nullptr);
-    // text(drum_pattern->getAbsoluteX(), drum_pattern->getAbsoluteY(), "result:", nullptr);
-    // closePath();
-
-    // int row_height = score_grid->getHeight() / 9;
-    // beginPath();
-    // fillColor(WaiveColors::text);
-    // fontSize(14 * fScaleFactor);
-    // textAlign(Align::ALIGN_RIGHT | Align::ALIGN_CENTER);
-    // fontFaceId(logo_font);
-    // int x, y;
-    // x = score_grid->getAbsoluteX() - 2;
-    // y = score_grid->getAbsoluteY() + score_grid->getHeight() - row_height / 2;
-    // for (int i = 0; i < 9; i++)
-    // {
-    //     text(x, y, midiNoteLabels[i], nullptr);
-    //     y -= row_height;
-    // }
-    // closePath();
 }
 
 void WAIVEMidiUI::uiScaleFactorChanged(const double scaleFactor)

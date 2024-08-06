@@ -8,6 +8,7 @@
 #include "VBox.hpp"
 #include "Knob.hpp"
 #include "Label.hpp"
+#include "Panel.hpp"
 #include "Playhead.hpp"
 #include "ScoreGrid.hpp"
 #include "GrooveGraph.hpp"
@@ -22,7 +23,7 @@
 START_NAMESPACE_DISTRHO
 
 const unsigned int UI_W = 860;
-const unsigned int UI_H = 435;
+const unsigned int UI_H = 460;
 
 class WAIVEMidiUI : public UI,
                     public GrooveGraph::Callback,
@@ -49,10 +50,11 @@ private:
 
     WAIVEMidi *plugin;
 
+    Panel *edit_panel, *result_panel;
     ScoreGrid *score_grid;
     GrooveGraph *groove_graph;
     DrumPattern *drum_pattern;
-    Label *score_label, *groove_label, *drum_label;
+    Label *score_label, *groove_label, *threshold_label;
     std::vector<std::shared_ptr<Label>> drum_names;
     Button *new_score, *var_score, *new_groove, *var_groove;
     Knob *threshold;
