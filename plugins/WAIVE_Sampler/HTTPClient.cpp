@@ -33,11 +33,22 @@ void HTTPRequestTask::runTask()
         Poco::Net::HTTPSClientSession session(uri.getHost(), uri.getPort());
         session.setTimeout(Poco::Timespan(10, 0));
 
+        std::cout << "HTTPRequestTask::runTask() Request for: " << session.getHost() << path << std::endl;
+
         Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_GET, path);
         session.sendRequest(request);
 
         Poco::Net::HTTPResponse response;
+
         std::istream &resStream = session.receiveResponse(response);
+        std::cout << "HTTPRequestTask::runTask() Response: " << response.getStatus() << std::endl;
+
+        if (response.getStatus() != 200)
+        {
+            // TODO: check for other status codes?
+            _failCallback();
+            return;
+        }
 
         std::stringstream responseString;
         Poco::StreamCopier::copyStream(resStream, responseString);

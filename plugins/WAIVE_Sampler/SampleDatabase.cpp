@@ -839,7 +839,6 @@ void SampleDatabase::downloadSourceFile(int i)
 
     if (file.exists())
     {
-        std::cout << file.path() << " already exists\n";
         si->downloaded = DownloadState::DOWNLOADED;
         return;
     }
@@ -876,7 +875,7 @@ void SampleDatabase::downloadSourceFile(int i)
         {
             sleep(1);
             si->downloaded = DownloadState::NOT_DOWNLOADED;
-            std::cout << "http://127.0.0.1:3000" << endpoint.toString(Poco::Path::Style::PATH_URI) << " not avaliable" << std::endl;
+            std::cout << WAIVE_SERVER << endpoint.toString(Poco::Path::Style::PATH_URI) << " not avaliable" << std::endl;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
         });
 }
@@ -934,7 +933,8 @@ void SampleDatabase::playTempSourceFile(int i)
         [this, endpoint, si]()
         {
             sleep(1);
-            std::cout << endpoint.toString(Poco::Path::Style::PATH_URI) << " not avaliable" << std::endl;
+            std::cout << WAIVE_SERVER << endpoint.toString(Poco::Path::Style::PATH_URI) << " not avaliable" << std::endl;
+            databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
         });
 }
 
