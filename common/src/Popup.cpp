@@ -10,7 +10,7 @@ Popup::Popup(Widget *widget, float x, float y, float width, float height)
     close_btn->setLabel("x");
     close_btn->setSize(20, 20);
     close_btn->setCallback(this);
-    Layout::onTop(close_btn, this, Widget_Align::END, Widget_Align::START, 10);
+    close_btn->onTop(this, Widget_Align::END, Widget_Align::START, 10);
 
     addChildWidget(close_btn);
 }

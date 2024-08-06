@@ -10,13 +10,13 @@ CheckboxGroup::CheckboxGroup(
     check_all->setLabel("all");
     check_all->setSize(30, 16);
     check_all->setCallback(this);
-    Layout::onTop(check_all, this, Widget_Align::START, Widget_Align::START, 10);
+    check_all->onTop(this, Widget_Align::START, Widget_Align::START, 10);
 
     check_none = new Button(widget);
     check_none->setLabel("none");
     check_none->setSize(30, 16);
     check_none->setCallback(this);
-    Layout::rightOf(check_none, check_all, Widget_Align::CENTER, 10);
+    check_none->rightOf(check_all, Widget_Align::CENTER, 10);
 
     grid = new GridLayout(widget, x + 10, y + 30, width - 10, height - 50);
 

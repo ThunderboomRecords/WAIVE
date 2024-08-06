@@ -3,7 +3,6 @@
 
 #include "WidgetGroup.hpp"
 #include "SimpleButton.hpp"
-#include "Layout.hpp"
 #include "Panel.hpp"
 
 START_NAMESPACE_DISTRHO
