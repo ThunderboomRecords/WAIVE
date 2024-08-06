@@ -1,43 +1,44 @@
 #include "SampleBrowser.hpp"
 
-SampleBrowser::SampleBrowser(Window &window, SampleDatabase *sd_)
-    : NanoTopLevelWidget(window),
+SampleBrowser::SampleBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
+    : WidgetGroup(widget),
       sd(sd_)
 {
-    loadSharedResources();
+    float width = widget->getWidth();
+    float height = widget->getHeight();
 
-    float width = window.getWidth();
-    float height = window.getHeight();
-
-    sampleMap = new SampleMap(this);
-    sampleMap->setSize(width, height, false);
+    sampleMap = new SampleMap(widget);
+    sampleMap->setSize(width - 4.0f, height - widget->getFontSize() * 2.f - 4.f, true);
     sampleMap->allSamples = &sd->fAllSamples;
-    // sampleMap->selectedSample = &sd->
+    sampleMap->onTop(widget, Widget_Align::START, Widget_Align::START, 2.f, widget->getFontSize() * 2.f);
+    addChildWidget(sampleMap);
 
-    importSampleBtn = new Button(this);
+    importSampleBtn = new Button(widget);
     importSampleBtn->setLabel("Import sample");
     importSampleBtn->resizeToFit();
-    importSampleBtn->onTop(sampleMap, END, START);
+    importSampleBtn->onTop(sampleMap, Widget_Align::END, Widget_Align::START);
     importSampleBtn->setCallback(sampleMap);
+    addChildWidget(importSampleBtn);
 
-    loading = new Spinner(this);
+    loading = new Spinner(widget);
     loading->setSize(importSampleBtn->getHeight(), importSampleBtn->getHeight());
     loading->leftOf(importSampleBtn);
     loading->setLoading(false);
+    addChildWidget(loading);
 
     sd->databaseUpdate += Poco::delegate(this, &SampleBrowser::onDatabaseChanged);
 }
 
 void SampleBrowser::onNanoDisplay()
 {
-    const float width = getWidth();
-    const float height = getHeight();
+    // const float width = getWidth();
+    // const float height = getHeight();
 
-    beginPath();
-    fillColor(WaiveColors::grey1);
-    rect(0, 0, width, height);
-    fill();
-    closePath();
+    // beginPath();
+    // fillColor(WaiveColors::grey1);
+    // rect(0, 0, width, height);
+    // fill();
+    // closePath();
 }
 
 void SampleBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
@@ -58,6 +59,5 @@ void SampleBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
 
 void SampleBrowser::setCallback(SampleMap::Callback *cb)
 {
-    // callback = cb;
     sampleMap->setCallback(cb);
 }

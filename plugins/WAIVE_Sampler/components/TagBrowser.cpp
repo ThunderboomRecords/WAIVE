@@ -1,52 +1,54 @@
 #include "TagBrowser.hpp"
 
-TagBrowser::TagBrowser(Window &window, SampleDatabase *sd_)
-    : NanoTopLevelWidget(window),
+TagBrowser::TagBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
+    : WidgetGroup(widget),
       sd(sd_)
 {
-    loadSharedResources();
+    float width = widget->getWidth();
+    float height = widget->getHeight();
 
-    float width = window.getWidth();
-    float height = window.getHeight();
-
-    tagMap = new TagMap(this);
-    tagMap->setSize(width, height, false);
+    tagMap = new TagMap(widget);
+    tagMap->setSize(width - 4.0f, height - widget->getFontSize() * 2.f - 4.f, true);
+    tagMap->onTop(widget, Widget_Align::START, Widget_Align::START, 2.f, widget->getFontSize() * 2.f);
     tagMap->setFont("VG5000", VG5000, VG5000_len);
     tagMap->tagList = &sd->tagList;
     tagMap->setCallback(this);
+    addChildWidget(tagMap);
 
-    select_none = new Button(this);
-    select_none->setLabel("None");
-    select_none->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    select_none->resizeToFit();
-    select_none->setCallback(this);
-    select_none->onTop(tagMap, END, START, 10);
+    selectNoneBtn = new Button(widget);
+    selectNoneBtn->setLabel("None");
+    selectNoneBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    selectNoneBtn->resizeToFit();
+    selectNoneBtn->setCallback(this);
+    selectNoneBtn->onTop(tagMap, Widget_Align::END, Widget_Align::START, 10);
+    addChildWidget(selectNoneBtn);
 
-    select_all = new Button(this);
-    select_all->setLabel("All");
-    select_all->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    select_all->resizeToFit();
-    select_all->setCallback(this);
-    select_all->leftOf(select_none, START, 10);
+    selectAllBtn = new Button(widget);
+    selectAllBtn->setLabel("All");
+    selectAllBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    selectAllBtn->resizeToFit();
+    selectAllBtn->setCallback(this);
+    selectAllBtn->leftOf(selectNoneBtn, Widget_Align::START, 10);
+    addChildWidget(selectAllBtn);
 }
 
 void TagBrowser::onNanoDisplay()
 {
-    const float width = getWidth();
-    const float height = getHeight();
+    // const float width = getWidth();
+    // const float height = getHeight();
 
-    beginPath();
-    fillColor(WaiveColors::grey1);
-    rect(0, 0, width, height);
-    fill();
-    closePath();
+    // beginPath();
+    // fillColor(WaiveColors::grey1);
+    // rect(0, 0, width, height);
+    // fill();
+    // closePath();
 }
 
 void TagBrowser::buttonClicked(Button *btn)
 {
-    if (btn == select_all)
+    if (btn == selectAllBtn)
         tagMap->setSelectAll(true);
-    else if (btn == select_none)
+    else if (btn == selectNoneBtn)
         tagMap->setSelectAll(false);
 }
 

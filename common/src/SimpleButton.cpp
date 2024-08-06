@@ -8,7 +8,8 @@ Button::Button(Widget *parent)
       fHasFocus(false),
       callback(nullptr),
       fEnabled(true),
-      drawBackground(true)
+      drawBackground(true),
+      isToggle(false)
 {
     background_color = WaiveColors::grey2;
 }
@@ -57,10 +58,13 @@ void Button::onNanoDisplay()
     }
 
     // Background
-    if (drawBackground)
+    if (drawBackground || isToggle)
     {
         beginPath();
-        fillColor(fHasFocus ? highlight_color : background_color);
+        if (fToggleValue)
+            fillColor(accent_color);
+        else
+            fillColor(fHasFocus ? highlight_color : background_color);
         roundedRect(margin, margin, width - 2 * margin, height - 2 * margin, height * 0.5f);
         fill();
         closePath();
@@ -87,14 +91,19 @@ void Button::onNanoDisplay()
 
 bool Button::onMouse(const MouseEvent &ev)
 {
+    // std::cout << "Button::onMouse " << label << ": " << fEnabled << " " << (callback != nullptr) << " " << ev.press << " " << (ev.button == kMouseButtonLeft) << " " << contains(ev.pos) << std::endl;
     if (
         fEnabled &&
         callback != nullptr &&
         ev.press &&
-        ev.button == 1 &&
+        ev.button == kMouseButtonLeft &&
         contains(ev.pos))
     {
+        if (isToggle)
+            fToggleValue = !fToggleValue;
+
         callback->buttonClicked(this);
+        repaint();
         return true;
     }
 
@@ -123,6 +132,19 @@ bool Button::onMotion(const MotionEvent &ev)
         }
     }
     return false;
+}
+
+void Button::setToggled(bool value, bool sendCallback)
+{
+    fToggleValue = value;
+    repaint();
+    if (callback != nullptr && sendCallback)
+        callback->buttonClicked(this);
+}
+
+bool Button::getToggled() const
+{
+    return fToggleValue;
 }
 
 void Button::setCallback(Callback *cb)

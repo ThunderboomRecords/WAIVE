@@ -46,18 +46,19 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sourceList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     sourceList->setCallback(this);
 
-    filterSources = new Button(this);
-    filterSources->setLabel("Tags");
-    filterSources->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    filterSources->resizeToFit();
-    filterSources->onTop(sourceBrowserPanel, START, END, padding * 2.f);
-    filterSources->setCallback(this);
+    openTagBrowserBtn = new Button(this);
+    openTagBrowserBtn->isToggle = true;
+    openTagBrowserBtn->setLabel("Tags");
+    openTagBrowserBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    openTagBrowserBtn->resizeToFit();
+    openTagBrowserBtn->onTop(sourceBrowserPanel, START, END, padding * 2.f);
+    openTagBrowserBtn->setCallback(this);
 
     searchBox = new Panel(this);
-    searchBox->setSize(300, filterSources->getHeight(), true);
+    searchBox->setSize(300, openTagBrowserBtn->getHeight(), true);
     searchBox->radius = searchBox->getHeight() / 2;
     searchBox->background_color = WaiveColors::grey2;
-    searchBox->rightOf(filterSources);
+    searchBox->rightOf(openTagBrowserBtn);
 
     sourceSearch = new TextInput(this);
     sourceSearch->placeholder = "Search...";
@@ -92,7 +93,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     previewPlayback->setVisible(false);
 
     sourceBrowserPanel->addChildWidget(sourceList);
-    sourceBrowserPanel->addChildWidget(filterSources);
+    sourceBrowserPanel->addChildWidget(openTagBrowserBtn);
     sourceBrowserPanel->addChildWidget(searchBox);
     sourceBrowserPanel->addChildWidget(sourceSearch);
 
@@ -315,12 +316,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     openMapBtn = new Button(this);
     openMapBtn->setLabel("Sample Map");
+    openMapBtn->isToggle = true;
     openMapBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     openMapBtn->resizeToFit();
     openMapBtn->setCallback(this);
 
     browseFilesBtn = new Button(this);
-    browseFilesBtn->setLabel("Open Folder");
+    browseFilesBtn->setLabel("View Folder");
     browseFilesBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     browseFilesBtn->resizeToFit();
     browseFilesBtn->setCallback(this);
@@ -360,17 +362,37 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleSlots[i]->repositionWidgets();
 
     // 5 ----- Sample Map
-    sampleBrowserRoot = new SampleBrowserRoot(getApp(), UI_W, UI_H - 40);
-    sampleBrowserRoot->setTitle("Browse samples");
+    sampleBrowserRoot = new Popup(
+        this,
+        sourceBrowserPanel->getAbsoluteX(),
+        sourceBrowserPanel->getAbsoluteY(),
+        sourceBrowserPanel->getWidth(),
+        Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END));
+    sampleBrowserRoot->title = "Browse samples";
+    sampleBrowserRoot->setFont("VG5000", VG5000, VG5000_len);
+    sampleBrowserRoot->close();
+    sampleBrowserRoot->setCallback(this);
 
-    sampleBrowser = new SampleBrowser(*sampleBrowserRoot, &plugin->sd);
+    sampleBrowser = new SampleBrowser(sampleBrowserRoot, &plugin->sd);
     sampleBrowser->setCallback(this);
+    sampleBrowserRoot->addChildWidget(sampleBrowser);
 
-    // 6 ----- Sample Map
-    tagRoot = new SampleBrowserRoot(getApp(), 300 * fScaleFactor, 300 * fScaleFactor);
-    tagRoot->setTitle("Browse tags");
+    // 6 ----- Tag Map
+    // tagRoot = new SampleBrowserRoot(getApp(), 300 * fScaleFactor, 300 * fScaleFactor);
+    tagRoot = new Popup(
+        this,
+        sampleEditorPanel->getAbsoluteX(),
+        sampleEditorPanel->getAbsoluteY(),
+        sampleEditorPanel->getWidth(),
+        sampleEditorPanel->getHeight());
+    tagRoot->title = "Browse tags";
+    tagRoot->setFont("VG5000", VG5000, VG5000_len);
+    tagRoot->close();
+    tagRoot->setCallback(this);
 
-    tagBrowser = new TagBrowser(*tagRoot, &plugin->sd);
+    tagBrowser = new TagBrowser(tagRoot, &plugin->sd);
+    // tagBrowser->setCallback(this);
+    tagRoot->addChildWidget(tagBrowser);
 
     setGeometryConstraints(width, height, false, false);
 
@@ -402,7 +424,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 WAIVESamplerUI::~WAIVESamplerUI()
 {
     plugin->sd.databaseUpdate -= Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
-    sampleBrowserRoot->close();
     tagRoot->close();
 
     if (open_dialog.joinable())
@@ -509,8 +530,6 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->addCurrentSampleToLibrary();
     else if (button == playSampleBtn)
         plugin->triggerPreview();
-    else if (button == filterSources)
-        tagRoot->show();
     else if (button == previewPlayback)
     {
         plugin->stopSourcePreview();
@@ -645,7 +664,19 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     else if (button == browseFilesBtn)
         SystemOpenDirectory(plugin->sd.getSampleFolder());
     else if (button == openMapBtn)
-        sampleBrowserRoot->show();
+    {
+        if (button->getToggled())
+            sampleBrowserRoot->open();
+        else
+            sampleBrowserRoot->close();
+    }
+    else if (button == openTagBrowserBtn)
+    {
+        if (button->getToggled())
+            tagRoot->open();
+        else
+            tagRoot->close();
+    }
 
     repaint();
 }
@@ -793,9 +824,26 @@ void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
     return;
 };
 
+void WAIVESamplerUI::popupOpened(Popup *popup)
+{
+    if (popup == sampleBrowserRoot)
+        openMapBtn->setToggled(true);
+    else if (popup == tagRoot)
+        openTagBrowserBtn->setToggled(true);
+}
+
+void WAIVESamplerUI::popupClosed(Popup *popup)
+{
+    if (popup == sampleBrowserRoot)
+        openMapBtn->setToggled(false);
+    else if (popup == tagRoot)
+        openTagBrowserBtn->setToggled(false);
+}
+
 void WAIVESamplerUI::sourceDownload(int index)
 {
     plugin->sd.downloadSourceFile(index);
+    lastRequestedDownload = index;
 }
 
 void WAIVESamplerUI::sourceLoad(int index)
@@ -1040,6 +1088,9 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
         databaseLoading->setLoading(false);
         break;
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
+        sourceLoad(lastRequestedDownload);
+        databaseLoading->setLoading(false);
+        break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
         databaseLoading->setLoading(false);

@@ -29,7 +29,6 @@ dpf_add_plugin(
       ./components/SourceList.cpp
       ./components/SampleMap.cpp
       ./components/SampleBrowser.cpp
-      ./components/SampleBrowserRoot.cpp
       ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
       ${CMAKE_SOURCE_DIR}/common/icons/download_icon.h

@@ -16,7 +16,7 @@ TagMap::TagMap(Widget *widget) noexcept
       dragAction(DragAction::NONE),
       callback(nullptr)
 {
-    loadSharedResources();
+    // loadSharedResources();
 }
 
 // pMap = ((pEmbed - cP) * zL * 0.5 + 0.5) * width

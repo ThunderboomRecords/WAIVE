@@ -1,8 +1,7 @@
 #ifndef TAG_BROWSER_HPP_INCLUDED
 #define TAG_BROWSER_HPP_INCLUDED
 
-#include "NanoVG.hpp"
-#include "Window.hpp"
+#include "WidgetGroup.hpp"
 
 #include "fonts.h"
 #include "TagMap.hpp"
@@ -11,12 +10,12 @@
 START_NAMESPACE_DISTRHO
 
 class TagBrowser
-    : public NanoTopLevelWidget,
+    : public WidgetGroup,
       public Button::Callback,
       public TagMap::Callback
 {
 public:
-    explicit TagBrowser(Window &window, SampleDatabase *sd_);
+    explicit TagBrowser(WAIVEWidget *parent, SampleDatabase *sd_);
 
     void setCallback(TagMap::Callback *cb);
 
@@ -29,7 +28,7 @@ private:
     SampleDatabase *sd;
 
     TagMap *tagMap;
-    Button *select_all, *select_none;
+    Button *selectAllBtn, *selectNoneBtn;
 
     DISTRHO_LEAK_DETECTOR(TagBrowser);
 };

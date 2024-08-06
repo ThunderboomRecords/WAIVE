@@ -11,20 +11,32 @@ class Popup : public WidgetGroup,
               Button::Callback
 {
 public:
+    class Callback
+    {
+    public:
+        virtual ~Callback() {};
+        virtual void popupOpened(Popup *popup) = 0;
+        virtual void popupClosed(Popup *popup) = 0;
+    };
+
     Popup(Widget *widget, float x, float y, float width, float height);
+    void setCallback(Callback *cb);
 
     float border_radius;
 
     void open();
     void close();
 
+    std::string title;
+
 protected:
     void onNanoDisplay() override;
     void buttonClicked(Button *button) override;
-    bool onMouse(const MouseEvent &ev) override;
 
 private:
     Button *close_btn;
+
+    Callback *callback;
 };
 
 END_NAMESPACE_DISTRHO

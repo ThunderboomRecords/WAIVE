@@ -68,7 +68,8 @@ class WAIVESamplerUI : public UI,
                        public TextInput::Callback,
                        public DropDown::Callback,
                        public SampleSlot::Callback,
-                       public SourceList::Callback
+                       public SourceList::Callback,
+                       public Popup::Callback
 {
 public:
     WAIVESamplerUI();
@@ -104,6 +105,8 @@ protected:
     void dropdownSelection(DropDown *widget, int item) override;
     void sampleSelected(SampleSlot *slot, int slotId) override;
     void sampleSlotCleared(SampleSlot *slot, int slotId) override;
+    void popupOpened(Popup *popup) override;
+    void popupClosed(Popup *popup) override;
 
     // Source List Callbacks
     void sourceDownload(int index) override;
@@ -122,6 +125,7 @@ private:
 
     float fScale;
     double fScaleFactor;
+    int lastRequestedDownload;
 
     FontId fontTitle, fontMain;
 
@@ -139,13 +143,13 @@ private:
     // 1. Source Browser Components
     SourceList *sourceList;
     Spinner *databaseLoading;
-    Button *filterSources, *previewPlayback;
+    Button *openTagBrowserBtn, *previewPlayback;
     Panel *searchBox;
     TextInput *sourceSearch;
     Icon *searchIcon;
     Label *databaseProgress;
 
-    SampleBrowserRoot *tagRoot;
+    Popup *tagRoot;
     TagBrowser *tagBrowser;
 
     // 2. Sample Editor Components
@@ -170,8 +174,9 @@ private:
     std::vector<SampleSlot *> sampleSlots;
     Button *openMapBtn, *browseFilesBtn;
 
-    SampleBrowserRoot *sampleBrowserRoot;
+    // SampleBrowserRoot *sampleBrowserRoot;
     SampleBrowser *sampleBrowser;
+    Popup *sampleBrowserRoot;
 
     // OTHER
     ValueIndicator *valueIndicator;
