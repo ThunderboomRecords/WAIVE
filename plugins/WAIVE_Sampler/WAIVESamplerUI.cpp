@@ -84,13 +84,20 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     databaseProgress->rightOf(databaseLoading, START);
     databaseProgress->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
 
-    previewPlayback = new Button(this);
-    previewPlayback->setLabel("Stop");
-    previewPlayback->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    previewPlayback->resizeToFit();
-    previewPlayback->onTop(sourceBrowserPanel, END, END, padding * 2.f);
-    previewPlayback->setCallback(this);
-    previewPlayback->setVisible(false);
+    previewPlaybackBtn = new Button(this);
+    previewPlaybackBtn->setLabel("Stop");
+    previewPlaybackBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    previewPlaybackBtn->resizeToFit();
+    previewPlaybackBtn->onTop(sourceBrowserPanel, END, END, padding * 2.f);
+    previewPlaybackBtn->setCallback(this);
+    previewPlaybackBtn->setVisible(false);
+
+    randomSourceBtn = new Button(this);
+    randomSourceBtn->setLabel("Random");
+    randomSourceBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    randomSourceBtn->resizeToFit();
+    randomSourceBtn->below(sourceList, Widget_Align::END, padding * 2.f);
+    randomSourceBtn->setCallback(this);
 
     sourceBrowserPanel->addChildWidget(sourceList);
     sourceBrowserPanel->addChildWidget(openTagBrowserBtn);
@@ -530,10 +537,10 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->addCurrentSampleToLibrary();
     else if (button == playSampleBtn)
         plugin->triggerPreview();
-    else if (button == previewPlayback)
+    else if (button == previewPlaybackBtn)
     {
         plugin->stopSourcePreview();
-        previewPlayback->setVisible(false);
+        previewPlaybackBtn->setVisible(false);
     }
     else if (button == sourcePreviewBtn)
         plugin->playSourcePreview();
@@ -648,9 +655,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         }
 
         if (starts.size() == 0)
-        {
             return;
-        }
 
         int i = random.next() % starts.size();
         plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
@@ -677,6 +682,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         else
             tagRoot->close();
     }
+    else if (button == randomSourceBtn)
+        sourceList->selectRandom();
 
     repaint();
 }
@@ -843,11 +850,12 @@ void WAIVESamplerUI::popupClosed(Popup *popup)
 void WAIVESamplerUI::sourceDownload(int index)
 {
     plugin->sd.downloadSourceFile(index);
-    lastRequestedDownload = index;
 }
 
 void WAIVESamplerUI::sourceLoad(int index)
 {
+    if (index < 0)
+        return;
     std::string fp = plugin->sd.getFullSourcePath(plugin->sd.sourcesList.at(index));
     plugin->fSourceTagString = makeTagString(plugin->sd.sourcesList.at(index).tags);
     plugin->loadSource(fp.c_str());
@@ -1088,7 +1096,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
         databaseLoading->setLoading(false);
         break;
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
-        sourceLoad(lastRequestedDownload);
+        sourceLoad(plugin->sd.latestDownloadedIndex);
         databaseLoading->setLoading(false);
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
@@ -1125,7 +1133,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
         databaseProgress->setLabel("Error downloading.");
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
-        previewPlayback->setVisible(true);
+        previewPlaybackBtn->setVisible(true);
         break;
     case SampleDatabase::DatabaseUpdate::SAMPLE_ADDED:
     case SampleDatabase::DatabaseUpdate::SAMPLE_DELETED:

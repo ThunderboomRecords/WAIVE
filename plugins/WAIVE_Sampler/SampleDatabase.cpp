@@ -125,7 +125,8 @@ json SampleInfo::toJson() const
 SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     : httpClient(_httpClient),
       sourcesLoaded(false),
-      sourceDatabaseInitialised(true)
+      sourceDatabaseInitialised(true),
+      latestDownloadedIndex(-1)
 {
     // Get and create the directory where samples and sound files will
     // be saved to
@@ -850,7 +851,7 @@ void SampleDatabase::downloadSourceFile(int i)
 
     httpClient->sendRequest(
         "DownloadSourceFile",
-        WAIVE_SERVER, endpoint.toString(Poco::Path::Style::PATH_URI), [this, filePath, si](const std::string &response)
+        WAIVE_SERVER, endpoint.toString(Poco::Path::Style::PATH_URI), [this, filePath, si, i](const std::string &response)
         {
             // save file...
             Poco::File fp(filePath);
@@ -870,6 +871,7 @@ void SampleDatabase::downloadSourceFile(int i)
 
             sleep(1);
             si->downloaded = DownloadState::DOWNLOADED;
+            this->latestDownloadedIndex = i;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED); },
         [this, endpoint, si]()
         {
@@ -926,6 +928,7 @@ void SampleDatabase::playTempSourceFile(int i)
 
             }
 
+            this->latestDownloadedIndex = -1; // to avoid loading preview into SampleEditor
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED);
             
             this->sourcePreviewPath = tmp.path();

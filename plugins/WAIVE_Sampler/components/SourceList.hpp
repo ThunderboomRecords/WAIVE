@@ -6,6 +6,8 @@
 #include "SampleDatabase.hpp"
 #include "WAIVEUtils.hpp"
 
+#include "Poco/Random.h"
+
 #include "download_icon.h"
 
 START_NAMESPACE_DISTRHO
@@ -16,7 +18,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void sourceDownload(int index) = 0;
         virtual void sourcePreview(int index) = 0;
         virtual void sourceLoad(int index) = 0;
@@ -24,6 +26,7 @@ public:
 
     SourceList(Widget *widget);
     void setCallback(Callback *cb);
+    void selectRandom();
 
     std::vector<SourceInfo> *source_info;
     std::mutex *source_info_mtx;
@@ -51,6 +54,8 @@ private:
 
     bool scrolling;
     int highlighting;
+
+    Poco::Random random;
 };
 
 END_NAMESPACE_DISTRHO

@@ -143,7 +143,7 @@ private:
     // 1. Source Browser Components
     SourceList *sourceList;
     Spinner *databaseLoading;
-    Button *openTagBrowserBtn, *previewPlayback;
+    Button *openTagBrowserBtn, *previewPlaybackBtn, *randomSourceBtn;
     Panel *searchBox;
     TextInput *sourceSearch;
     Icon *searchIcon;

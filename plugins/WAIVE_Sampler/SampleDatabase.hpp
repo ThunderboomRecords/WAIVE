@@ -256,6 +256,8 @@ public:
     std::vector<Tag> tagList;
     std::vector<std::string> archives;
 
+    int latestDownloadedIndex;
+
 private:
     Poco::Data::Session *session;
     Poco::Path rootDir, sampleFolder, sourceFolder;
