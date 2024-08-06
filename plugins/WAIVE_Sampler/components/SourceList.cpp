@@ -7,16 +7,17 @@ SourceList::SourceList(Widget *widget)
       margin(5.0f),
       padding(5.f),
       rowHeight(30.f),
-      scrollBarWidth(8),
       scrolling(false),
       scrollGutter(background_color),
       scrollHandle(foreground_color),
       info("No results found"),
       callback(nullptr)
 {
-    loadSharedResources();
-
     download = new WAIVEImage(this, download_icon, download_icon_len, 131, 119, IMAGE_GENERATE_MIPMAPS);
+
+    scrollBarWidth = 8 * scale_factor;
+    columnLabel = 30 * scale_factor;
+    columnLicense = 30 * scale_factor + 2.f * scrollBarWidth;
 }
 
 void SourceList::onNanoDisplay()
@@ -137,13 +138,13 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
     fontSize(getFontSize());
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
     fontFaceId(font);
-    text(30.f, height / 2.0f, info.description.c_str(), nullptr);
+    text(columnLabel, height / 2.0f, info.description.c_str(), nullptr);
     closePath();
 
     // fade string
     Paint fade;
     if (highlight)
-        fade = linearGradient(width - 26.f - 2.f * scrollBarWidth - 50, 0, width - 26.f - 50 - 4.f * scrollBarWidth, 0, accent_color, Color(0, 0, 0, 0.f));
+        fade = linearGradient(width - columnLicense - 50 * scale_factor, 0, width - columnLicense - 2 * scrollBarWidth - 50 * scale_factor, 0, accent_color, Color(0, 0, 0, 0.f));
     else
         fade = linearGradient(width - scrollBarWidth, 0, width - 4.f * scrollBarWidth, 0, background_color, Color(0, 0, 0, 0.f));
     beginPath();
@@ -161,9 +162,9 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
     // play button
     beginPath();
     fillColor(text_color);
-    moveTo(8, 10);
-    lineTo(8, height - 10);
-    lineTo(20, height / 2);
+    moveTo(8 * scale_factor, 10 * scale_factor);
+    lineTo(8 * scale_factor, height - 10 * scale_factor);
+    lineTo(20 * scale_factor, height / 2);
     fill();
     closePath();
 
@@ -172,20 +173,20 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
     fillColor(text_color);
     fontSize(getFontSize() * 0.8f);
     textAlign(Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE);
-    text(width - 26.f - 2.f * scrollBarWidth, height / 2.f, "License", nullptr);
+    text(width - columnLicense, height / 2.f, "License", nullptr);
     closePath();
 
     if (info.downloaded == DownloadState::NOT_DOWNLOADED)
     {
         download->align = Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE;
-        download->drawAt(width - scrollBarWidth * 2.f, height / 2.f, height / 2.f);
+        download->drawAt(width - scrollBarWidth * 2.f, height / 2.f, getFontSize() * 0.8f);
     }
     else if (info.downloaded == DownloadState::DOWNLOADING)
     {
         beginPath();
         strokeColor(text_color);
         strokeWidth(3.0f);
-        circle(width - 8.f - 2.f * scrollBarWidth, height / 2.f, 8.f);
+        circle(width - 8.f - 2.f * scrollBarWidth, height / 2.f, 8.f * scale_factor);
         stroke();
         closePath();
     }
@@ -194,9 +195,9 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
         beginPath();
         strokeColor(text_color);
         strokeWidth(3.0f);
-        moveTo(width - scrollBarWidth * 2.f - 12.f, 10.f);
-        lineTo(width - scrollBarWidth * 2.f - 4.f, height / 2.f);
-        lineTo(width - scrollBarWidth * 2.f - 12.f, height - 10.f);
+        moveTo(width - scrollBarWidth * 2.f - 12.f * scale_factor, 10.f * scale_factor);
+        lineTo(width - scrollBarWidth * 2.f - 4.f * scale_factor, height / 2.f);
+        lineTo(width - scrollBarWidth * 2.f - 12.f * scale_factor, height - 10.f * scale_factor);
         stroke();
         closePath();
     }
@@ -275,8 +276,7 @@ bool SourceList::onMouse(const MouseEvent &ev)
             scrolling = true;
             return true;
         }
-
-        if (ev.pos.getX() > getWidth() - 26.f - 2.f * scrollBarWidth - 50)
+        else if (ev.pos.getX() > getWidth() - columnLicense - 50)
         {
             try
             {
@@ -291,8 +291,7 @@ bool SourceList::onMouse(const MouseEvent &ev)
             }
             
         }
-
-        if (ev.pos.getX() > 30)
+        else if (ev.pos.getX() > columnLabel)
         {
             try
             {
@@ -317,10 +316,8 @@ bool SourceList::onMouse(const MouseEvent &ev)
             
             return false;
         }
-
-        if (ev.pos.getX() < 30)
+        else
         {
-            std::cout << "play " << highlighting << std::endl;
             if (callback != nullptr)
                 callback->sourcePreview(highlighting);
             return true;

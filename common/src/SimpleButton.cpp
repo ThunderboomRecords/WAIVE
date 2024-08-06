@@ -30,7 +30,8 @@ void Button::resizeToFit()
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
-    setHeight(bounds.getHeight() * 2.f);
+    // setHeight(bounds.getHeight() * 2.f);
+    setHeight(getFontSize() * 2.f);
     setWidth(bounds.getWidth() + getHeight());
 }
 

@@ -4,7 +4,10 @@
 enum Parameters
 {
     kThreshold = 0,
-    kSixteenth,
+    kGrooveNew,
+    kGrooveVar,
+    kScoreNew,
+    kScoreVar,
     kParameterCount
 };
 

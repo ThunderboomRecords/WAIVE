@@ -16,10 +16,10 @@ Waveform::Waveform(Widget *widget) noexcept
       wf(nullptr),
       wfFeatures(nullptr),
       featureHighlight(-1),
-      level_of_detail(4),
       feature_color(WaiveColors::accent1),
       cursor_color(WaiveColors::accent2)
 {
+    level_of_detail = int(4 * scale_factor);
 }
 
 void Waveform::setWaveform(std::vector<float> *wf_)
@@ -140,7 +140,7 @@ void Waveform::onNanoDisplay()
     lineJoin(BEVEL);
     lineCap(SQUARE);
     strokeColor(text_color);
-    strokeWidth(reduced ? 1.5f : 1.f);
+    strokeWidth(reduced ? 1.5f * scale_factor : 1.f);
     moveTo(0, half);
 
     for (int i = 0; i < waveformMin.size(); i++)

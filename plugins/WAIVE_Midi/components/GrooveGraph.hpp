@@ -1,22 +1,20 @@
 #ifndef GROOVEGRAPH_HPP_INCLUDED
 #define GROOVEGRAPH_HPP_INCLUDED
 
-#include "Window.hpp"
-#include "Widget.hpp"
-#include "NanoVG.hpp"
+#include "WAIVEWidget.hpp"
 #include "Notes.hpp"
 
 START_NAMESPACE_DISTRHO
 
-
-class GrooveGraph : public NanoSubWidget
+class GrooveGraph : public WAIVEWidget
 {
 public:
-    class Callback {
-        public:
-            virtual ~Callback() {};
-            virtual void grooveClicked(GrooveGraph *graph) = 0;
-    };  
+    class Callback
+    {
+    public:
+        virtual ~Callback() {};
+        virtual void grooveClicked(GrooveGraph *graph) = 0;
+    };
     explicit GrooveGraph(Widget *widget) noexcept;
 
 protected:
@@ -33,12 +31,11 @@ private:
 
     bool dragging;
     Point<double> dragStart;
-    
+
     DISTRHO_LEAK_DETECTOR(GrooveGraph);
 
     friend class WAIVEMidiUI;
 };
-
 
 END_NAMESPACE_DISTRHO
 

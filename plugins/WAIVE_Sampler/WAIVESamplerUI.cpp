@@ -12,7 +12,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     float width = UI_W * fScaleFactor;
     float height = UI_H * fScaleFactor;
-    float padding = 4.f;
+    float padding = 4.f * fScaleFactor;
 
     fontTitle = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
     fontMain = createFontFromMemory("Poppins-Light", Poppins_Light, Poppins_Light_len, false);
@@ -108,11 +108,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     importSource->setLabel("Import source");
     importSource->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     importSource->resizeToFit();
-    importSource->onTop(sampleEditorPanel, END, START, padding * 2.f);
+    importSource->onTop(sampleEditorPanel, END, START, padding);
     importSource->setCallback(this);
 
     sourceWaveformDisplay = new Waveform(this);
-    sourceWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 4.f * padding, sampleEditorPanel->getHeight() * 0.3f, true);
+    sourceWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 4.f * padding, sampleEditorPanel->getHeight() * 0.4f, true);
     sourceWaveformDisplay->below(importSource, END, padding);
     sourceWaveformDisplay->selectable = true;
     sourceWaveformDisplay->setCallback(this);
@@ -236,7 +236,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     editorKnobs->addWidget(filterType);
     editorKnobs->below(presetButtons, START, padding);
     editorKnobs->setWidth(presetButtons->getWidth());
-    editorKnobs->setHeight(Layout::measureVertical(editorKnobs, START, sampleEditorPanel, END) - padding);
     editorKnobs->justify_content = HBox::Justify_Content::space_between;
     editorKnobs->positionWidgets();
 
@@ -1106,7 +1105,7 @@ Knob *WAIVESamplerUI::createWAIVEKnob(
     knob->min = min;
     knob->max = max;
     knob->setValue(value);
-    knob->gauge_width = 3.0f;
+    knob->gauge_width = 3.0f * fScaleFactor;
     knob->setCallback(this);
     knob->setFontSize(14.f);
     knob->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);

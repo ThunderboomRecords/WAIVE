@@ -2,11 +2,9 @@
 
 START_NAMESPACE_DISTRHO
 
-
 Playhead::Playhead(Widget *parent) noexcept
-    : NanoSubWidget(parent)
+    : WAIVEWidget(parent)
 {
-
 }
 
 void Playhead::onNanoDisplay()
@@ -16,7 +14,7 @@ void Playhead::onNanoDisplay()
 
     float x = (*progress) * width;
 
-    strokeColor(220, 220, 220);
+    strokeColor(accent_color);
     beginPath();
     moveTo(x, 0);
     lineTo(x, height);
@@ -28,6 +26,5 @@ void Playhead::idleCallback()
 {
     repaint();
 }
-
 
 END_NAMESPACE_DISTRHO

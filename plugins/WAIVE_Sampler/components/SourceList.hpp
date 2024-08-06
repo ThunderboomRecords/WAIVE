@@ -44,6 +44,7 @@ private:
     void clampScrollPos();
     float scrollPos;
     float rowHeight;
+    float columnLabel, columnLicense;
     void drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight);
 
     WAIVEImage *download;

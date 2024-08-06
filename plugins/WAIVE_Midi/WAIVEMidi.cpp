@@ -127,9 +127,13 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
         return;
     }
 
+    midiNotes.resize(9);
+    for (int i = 0; i < 9; i++)
+        midiNotes[i] = midiMap[i];
+
+    notes.reserve(16 * 9 * 3);
     notesPointer = notes.begin();
 
-    // generate
     generateScore();
     generateGroove();
     generateFullPattern();
@@ -137,15 +141,48 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
 void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
 {
+    std::cout << "WAIVEMidi::initParameter index " << index << std::endl;
     switch (index)
     {
     case kThreshold:
-        parameter.name = "Threshold";
-        parameter.symbol = "threshold";
+        parameter.name = "Complexity";
+        parameter.symbol = "complexity";
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 0.7f;
+        parameter.ranges.def = 0.5f;
         parameter.hints = kParameterIsAutomatable;
+        break;
+    case kGrooveNew:
+        parameter.name = "New Groove";
+        parameter.symbol = "new_groove";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
+        break;
+    case kGrooveVar:
+        parameter.name = "Variation Groove";
+        parameter.symbol = "variation_groove";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
+        break;
+    case kScoreNew:
+        parameter.name = "New Score";
+        parameter.symbol = "new_score";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
+        break;
+    case kScoreVar:
+        parameter.name = "Variation Score";
+        parameter.symbol = "variation_score";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
         break;
     default:
         break;
@@ -160,6 +197,12 @@ float WAIVEMidi::getParameterValue(uint32_t index) const
     case kThreshold:
         val = fThreshold;
         break;
+    case kScoreNew:
+    case kScoreVar:
+    case kGrooveNew:
+    case kGrooveVar:
+        val = 0.0f;
+        break;
     default:
         break;
     }
@@ -173,6 +216,31 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
     {
     case kThreshold:
         fThreshold = value;
+        generateFullPattern();
+        break;
+    case kGrooveNew:
+        if (value != 1.f)
+            break;
+        generateGroove();
+        generateFullPattern();
+        break;
+    case kGrooveVar:
+        if (value != 1.f)
+            break;
+        variationGroove();
+        generateFullPattern();
+        break;
+    case kScoreNew:
+        if (value != 1.f)
+            break;
+        generateScore();
+        generateFullPattern();
+        break;
+    case kScoreVar:
+        if (value != 1.f)
+            break;
+        variationScore();
+        generateFullPattern();
         break;
     default:
         break;
@@ -275,10 +343,12 @@ void WAIVEMidi::run(
     MidiEvent me;
     me.size = 3;
 
+    std::lock_guard<std::mutex> lk(noteMtx);
+
     for (uint32_t i = 0; i < numFrames; i++)
     {
         me.frame = i;
-        while (notesPointer != notes.end() && (double)(*notesPointer).tick <= loopTick)
+        while (notesPointer < notes.end() && (double)(*notesPointer).tick <= loopTick)
         {
             me.data[1] = (*notesPointer).midiNote;
 
@@ -351,6 +421,23 @@ void WAIVEMidi::generateScore()
         mScoreZ[i] = z;
     }
 
+    computeScore();
+}
+
+void WAIVEMidi::variationScore()
+{
+    for (size_t i = 0; i < mScoreZ.size(); i++)
+    {
+        float z = distribution(generator);
+        z = z * score_stds[i % 64] * 0.1f;
+        mScoreZ[i] += z;
+    }
+
+    computeScore();
+}
+
+void WAIVEMidi::computeScore()
+{
     const char *inputNamesCstrs[] = {mScoreDecoderInputNames[0].c_str()};
     const char *outputNamesCstrs[] = {mScoreDecoderOutputNames[0].c_str()};
 
@@ -416,16 +503,30 @@ void WAIVEMidi::encodeGroove()
 
 void WAIVEMidi::generateGroove()
 {
-    // std::cout << "mGrooveZ: [";
     for (size_t i = 0; i < mGrooveZ.size(); i++)
     {
         float z = distribution(generator);
         z = z * groove_stds[i % 32] + groove_means[i % 32];
         mGrooveZ[i] = z;
-        // printf("%.3f, ", mGrooveZ[i]);
     }
-    // std::cout << "]" << std::endl;
 
+    computeGroove();
+}
+
+void WAIVEMidi::variationGroove()
+{
+    for (size_t i = 0; i < mGrooveZ.size(); i++)
+    {
+        float z = distribution(generator);
+        z = z * groove_stds[i % 32] * 0.1f;
+        mGrooveZ[i] += z;
+    }
+
+    computeGroove();
+}
+
+void WAIVEMidi::computeGroove()
+{
     const char *inputNamesCstrs[] = {mGrooveDecoderInputNames[0].c_str()};
     const char *outputNamesCstrs[] = {mGrooveDecoderOutputNames[0].c_str()};
 
@@ -465,20 +566,12 @@ void WAIVEMidi::generateGroove()
 
 void WAIVEMidi::generateFullPattern()
 {
-
     mFullZ.clear();
-    // std::cout << "mFullZ = [";
     for (const float z : mScoreZ)
-    {
         mFullZ.push_back(z);
-        // printf("%.2f, ", z);
-    }
+
     for (const float z : mGrooveZ)
-    {
         mFullZ.push_back(z);
-        // printf("%.2f, ", z);
-    }
-    // std::cout << "]" << std::endl;
 
     const char *inputNamesCstrs[] = {mFullDecoderInputNames[0].c_str()};
     const char *outputNamesCstrs[] = {mFullDecoderOutputNames[0].c_str()};
@@ -498,9 +591,7 @@ void WAIVEMidi::generateFullPattern()
         {
             for (int k = 0; k < 3; k++)
             {
-
                 int index = k + 3 * (j + 30 * i);
-
                 fDrumPattern[i][j][k] = mFullOutput[index];
             }
         }
@@ -509,17 +600,23 @@ void WAIVEMidi::generateFullPattern()
     computeNotes();
 }
 
+void WAIVEMidi::setMidiNote(int instrument, uint8_t midi)
+{
+    midiNotes[instrument] = midi;
+    computeNotes();
+}
+
 void WAIVEMidi::computeNotes()
 {
+    std::lock_guard<std::mutex> lk(noteMtx);
+
     int tp16th = ticks_per_beat / 4;
 
     int nextTick = -1;
     if (notesPointer != notes.end())
-    {
         nextTick = (*notesPointer).tick;
-    }
 
-    std::cout << "WAIVEMidi::computeNotes()\n  tp16th: " << tp16th << std::endl;
+    // std::cout << "WAIVEMidi::computeNotes()\n  tp16th: " << tp16th << std::endl;
 
     notes.clear();
 
@@ -537,7 +634,7 @@ void WAIVEMidi::computeNotes()
             {
                 int index = s_map[j] + k;
 
-                if (fDrumPattern[i][index][0] < 0.3f)
+                if (fDrumPattern[i][index][0] < (1.f - fThreshold))
                     break;
 
                 float vel = fDrumPattern[i][index][1];
@@ -551,7 +648,7 @@ void WAIVEMidi::computeNotes()
                 tickOn = std::max(tickOn, 0);
 
                 Note noteOn = {
-                    tickOn, velocity, midiMap[j], 9, true};
+                    tickOn, velocity, midiNotes[j], 9, true, j};
 
                 newNotes[j].push_back(noteOn);
             }
@@ -572,14 +669,14 @@ void WAIVEMidi::computeNotes()
             int noteOffTick = std::min(thisOnTick + tp16th, nextOnTick);
 
             Note noteOff = {
-                noteOffTick, 0, newNotes[j][i].midiNote, 9, false};
+                noteOffTick, 0, newNotes[j][i].midiNote, 9, false, j};
             newNotes[j].push_back(noteOff);
         }
 
         // add final noteOff
         int noteOffTick = std::min(newNotes[j][nNotes - 1].tick + tp16th, tp16th * 16 * 4 - 1);
         Note noteOff = {
-            noteOffTick, 0, newNotes[j][nNotes - 1].midiNote, 9, false};
+            noteOffTick, 0, newNotes[j][nNotes - 1].midiNote, 9, false, j};
         newNotes[j].push_back(noteOff);
 
         // then reorder again
@@ -600,14 +697,11 @@ void WAIVEMidi::computeNotes()
     }
 
     std::sort(notes.begin(), notes.end(), compareNotes);
-    notesPointer = notes.begin();
 
     // advance pointer to reach time when computeNotes was called
     notesPointer = notes.begin();
     while (notesPointer != notes.end() && (*notesPointer).tick <= nextTick)
-    {
         notesPointer++;
-    }
 }
 
 void WAIVEMidi::sampleRateChanged(double newSampleRate)

@@ -5,13 +5,16 @@
 #include "NanoVG.hpp"
 #include "Window.hpp"
 
-#include "HBox.hpp"
 #include "VBox.hpp"
-#include "VSlider.hpp"
+#include "Knob.hpp"
+#include "Label.hpp"
+#include "Panel.hpp"
+#include "DropDown.hpp"
 #include "Playhead.hpp"
 #include "ScoreGrid.hpp"
 #include "GrooveGraph.hpp"
 #include "DrumPattern.hpp"
+#include "SimpleButton.hpp"
 
 #include "fonts.h"
 #include "WAIVEColors.hpp"
@@ -20,11 +23,14 @@
 
 START_NAMESPACE_DISTRHO
 
-const unsigned int UI_W = 840;
-const unsigned int UI_H = 380;
+const unsigned int UI_W = 890;
+const unsigned int UI_H = 460;
 
 class WAIVEMidiUI : public UI,
-                    public GrooveGraph::Callback
+                    public GrooveGraph::Callback,
+                    public Button::Callback,
+                    public Knob::Callback,
+                    public DropDown::Callback
 {
 public:
     WAIVEMidiUI();
@@ -34,20 +40,28 @@ protected:
     void parameterChanged(uint32_t index, float value) override;
     void stateChanged(const char *key, const char *value) override;
     void onNanoDisplay() override;
+    void buttonClicked(Button *button) override;
     void grooveClicked(GrooveGraph *graph) override;
+    void knobDragStarted(Knob *knob) override;
+    void knobDragFinished(Knob *knob, float value) override;
+    void knobValueChanged(Knob *knob, float value) override;
+    void dropdownSelection(DropDown *widget, int item) override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
 private:
-    float fScale;
     double fScaleFactor;
 
     WAIVEMidi *plugin;
-    VSlider *fThreshold;
-    HBox *hbox_controls;
-    VBox *vbox_container;
+
+    Panel *edit_panel, *result_panel;
     ScoreGrid *score_grid;
     GrooveGraph *groove_graph;
     DrumPattern *drum_pattern;
+    Label *score_label, *groove_label, *threshold_label;
+    std::vector<std::shared_ptr<Label>> drum_names;
+    Button *new_score, *var_score, *new_groove, *var_groove;
+    Knob *threshold;
+    std::vector<std::shared_ptr<DropDown>> midi_notes;
 
     Playhead *drum_playhead;
 

@@ -8,7 +8,8 @@ VBox::VBox(Widget *widget) noexcept
       justify_content(Justify_Content::space_between),
       padding(0)
 {
-    setHeight(widget->getHeight());
+    setHeight(50);
+    setWidth(50);
 }
 
 void VBox::addWidget(NanoSubWidget *widget)
