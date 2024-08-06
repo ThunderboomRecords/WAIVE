@@ -1,23 +1,25 @@
 # WAIVE-Plugins
 
-<p align="center">    
-AI x Archive music tools
+<p align="center">
+    <img src="assets/logo.png">
 </p>
-
+<p align="center">
+    AI x Archive music tools
+</p>
 
 <p align="center">
     <img 
-        src="assets/screenshot.png" 
-        style="border-radius: 4px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);"
+        src="assets/WAIVE_Midi_preview.png" 
         width="500"
+        alt="WAIVE-Midi screenshot"
     >
 </p>
 
 <p align="center">
     <img 
-        src="assets/WAIVE_Sampler_Latest.png" 
-        style="border-radius: 4px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);"
+        src="assets/WAIVE_Sampler_preview.png" 
         width="500"
+        alt="WAIVE-Sampler screenshot"
     >
 </p>
 
@@ -44,12 +46,10 @@ Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX 
       
        \* for VST3, move the whole `.vst` folders here. 
    
-4. In your DAW, rescan plugins if it does not automatically. 
+4. In your DAW, rescan plugins if it does not do so automatically. 
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
-
-*TODO: static library builds*
 
 #### Pre-requisites
 Requires statically built onnxruntime for your platform. You can download pre-built libraries from [csukuangfj/onnxruntime-libs](https://huggingface.co/csukuangfj/onnxruntime-libs/tree/main), or build them yourself (such as with [ort-builder](https://github.com/olilarkin/ort-builder/tree/bfbd362c9660fce9600a43732e3f8b53d5fb243a)).
@@ -82,7 +82,7 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 
 #### Windows
 
-*TODO*
+*Coming soon*
 
 
 ### Licenses
