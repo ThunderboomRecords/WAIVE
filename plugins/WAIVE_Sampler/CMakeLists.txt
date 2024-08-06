@@ -77,6 +77,12 @@ include_directories(
 set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
 set(OPENSSL_LIBRARIES /usr/local/opt/openssl/lib)
 
+# Really make sure Poco builds statically...
+if(POLICY CMP0077)
+    cmake_policy(SET CMP0077 NEW)
+endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
 set(BUILD_SHARED_LIBS OFF)
 set(POCO_STATIC ON)
 add_compile_options(-DUSE_KISS_FFT)
