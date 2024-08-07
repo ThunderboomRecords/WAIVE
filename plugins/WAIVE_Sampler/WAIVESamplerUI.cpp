@@ -420,7 +420,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
     plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
 
-    printf("WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
+    // printf("WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
 
     // should be done by plugin itself?
     plugin->sd.checkLatestRemoteVersion();

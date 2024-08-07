@@ -87,7 +87,15 @@ void SourceList::onNanoDisplay()
             continue;
         if (y > height || i >= n)
             break;
-        drawSourceInfo((source_info->at(i)), x, y, rowWidth, rowHeight, (highlighting == i) || (selected == i));
+
+        try
+        {
+            drawSourceInfo((source_info->at(i)), x, y, rowWidth, rowHeight, (highlighting == i) || (selected == i));
+        }
+        catch (const std::out_of_range &e)
+        {
+            continue;
+        }
     }
 
     // scroll bar

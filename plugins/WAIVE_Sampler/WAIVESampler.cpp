@@ -353,7 +353,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
         samplePlayers[i].midi = defaultMidiMap[i];
 
     // Load models
-    std::cout << "Loading TSNE model...\n";
+    // std::cout << "Loading TSNE model...\n";
     try
     {
         auto info = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
@@ -380,11 +380,12 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
         mTSNEInputTensor.push_back(Ort::Value::CreateTensor<float>(info, mTSNEInput.data(), mTSNEInput.size(), mTSNEInputShape[0].data(), mTSNEInputShape[0].size()));
         mTSNEOutputTensor.push_back(Ort::Value::CreateTensor<float>(info, mTSNEOutput.data(), mTSNEOutput.size(), mTSNEOutputShape[0].data(), mTSNEOutputShape[0].size()));
 
-        PrintModelDetails("TSNE model", mTSNEInputNames, mTSNEOutputNames, mTSNEInputShape, mTSNEOutputShape);
+        // PrintModelDetails("TSNE model", mTSNEInputNames, mTSNEOutputNames, mTSNEInputShape, mTSNEOutputShape);
     }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << '\n';
+        std::cerr << "Error loading model: " << e.what() << '\n';
+        return;
     }
 
     std::lock_guard<std::mutex> lock(tempBufferMutex);
@@ -1238,7 +1239,7 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         std::cerr << "Error: Task is null" << std::endl;
         return;
     }
-    std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << " isCancelled: " << pTask->isCancelled() << std::endl;
+    std::cout << "WAIVESampler::onTaskFinished: " << pTask->name() << std::endl;
 
     const std::string taskName = pTask->name();
 

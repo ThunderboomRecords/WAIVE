@@ -516,8 +516,9 @@ std::string SampleDatabase::getSourcePreview() const
 
 std::string SampleDatabase::getNewSampleName(const std::string &name)
 {
+    std::cout << "SampleDatabase::getNewSampleName: " << name << std::endl;
     // Finds a unique name of the form "new_sample_X.wav"
-    int x = 0;
+    int suffixCounter = 0;
     int id;
     std::string newName(name);
 
@@ -556,16 +557,16 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
 
         while (select.execute())
         {
-            if (x > 99)
+            if (suffixCounter > 199)
             {
                 std::cerr << "Max iterations finding new sample name...\n";
                 break;
             }
-            x++;
-            newName.assign(fmt::format(pattern, x));
+            suffixCounter++;
+            newName = fmt::format(pattern, suffixCounter);
         }
     }
-    catch (Poco::DataException &e)
+    catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Error in getNewSampleName: " << e.what() << std::endl;
     }
@@ -747,7 +748,7 @@ void SampleDatabase::parseTSV(
     const std::vector<std::string> &column_type,
     const std::string &csvData)
 {
-    std::cout << "SampleDatabase::parseTSV\n";
+    // std::cout << "SampleDatabase::parseTSV\n";
 
     // 1. Create database
     try
@@ -862,7 +863,6 @@ void SampleDatabase::downloadSourceFile(int i)
         return;
 
     SourceInfo *si = &sourcesList[i];
-    // loadedSource = SourceInfo(*si);
 
     if (si->downloaded == DownloadState::DOWNLOADED)
         return;
@@ -976,7 +976,7 @@ void SampleDatabase::playTempSourceFile(int i)
 
 void SampleDatabase::makeTagSourcesTable()
 {
-    std::cout << "SampleDatabase::makeTagSourcesTable()" << std::endl;
+    // std::cout << "SampleDatabase::makeTagSourcesTable()" << std::endl;
 
     try
     {
@@ -1074,7 +1074,7 @@ void SampleDatabase::makeTagSourcesTable()
 
 void SampleDatabase::getTagList()
 {
-    std::cout << "SampleDatabase::getTagList()" << std::endl;
+    // std::cout << "SampleDatabase::getTagList()" << std::endl;
     if (!sourceDatabaseInitialised)
         return;
 
@@ -1114,8 +1114,7 @@ void SampleDatabase::getTagList()
 
 void SampleDatabase::getArchiveList()
 {
-    std::cout << "SampleDatabase::getArchiveList()" << std::endl;
-
+    // std::cout << "SampleDatabase::getArchiveList()" << std::endl;
     archives.clear();
 
     try
@@ -1146,7 +1145,7 @@ void SampleDatabase::getArchiveList()
 
 void SampleDatabase::filterSources()
 {
-    std::cout << "SampleDatabase::filterSources()" << std::endl;
+    // std::cout << "SampleDatabase::filterSources()" << std::endl;
     if (!sourceDatabaseInitialised)
         return;
 
@@ -1164,7 +1163,6 @@ void SampleDatabase::filterSources()
         return;
     }
 
-    std::cout << "Sources table exists: " << exists << std::endl;
     if (exists.empty())
     {
         sourceDatabaseInitialised = false;
