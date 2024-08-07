@@ -385,7 +385,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sampleBrowserRoot->addChildWidget(sampleBrowser);
 
     // 6 ----- Tag Map
-    // tagRoot = new SampleBrowserRoot(getApp(), 300 * fScaleFactor, 300 * fScaleFactor);
     tagRoot = new Popup(
         this,
         sampleEditorPanel->getAbsoluteX(),
@@ -398,7 +397,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     tagRoot->setCallback(this);
 
     tagBrowser = new TagBrowser(tagRoot, &plugin->sd);
-    // tagBrowser->setCallback(this);
     tagRoot->addChildWidget(tagBrowser);
 
     setGeometryConstraints(width, height, false, false);
@@ -555,10 +553,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 1. Select random candidate area of source
         int nCandidates = plugin->fSourceFeatures.size();
         if (nCandidates == 0)
-        {
-
             return; // or pick a random spot?
-        }
         else
         {
             int i = random.next() % nCandidates;
@@ -571,9 +566,6 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         // 3. Set sample name
         sampleName->setText(plugin->sd.getNewSampleName("kick.wav").c_str(), true);
-
-        // 4. Add to library
-        // plugin->addCurrentSampleToLibrary();
     }
     else if (button == makeSnare)
     {
@@ -587,15 +579,11 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         for (auto &m : plugin->fSourceMeasurements)
         {
             if (m.rms > 0.1 && m.specFlat > 0.9f)
-            {
                 starts.push_back(m.frame);
-            }
         }
 
         if (starts.size() == 0)
-        {
             return;
-        }
 
         int i = random.next() % starts.size();
         plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
@@ -604,6 +592,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->loadPreset(Presets::SnarePreset);
 
         // 3. Set sample name
+        std::cout << plugin->fSourceTagString << std::endl;
         sampleName->setText(plugin->sd.getNewSampleName("snare.wav").c_str(), true);
     }
     else if (button == makeHihat)
@@ -618,15 +607,11 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         for (auto &m : plugin->fSourceMeasurements)
         {
             if (m.rms > 0.1 && m.specFlat > 0.9f)
-            {
                 starts.push_back(m.frame);
-            }
         }
 
         if (starts.size() == 0)
-        {
             return;
-        }
 
         int i = random.next() % starts.size();
         plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
@@ -649,9 +634,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         for (auto &m : plugin->fSourceMeasurements)
         {
             if (m.rms > 0.1 && m.specFlat > 0.9f)
-            {
                 starts.push_back(m.frame);
-            }
         }
 
         if (starts.size() == 0)
@@ -751,6 +734,7 @@ void WAIVESamplerUI::mapSampleHovered(int id)
 void WAIVESamplerUI::mapSampleSelected(int id)
 {
     plugin->loadSample(id);
+    sourceList->selected = -1; // TODO: select correct source!
 }
 
 void WAIVESamplerUI::mapSampleLoadSlot(int id, int slot)
@@ -828,8 +812,8 @@ void WAIVESamplerUI::sampleSelected(SampleSlot *slot, int slotId)
 void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
 {
     plugin->clearSamplePlayer(*sampleSlots[slotId]->getSamplePlayer());
-    // plugin->fCurrentSample = nullptr;
     plugin->clear();
+    sourceList->selected = -1;
     return;
 };
 
@@ -908,6 +892,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
     case WAIVESampler::kSampleLoading:
         break;
     case WAIVESampler::kSampleLoaded:
+        sourceList->repaint();
         if (plugin->fCurrentSample == nullptr)
         {
             // sampleWaveformDisplay->setWaveform(nullptr);
@@ -939,7 +924,6 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         }
         else
         {
-            // sampleWaveformDisplay->setWaveform(nullptr);
             sampleWaveformDisplay->setWaveformLength(0);
             sampleWaveformDisplay->waveformNew();
             playSampleBtn->setEnabled(false);
@@ -963,16 +947,10 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             ampRelease->setValue(plugin->ampEnvGen.getRelease(), false);
 
             sourceWaveformDisplay->setSelection(plugin->fCurrentSample->sourceStart, false);
-            if (plugin->fCurrentSample->waive)
-            {
-                saveSampleBtn->setVisible(true);
-                if (plugin->fCurrentSample->saved)
-                    saveSampleBtn->setLabel("Update");
-                else
-                    saveSampleBtn->setLabel("Save");
-            }
+            if (plugin->fCurrentSample->saved)
+                saveSampleBtn->setLabel("Update");
             else
-                saveSampleBtn->setVisible(false);
+                saveSampleBtn->setLabel("Save");
             sampleName->setText(plugin->fCurrentSample->name.c_str(), false);
         }
 
@@ -992,18 +970,21 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
 void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    if (pTask->name().compare("ImporterTask") == 0)
+
+    const std::string &taskName = pTask->name();
+
+    if (taskName == "ImporterTask")
     {
         sampleBrowser->loading->setLoading(true);
     }
-    else if (pTask->name().compare("WaveformLoaderTask") == 0)
+    else if (taskName == "WaveformLoaderTask")
     {
         sourceLoading->setLoading(true);
         progress->setLabel("Importing...");
         progress->resizeToFit();
         progress->setVisible(true);
     }
-    else if (pTask->name().compare("FeatureExtractorTask") == 0)
+    else if (taskName == "FeatureExtractorTask")
     {
         sourceLoading->setLoading(true);
         progress->setLabel("Analysing...");
@@ -1018,27 +999,29 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
     Poco::Task *pTask = pNf->task();
     // printf("WAIVESamplerUI::onTaskProgress: %s progress %.4f\n", pTask->name().c_str(), pTask->progress());
 
-    if (pTask->name().compare("FeatureExtractorTask") == 0)
+    const std::string &taskName = pTask->name();
+
+    if (taskName == "FeatureExtractorTask")
     {
         progress->setLabel(fmt::format("Analysing...[{:d}%]", (int)(pTask->progress() * 100.f)));
         progress->resizeToFit();
         progress->setVisible(true);
         sourceWaveformDisplay->repaint();
     }
-    else if (pTask->name().compare("WaveformLoaderTask") == 0)
+    else if (taskName == "WaveformLoaderTask")
     {
         progress->setLabel(fmt::format("Importing...[{:d}%]", (int)(pTask->progress() * 100.f)));
         progress->resizeToFit();
         progress->setVisible(true);
         sourceWaveformDisplay->repaint();
     }
-    else if (pTask->name().compare("ParseSourceList") == 0)
+    else if (taskName == "ParseSourceList")
     {
         databaseProgress->setLabel(fmt::format("Importing sources [{:d}%]", (int)(pTask->progress() * 100.f)));
         databaseProgress->resizeToFit();
         databaseProgress->setVisible(true);
     }
-    else if (pTask->name().compare("ParseTagsList") == 0)
+    else if (taskName == "ParseTagsList")
     {
         databaseProgress->setLabel(fmt::format("Importing tags [{:d}%]", (int)(pTask->progress() * 100.f)));
         databaseProgress->resizeToFit();
@@ -1050,7 +1033,6 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
 void WAIVESamplerUI::onTaskCancelled(Poco::TaskCancelledNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
-    // std::cout << "WAIVESamplerUI::onTaskCancelled: " << pTask->name() << std::endl;
     pNf->release();
 }
 

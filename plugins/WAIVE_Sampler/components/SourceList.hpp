@@ -18,7 +18,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback() {};
+        virtual ~Callback(){};
         virtual void sourceDownload(int index) = 0;
         virtual void sourcePreview(int index) = 0;
         virtual void sourceLoad(int index) = 0;
@@ -35,6 +35,7 @@ public:
     std::string info;
     Color scrollGutter, scrollHandle;
     float margin, padding;
+    int selected;
 
 protected:
     void onNanoDisplay() override;

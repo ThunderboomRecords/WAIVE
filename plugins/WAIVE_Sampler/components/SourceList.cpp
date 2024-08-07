@@ -11,7 +11,9 @@ SourceList::SourceList(Widget *widget)
       scrollGutter(background_color),
       scrollHandle(foreground_color),
       info("No results found"),
-      callback(nullptr)
+      callback(nullptr),
+      highlighting(-1),
+      selected(-1)
 {
     download = new WAIVEImage(this, download_icon, download_icon_len, 131, 119, IMAGE_GENERATE_MIPMAPS);
 
@@ -85,7 +87,7 @@ void SourceList::onNanoDisplay()
             continue;
         if (y > height || i >= n)
             break;
-        drawSourceInfo((source_info->at(i)), x, y, rowWidth, rowHeight, highlighting == i);
+        drawSourceInfo((source_info->at(i)), x, y, rowWidth, rowHeight, (highlighting == i) || (selected == i));
     }
 
     // scroll bar
@@ -298,12 +300,14 @@ bool SourceList::onMouse(const MouseEvent &ev)
             {
                 if (source_info->at(highlighting).downloaded == DownloadState::DOWNLOADED)
                 {
+                    selected = highlighting;
                     if (callback != nullptr)
                         callback->sourceLoad(highlighting);
                     return true;
                 }
                 else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
                 {
+                    selected = highlighting;
                     if (callback != nullptr)
                         callback->sourceDownload(highlighting);
                     return true;
@@ -311,6 +315,8 @@ bool SourceList::onMouse(const MouseEvent &ev)
             }
             catch (const std::out_of_range &e)
             {
+                highlighting = -1;
+                selected = -1;
                 std::cerr << e.what() << '\n';
             }
 
@@ -335,6 +341,7 @@ void SourceList::selectRandom()
         return;
 
     highlighting = random.next() % source_info->size();
+    selected = highlighting;
     scrollPos = (highlighting - 2) * (rowHeight + margin) + 2 * padding;
     clampScrollPos();
 
