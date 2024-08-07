@@ -547,20 +547,27 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
 
     std::string pattern = basename + "_{}." + file.getExtension();
 
-    Poco::Data::Statement select(*session);
-    select << "SELECT id FROM Samples WHERE name = ?",
-        Poco::Data::Keywords::use(newName),
-        Poco::Data::Keywords::into(id);
-
-    while (select.execute())
+    try
     {
-        if (x > 99)
+        Poco::Data::Statement select(*session);
+        select << "SELECT id FROM Samples WHERE name = ?",
+            Poco::Data::Keywords::use(newName),
+            Poco::Data::Keywords::into(id);
+
+        while (select.execute())
         {
-            std::cerr << "Max iterations finding new sample name...\n";
-            break;
+            if (x > 99)
+            {
+                std::cerr << "Max iterations finding new sample name...\n";
+                break;
+            }
+            x++;
+            newName.assign(fmt::format(pattern, x));
         }
-        x++;
-        newName.assign(fmt::format(pattern, x));
+    }
+    catch (Poco::DataException &e)
+    {
+        std::cerr << "Error in getNewSampleName: " << e.what() << std::endl;
     }
 
     return newName;
@@ -666,7 +673,6 @@ void SampleDatabase::updateDatabaseVersion(int new_version)
 
     try
     {
-
         Poco::Data::Statement pragma(*session);
         pragma << "PRAGMA user_version = " << new_version;
 
@@ -744,8 +750,15 @@ void SampleDatabase::parseTSV(
     std::cout << "SampleDatabase::parseTSV\n";
 
     // 1. Create database
-    *session << "DROP TABLE IF EXISTS " << table,
-        Poco::Data::Keywords::now;
+    try
+    {
+        *session << "DROP TABLE IF EXISTS " << table,
+            Poco::Data::Keywords::now;
+    }
+    catch (const Poco::DataException &e)
+    {
+        std::cerr << e.what() << '\n';
+    }
 
     std::ostringstream createTableQuery;
     createTableQuery << "CREATE TABLE IF NOT EXISTS " << table << " (";
@@ -756,7 +769,15 @@ void SampleDatabase::parseTSV(
             createTableQuery << ", ";
     }
     createTableQuery << ")";
-    *session << createTableQuery.str(), Poco::Data::Keywords::now;
+
+    try
+    {
+        *session << createTableQuery.str(), Poco::Data::Keywords::now;
+    }
+    catch (const Poco::DataException &e)
+    {
+        std::cerr << e.what() << '\n';
+    }
 
     // 2. Tokenise CSV data
     Poco::StringTokenizer tokenizer(csvData, "\n", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
@@ -795,19 +816,25 @@ void SampleDatabase::parseTSV(
 
         if (lineTokenizer.count() == column_names.size())
         {
-
-            Poco::Data::Statement insertStmt(*session);
-            insertStmt << insertQuery.str();
-            for (size_t j = 0; j < lineTokenizer.count(); ++j)
-                insertStmt, Poco::Data::Keywords::use(lineTokenizer[j]);
-
-            insertStmt.execute();
-
-            if (i % batch_size == 0)
+            try
             {
-                std::cout << "Row " << i << " parsed" << std::endl;
-                session->commit();
-                session->begin();
+                Poco::Data::Statement insertStmt(*session);
+                insertStmt << insertQuery.str();
+                for (size_t j = 0; j < lineTokenizer.count(); ++j)
+                    insertStmt, Poco::Data::Keywords::use(lineTokenizer[j]);
+
+                insertStmt.execute();
+
+                if (i % batch_size == 0)
+                {
+                    std::cout << "Row " << i << " parsed" << std::endl;
+                    session->commit();
+                    session->begin();
+                }
+            }
+            catch (const Poco::DataException &e)
+            {
+                std::cerr << "Error in parseTSV: " << e.what() << std::endl;
             }
         }
         progress += pStep;
@@ -816,7 +843,14 @@ void SampleDatabase::parseTSV(
     if (i % batch_size != 0)
     {
         std::cout << "Row " << i << " parsed" << std::endl;
-        session->commit();
+        try
+        {
+            session->commit();
+        }
+        catch (const Poco::DataException &e)
+        {
+            std::cerr << "Error in parseTSV: " << e.what() << std::endl;
+        }
     }
 
     std::cout << "ParseCSV DONE\n";
