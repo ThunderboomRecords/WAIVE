@@ -21,42 +21,33 @@ void DrumPattern::onNanoDisplay()
     const float gridHeight = height / 9.0f;
 
     beginPath();
-    fillColor(Color(40, 40, 40));
+    fillColor(WaiveColors::grey2);
     rect(0, 0, width, height);
     fill();
     closePath();
 
     beginPath();
-    fillColor(60, 60, 60);
+    fillColor(WaiveColors::light1);
     rect(4 * gridWidth, 0, 4 * gridWidth, height);
-    fill();
-    closePath();
-
-    beginPath();
-    fillColor(60, 60, 60);
     rect(12 * gridWidth, 0, 4 * gridWidth, height);
     fill();
     closePath();
 
+    beginPath();
+    strokeColor(WaiveColors::light2);
     for (int i = 1; i < 16; i++)
     {
-        beginPath();
-        strokeColor(80, 80, 80);
         moveTo(i * gridWidth, 0);
         lineTo(i * gridWidth, height);
-        stroke();
-        closePath();
     }
 
     for (int i = 1; i < 9; i++)
     {
-        beginPath();
-        strokeColor(80, 80, 80);
         moveTo(0, i * gridHeight);
         lineTo(width, i * gridHeight);
-        stroke();
-        closePath();
     }
+    stroke();
+    closePath();
 
     std::vector<Note>::iterator noteStart = notes->begin();
     std::vector<Note>::iterator noteEnd = notes->begin();

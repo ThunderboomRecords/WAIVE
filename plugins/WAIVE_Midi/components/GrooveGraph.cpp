@@ -97,27 +97,27 @@ void GrooveGraph::onNanoDisplay()
     const float gridWidth = width / 16.0f;
 
     beginPath();
-    fillColor(Color(40, 40, 40));
+    fillColor(WaiveColors::grey2);
     rect(0, 0, width, height);
     closePath();
     fill();
 
     beginPath();
-    fillColor(60, 60, 60);
+    fillColor(WaiveColors::light1);
     rect(4 * gridWidth, 0, 4 * gridWidth, height);
     rect(12 * gridWidth, 0, 4 * gridWidth, height);
     fill();
     closePath();
 
+    beginPath();
+    strokeColor(WaiveColors::light2);
     for (int i = 1; i < 16; i++)
     {
-        beginPath();
-        strokeColor(80, 80, 80);
         moveTo(i * gridWidth, 0);
         lineTo(i * gridWidth, height);
-        stroke();
-        closePath();
     }
+    stroke();
+    closePath();
 
     std::vector<GrooveEvent>::iterator grooveEvents = fGroove->begin();
 
