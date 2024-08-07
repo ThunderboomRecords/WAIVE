@@ -7,7 +7,6 @@
 #include "Checkbox.hpp"
 #include "GridLayout.hpp"
 #include "SimpleButton.hpp"
-#include "Layout.hpp"
 
 START_NAMESPACE_DISTRHO
 
@@ -25,7 +24,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void checkboxesUpdated(CheckboxGroup *checkboxGroup) = 0;
     };
     CheckboxGroup(Widget *widget, float x, float y, float width, float height);

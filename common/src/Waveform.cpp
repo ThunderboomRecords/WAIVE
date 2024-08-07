@@ -71,10 +71,10 @@ void Waveform::waveformUpdated()
 
 void Waveform::calculateWaveform()
 {
+    waveformCached = false;
+
     if (waveformLength == 0)
         return;
-
-    waveformCached = false;
 
     const int width = getWidth() - 2;
     int number_of_blocks = width / level_of_detail;

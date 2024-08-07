@@ -14,7 +14,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void buttonClicked(Button *button) = 0;
     };
     explicit Button(Widget *parent);
@@ -23,9 +23,12 @@ public:
 
     void setLabel(const std::string &label);
     void setEnabled(bool enabled);
+    void setToggled(bool value, bool sendCallback = false);
+    bool getToggled() const;
     void resizeToFit();
 
     bool drawBackground;
+    bool isToggle;
 
 protected:
     void onNanoDisplay() override;
@@ -39,6 +42,7 @@ private:
 
     bool fHasFocus;
     bool fEnabled;
+    bool fToggleValue;
 
     DISTRHO_LEAK_DETECTOR(Button)
 };

@@ -16,8 +16,7 @@ START_NAMESPACE_DISTRHO
 class SampleSlot : public WidgetGroup,
                    public Menu::Callback,
                    Button::Callback,
-                   DropDown::Callback,
-                   IdleCallback
+                   DropDown::Callback
 {
 public:
     class Callback
@@ -39,7 +38,6 @@ protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
-    void idleCallback() override;
 
     void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
     void buttonClicked(Button *button) override;

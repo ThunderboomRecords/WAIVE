@@ -6,6 +6,8 @@
 #include "SampleDatabase.hpp"
 #include "WAIVEUtils.hpp"
 
+#include "Poco/Random.h"
+
 #include "download_icon.h"
 
 START_NAMESPACE_DISTRHO
@@ -24,6 +26,7 @@ public:
 
     SourceList(Widget *widget);
     void setCallback(Callback *cb);
+    void selectRandom();
 
     std::vector<SourceInfo> *source_info;
     std::mutex *source_info_mtx;
@@ -32,6 +35,7 @@ public:
     std::string info;
     Color scrollGutter, scrollHandle;
     float margin, padding;
+    int selected;
 
 protected:
     void onNanoDisplay() override;
@@ -51,6 +55,8 @@ private:
 
     bool scrolling;
     int highlighting;
+
+    Poco::Random random;
 };
 
 END_NAMESPACE_DISTRHO
