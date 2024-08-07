@@ -62,8 +62,13 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
     }
     else if (ev.button == kMouseButtonLeft)
     {
-        if (callback != nullptr && samplePlayer != nullptr && samplePlayer->sampleInfo != nullptr)
-            callback->sampleSelected(this, slotId);
+        if (callback != nullptr && samplePlayer != nullptr)
+        {
+            if (samplePlayer->sampleInfo != nullptr)
+                callback->sampleSelected(this, slotId);
+            else
+                callback->sampleSlotCleared(this, slotId);
+        }
     }
 
     return false;
@@ -128,8 +133,6 @@ void SampleSlot::setMidiNumber(int midi, bool sendCallback)
 {
     midiSelect->setItem(midi, sendCallback);
 }
-
-void SampleSlot::idleCallback() {}
 
 void SampleSlot::setCallback(Callback *cb)
 {

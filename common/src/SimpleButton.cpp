@@ -79,7 +79,7 @@ void Button::onNanoDisplay()
     text(width / 2, height / 2, label.c_str(), nullptr);
     closePath();
 
-    if (!fEnabled)
+    if (!fEnabled && drawBackground)
     {
         beginPath();
         fillColor(0.f, 0.f, 0.f, 0.5f);

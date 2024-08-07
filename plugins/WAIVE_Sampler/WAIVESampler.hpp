@@ -154,6 +154,7 @@ protected:
     void run(const float **, float **outputs, uint32_t numFrames, const MidiEvent *midiEvents, uint32_t midiEventCount) override;
     void sampleRateChanged(double newSampleRate) override;
 
+    void clear();
     void newSample();
     void loadSamplePreview(int id);
     void loadSourcePreview(const std::string &fp);

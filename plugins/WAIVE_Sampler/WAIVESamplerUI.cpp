@@ -828,6 +828,8 @@ void WAIVESamplerUI::sampleSelected(SampleSlot *slot, int slotId)
 void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
 {
     plugin->clearSamplePlayer(*sampleSlots[slotId]->getSamplePlayer());
+    // plugin->fCurrentSample = nullptr;
+    plugin->clear();
     return;
 };
 
@@ -906,13 +908,23 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
     case WAIVESampler::kSampleLoading:
         break;
     case WAIVESampler::kSampleLoaded:
-        sampleWaveformDisplay->setWaveformLength(plugin->fCurrentSample->sampleLength);
-        if (plugin->fCurrentSample->saved)
-            saveSampleBtn->setLabel("update");
+        if (plugin->fCurrentSample == nullptr)
+        {
+            // sampleWaveformDisplay->setWaveform(nullptr);
+            sampleWaveformDisplay->setWaveformLength(0);
+            sampleWaveformDisplay->waveformNew();
+            playSampleBtn->setEnabled(false);
+        }
         else
-            saveSampleBtn->setLabel("save");
-        sampleWaveformDisplay->waveformNew();
-        playSampleBtn->setEnabled(true);
+        {
+            sampleWaveformDisplay->setWaveformLength(plugin->fCurrentSample->sampleLength);
+            if (plugin->fCurrentSample->saved)
+                saveSampleBtn->setLabel("Update");
+            else
+                saveSampleBtn->setLabel("Save");
+            sampleWaveformDisplay->waveformNew();
+            playSampleBtn->setEnabled(true);
+        }
         break;
     case WAIVESampler::kSampleUpdated:
         if (plugin->fCurrentSample != nullptr)
@@ -920,11 +932,18 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             sampleWaveformDisplay->setWaveformLength(plugin->fCurrentSample->sampleLength);
             sampleWaveformDisplay->waveformUpdated();
             if (plugin->fCurrentSample->saved)
-                saveSampleBtn->setLabel("update");
+                saveSampleBtn->setLabel("Update");
             else
-                saveSampleBtn->setLabel("save");
+                saveSampleBtn->setLabel("Save");
+            playSampleBtn->setEnabled(true);
         }
-        playSampleBtn->setEnabled(true);
+        else
+        {
+            // sampleWaveformDisplay->setWaveform(nullptr);
+            sampleWaveformDisplay->setWaveformLength(0);
+            sampleWaveformDisplay->waveformNew();
+            playSampleBtn->setEnabled(false);
+        }
         break;
     case WAIVESampler::kSampleAdded:
         break;
@@ -948,9 +967,9 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             {
                 saveSampleBtn->setVisible(true);
                 if (plugin->fCurrentSample->saved)
-                    saveSampleBtn->setLabel("update");
+                    saveSampleBtn->setLabel("Update");
                 else
-                    saveSampleBtn->setLabel("save");
+                    saveSampleBtn->setLabel("Save");
             }
             else
                 saveSampleBtn->setVisible(false);

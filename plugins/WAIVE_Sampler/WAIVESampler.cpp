@@ -786,6 +786,19 @@ void WAIVESampler::run(
     }
 }
 
+void WAIVESampler::clear()
+{
+    std::cout << "WAIVESampler::clear" << std::endl;
+    stopSourcePreview();
+    fSourceLoaded = false;
+    fSourceLength = 0;
+    fSourcePath = "";
+    fCurrentSample = nullptr;
+
+    pluginUpdate.notify(this, PluginUpdate::kSourceUpdated);
+    pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
+}
+
 void WAIVESampler::loadSource(const char *fp)
 {
     std::cout << "WAIVESampler::loadSource" << std::endl;
