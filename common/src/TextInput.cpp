@@ -142,6 +142,13 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
         textValue.insert(textValue.begin() + position, ev.string[0]);
         position += 1;
         break;
+    case 22:
+        // backspace
+    case 23:
+        // tab
+    case 119:
+        // DEL
+        break;
     default:
         // other characters
         textValue.insert(textValue.begin() + position, ev.string[0]);

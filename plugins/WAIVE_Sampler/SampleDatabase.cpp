@@ -486,7 +486,6 @@ std::vector<std::shared_ptr<SampleInfo>> SampleDatabase::findRadius(float x, flo
 
 std::string SampleDatabase::getSamplePath(std::shared_ptr<SampleInfo> sample) const
 {
-    // std::string saveName = fmt::format("{:d}_{}", sample->getId(), sample->name);
     return Poco::Path(sample->path).append(sample->name).toString();
 }
 
@@ -1154,11 +1153,8 @@ void SampleDatabase::filterSources()
 
     if (filterConditions.searchString.length() > 0)
     {
-        // conditions.push_back(
-        //     fmt::format("(Sources.filename LIKE \"%{0}%\" OR Sources.description LIKE \"%{0}%\")",
-        //                 filterConditions.searchString));
         conditions.push_back(
-            "(Sources.filename LIKE \"" + filterConditions.searchString + "\" OR Sources.description LIKE \"" + filterConditions.searchString + "\")");
+            "(Sources.filename LIKE \"%" + filterConditions.searchString + "%\" OR Sources.description LIKE \"%" + filterConditions.searchString + "%\")");
     }
 
     std::string where = "";
