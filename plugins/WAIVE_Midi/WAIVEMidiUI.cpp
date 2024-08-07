@@ -9,12 +9,12 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
 
     float width = UI_W * fScaleFactor;
     float height = UI_H * fScaleFactor;
+    float padding = 8.f * fScaleFactor;
 
     std::cout << "UI_W: " << UI_W << " UI_H: " << UI_H << std::endl;
 
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
 
-    float padding = 10.f;
     float col2_width = (350 + 35) * fScaleFactor + 3.f * padding;
     float col1_width = width - col2_width - 3.f * padding;
     float col_height = height - 2.f * padding;
@@ -244,9 +244,9 @@ void WAIVEMidiUI::grooveClicked(GrooveGraph *graph)
     repaint();
 }
 
-void WAIVEMidiUI::knobDragStarted(Knob *knob) {};
+void WAIVEMidiUI::knobDragStarted(Knob *knob){};
 
-void WAIVEMidiUI::knobDragFinished(Knob *knob, float value) {};
+void WAIVEMidiUI::knobDragFinished(Knob *knob, float value){};
 
 void WAIVEMidiUI::knobValueChanged(Knob *knob, float value)
 {

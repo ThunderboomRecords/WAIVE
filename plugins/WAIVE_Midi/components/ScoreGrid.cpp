@@ -85,20 +85,20 @@ void ScoreGrid::onNanoDisplay()
     const float gridHeight = height / 9.0f;
 
     beginPath();
-    fillColor(background_color);
+    fillColor(WaiveColors::grey2);
     rect(0, 0, width, height);
     fill();
     closePath();
 
     beginPath();
-    fillColor(60, 60, 60);
+    fillColor(WaiveColors::light1);
     rect(4 * gridWidth, 0, 4 * gridWidth, height);
     rect(12 * gridWidth, 0, 4 * gridWidth, height);
     fill();
     closePath();
 
     beginPath();
-    strokeColor(80, 80, 80);
+    strokeColor(WaiveColors::light2);
     for (int i = 1; i < 16; i++)
     {
         moveTo(i * gridWidth, 0);
@@ -138,7 +138,7 @@ void ScoreGrid::onNanoDisplay()
 
     // round off corners
     float r = 8.0f;
-    fillColor(WaiveColors::dark);
+    fillColor(WaiveColors::grey1);
     strokeColor(255, 0, 0);
 
     // top left
