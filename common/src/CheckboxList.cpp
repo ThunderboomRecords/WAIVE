@@ -168,8 +168,8 @@ void CheckboxList::setCallback(Callback *cb)
 
 void CheckboxList::reposition()
 {
-    Layout::onTop(check_all, this, Widget_Align::START, Widget_Align::START, 10);
-    Layout::rightOf(check_none, check_all, Widget_Align::CENTER, 10);
+    check_all->onTop(this, Widget_Align::START, Widget_Align::START, 10);
+    check_none->rightOf(check_all, Widget_Align::CENTER, 10);
 }
 
 END_NAMESPACE_DISTRHO

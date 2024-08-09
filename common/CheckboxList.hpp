@@ -1,7 +1,6 @@
 #ifndef CHECKBOX_LIST_HPP_INCLUDED
 #define CHECKBOX_LIST_HPP_INCLUDED
 
-#include "Layout.hpp"
 #include "WAIVEWidget.hpp"
 #include "SimpleButton.hpp"
 
@@ -20,7 +19,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void checkboxesUpdated(CheckboxList *checkboxGroup) = 0;
     };
 

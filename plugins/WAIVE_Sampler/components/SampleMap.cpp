@@ -271,6 +271,7 @@ void SampleMap::onNanoDisplay()
 
 void SampleMap::buttonClicked(Button *btn)
 {
+    std::cout << "SampleMap::buttonClicked" << std::endl;
     if (callback != nullptr)
         callback->mapSampleImport();
 }

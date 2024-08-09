@@ -11,13 +11,17 @@ SourceList::SourceList(Widget *widget)
       scrollGutter(background_color),
       scrollHandle(foreground_color),
       info("No results found"),
-      callback(nullptr)
+      callback(nullptr),
+      highlighting(-1),
+      selected(-1)
 {
     download = new WAIVEImage(this, download_icon, download_icon_len, 131, 119, IMAGE_GENERATE_MIPMAPS);
 
     scrollBarWidth = 8 * scale_factor;
     columnLabel = 30 * scale_factor;
     columnLicense = 30 * scale_factor + 2.f * scrollBarWidth;
+
+    random.seed();
 }
 
 void SourceList::onNanoDisplay()
@@ -83,7 +87,15 @@ void SourceList::onNanoDisplay()
             continue;
         if (y > height || i >= n)
             break;
-        drawSourceInfo((source_info->at(i)), x, y, rowWidth, rowHeight, highlighting == i);
+
+        try
+        {
+            drawSourceInfo((source_info->at(i)), x, y, rowWidth, rowHeight, (highlighting == i) || (selected == i));
+        }
+        catch (const std::out_of_range &e)
+        {
+            continue;
+        }
     }
 
     // scroll bar
@@ -266,7 +278,7 @@ bool SourceList::onMouse(const MouseEvent &ev)
     if (!isVisible())
         return false;
 
-    if(source_info->empty())
+    if (source_info->empty())
         return true;
 
     if (!scrolling && ev.press && contains(ev.pos))
@@ -280,16 +292,15 @@ bool SourceList::onMouse(const MouseEvent &ev)
         {
             try
             {
-            std::cout << "License: " << source_info->at(highlighting).license << std::endl;
-            SystemOpenURL(source_info->at(highlighting).license);
-            return true;
+                std::cout << "License: " << source_info->at(highlighting).license << std::endl;
+                SystemOpenURL(source_info->at(highlighting).license);
+                return true;
             }
-            catch(const std::out_of_range& e)
+            catch (const std::out_of_range &e)
             {
                 std::cerr << e.what() << '\n';
                 return true;
             }
-            
         }
         else if (ev.pos.getX() > columnLabel)
         {
@@ -297,23 +308,26 @@ bool SourceList::onMouse(const MouseEvent &ev)
             {
                 if (source_info->at(highlighting).downloaded == DownloadState::DOWNLOADED)
                 {
+                    selected = highlighting;
                     if (callback != nullptr)
                         callback->sourceLoad(highlighting);
                     return true;
                 }
                 else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
                 {
+                    selected = highlighting;
                     if (callback != nullptr)
                         callback->sourceDownload(highlighting);
                     return true;
                 }
-                
             }
-            catch(const std::out_of_range& e)
+            catch (const std::out_of_range &e)
             {
+                highlighting = -1;
+                selected = -1;
                 std::cerr << e.what() << '\n';
             }
-            
+
             return false;
         }
         else
@@ -327,6 +341,30 @@ bool SourceList::onMouse(const MouseEvent &ev)
         scrolling = false;
 
     return false;
+}
+
+void SourceList::selectRandom()
+{
+    if (source_info->size() == 0)
+        return;
+
+    highlighting = random.next() % source_info->size();
+    selected = highlighting;
+    scrollPos = (highlighting - 2) * (rowHeight + margin) + 2 * padding;
+    clampScrollPos();
+
+    repaint();
+
+    if (source_info->at(highlighting).downloaded == DownloadState::DOWNLOADED)
+    {
+        if (callback != nullptr)
+            callback->sourceLoad(highlighting);
+    }
+    else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
+    {
+        if (callback != nullptr)
+            callback->sourceDownload(highlighting);
+    }
 }
 
 void SourceList::setCallback(Callback *cb)

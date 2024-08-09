@@ -4,13 +4,14 @@ START_NAMESPACE_DISTRHO
 
 Popup::Popup(Widget *widget, float x, float y, float width, float height)
     : WidgetGroup(widget, x, y, width, height),
-      border_radius(7.0f)
+      border_radius(7.0f),
+      callback(nullptr)
 {
     close_btn = new Button(widget);
     close_btn->setLabel("x");
     close_btn->setSize(20, 20);
     close_btn->setCallback(this);
-    Layout::onTop(close_btn, this, Widget_Align::END, Widget_Align::START, 10);
+    close_btn->onTop(this, Widget_Align::END, Widget_Align::START, 10);
 
     addChildWidget(close_btn);
 }
@@ -22,23 +23,37 @@ void Popup::onNanoDisplay()
 
     beginPath();
     fillColor(background_color);
+    strokeColor(accent_color);
+    strokeWidth(2.f);
     roundedRect(0, 0, width, height, border_radius);
     fill();
+    stroke();
     closePath();
-}
 
-bool Popup::onMouse(const MouseEvent &ev)
-{
-    if (!isVisible())
-        return false;
-
-    if (!contains(ev.pos))
+    if (title.length() > 0)
     {
-        close();
-        return true;
+        beginPath();
+        fillColor(text_color);
+        fontFaceId(font);
+        textAlign(ALIGN_CENTER | ALIGN_TOP);
+        text(width / 2.f, 4, title.c_str(), nullptr);
+        closePath();
     }
-    return true;
 }
+
+// bool Popup::onMouse(const MouseEvent &ev)
+// {
+//     // if (!isVisible())
+//     //     return false;
+
+//     // if (contains(ev.pos))
+//     // {
+//     //     //     close();
+//     //     //     return true;
+//     //     return true;
+//     // }
+//     return false;
+// }
 
 void Popup::buttonClicked(Button *button)
 {
@@ -52,6 +67,10 @@ void Popup::open()
     toFront();
     NanoSubWidget::setVisible(true);
     setVisible(true);
+    show();
+
+    if (callback != nullptr)
+        callback->popupOpened(this);
 }
 
 void Popup::close()
@@ -59,7 +78,17 @@ void Popup::close()
     setVisible(false);
     NanoSubWidget::setVisible(false);
     toBottom();
-    getParentWidget()->repaint();
+    hide();
+
+    if (callback != nullptr)
+        callback->popupClosed(this);
+
+    // getParentWidget()->repaint();
+}
+
+void Popup::setCallback(Callback *cb)
+{
+    callback = cb;
 }
 
 END_NAMESPACE_DISTRHO

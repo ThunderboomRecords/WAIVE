@@ -1,8 +1,10 @@
 #ifndef SAMPLE_BROWSER_HPP_INCLUDED
 #define SAMPLE_BROWSER_HPP_INCLUDED
 
-#include "NanoVG.hpp"
-#include "Window.hpp"
+// #include "NanoVG.hpp"
+// #include "Window.hpp"
+
+#include "WidgetGroup.hpp"
 
 #include "Label.hpp"
 #include "Spinner.hpp"
@@ -12,10 +14,10 @@
 START_NAMESPACE_DISTRHO
 
 class SampleBrowser
-    : public NanoTopLevelWidget
+    : public WidgetGroup
 {
 public:
-    explicit SampleBrowser(Window &window, SampleDatabase *sd_);
+    explicit SampleBrowser(WAIVEWidget *parent, SampleDatabase *sd_);
 
     void setCallback(SampleMap::Callback *cb);
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);

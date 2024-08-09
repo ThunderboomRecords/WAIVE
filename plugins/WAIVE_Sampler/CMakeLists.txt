@@ -29,7 +29,6 @@ dpf_add_plugin(
       ./components/SourceList.cpp
       ./components/SampleMap.cpp
       ./components/SampleBrowser.cpp
-      ./components/SampleBrowserRoot.cpp
       ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
       ${CMAKE_SOURCE_DIR}/common/icons/download_icon.h
@@ -71,19 +70,25 @@ endif()
 
 include_directories(
     ${CMAKE_BINARY_DIR}/generated/
-    external/Gist/libs/kiss_fft130
+    ${CMAKE_SOURCE_DIR}/external/Gist/libs/kiss_fft130
 )
 
 set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
 set(OPENSSL_LIBRARIES /usr/local/opt/openssl/lib)
 
+# Really make sure Poco builds statically...
+if(POLICY CMP0077)
+    cmake_policy(SET CMP0077 NEW)
+endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
 set(BUILD_SHARED_LIBS OFF)
-set(JSON_BuildTests OFF CACHE INTERNAL "")
+set(POCO_STATIC ON)
 add_compile_options(-DUSE_KISS_FFT)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
 set(BUILD_TESTING OFF CACHE BOOL "Enable libsamplerate tests")
-message(STATUS "BUILD_TESTING: ${BUILD_TESTING}")
 
+message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
 
 set(LIBSAMPLERATE_EXAMPLES OFF CACHE BOOL "Build libsamplerate examples")
 set(LIBSAMPLERATE_STATIC ON CACHE BOOL "Build libsamplerate as static library")
@@ -105,10 +110,11 @@ set(ENABLE_DATA_ODBC OFF CACHE BOOL "Disable Poco Data ODBC")
 set(ENABLE_DATA_MYSQL OFF CACHE BOOL "Disable Poco Data MySQL")
 set(ENABLE_DATA_POSTGRESQL OFF CACHE BOOL "Disable Poco Data PostgreSQL")
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/poco ${CMAKE_BINARY_DIR}/external/poco)
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/libsamplerate ${CMAKE_BINARY_DIR}/external/libsamplerate)
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/Gist ${CMAKE_BINARY_DIR}/external/Gist)
 
-add_subdirectory(external/poco)
-add_subdirectory(external/libsamplerate)
-add_subdirectory(external/Gist)
+message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
 
 link_directories(
   /usr/lib
@@ -121,8 +127,6 @@ message(FATAL_ERROR "Sndfile library not found")
 endif()
 
 find_package(fmt REQUIRED)
-
-# find_package(Poco REQUIRED COMPONENTS NetSSL Crypto Net Foundation DataSQLite Data)
 
 target_include_directories(
   WAIVE_Sampler
@@ -139,8 +143,6 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external/kd-tree
     ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs
     ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
-    ${CMAKE_SOURCE_DIR}/external/cpp-httplib
-    # ${Poco_INCLUDE_DIRS}
 )
 
 target_link_libraries(
@@ -150,7 +152,6 @@ target_link_libraries(
     ${Foundation}
     ${SNDFILE_LIBRARY}
     fmt::fmt
-    # ${Poco_LIBRARIES}
     Poco::Foundation
     Poco::Data
     Poco::DataSQLite
