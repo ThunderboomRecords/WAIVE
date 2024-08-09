@@ -23,7 +23,7 @@
 
 START_NAMESPACE_DISTRHO
 
-const unsigned int UI_W = 890;
+const unsigned int UI_W = 880;
 const unsigned int UI_H = 460;
 
 class WAIVEMidiUI : public UI,
