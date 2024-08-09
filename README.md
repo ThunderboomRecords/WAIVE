@@ -24,29 +24,32 @@
 </p>
 
 A plugin suite that combines music, sound and MIDI generation with European cultural archives. 
-Aims to be an offline, modular version of [WAIVE-studio](https://www.waive.studio/) that can be integrated into your DAW.
+Aims to be an offline, modular version of [WAIVE-Studio](https://www.waive.studio/) that can be integrated into your DAW.
 Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX Runtime](https://github.com/microsoft/onnxruntime).
 
 - **WAIVE-Midi**: a rhythmic pattern generator
 - **WAIVE-Sampler**: a sample player, sample library and sample generator in one
 
-### Installation
+Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding Windows builds.
 
-> :warning: *Currently pre-built binaries are not available. Follow build instructions below*.
+### Download and Install
 
-1. Choose which plugin format you prefer and place it in your plugins path of your DAW. 
+> :warning: macOS users: currently the pre-built plugin is unsigned, so you may have to follow [these steps](https://support.apple.com/en-gb/guide/mac-help/mh40616/mac) to allow the plugin to work. Alternatively, you may try to build the plugin yourself, following the [Build Instructions](#build-instructions) section.
+
+1. Download and extract the latest archive from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform (currently only available for macOS Apple Silicon and Linux). You can find the downloads under the **Assets** heading.
+2. Choose which plugin format you prefer and place the corresponding folder in your plugins path of your DAW. 
     - Current formats: VST2, VST3, CLAP, and a Standalone (JACK) app.
     - Common (system-wide) plugin paths:
       
-        |          |  VST2                                 |  VST3                               |  CLAP                                 |
+        |          |  VST2                                 |  VST3                                |  CLAP                                 |
         |----------|---------------------------------------|--------------------------------------|---------------------------------------|
-        | macOS    | `Library/Audio/Plug-ins/VST3`         | `Library/Audio/Plug-ins/VST3`        | `Library/Audio/Plug-ins/CLAP`         |
-        | Linux    | `/usr/lib/vst`                        | `/usr/lib/vst3`*                      |  `/usr/lib/clap`                      |
+        | macOS    | `Library/Audio/Plug-Ins/VST`          | `Library/Audio/Plug-Ins/VST3`        | `Library/Audio/Plug-Ins/CLAP`         |
+        | Linux    | `/usr/lib/vst`                        | `/usr/lib/vst3`                      | `/usr/lib/clap`                       |
         | Windows  | `C:\Program Files\Common Files\VST2`  | `C:\Program Files\Common Files\VST3` | `C:\Program Files\Common Files\CLAP`  |
       
-       \* for VST3 on Linux, move the whole plugin's `.vst/` folders here. 
    
-4. In your DAW, rescan plugins if it does not do so automatically. 
+3. In your DAW, rescan plugins if it does not do so automatically.
+
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
@@ -82,7 +85,7 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 
 #### Windows
 
-*Coming soon*
+*Coming soon*.
 
 
 ### Licenses
