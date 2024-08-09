@@ -22,7 +22,7 @@ public:
         int padding;
     };
 
-    explicit WidgetGroup(Widget *widget, float x = 100.f, float y = 100.f, float width = 100.f, float height = 120.f) noexcept;
+    explicit WidgetGroup(Widget *widget, float x = 100.f, float y = 100.f, float width = 100.f, float height = 120.f, bool ignore_sf = false) noexcept;
 
     void addChildWidget(NanoSubWidget *widget);
     void addChildWidget(NanoSubWidget *widget, WidgetPosition position);

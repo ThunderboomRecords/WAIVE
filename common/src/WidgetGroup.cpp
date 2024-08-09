@@ -2,10 +2,10 @@
 
 START_NAMESPACE_DISTRHO
 
-WidgetGroup::WidgetGroup(Widget *widget, float x, float y, float width, float height) noexcept
+WidgetGroup::WidgetGroup(Widget *widget, float x, float y, float width, float height, bool ignore_sf) noexcept
     : WAIVEWidget(widget)
 {
-    setSize(width, height);
+    setSize(width, height, ignore_sf);
     setAbsolutePos(x, y);
 }
 

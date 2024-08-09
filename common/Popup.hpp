@@ -19,7 +19,7 @@ public:
         virtual void popupClosed(Popup *popup) = 0;
     };
 
-    Popup(Widget *widget, float x, float y, float width, float height);
+    Popup(Widget *widget, float x, float y, float width, float height, bool ignore_sf = false);
     void setCallback(Callback *cb);
 
     float border_radius;

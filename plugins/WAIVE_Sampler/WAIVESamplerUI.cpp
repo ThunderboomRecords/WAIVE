@@ -374,7 +374,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceBrowserPanel->getAbsoluteX(),
         sourceBrowserPanel->getAbsoluteY(),
         sourceBrowserPanel->getWidth(),
-        Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END));
+        Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END),
+        true);
     sampleBrowserRoot->title = "Browse samples";
     sampleBrowserRoot->setFont("VG5000", VG5000, VG5000_len);
     sampleBrowserRoot->close();
@@ -390,7 +391,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleEditorPanel->getAbsoluteX(),
         sampleEditorPanel->getAbsoluteY(),
         sampleEditorPanel->getWidth(),
-        sampleEditorPanel->getHeight());
+        sampleEditorPanel->getHeight(),
+        true);
     tagRoot->title = "Browse tags";
     tagRoot->setFont("VG5000", VG5000, VG5000_len);
     tagRoot->close();

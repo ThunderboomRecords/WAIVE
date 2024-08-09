@@ -247,9 +247,9 @@ void SampleMap::onNanoDisplay()
 
         int sampleId = allSamples->at(i)->getId();
 
-        float r = 3.0f;
+        float r = 4.0f * scale_factor;
         if (highlightSample >= -1 && highlightSample == sampleId)
-            r = 6.0f;
+            r *= 2.0f;
 
         beginPath();
         fillColor(get2DColor(embedX, embedY));

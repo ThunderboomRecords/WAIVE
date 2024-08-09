@@ -2,8 +2,8 @@
 
 START_NAMESPACE_DISTRHO
 
-Popup::Popup(Widget *widget, float x, float y, float width, float height)
-    : WidgetGroup(widget, x, y, width, height),
+Popup::Popup(Widget *widget, float x, float y, float width, float height, bool ignore_sf)
+    : WidgetGroup(widget, x, y, width, height, ignore_sf),
       border_radius(7.0f),
       callback(nullptr)
 {
@@ -34,6 +34,7 @@ void Popup::onNanoDisplay()
     {
         beginPath();
         fillColor(text_color);
+        fontSize(getFontSize());
         fontFaceId(font);
         textAlign(ALIGN_CENTER | ALIGN_TOP);
         text(width / 2.f, 4, title.c_str(), nullptr);
