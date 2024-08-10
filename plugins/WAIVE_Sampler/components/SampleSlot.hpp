@@ -9,7 +9,7 @@
 #include "SimpleButton.hpp"
 #include "DropDown.hpp"
 
-using namespace fmt::v10;
+using namespace fmt::v11;
 
 START_NAMESPACE_DISTRHO
 

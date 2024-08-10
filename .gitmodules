@@ -10,15 +10,9 @@
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git
-[submodule "external/libsamplerate"]
-	path = external/libsamplerate
-	url = https://github.com/libsndfile/libsamplerate.git
 [submodule "external/kissfft"]
 	path = external/kissfft
 	url = https://github.com/mborgerding/kissfft.git
 [submodule "external/libtinyfiledialogs"]
 	path = external/libtinyfiledialogs
 	url = https://github.com/native-toolkit/libtinyfiledialogs.git
-[submodule "external/poco"]
-	path = external/poco
-	url = https://github.com/pocoproject/poco.git

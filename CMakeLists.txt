@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.18)
 set(CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED ON)
 set(POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
 if(POLICY CMP0077)
     cmake_policy(SET CMP0077 NEW)
 endif()
 
 project(
-    WAIVE_Plugins VERSION 1.0.0
+    WAIVE_Plugins VERSION 1.1.0
 )
 
 configure_file(version_config.h.in ${CMAKE_BINARY_DIR}/generated/version_config.h)

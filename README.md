@@ -58,14 +58,14 @@ To build WAIVE-Plugins from source.
 Requires statically built onnxruntime for your platform. You can download pre-built libraries from [csukuangfj/onnxruntime-libs](https://huggingface.co/csukuangfj/onnxruntime-libs/tree/main), or build them yourself (such as with [ort-builder](https://github.com/olilarkin/ort-builder/tree/bfbd362c9660fce9600a43732e3f8b53d5fb243a)).
 Tested with 1.17.1.
 
-Requires cmake:
-- on Mac, with [homebrew](https://brew.sh/): ```$ brew install cmake```
+Requires `cmake` and `ninja`:
+- on Mac, with [homebrew](https://brew.sh/): ```$ brew install cmake ninja```
 - on Linux: use your distributions package manager
 - Windows: *TODO*
 
-Requires already installed:
-- [`libsndfile`](https://libsndfile.github.io/libsndfile/)
-- [`fmt`](https://fmt.dev/latest/index.html) 
+Requires vcpkg:
+- [vcpkg installation instructions](https://learn.microsoft.com/en-gb/vcpkg/get_started/get-started?pivots=shell-cmd)
+
 
 #### Linux/macOS
 ```shell
@@ -76,9 +76,8 @@ $ cd WAIVE/
 # `external/onnxruntime/`, then from project root:
 
 $ mkdir build
-$ cd build
-$ cmake ..
-$ cmake --build . -j 8 --config Release
+$ cmake --preset default
+$ cmake --build . -j8 --config Release
 ```
 
 The plugins are found in ```build/bin``` folder. Move your prefered format binary to your plugins folder (see [instructions](#installation) above).

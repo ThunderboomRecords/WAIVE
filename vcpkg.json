@@ -1,0 +1,21 @@
+{
+  "dependencies": [
+    "fmt",
+    {
+      "name": "libsndfile",
+      "features": [
+        "external-libs",
+        "mpeg"
+      ]
+    },
+    {
+      "name": "poco",
+      "features": [
+        "crypto",
+        "netssl",
+        "sqlite3"
+      ]
+    },
+    "libsamplerate"
+  ]
+}

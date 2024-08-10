@@ -1,4 +1,5 @@
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
 dpf_add_plugin(
   WAIVE_Sampler
@@ -58,7 +59,6 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/ValueIndicator.cpp
 )
 
-
 # Externals:
 if(APPLE)
   find_library(FOUNDATION Foundation)
@@ -76,15 +76,8 @@ include_directories(
 set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
 set(OPENSSL_LIBRARIES /usr/local/opt/openssl/lib)
 
-# Really make sure Poco builds statically...
-if(POLICY CMP0077)
-    cmake_policy(SET CMP0077 NEW)
-endif()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-
 set(BUILD_SHARED_LIBS OFF)
-set(POCO_STATIC ON)
-add_compile_options(-DUSE_KISS_FFT)
+add_compile_definitions(USE_KISS_FFT)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
 set(BUILD_TESTING OFF CACHE BOOL "Enable libsamplerate tests")
 
@@ -93,40 +86,16 @@ message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
 set(LIBSAMPLERATE_EXAMPLES OFF CACHE BOOL "Build libsamplerate examples")
 set(LIBSAMPLERATE_STATIC ON CACHE BOOL "Build libsamplerate as static library")
 
-# Poco configuration to disable unwanted components
-set(ENABLE_ACTIVERECORD OFF CACHE BOOL "Disable Poco ActiveRecord")
-set(ENABLE_ACTIVERECORD_COMPILER OFF CACHE BOOL "Disable Poco ActiveRecord Compiler")
-set(ENABLE_PROMETHEUS OFF CACHE BOOL "Disable Prometheus")
-set(ENABLE_XML OFF CACHE BOOL "Disable Poco XML")
-set(ENABLE_REDIS OFF CACHE BOOL "Disable Poco Redis")
-set(ENABLE_PDF OFF CACHE BOOL "Disable Poco PDF")
-set(ENABLE_UTIL OFF CACHE BOOL "Disable Poco Util")
-set(ENABLE_ZIP OFF CACHE BOOL "Disable Poco Zip")
-set(ENABLE_PAGECOMPILER OFF CACHE BOOL "Disable Poco PageCompiler")
-set(ENABLE_PAGECOMPILER_FILE2PAGE OFF CACHE BOOL "Disable Poco File2Page")
-set(ENABLE_NETSSL_WIN OFF CACHE BOOL "Disable Poco NetSSL Win")
-set(ENABLE_MONGODB OFF CACHE BOOL "Disable Poco MongoDB")
-set(ENABLE_DATA_ODBC OFF CACHE BOOL "Disable Poco Data ODBC")
-set(ENABLE_DATA_MYSQL OFF CACHE BOOL "Disable Poco Data MySQL")
-set(ENABLE_DATA_POSTGRESQL OFF CACHE BOOL "Disable Poco Data PostgreSQL")
-
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/poco ${CMAKE_BINARY_DIR}/external/poco)
-add_subdirectory(${CMAKE_SOURCE_DIR}/external/libsamplerate ${CMAKE_BINARY_DIR}/external/libsamplerate)
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/Gist ${CMAKE_BINARY_DIR}/external/Gist)
-
-message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
 
 link_directories(
   /usr/lib
 )
-find_library(SNDFILE_LIBRARY NAMES sndfile)
-if(SNDFILE_LIBRARY)
-message(STATUS "Sndfile library found: ${SNDFILE_LIBRARY}")
-else()
-message(FATAL_ERROR "Sndfile library not found")
-endif()
 
-find_package(fmt REQUIRED)
+find_package(SampleRate CONFIG REQUIRED)
+find_package(SndFile CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(Poco CONFIG REQUIRED Foundation Crypto NetSSL Net Data DataSQLite)
 
 target_include_directories(
   WAIVE_Sampler
@@ -137,7 +106,6 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/common/fonts
     ${CMAKE_SOURCE_DIR}/common/icons
-    ${CMAKE_SOURCE_DIR}/external/libsamplerate/include
     ${CMAKE_SOURCE_DIR}/external/json/single_include
     ${CMAKE_SOURCE_DIR}/external/Gist/src
     ${CMAKE_SOURCE_DIR}/external/kd-tree
@@ -150,7 +118,7 @@ target_link_libraries(
     PUBLIC
     ${CoreFoundation}
     ${Foundation}
-    ${SNDFILE_LIBRARY}
+    SndFile::sndfile
     fmt::fmt
     Poco::Foundation
     Poco::Data
@@ -158,7 +126,7 @@ target_link_libraries(
     Poco::NetSSL
     Poco::Net
     Poco::Crypto
-    samplerate
+    SampleRate::samplerate
     Gist
     PRIVATE
     ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
@@ -166,5 +134,3 @@ target_link_libraries(
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
-
-set_target_properties(WAIVE_Sampler PROPERTIES LINK_FLAGS "--libs=sndfile")
