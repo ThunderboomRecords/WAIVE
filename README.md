@@ -61,10 +61,11 @@ Tested with 1.17.1.
 Requires `cmake` and `ninja`:
 - on Mac, with [homebrew](https://brew.sh/): ```$ brew install cmake ninja```
 - on Linux: use your distributions package manager
-- Windows: *TODO*
+- Windows: *coming soon*
 
-Requires vcpkg:
-- [vcpkg installation instructions](https://learn.microsoft.com/en-gb/vcpkg/get_started/get-started?pivots=shell-cmd)
+Requires vcpkg and pkg-config:
+- on Mac: ```$ brew install vcpkg pkg-config``` (follow additional instructions on adding vcpkg to path)
+- on Windows/Linux: [vcpkg installation instructions](https://learn.microsoft.com/en-gb/vcpkg/get_started/get-started?pivots=shell-cmd)
 
 
 #### Linux/macOS
@@ -76,8 +77,8 @@ $ cd WAIVE/
 # `external/onnxruntime/`, then from project root:
 
 $ mkdir build
-$ cmake --preset default
-$ cmake --build . -j8 --config Release
+$ cmake --preset=default
+$ cmake --build ./build -j8 --config Release
 ```
 
 The plugins are found in ```build/bin``` folder. Move your prefered format binary to your plugins folder (see [instructions](#installation) above).

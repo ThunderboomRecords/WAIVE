@@ -4,8 +4,9 @@
 #define DISTRHO_PLUGIN_BRAND "WAIVE"
 #define DISTRHO_PLUGIN_NAME "WAIVE-Sampler"
 #define DISTRHO_PLUGIN_URI "https://github.com/ThunderboomRecords/WAIVE"
-#define DISTRHO_PLUGIN_CLAP_ID "waive.midiinstrument"
-#define DISTRHO_PLUGIN_VST3_CATEGORIES "Instrument|Drum"
+#define DISTRHO_PLUGIN_CLAP_ID "thunderboom.waive.midiinstrument"
+#define DISTRHO_PLUGIN_CLAP_FEATURES "instrument", "sampler", "mono"
+#define DISTRHO_PLUGIN_VST3_CATEGORIES "Instrument|Sampler"
 
 #define DISTRHO_PLUGIN_HAS_UI 1
 #define DISTRHO_UI_USE_NANOVG 1

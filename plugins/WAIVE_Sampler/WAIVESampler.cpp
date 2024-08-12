@@ -4,7 +4,7 @@ START_NAMESPACE_DISTRHO
 
 uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 
-ImporterTask::ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *queue) : Poco::Task("ImporterTask"), _ws(ws), _queue(queue){};
+ImporterTask::ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *queue) : Poco::Task("ImporterTask"), _ws(ws), _queue(queue) {};
 
 void ImporterTask::runTask()
 {
@@ -156,11 +156,25 @@ void FeatureExtractorTask::runTask()
     setProgress(1.0f);
 }
 
-WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex &_mutex, const std::string &_fp, int _sampleRate)
-    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), mutex(_mutex), fp(_fp), sampleRate(_sampleRate){};
+WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex *_mutex, const std::string &_fp, int _sampleRate)
+    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), mutex(_mutex), fp(_fp), sampleRate(_sampleRate)
+{
+    std::cout << "WaveformLoaderTask::WaveformLoaderTask() initialised" << std::endl;
+    std::cout << " - buffer: " << _buffer << std::endl;
+    std::cout << " - mutex: " << _mutex << std::endl;
+    std::cout << " - fp: " << _fp << std::endl;
+    std::cout << " - sampleRate: " << sampleRate << std::endl;
+};
+
+WaveformLoaderTask::~WaveformLoaderTask()
+{
+    std::cout << "WaveformLoaderTask::~WaveformLoaderTask() destructor called..." << std::endl;
+}
 
 void WaveformLoaderTask::runTask()
 {
+    std::cout << "WaveformLoaderTask::runTask()" << std::endl;
+
     SndfileHandle fileHandle(fp, SFM_READ);
     if (fileHandle.error())
     {
@@ -227,13 +241,6 @@ void WaveformLoaderTask::runTask()
             return;
         }
 
-        // SRC_STATE *converter = src_new(SRC_SINC_BEST_QUALITY, sampleChannels, &error);
-        // if (converter == NULL)
-        // {
-        //     std::cout << "Could not init samplerate converter, reason: " << sf_error_number(error) << std::endl;
-        //     return;
-        // }
-
         setProgress(progress);
 
         src_data.end_of_input = 0;
@@ -269,8 +276,10 @@ void WaveformLoaderTask::runTask()
     if (isCancelled())
         return;
 
-    std::lock_guard<std::mutex> lock(mutex);
+    std::lock_guard<std::mutex> lock(*mutex);
     buffer->resize(new_size);
+
+    std::cout << "WaveformLoaderTask new_size: " << new_size << std::endl;
 
     //  TODO: mix to Mono before sample rate conversion??
     if (sampleChannels > 1)
@@ -287,6 +296,8 @@ void WaveformLoaderTask::runTask()
     {
         std::copy(sample_tmp.begin(), sample_tmp.begin() + new_size, buffer->begin());
     }
+
+    std::cout << "WaveformLoaderTask::runTask() finished" << std::endl;
 }
 
 void SamplePlayer::clear()
@@ -323,7 +334,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     if (isDummyInstance())
     {
         std::cout << "** dummy instance" << std::endl;
-        return;
+        // return;
     }
 
     printf(" VERSION: %d.%d.%d\n", V_MAJ, V_MIN, V_PAT);
@@ -393,6 +404,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
     // OSC Test
     oscClient.sendMessage("/WAIVE_Sampler/Started", {"WAIVESampler started"});
+
+    sd.checkLatestRemoteVersion();
 }
 
 WAIVESampler::~WAIVESampler()
@@ -408,6 +421,7 @@ WAIVESampler::~WAIVESampler()
 void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
 {
     int slot = 0;
+    parameter.hints = kParameterIsAutomatable;
     switch (index)
     {
     case kSampleVolume:
@@ -502,7 +516,7 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 127.0f;
         parameter.ranges.def = (float)defaultMidiMap[slot];
-        parameter.hints = kParameterIsInteger;
+        parameter.hints |= kParameterIsInteger;
         break;
     default:
         break;
@@ -802,15 +816,18 @@ void WAIVESampler::clear()
 
 void WAIVESampler::loadSource(const char *fp)
 {
-    std::cout << "WAIVESampler::loadSource" << std::endl;
+    // std::cout << "WAIVESampler::loadSource" << std::endl;
     stopSourcePreview();
     fSourceLoaded = false;
     fSourcePath = std::string(fp);
     converterManager.cancelAll();
     converterManager.joinAll();
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
-    waveformLoaderTask = new WaveformLoaderTask(tempBuffer, tempBufferMutex, std::string(fp), sampleRate);
-    taskManager.start(waveformLoaderTask);
+
+    auto waveformLoad = std::make_unique<WaveformLoaderTask>(tempBuffer, &tempBufferMutex, std::string(fp), sampleRate);
+    std::cout << "WaveformLoaderTask created" << std::endl;
+    taskManager.start(waveformLoad.get());
+    waveformLoad.release();
 }
 
 void WAIVESampler::newSample()
@@ -846,7 +863,6 @@ void WAIVESampler::newSample()
         fCurrentSample = s;
     }
 
-    // pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
     pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
     pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
 }
@@ -1115,7 +1131,7 @@ void WAIVESampler::renderSample()
 
 void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer)
 {
-    // LOG_LOCATION
+    LOG_LOCATION
     if (info == nullptr)
     {
         sp.active = false;
@@ -1281,8 +1297,6 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
             fCurrentSample->tagString = "";
             fSourcePath = "";
         }
-
-        // waveformLoaderTask->release();
     }
 
     pNf->release();
@@ -1410,6 +1424,8 @@ bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int samp
         std::cerr << "Error: Failed to write all frames to " << fp << std::endl;
         return false;
     }
+
+    std::cout << "saveWaveform() done" << std::endl;
 
     return true;
 }

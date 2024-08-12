@@ -181,7 +181,7 @@ protected:
 private:
     Poco::TaskManager taskManager, converterManager;
     ImporterTask *importerTask;
-    WaveformLoaderTask *waveformLoaderTask;
+    std::unique_ptr<WaveformLoaderTask> waveformLoaderTask;
     std::shared_ptr<std::vector<float>> tempBuffer;
     std::mutex tempBufferMutex;
     ThreadsafeQueue<std::string> import_queue;
@@ -257,14 +257,30 @@ private:
 class WaveformLoaderTask : public Poco::Task
 {
 public:
-    WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex &_mutex, const std::string &_fp, int sampleRate);
+    WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex *_mutex, const std::string &_fp, int sampleRate);
+    ~WaveformLoaderTask();
     void runTask() override;
     std::string fp;
 
 private:
     std::shared_ptr<std::vector<float>> buffer;
-    std::mutex &mutex;
+    std::mutex *mutex;
     int sampleRate, flags;
+};
+
+class TestTask : public Poco::Task
+{
+public:
+    TestTask(std::string name) : Poco::Task(name)
+    {
+        std::cout << "TestTask init" << std::endl;
+    };
+    void runTask() override
+    {
+        std::cout << "TestTask runTask" << std::endl;
+        sleep(1000);
+        std::cout << "TestTask done" << std::endl;
+    };
 };
 
 END_NAMESPACE_DISTRHO

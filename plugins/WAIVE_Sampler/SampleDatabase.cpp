@@ -316,19 +316,35 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     int id = sample->getId();
     std::string parameters = sample->toJson().dump();
 
-    Poco::Data::Statement insert(*session);
-    insert << "INSERT INTO Samples(name, path, source, parameters) VALUES(?, ?, ?, ?)",
-        Poco::Data::Keywords::use(sample->name),
-        Poco::Data::Keywords::use(sample->path),
-        Poco::Data::Keywords::use(sample->source),
-        Poco::Data::Keywords::use(parameters);
-    insert.execute();
+    try
+    {
+        Poco::Data::Statement insert(*session);
+        insert << "INSERT INTO Samples(name, path, source, parameters) VALUES(?, ?, ?, ?)",
+            Poco::Data::Keywords::use(sample->name),
+            Poco::Data::Keywords::use(sample->path),
+            Poco::Data::Keywords::use(sample->source),
+            Poco::Data::Keywords::use(parameters);
+        insert.execute();
+    }
+    catch (const Poco::DataException &ex)
+    {
+        std::cerr << "Error inserting new sample into database: " << ex.message() << std::endl;
+        return false;
+    }
 
     int lastId;
-    Poco::Data::Statement lastSampleId(*session);
-    lastSampleId << "SELECT last_insert_rowid()",
-        Poco::Data::Keywords::into(lastId);
-    lastSampleId.execute();
+    try
+    {
+        Poco::Data::Statement lastSampleId(*session);
+        lastSampleId << "SELECT last_insert_rowid()",
+            Poco::Data::Keywords::into(lastId);
+        lastSampleId.execute();
+    }
+    catch (const Poco::DataException &ex)
+    {
+        std::cerr << "Error getting new sampleId: " << ex.message() << std::endl;
+        return false;
+    }
 
     sample->setId(lastId);
 
@@ -339,7 +355,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     }
 
     fAllSamples.push_back(sample);
-    databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_ADDED);
+    // databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_ADDED);
     return true;
 }
 
@@ -570,6 +586,8 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
     {
         std::cerr << "Error in getNewSampleName: " << e.what() << std::endl;
     }
+
+    std::cout << "New name: " << newName << std::endl;
 
     return newName;
 }
@@ -1359,7 +1377,6 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
 
 std::string makeTagString(const std::vector<Tag> &tags)
 {
-    std::cout << "makeTagString " << tags.size() << std::endl;
     if (tags.empty())
         return "";
 

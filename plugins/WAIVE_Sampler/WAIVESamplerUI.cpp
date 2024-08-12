@@ -422,16 +422,28 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
     plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
 
-    // printf("WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
+    updateWidgets();
 
-    // should be done by plugin itself?
-    plugin->sd.checkLatestRemoteVersion();
+    // printf("** WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
 }
 
 WAIVESamplerUI::~WAIVESamplerUI()
 {
+    // std::cout << "WAIVESamplerUI::~WAIVESamplerUI destructor" << std::endl;
+    plugin->taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+    plugin->taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+    plugin->taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+    plugin->taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+    plugin->taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+
+    plugin->sd.taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+    plugin->sd.taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+    plugin->sd.taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+    plugin->sd.taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+    plugin->sd.taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+
     plugin->sd.databaseUpdate -= Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
-    tagRoot->close();
+    plugin->pluginUpdate -= Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
 
     if (open_dialog.joinable())
         open_dialog.join();
@@ -496,10 +508,6 @@ void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
 void WAIVESamplerUI::stateChanged(const char *key, const char *value)
 {
     std::cout << "WAIVESamplerUI::stateChanged: " << key << " -> " << value << std::endl;
-
-    if (strcmp(key, "filename") == 0)
-    {
-    }
 
     repaint();
 }
@@ -872,8 +880,39 @@ void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
     fScaleFactor = scaleFactor;
 }
 
+void WAIVESamplerUI::updateWidgets()
+{
+    sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
+    sourceWaveformDisplay->setWaveformLength(plugin->fSourceLength);
+    sourceWaveformDisplay->waveformNew();
+    bool sourceAvailable = plugin->fSourceLength > 0;
+    saveSampleBtn->setEnabled(sourceAvailable);
+    sourceLoading->setLoading(false);
+    presetButtons->setVisible(sourceAvailable);
+    editorKnobs->setVisible(sourceAvailable);
+    instructions->setVisible(!sourceAvailable);
+
+    if (plugin->fCurrentSample != nullptr)
+    {
+        sampleWaveformDisplay->setWaveformLength(plugin->fCurrentSample->sampleLength);
+        sampleWaveformDisplay->waveformUpdated();
+        if (plugin->fCurrentSample->saved)
+            saveSampleBtn->setLabel("Update");
+        else
+            saveSampleBtn->setLabel("Save");
+        playSampleBtn->setEnabled(true);
+    }
+    else
+    {
+        sampleWaveformDisplay->setWaveformLength(0);
+        sampleWaveformDisplay->waveformNew();
+        playSampleBtn->setEnabled(false);
+    }
+}
+
 void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg)
 {
+    // std::cout << "WAIVESamplerUI::onPluginUpdated" << std::endl;
     bool sourceAvailable;
     switch (arg)
     {
@@ -971,9 +1010,11 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
 
 void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
 {
+    // std::cout << "WAIVESamplerUI::onTaskStarted ";
     Poco::Task *pTask = pNf->task();
 
     const std::string &taskName = pTask->name();
+    // std::cout << taskName << std::endl;
 
     if (taskName == "ImporterTask")
     {
@@ -981,6 +1022,7 @@ void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
     }
     else if (taskName == "WaveformLoaderTask")
     {
+        std::cout << "sourceLoading: " << sourceLoading << std::endl;
         sourceLoading->setLoading(true);
         progress->setLabel("Importing...");
         progress->resizeToFit();
@@ -1048,6 +1090,7 @@ void WAIVESamplerUI::onTaskFailed(Poco::TaskFailedNotification *pNf)
 
 void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
+    // std::cout << "WAIVESamplerUI::onTaskFinished ";
     Poco::Task *pTask = pNf->task();
     if (!pTask)
     {
@@ -1056,6 +1099,7 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     }
 
     const std::string &taskName = pTask->name();
+    std::cout << taskName << std::endl;
 
     if (taskName == "ImporterTask")
         sampleBrowser->loading->setLoading(false);

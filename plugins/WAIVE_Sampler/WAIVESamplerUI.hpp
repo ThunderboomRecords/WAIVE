@@ -75,6 +75,8 @@ public:
     WAIVESamplerUI();
     ~WAIVESamplerUI();
 
+    void updateWidgets();
+
     void onTaskStarted(Poco::TaskStartedNotification *pNf);
     void onTaskFinished(Poco::TaskFinishedNotification *pNf);
     void onTaskFailed(Poco::TaskFailedNotification *pNf);

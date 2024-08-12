@@ -18,8 +18,6 @@
 // sample waveforms
 #define SAMPLE_DIR "Samples"
 
-#define DB_FILE "db.csv"
-
 enum Parameters
 {
     kSampleVolume = 0,
