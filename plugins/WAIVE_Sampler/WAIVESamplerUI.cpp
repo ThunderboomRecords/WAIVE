@@ -1127,7 +1127,7 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
 void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
 {
-    // std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
+    std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
     switch (arg)
     {
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:

@@ -157,23 +157,13 @@ void FeatureExtractorTask::runTask()
 }
 
 WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex *_mutex, const std::string &_fp, int _sampleRate)
-    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), mutex(_mutex), fp(_fp), sampleRate(_sampleRate)
-{
-    std::cout << "WaveformLoaderTask::WaveformLoaderTask() initialised" << std::endl;
-    std::cout << " - buffer: " << _buffer << std::endl;
-    std::cout << " - mutex: " << _mutex << std::endl;
-    std::cout << " - fp: " << _fp << std::endl;
-    std::cout << " - sampleRate: " << sampleRate << std::endl;
-};
+    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), mutex(_mutex), fp(_fp), sampleRate(_sampleRate) {};
 
-WaveformLoaderTask::~WaveformLoaderTask()
-{
-    std::cout << "WaveformLoaderTask::~WaveformLoaderTask() destructor called..." << std::endl;
-}
+WaveformLoaderTask::~WaveformLoaderTask() {}
 
 void WaveformLoaderTask::runTask()
 {
-    std::cout << "WaveformLoaderTask::runTask()" << std::endl;
+    // std::cout << "WaveformLoaderTask::runTask()" << std::endl;
 
     SndfileHandle fileHandle(fp, SFM_READ);
     if (fileHandle.error())
@@ -279,7 +269,7 @@ void WaveformLoaderTask::runTask()
     std::lock_guard<std::mutex> lock(*mutex);
     buffer->resize(new_size);
 
-    std::cout << "WaveformLoaderTask new_size: " << new_size << std::endl;
+    // std::cout << "WaveformLoaderTask new_size: " << new_size << std::endl;
 
     //  TODO: mix to Mono before sample rate conversion??
     if (sampleChannels > 1)
@@ -297,7 +287,7 @@ void WaveformLoaderTask::runTask()
         std::copy(sample_tmp.begin(), sample_tmp.begin() + new_size, buffer->begin());
     }
 
-    std::cout << "WaveformLoaderTask::runTask() finished" << std::endl;
+    // std::cout << "WaveformLoaderTask::runTask() finished" << std::endl;
 }
 
 void SamplePlayer::clear()

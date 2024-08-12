@@ -364,24 +364,30 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
     if (sample == nullptr)
         return false;
 
-    // std::cout << "SampleDatabase::updateSample\n";
+    // std::cout << "SampleDatabase::updateSample" << std::endl;
 
     int id = sample->getId();
     std::string parameters = sample->toJson().dump();
 
     // std::cout << parameters << std::endl;
 
-    Poco::Data::Statement update(*session);
-    update << "UPDATE Samples SET name = ?, path = ?, source = ?, parameters = ? WHERE id = ?",
-        Poco::Data::Keywords::use(sample->name),
-        Poco::Data::Keywords::use(sample->path),
-        Poco::Data::Keywords::use(sample->source),
-        Poco::Data::Keywords::use(parameters),
-        Poco::Data::Keywords::use(id);
-    int n = update.execute();
-
-    // std::cout << update.toString() << std::endl;
-    // std::cout << n << std::endl;
+    int n = 0;
+    try
+    {
+        Poco::Data::Statement update(*session);
+        update << "UPDATE Samples SET name = ?, path = ?, source = ?, parameters = ? WHERE id = ?",
+            Poco::Data::Keywords::use(sample->name),
+            Poco::Data::Keywords::use(sample->path),
+            Poco::Data::Keywords::use(sample->source),
+            Poco::Data::Keywords::use(parameters),
+            Poco::Data::Keywords::use(id);
+        n = update.execute();
+    }
+    catch (const Poco::DataException &ex)
+    {
+        std::cerr << "Error updating sample info" << std::endl;
+        return false;
+    }
 
     // TODO: update Sample<->Tags database
     for (Tag t : sample->tags)
@@ -391,7 +397,7 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
 
     if (n > 0)
     {
-        databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_UPDATED);
+        // databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_UPDATED);
         return true;
     }
 
@@ -1355,7 +1361,6 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
         getTagList();
-        // getArchiveList();
         filterSources();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
@@ -1370,6 +1375,10 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
         break;
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOAD_FAILED:
         break;
+    case SampleDatabase::DatabaseUpdate::SAMPLE_ADDED:
+    case SampleDatabase::DatabaseUpdate::SAMPLE_DELETED:
+    case SampleDatabase::DatabaseUpdate::SAMPLE_UPDATED:
+    case SampleDatabase::DatabaseUpdate::SAMPLE_LIST_LOADED:
     default:
         break;
     }
