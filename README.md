@@ -30,15 +30,12 @@ Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX 
 - **WAIVE-Midi**: a rhythmic pattern generator
 - **WAIVE-Sampler**: a sample player, sample library and sample generator in one
 
-Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding Windows builds.
+Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding Windows and MacOS releases.
 
 ### Download and Install
-
-> :warning: macOS users: currently the pre-built plugin is unsigned, so you may have to follow [these steps](https://support.apple.com/en-gb/guide/mac-help/mh40616/mac) to allow the plugin to work. Alternatively, you may try to build the plugin yourself, following the [Build Instructions](#build-instructions) section.
-
-1. Download and extract the latest archive from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform (currently only available for macOS Apple Silicon and Linux). You can find the downloads under the **Assets** heading.
-2. Choose which plugin format you prefer and place the corresponding folder in your plugins path of your DAW. 
-    - Current formats: VST2, VST3, CLAP, and a Standalone (JACK) app.
+Currently, there is no installer provided, so you must install the plugins manually: 
+1. Download and extract the latest archive from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform (currently only available for macOS Apple Silicon and Linux). You can find the download links under the **Assets** heading.
+2. Choose which plugin format you prefer and place the corresponding bundle (e.g. `WAIVE_Sampler.vst3`) in your plugins path of your DAW:
     - Common (system-wide) plugin paths:
       
         |          |  VST2                                 |  VST3                                |  CLAP                                 |
@@ -47,9 +44,7 @@ Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https
         | Linux    | `/usr/lib/vst`                        | `/usr/lib/vst3`                      | `/usr/lib/clap`                       |
         | Windows  | `C:\Program Files\Common Files\VST2`  | `C:\Program Files\Common Files\VST3` | `C:\Program Files\Common Files\CLAP`  |
       
-   
-3. In your DAW, rescan plugins if it does not do so automatically.
-
+3. In your DAW, re-scan plugins if it does not do so automatically.
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
