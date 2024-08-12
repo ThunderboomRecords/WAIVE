@@ -24,7 +24,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     triggerBtn->drawBackground = false;
 
     midiSelect = new DropDown(parent);
-    for (int i = 1; i < 128; i++)
+    for (int i = 0; i < 128; i++)
         midiSelect->addItem(fmt::format("{:d}", i).c_str());
     midiSelect->setDisplayNumber(6);
     midiSelect->setFontSize(16.0f);
