@@ -58,8 +58,14 @@ Requires `cmake` and `ninja`:
 - on Linux: use your distributions package manager
 - Windows: *coming soon*
 
-Requires vcpkg and pkg-config:
-- on Mac: ```$ brew install vcpkg pkg-config``` (follow additional instructions on adding vcpkg to path)
+Requires `vcpkg` and `pkg-config`:
+- on Mac:
+  ```shell
+  $ brew install vcpkg pkg-config
+  $ git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
+  $ export VCPKG_ROOT="$HOME/vcpkg"
+  ```
+  (you may wish to add the last line to your .bashrc or .zshrc to make it permanent)
 - on Windows/Linux: [vcpkg installation instructions](https://learn.microsoft.com/en-gb/vcpkg/get_started/get-started?pivots=shell-cmd)
 
 
@@ -67,10 +73,11 @@ Requires vcpkg and pkg-config:
 ```shell
 $ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git
 $ cd WAIVE/
-
-# copy `lib/` and `include/` from static built onnxruntime into a new folder 
-# `external/onnxruntime/`, then from project root:
-
+```
+Copy the `lib/` and `include/` folders from the static built onnxruntime you downloaded in the prerequisite step into a new folder 
+ `WAIVE/external/onnxruntime/`, then from project root:
+ 
+```shell
 $ mkdir build
 $ cmake --preset=default
 $ cmake --build ./build -j8 --config Release
