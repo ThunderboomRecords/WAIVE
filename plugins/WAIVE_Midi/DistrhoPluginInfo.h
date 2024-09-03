@@ -4,8 +4,11 @@
 #define DISTRHO_PLUGIN_URI "https://github.com/ThunderboomRecords/WAIVE"
 #define DISTRHO_PLUGIN_BRAND "WAIVE"
 #define DISTRHO_PLUGIN_NAME  "WAIVE-MIDI"
-#define DISTRHO_PLUGIN_CLAP_ID "waive.midiinstrument"
-#define DISTRHO_PLUGIN_VST3_CATEGORIES "Instrument|Drum"
+#define DISTRHO_PLUGIN_BRAND_ID Waiv
+#define DISTRHO_PLUGIN_UNIQUE_ID WaMi
+#define DISTRHO_PLUGIN_CLAP_ID "waive.midieffect"
+#define DISTRHO_PLUGIN_CLAP_FEATURES "note-effect" 
+#define DISTRHO_PLUGIN_VST3_CATEGORIES "Fx|Generator"
 
 // #define HAVE_OPENGL 1
 #define DISTRHO_PLUGIN_HAS_UI       1
