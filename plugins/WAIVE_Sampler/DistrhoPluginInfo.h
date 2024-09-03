@@ -3,6 +3,8 @@
 
 #define DISTRHO_PLUGIN_BRAND "WAIVE"
 #define DISTRHO_PLUGIN_NAME "WAIVE-Sampler"
+#define DISTRHO_PLUGIN_BRAND_ID Waiv
+#define DISTRHO_PLUGIN_UNIQUE_ID WaSa
 #define DISTRHO_PLUGIN_URI "https://github.com/ThunderboomRecords/WAIVE"
 #define DISTRHO_PLUGIN_CLAP_ID "thunderboom.waive.midiinstrument"
 #define DISTRHO_PLUGIN_CLAP_FEATURES "instrument", "sampler", "mono"
