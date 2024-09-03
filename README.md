@@ -89,6 +89,10 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 
 *Coming soon*.
 
+### Troubleshooting
+#### WAIVE-Sampler not loading sources list
+- Make sure you are connected to the internet
+- Click "View Folder" button to open up the location the database is saved in you file browser. Delete the file WAIVE.db, close the plugin and re-open.
 
 ### Licenses
 
