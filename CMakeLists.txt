@@ -4,9 +4,11 @@ set(CXX_STANDARD_REQUIRED ON)
 set(POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
+set(CMAKE_GENERATOR "Ninja")
+
 if(APPLE)
   message(STATUS "Building on Mac") 
-  set(CMAKE_MAKE_PROGRAM /opt/homebrew/bin/ninja)
+  set(CMAKE_MAKE_PROGRAM /opt/homebrew/bin/ninja CACHE FILEPATH "Path to Ninja build system")
 elseif(WIN32)
   message(STATUS "Building on Windows")
 elseif(UNIX AND NOT APPLE)

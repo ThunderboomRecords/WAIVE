@@ -61,7 +61,6 @@ Requires `cmake` and `ninja`:
 Requires `vcpkg` and `pkg-config`:
 - on Mac:
   ```shell
-  $ brew install vcpkg pkg-config
   $ git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
   $ export VCPKG_ROOT="$HOME/vcpkg"
   ```
