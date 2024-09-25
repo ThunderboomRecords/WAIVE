@@ -44,7 +44,12 @@ Currently, there is no installer provided, so you must install the plugins manua
         | Linux    | `/usr/lib/vst`                        | `/usr/lib/vst3`                      | `/usr/lib/clap`                       |
         | Windows  | `C:\Program Files\Common Files\VST2`  | `C:\Program Files\Common Files\VST3` | `C:\Program Files\Common Files\CLAP`  |
       
-3. In your DAW, re-scan plugins if it does not do so automatically.
+3. In your DAW, rescan plugins if it does not do so automatically.
+
+#### Ableton Live Notes
+- If you installed the plug-ins in the above directories, then make sure that "Use VST3 System Plug-in Folders" is On (same for VST2) in Settings > Plug-ins before rescanning.
+- To use WAIVE-Midi, add this plugin to an empty MIDI track. Then, on a separate MIDI track add your instrument (e.g. WAIVE-Midi) then set MIDI From to the name of the first track and make sure to set it to use Post-FX. 
+- The VST3 version of WAIVE-Midi currently is not loading in Live, so use the VST2 version.
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
