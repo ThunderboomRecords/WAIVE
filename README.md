@@ -58,7 +58,7 @@ Requires `cmake` and `ninja`:
 - on Linux: use your distributions package manager
 - Windows: *coming soon*
 
-Requires `vcpkg` and `pkg-config`:
+Requires `vcpkg`:
 - on Mac:
   ```shell
   $ git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"

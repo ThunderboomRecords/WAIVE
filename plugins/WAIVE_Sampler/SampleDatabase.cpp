@@ -637,7 +637,7 @@ void SampleDatabase::checkLatestRemoteVersion()
     catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Failed to retrieve user version: " << e.what() << std::endl;
-        return;
+        user_version = 0;
     }
 
     std::cout << "user_version: " << user_version << std::endl;
@@ -680,15 +680,17 @@ void SampleDatabase::checkLatestRemoteVersion()
 
             } catch(json::parse_error &e) {
                 std::cerr << "JSON parsing error: " << e.what() << std::endl;
+            	databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
             } catch(const std::exception &e){
                 std::cerr << "Unexpected error: " << e.what() << std::endl;
+           		databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
             } },
         [this]()
         {
             std::cout << "cannot connect to remote database and verify if up-to-date." << std::endl;
             if (!sourceDatabaseInitialised)
                 std::cout << "no Source info avaliable\n";
-            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
         });
 }
 
@@ -715,9 +717,6 @@ void SampleDatabase::updateDatabaseVersion(int new_version)
 
 void SampleDatabase::downloadSourcesList()
 {
-    if (sourcesLoaded)
-        return;
-
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
 
     httpClient->sendRequest(
@@ -742,9 +741,6 @@ void SampleDatabase::downloadSourcesList()
 
 void SampleDatabase::downloadTagsList()
 {
-    if (sourcesLoaded)
-        return;
-
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
 
     httpClient->sendRequest(

@@ -395,7 +395,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     // OSC Test
     oscClient.sendMessage("/WAIVE_Sampler/Started", {"WAIVESampler started"});
 
-    sd.checkLatestRemoteVersion();
+    // sd.checkLatestRemoteVersion();
 }
 
 WAIVESampler::~WAIVESampler()

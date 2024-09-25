@@ -4,7 +4,8 @@ START_NAMESPACE_DISTRHO
 WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
                                    fScaleFactor(getScaleFactor()),
                                    fScale(1.0f),
-                                   filebrowserOpen(false)
+                                   filebrowserOpen(false),
+                                   errorMessage(false)
 {
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
@@ -423,6 +424,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
 
     updateWidgets();
+
+    plugin->sd.checkLatestRemoteVersion();
 
     // printf("** WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
 }
@@ -1115,11 +1118,11 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     }
     else if (taskName == "ParseSourceList")
     {
-        databaseProgress->hide();
+        // databaseProgress->hide();
     }
     else if (taskName == "ParseTagsList")
     {
-        databaseProgress->hide();
+        // databaseProgress->hide();
     }
 
     pNf->release();
@@ -1134,21 +1137,25 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_START:
     case SampleDatabase::DatabaseUpdate::BUILDING_TAG_LIST:
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADING:
-        databaseLoading->setLoading(true);
+        loadingTaskCount++;
+        // databaseLoading->setLoading(true);
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
     case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOAD_FAILED:
-        databaseLoading->setLoading(false);
+        loadingTaskCount--;
+        // databaseLoading->setLoading(false);
         break;
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
         sourceLoad(plugin->sd.latestDownloadedIndex);
-        databaseLoading->setLoading(false);
+        loadingTaskCount--;
+        // databaseLoading->setLoading(false);
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
-        databaseLoading->setLoading(false);
+        // databaseLoading->setLoading(false);
+        loadingTaskCount--;
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
@@ -1156,6 +1163,11 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     default:
         break;
     }
+
+    if (loadingTaskCount > 0)
+        databaseLoading->setLoading(true);
+    else
+        databaseLoading->setLoading(false);
 
     switch (arg)
     {
@@ -1169,14 +1181,19 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
         databaseProgress->setLabel("Downloading file...");
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
+        errorMessage = false;
+        databaseProgress->setLabel("");
+        break;
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
-        databaseProgress->setLabel("");
+        if (!errorMessage)
+            databaseProgress->setLabel("");
         break;
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOAD_FAILED:
     case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
+        errorMessage = true;
         databaseProgress->setLabel("Error downloading.");
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:

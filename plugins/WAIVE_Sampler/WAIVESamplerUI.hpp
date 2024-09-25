@@ -140,6 +140,9 @@ private:
     std::mutex fileBrowserOpenMtx;
     std::condition_variable fileBrowserCV;
 
+    bool errorMessage;
+    int loadingTaskCount;
+
     Panel *sourceBrowserPanel, *sampleEditorPanel, *samplePanel, *samplePlayerPanel;
 
     // 1. Source Browser Components
