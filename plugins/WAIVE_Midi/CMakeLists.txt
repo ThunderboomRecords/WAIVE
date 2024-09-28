@@ -7,6 +7,7 @@ dpf_add_plugin(
       vst3
       vst2
       clap
+      au
   FILES_DSP
       WAIVEMidi.cpp
       ./components/Notes.cpp

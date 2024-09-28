@@ -5,10 +5,10 @@ dpf_add_plugin(
   WAIVE_Sampler
   TARGETS 
       jack
-    #   lv2
       vst3
       vst2
       clap
+      au
   FILES_DSP
       WAIVESampler.cpp
       SampleDatabase.cpp
