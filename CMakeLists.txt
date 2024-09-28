@@ -20,7 +20,7 @@ if(POLICY CMP0077)
 endif()
 
 project(
-    WAIVE_Plugins VERSION 1.2.1
+    WAIVE_Plugins VERSION 1.2.2
 )
 
 configure_file(version_config.h.in ${CMAKE_BINARY_DIR}/generated/version_config.h)

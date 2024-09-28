@@ -78,7 +78,11 @@ void Waveform::calculateWaveform()
 
     const int width = getWidth() - 2;
     int number_of_blocks = width / level_of_detail;
-    double samples_per_block = (double)(visibleEnd - visibleStart) / (number_of_blocks);
+
+    if (number_of_blocks <= 0)
+        return;
+
+    double samples_per_block = (double)(visibleEnd - visibleStart) / number_of_blocks;
     reduced = samples_per_block > 2 * level_of_detail;
 
     if (waveformMin.size() != number_of_blocks)
@@ -93,12 +97,15 @@ void Waveform::calculateWaveform()
         start = (int)(i * samples_per_block) + visibleStart;
         end = std::min((int)waveformLength, (int)((i + 1) * samples_per_block) + visibleStart);
 
+        if (start >= wf->size() || end > wf->size() || start >= end)
+            continue;
+
         auto [min, max] = std::minmax_element(
             wf->begin() + start,
             wf->begin() + end);
 
-        waveformMin[i] = min[0];
-        waveformMax[i] = max[0];
+        waveformMin[i] = *min;
+        waveformMax[i] = *max;
     }
 
     waveformCached = true;
