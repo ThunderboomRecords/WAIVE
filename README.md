@@ -30,12 +30,12 @@ Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX 
 - **WAIVE-Midi**: a rhythmic pattern generator
 - **WAIVE-Sampler**: a sample player, sample library and sample generator in one
 
-Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding Windows and MacOS releases.
+Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding stability improvements and Windows release.
 
 ### Download and Install
 Currently, there is no installer provided, so you must install the plugins manually: 
 
-> If you are reinstalled the plugin from an older, develpment version, you maywant to delete the old database file as described in the [Troubleshooting](#waive-sampler-not-loading-sources-list) section.
+> If you are reinstalled the plugin from an older, develpment version, you may need to delete the old database file as described in the [Troubleshooting](#waive-sampler-not-loading-sources-list) section.
 
 1. Download and extract the latest archive from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform (currently only available for macOS Apple Silicon and Linux). You can find the download links under the **Assets** heading.
 2. Choose which plugin format you prefer and place the corresponding bundle (e.g. `WAIVE_Sampler.vst3`) in your plugins path of your DAW:
@@ -101,6 +101,22 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 - Make sure you are connected to the internet
 - Click "View Folder" button to open up the location the database is saved in you file browser. Delete the file WAIVE.db, close and remove the plugin from the track, and re-add it and re-open.
   - On macOS, this is located at `/Users/[your username]/Library/Application Support/WAIVE`
+ 
+### About
+WAIVE-Plugins are built on top of several bespoke music and audio analysis models in order to create a unique and custom musical toolbox. These models will continue to be fine-tuned and updated on new data. 
+
+**WAIVE-Midi** utilises a flexible approach of modelling rhythmic data first outlined by Jon Gillick and collaborators. This works by encoding a percussion loop into it's *Score* and *Groove* components, then a model (a Variational AutoEncoder, *VAE*) is trained to combine them into a final output sequence. By adjusting the groove information, the same pattern (score) can be played in a different style. For the plugin, we also trained 2 smaller models (VAEs) that can encode the training data and can generate new Grooves and Scores in a variety of styles. 
+
+We use a combination of MIDI data and raw audio to collect rhythm information to train the models. In the case of raw audio, first the percussion instruments are isolated using [demucs](https://github.com/facebookresearch/demucs), then a method (Non-Negative Matrix Factorisation, demoed [here](https://www.audiolabs-erlangen.de/resources/MIR/2016-IEEE-TASLP-DrumSeparation/AmenBreak)) to further separate the individual percussion instruments is used to extract the score and groove information. 
+
+Rhythmic datasets include:
+- [Groove MIDI Dataset](https://magenta.tensorflow.org/datasets/groove) from Magenta
+- [Folkloras](http://etnomuzikologai.lmta.lt/), Baltic folk music archive.
+- [Free Music Archive](https://freemusicarchive.org/) selected electronic dance tracks.
+
+#### References
+- [Jon Gillick, Adam Roberts, Jesse Engel, Douglas Eck, and David Bamman (2019) 'Learning to Groove with Inverse Sequence Transformations.'](https://magenta.tensorflow.org/datasets/groove), International Conference on Machine Learning 2019 (ICML). 
+- [Gillick, J., Yang, J., Cella, C.-E. and Bamman, D. (2021) ‘Drumroll Please: Modeling Multi-Scale Rhythmic Gestures with Flexible Grids’](https://transactions.ismir.net/articles/10.5334/tismir.98#42-data-representations-for-comparison), Transactions of the International Society for Music Information Retrieval, 4(1), p. 156–166
 
 ### Licenses
 
