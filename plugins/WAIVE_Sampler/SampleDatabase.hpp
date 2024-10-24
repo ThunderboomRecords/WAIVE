@@ -111,6 +111,7 @@ public:
         SAMPLE_ADDED,
         SAMPLE_UPDATED,
         SAMPLE_DELETED,
+        SOURCE_ADDED,
         SOURCE_LIST_CHECKING_UPDATE,
         SOURCE_LIST_CHECKED_UPDATE,
         SOURCE_LIST_DOWNLOADING,
@@ -142,6 +143,8 @@ public:
             return "SAMPLE_UPDATED";
         case SAMPLE_DELETED:
             return "SAMPLE_DELETED";
+        case SOURCE_ADDED:
+            return "SOURCE_ADDED";
         case SOURCE_LIST_DOWNLOADING:
             return "SOURCE_LIST_DOWNLOADING";
         case SOURCE_LIST_CHECKING_UPDATE:
@@ -211,6 +214,7 @@ public:
     bool addToLibrary(std::shared_ptr<SampleInfo> sample);
     bool updateSample(std::shared_ptr<SampleInfo> sample);
     bool renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name);
+    bool addSourceToLibrary(const std::string &path);
     std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
     std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
     std::string getFullSamplePath(std::shared_ptr<SampleInfo> sample) const;

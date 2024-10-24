@@ -180,13 +180,16 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
     fill();
     closePath();
 
-    // license info button
-    beginPath();
-    fillColor(text_color);
-    fontSize(getFontSize() * 0.8f);
-    textAlign(Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE);
-    text(width - columnLicense, height / 2.f, "License", nullptr);
-    closePath();
+    if (info.license.length())
+    {
+        // license info button
+        beginPath();
+        fillColor(text_color);
+        fontSize(getFontSize() * 0.8f);
+        textAlign(Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE);
+        text(width - columnLicense, height / 2.f, "License", nullptr);
+        closePath();
+    }
 
     if (info.downloaded == DownloadState::NOT_DOWNLOADED)
     {
@@ -288,7 +291,7 @@ bool SourceList::onMouse(const MouseEvent &ev)
             scrolling = true;
             return true;
         }
-        else if (ev.pos.getX() > getWidth() - columnLicense - 50)
+        else if (ev.pos.getX() > getWidth() - columnLicense - 50 && source_info->at(highlighting).license.length())
         {
             try
             {

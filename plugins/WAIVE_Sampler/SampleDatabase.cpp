@@ -311,9 +311,11 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     if (sample == nullptr)
         return false;
 
+    std::cout << "SampleDatabase::addToLibrary" << std::endl;
+
     sample->saved = true;
 
-    int id = sample->getId();
+    // int id = sample->getId();
     std::string parameters = sample->toJson().dump();
 
     try
@@ -332,6 +334,8 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
         return false;
     }
 
+    std::cout << "insert done" << std::endl;
+
     int lastId;
     try
     {
@@ -346,17 +350,105 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
         return false;
     }
 
+    std::cout << "lastId " << lastId << std::endl;
+
     sample->setId(lastId);
 
     // TODO: update Sample<->Tags database
     for (Tag t : sample->tags)
     {
+        std::cout << t.name << std::endl;
         newTag(t.name);
     }
 
     fAllSamples.push_back(sample);
     // databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_ADDED);
+
+    std::cout << "SampleDatabase::addToLibrary done" << std::endl;
     return true;
+}
+
+bool SampleDatabase::addSourceToLibrary(const std::string &path)
+{
+    // 1 Copy source to folder
+
+    Poco::File sourceFile(path);
+    Poco::Path savePath(sourceFolder);
+    savePath.append("User").makeDirectory();
+    Poco::File copyDir(savePath);
+    if (!copyDir.exists())
+    {
+        copyDir.createDirectories();
+    }
+
+    if (!sourceFile.exists())
+    {
+        std::cerr << "Imported file " << path << " does not exist" << std::endl;
+        return false;
+    }
+
+    try
+    {
+        sourceFile.copyTo(savePath.toString(), Poco::File::OPT_FAIL_ON_OVERWRITE);
+    }
+    catch (Poco::FileExistsException &ex)
+    {
+        std::cout << "File already in database folder" << std::endl;
+        return false;
+    }
+    catch (Poco::FileNotFoundException &ex)
+    {
+        std::cerr << "Copy destination not found: " << savePath.toString() << std::endl;
+        return false;
+    }
+    catch (std::exception &ex)
+    {
+        std::cerr << "An error occurred during file copy: " << ex.what() << std::endl;
+        return false;
+    }
+
+    std::cout << "File copied to sources folder" << std::endl;
+
+    // 2 Update database
+    std::string filename = Poco::Path(path).getFileName();
+    Poco::Path url = Poco::Path("User").append(filename);
+
+    std::cout << "filename: " << filename << ", url: " << url.toString() << std::endl;
+
+    std::string description = Poco::Path(path).getBaseName();
+    std::string archive = "User";
+    std::string tags = "";
+    std::string urlString = url.toString();
+
+    try
+    {
+        if (!session)
+        {
+            std::cerr << "Database session not initialized" << std::endl;
+            return false;
+        }
+
+        Poco::Data::Statement insert(*session);
+        insert << "INSERT INTO Sources(description, tags, archive, filename, url) VALUES(?, ?, ?, ?, ?)",
+            Poco::Data::Keywords::use(description),
+            Poco::Data::Keywords::use(tags),
+            Poco::Data::Keywords::use(archive),
+            Poco::Data::Keywords::use(filename),
+            Poco::Data::Keywords::use(urlString);
+
+        insert.execute();
+    }
+    catch (const Poco::DataException &ex)
+    {
+        std::cerr << "Error inserting new sample into database: " << ex.message() << std::endl;
+        return false;
+    }
+
+    filterSources();
+
+    return true;
+
+    // 3 Select current Source (and notify UI) to load it
 }
 
 bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
@@ -1169,6 +1261,9 @@ void SampleDatabase::filterSources()
     if (!sourceDatabaseInitialised)
         return;
 
+    if (!session)
+        return;
+
     std::string exists;
     try
     {
@@ -1221,14 +1316,13 @@ void SampleDatabase::filterSources()
 
     try
     {
-        Poco ::Data::Statement select(*session);
+        Poco::Data::Statement select(*session);
         std::string filename, archive, description, url, license;
         int id;
-        int lastId = -1;
-        select << "SELECT Sources.id, Sources.filename, Sources.archive, Sources.description, Sources.url, Sources.license "
+        select << "SELECT DISTINCT Sources.id, Sources.filename, Sources.archive, Sources.description, Sources.url, Sources.license "
                   "FROM Sources "
-                  "JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
-                  "JOIN Tags ON Tags.id = SourcesTags.tag_id " +
+                  "LEFT JOIN SourcesTags ON Sources.id = SourcesTags.source_id "
+                  "LEFT JOIN Tags ON Tags.id = SourcesTags.tag_id " +
                       where,
             Poco::Data::Keywords::into(id),
             Poco::Data::Keywords::into(filename),
@@ -1242,15 +1336,10 @@ void SampleDatabase::filterSources()
                   << select.toString() << "\"\n"
                   << std::endl;
 
-        while (!select.done())
+        while (!select.done() && select.execute())
         {
-            if (!select.execute())
-                continue;
+            // std::cout << filename << std::endl;
 
-            if (id == lastId)
-                continue;
-
-            lastId = id;
             SourceInfo source;
             source.id = id;
             source.archive = archive;
@@ -1375,6 +1464,7 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::SAMPLE_DELETED:
     case SampleDatabase::DatabaseUpdate::SAMPLE_UPDATED:
     case SampleDatabase::DatabaseUpdate::SAMPLE_LIST_LOADED:
+    case SampleDatabase::DatabaseUpdate::SOURCE_ADDED:
     default:
         break;
     }

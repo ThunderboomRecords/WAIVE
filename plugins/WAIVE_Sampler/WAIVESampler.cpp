@@ -653,13 +653,27 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
 
 void WAIVESampler::setState(const char *key, const char *value)
 {
-    if (strcmp(key, "filename") == 0)
+    if (strcmp(key, "importSource") == 0)
     {
-        // sd.loadedSource = SourceInfo();
+        std::stringstream filelist(value);
+        std::string filename;
+
+        int count = 0;
+
+        while (std::getline(filelist, filename, '|'))
+        {
+            std::cout << " - " << filename << std::endl;
+            sd.addSourceToLibrary(std::string(filename));
+
+            if (count == 0)
+            {
+                // Todo: load first sample?
+            }
+            count++;
+        }
         fSourceTagString = "";
-        loadSource(value);
     }
-    else if (strcmp(key, "import") == 0)
+    else if (strcmp(key, "importSample") == 0)
     {
         std::stringstream filelist(value);
         std::cout << "Importing files:" << std::endl;

@@ -100,6 +100,13 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     randomSourceBtn->below(sourceList, Widget_Align::END, padding * 2.f);
     randomSourceBtn->setCallback(this);
 
+    importSource = new Button(this);
+    importSource->setLabel("Import source");
+    importSource->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    importSource->resizeToFit();
+    importSource->leftOf(randomSourceBtn, START, padding);
+    importSource->setCallback(this);
+
     sourceBrowserPanel->addChildWidget(sourceList);
     sourceBrowserPanel->addChildWidget(openTagBrowserBtn);
     sourceBrowserPanel->addChildWidget(searchBox);
@@ -113,16 +120,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sampleEditorPanel->label = "2";
     sampleEditorPanel->title = "Sample Editor";
 
-    importSource = new Button(this);
-    importSource->setLabel("Import source");
-    importSource->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    importSource->resizeToFit();
-    importSource->onTop(sampleEditorPanel, END, START, padding);
-    importSource->setCallback(this);
-
     sourceWaveformDisplay = new Waveform(this);
     sourceWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 4.f * padding, sampleEditorPanel->getHeight() * 0.4f, true);
-    sourceWaveformDisplay->below(importSource, END, padding);
+    sourceWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, sampleEditorPanel->getFontSize() * 2.f);
     sourceWaveformDisplay->selectable = true;
     sourceWaveformDisplay->setCallback(this);
     sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
@@ -543,7 +543,7 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 void WAIVESamplerUI::buttonClicked(Button *button)
 {
     if (button == importSource)
-        beginOpenFileBrowser("filename", false);
+        beginOpenFileBrowser("importSource", true);
     else if (button == saveSampleBtn)
         plugin->addCurrentSampleToLibrary();
     else if (button == playSampleBtn)
@@ -686,7 +686,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
 void WAIVESamplerUI::mapSampleImport()
 {
-    beginOpenFileBrowser("import", true);
+    beginOpenFileBrowser("importSample", true);
 }
 
 void WAIVESamplerUI::beginOpenFileBrowser(const std::string &state, bool multiple)

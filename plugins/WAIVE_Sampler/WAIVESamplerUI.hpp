@@ -148,7 +148,7 @@ private:
     // 1. Source Browser Components
     SourceList *sourceList;
     Spinner *databaseLoading;
-    Button *openTagBrowserBtn, *previewPlaybackBtn, *randomSourceBtn;
+    Button *openTagBrowserBtn, *previewPlaybackBtn, *importSource, *randomSourceBtn;
     Panel *searchBox;
     TextInput *sourceSearch;
     Icon *searchIcon;
@@ -160,7 +160,7 @@ private:
     // 2. Sample Editor Components
     Waveform *sourceWaveformDisplay;
     HBox *presetButtons, *editorKnobs;
-    Button *makeKick, *makeSnare, *makeHihat, *makeClap, *importSource, *sourcePreviewBtn;
+    Button *makeKick, *makeSnare, *makeHihat, *makeClap, *sourcePreviewBtn;
     Label *presetLabel, *knobsLabel;
     Knob *pitch, *volume, *percussionBoost;
     Knob *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
