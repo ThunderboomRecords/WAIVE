@@ -28,6 +28,7 @@ public:
     int getNumberItems() const;
     const std::string getItem(int item) const;
     void calculateHeight();
+    void calculateWidth();
     void positionTo(NanoSubWidget *widget);
 
     Align alignment;

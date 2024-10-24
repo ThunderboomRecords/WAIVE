@@ -268,6 +268,21 @@ void Menu::calculateHeight()
     setHeight(display_number * (bounds.getHeight() + 4));
 }
 
+void Menu::calculateWidth()
+{
+    Rectangle<float> bounds;
+    float maxWidth = 10.f;
+    fontSize(getFontSize());
+    fontFaceId(font);
+    for (size_t i = 0; i < items.size(); i++)
+    {
+        textBounds(0, 0, items.at(i).c_str(), nullptr, bounds);
+        maxWidth = std::max(bounds.getWidth(), maxWidth);
+    }
+
+    setWidth(maxWidth + 6.f);
+}
+
 void Menu::setCallback(Callback *cb)
 {
     callback = cb;

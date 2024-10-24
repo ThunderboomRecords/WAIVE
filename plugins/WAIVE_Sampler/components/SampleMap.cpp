@@ -21,7 +21,7 @@ SampleMap::SampleMap(Widget *widget) noexcept
     menu = new Menu(widget);
     for (int i = 1; i < 9; i++)
         menu->addItem(fmt::format("Add to slot {:d}", i));
-    menu->setWidth(100);
+    menu->calculateWidth();
     menu->setFont("VG5000", VG5000, VG5000_len);
     menu->setDisplayNumber(8);
     menu->hide();
