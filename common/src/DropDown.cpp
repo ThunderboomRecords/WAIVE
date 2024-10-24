@@ -125,6 +125,11 @@ void DropDown::setItem(int item, bool sendCallback = false)
         callback->dropdownSelection(this, item);
 }
 
+std::string DropDown::getCurrentItem() const
+{
+    return menu->getCurrentItem();
+}
+
 void DropDown::setCallback(Callback *cb)
 {
     callback = cb;

@@ -151,6 +151,7 @@ private:
     Button *openTagBrowserBtn, *previewPlaybackBtn, *importSource, *randomSourceBtn;
     Panel *searchBox;
     TextInput *sourceSearch;
+    DropDown *archiveList;
     Icon *searchIcon;
     Label *databaseProgress;
 

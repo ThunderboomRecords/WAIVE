@@ -61,6 +61,18 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     searchBox->background_color = WaiveColors::grey2;
     searchBox->rightOf(openTagBrowserBtn);
 
+    archiveList = new DropDown(this);
+    archiveList->setFontSize(18.0f);
+    archiveList->setSize(240, archiveList->getFontSize(), true);
+    archiveList->rightOf(searchBox, CENTER, 14);
+    archiveList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    archiveList->menu->setFontSize(16.0f);
+    archiveList->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    archiveList->addItem("All");
+    archiveList->setItem(0, false);
+    archiveList->setDisplayNumber(6);
+    archiveList->setCallback(this);
+
     sourceSearch = new TextInput(this);
     sourceSearch->placeholder = "Search...";
     sourceSearch->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
@@ -814,6 +826,18 @@ void WAIVESamplerUI::dropdownSelection(DropDown *widget, int item)
     {
         setParameterValue(widget->getId(), item);
     }
+    else if (widget == archiveList)
+    {
+        if (item)
+        {
+            plugin->sd.filterConditions.archiveIs.assign(archiveList->getCurrentItem());
+        }
+        else
+        {
+            plugin->sd.filterConditions.archiveIs.assign("");
+        }
+        plugin->sd.filterSources();
+    }
 }
 
 void WAIVESamplerUI::sampleSelected(SampleSlot *slot, int slotId)
@@ -1130,7 +1154,7 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
 void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
 {
-    std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
+    // std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
     switch (arg)
     {
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
@@ -1156,6 +1180,13 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
         // databaseLoading->setLoading(false);
         loadingTaskCount--;
+        break;
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_ANALYSED:
+        for (size_t i = 0; i < plugin->sd.archives.size(); i++)
+        {
+            archiveList->addItem(plugin->sd.archives.at(i).c_str());
+        }
+        archiveList->setDisplayNumber(plugin->sd.archives.size() + 1);
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:

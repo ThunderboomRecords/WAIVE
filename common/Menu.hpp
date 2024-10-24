@@ -26,7 +26,8 @@ public:
     void setDisplayNumber(int number);
     void setItem(int item, bool sendCallback);
     int getNumberItems() const;
-    const std::string getItem(int item) const;
+    std::string getItem(int item) const;
+    std::string getCurrentItem() const;
     void calculateHeight();
     void calculateWidth();
     void positionTo(NanoSubWidget *widget);

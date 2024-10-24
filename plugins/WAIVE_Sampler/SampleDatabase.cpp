@@ -1226,7 +1226,7 @@ void SampleDatabase::getTagList()
 
 void SampleDatabase::getArchiveList()
 {
-    // std::cout << "SampleDatabase::getArchiveList()" << std::endl;
+    std::cout << "SampleDatabase::getArchiveList()" << std::endl;
     archives.clear();
 
     try
@@ -1253,6 +1253,8 @@ void SampleDatabase::getArchiveList()
     {
         std::cerr << "Unexpected error in SampleDatabase::getArchivesList(): " << e.what() << std::endl;
     }
+
+    std::cout << "number of archives: " << archives.size() << std::endl;
 }
 
 void SampleDatabase::filterSources()
@@ -1294,6 +1296,9 @@ void SampleDatabase::filterSources()
 
     if (filterConditions.archiveNotIn.length() > 0)
         conditions.push_back("Sources.archive NOT IN (" + filterConditions.archiveNotIn + ")");
+
+    if (filterConditions.archiveIs.length() > 0)
+        conditions.push_back("Sources.archive LIKE \"%" + filterConditions.archiveIs + "%\"");
 
     if (filterConditions.downloadsOnly)
         conditions.push_back("Sources.downloaded = 1");
@@ -1446,6 +1451,8 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
         getTagList();
+        getArchiveList();
+        databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_ANALYSED);
         filterSources();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:

@@ -24,6 +24,7 @@ public:
     void addItem(const char *item);
     void setDisplayNumber(int number);
     void setItem(int item, bool sendCallback);
+    std::string getCurrentItem() const;
 
     Menu *menu;
     Align alignment;

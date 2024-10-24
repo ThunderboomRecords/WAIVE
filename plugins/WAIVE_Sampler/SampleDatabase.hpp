@@ -122,6 +122,7 @@ public:
         SOURCE_LIST_FILTER_START,
         SOURCE_LIST_FILTER_END,
         SOURCE_LIST_QUERY_ERROR,
+        SOURCE_LIST_ANALYSED,
         TAG_LIST_DOWNLOADED,
         TAG_LIST_DOWNLOAD_ERROR,
         BUILDING_TAG_LIST,
@@ -165,6 +166,8 @@ public:
             return "SOURCE_LIST_FILTER_END";
         case SOURCE_LIST_QUERY_ERROR:
             return "SOURCE_LIST_QUERY_ERROR";
+        case SOURCE_LIST_ANALYSED:
+            return "SOURCE_LIST_ANALYSED";
         case TAG_LIST_DOWNLOADED:
             return "TAG_LIST_DOWNLOADED";
         case TAG_LIST_DOWNLOAD_ERROR:
@@ -189,6 +192,7 @@ public:
         std::string tagNotIn = "";
         std::string tagIn = "";
         std::string archiveNotIn = "";
+        std::string archiveIs = "";
         std::string searchString = "";
         bool downloadsOnly = false;
     };

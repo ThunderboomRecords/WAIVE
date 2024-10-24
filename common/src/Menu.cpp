@@ -241,7 +241,7 @@ void Menu::setItem(int item, bool sendCallback = false)
         callback->onMenuItemSelection(this, highlighted_item, items[highlighted_item]);
 }
 
-const std::string Menu::getItem(int item) const
+std::string Menu::getItem(int item) const
 {
     try
     {
@@ -281,6 +281,11 @@ void Menu::calculateWidth()
     }
 
     setWidth(maxWidth + 6.f);
+}
+
+std::string Menu::getCurrentItem() const
+{
+    return getItem(highlighted_item);
 }
 
 void Menu::setCallback(Callback *cb)
