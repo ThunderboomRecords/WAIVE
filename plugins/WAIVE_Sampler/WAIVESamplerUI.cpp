@@ -32,9 +32,16 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     sourceBrowserPanel->label = "1";
     sourceBrowserPanel->title = "Source";
 
+    importSource = new Button(this);
+    importSource->setLabel("Import source");
+    importSource->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    importSource->resizeToFit();
+    importSource->onTop(sourceBrowserPanel, END, START, padding);
+    importSource->setCallback(this);
+
     sourceList = new SourceList(this);
-    sourceList->setSize(sourceBrowserPanel->getWidth() - 4.f * padding, sourceBrowserPanel->getHeight() * 0.6f, true);
-    sourceList->onTop(sourceBrowserPanel, CENTER, START, sourceBrowserPanel->getFontSize() * 2.f);
+    sourceList->setSize(sourceBrowserPanel->getWidth() - 4.f * padding, sourceBrowserPanel->getHeight() * 0.55f, true);
+    sourceList->onTop(sourceBrowserPanel, CENTER, START, sourceBrowserPanel->getFontSize() * 2.5f);
     sourceList->source_info = &(plugin->sd.sourcesList);
     sourceList->source_info_mtx = &(plugin->sd.sourceListMutex);
     sourceList->scrollHandle = WaiveColors::light2;
@@ -61,18 +68,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     searchBox->background_color = WaiveColors::grey2;
     searchBox->rightOf(openTagBrowserBtn);
 
-    archiveList = new DropDown(this);
-    archiveList->setFontSize(18.0f);
-    archiveList->setSize(240, archiveList->getFontSize(), true);
-    archiveList->rightOf(searchBox, CENTER, 14);
-    archiveList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    archiveList->menu->setFontSize(16.0f);
-    archiveList->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    archiveList->addItem("All");
-    archiveList->setItem(0, false);
-    archiveList->setDisplayNumber(6);
-    archiveList->setCallback(this);
-
     sourceSearch = new TextInput(this);
     sourceSearch->placeholder = "Search...";
     sourceSearch->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
@@ -89,9 +84,21 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     sourceList->setHeight(Layout::measureVertical(sourceList, START, searchBox, START) - 2.f * padding);
 
+    archiveList = new DropDown(this);
+    archiveList->setFontSize(18.0f);
+    archiveList->setSize(240, archiveList->getFontSize(), true);
+    archiveList->rightOf(searchBox, CENTER, 14);
+    archiveList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    archiveList->menu->setFontSize(16.0f);
+    archiveList->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    archiveList->addItem("All");
+    archiveList->setItem(0, false);
+    archiveList->setDisplayNumber(6);
+    archiveList->setCallback(this);
+
     databaseLoading = new Spinner(this);
     databaseLoading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
-    databaseLoading->rightOf(searchBox, CENTER, padding * 2.f);
+    databaseLoading->rightOf(archiveList, CENTER, padding * 2.f);
 
     databaseProgress = new Label(this, "");
     databaseProgress->rightOf(databaseLoading, START);
@@ -111,13 +118,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     randomSourceBtn->resizeToFit();
     randomSourceBtn->below(sourceList, Widget_Align::END, padding * 2.f);
     randomSourceBtn->setCallback(this);
-
-    importSource = new Button(this);
-    importSource->setLabel("Import source");
-    importSource->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    importSource->resizeToFit();
-    importSource->leftOf(randomSourceBtn, START, padding);
-    importSource->setCallback(this);
 
     sourceBrowserPanel->addChildWidget(sourceList);
     sourceBrowserPanel->addChildWidget(openTagBrowserBtn);
