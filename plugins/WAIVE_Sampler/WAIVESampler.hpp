@@ -97,6 +97,7 @@ public:
         kSampleLoading,
         kSampleLoaded,
         kSampleUpdated,
+        kSampleCleared,
         kSampleAdded,
         kSlotLoaded,
         kParametersChanged,

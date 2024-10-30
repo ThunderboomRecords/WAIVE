@@ -22,7 +22,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void sampleSelected(SampleSlot *slot, int slotId) = 0;
         virtual void sampleSlotCleared(SampleSlot *slot, int slotId) = 0;
     };
@@ -33,6 +33,7 @@ public:
     void setMidiNumber(int midi, bool sendCallback);
     SamplePlayer *getSamplePlayer() const;
     int slotId;
+    std::shared_ptr<SampleInfo> currentSample;
 
 protected:
     void onNanoDisplay() override;

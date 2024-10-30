@@ -25,394 +25,407 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     float col2Width = panelWidths - col1Width;
 
     // 1 ----- Source Browser Panel
-    sourceBrowserPanel = new Panel(this);
-    sourceBrowserPanel->setSize(col1Width, panelHeights * 0.5f, true);
-    sourceBrowserPanel->setAbsolutePos(padding, padding);
-    sourceBrowserPanel->setFont("VG5000", VG5000, VG5000_len);
-    sourceBrowserPanel->label = "1";
-    sourceBrowserPanel->title = "Source";
-
-    importSource = new Button(this);
-    importSource->setLabel("Import source");
-    importSource->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    importSource->resizeToFit();
-    importSource->onTop(sourceBrowserPanel, END, START, padding);
-    importSource->setCallback(this);
-
-    sourceList = new SourceList(this);
-    sourceList->setSize(sourceBrowserPanel->getWidth() - 4.f * padding, sourceBrowserPanel->getHeight() * 0.55f, true);
-    sourceList->onTop(sourceBrowserPanel, CENTER, START, sourceBrowserPanel->getFontSize() * 2.5f);
-    sourceList->source_info = &(plugin->sd.sourcesList);
-    sourceList->source_info_mtx = &(plugin->sd.sourceListMutex);
-    sourceList->scrollHandle = WaiveColors::light2;
-    sourceList->scrollGutter = WaiveColors::light1;
-    sourceList->background_color = WaiveColors::grey2;
-    sourceList->accent_color = sourceBrowserPanel->background_color;
-    sourceList->padding = 0.0f;
-    sourceList->margin = 0.0f;
-    sourceList->setFontSize(16.f);
-    sourceList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    sourceList->setCallback(this);
-
-    openTagBrowserBtn = new Button(this);
-    openTagBrowserBtn->isToggle = true;
-    openTagBrowserBtn->setLabel("Tags");
-    openTagBrowserBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    openTagBrowserBtn->resizeToFit();
-    openTagBrowserBtn->onTop(sourceBrowserPanel, START, END, padding * 2.f);
-    openTagBrowserBtn->setCallback(this);
-
-    searchBox = new Panel(this);
-    searchBox->setSize(300, openTagBrowserBtn->getHeight(), true);
-    searchBox->radius = searchBox->getHeight() / 2;
-    searchBox->background_color = WaiveColors::grey2;
-    searchBox->rightOf(openTagBrowserBtn);
-
-    sourceSearch = new TextInput(this);
-    sourceSearch->placeholder = "Search...";
-    sourceSearch->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    sourceSearch->foreground_color = WaiveColors::light1;
-    sourceSearch->background_color = searchBox->background_color;
-    sourceSearch->setSize(searchBox->getWidth() - padding * 4.f - sourceSearch->getFontSize(), sourceSearch->getFontSize(), true);
-    sourceSearch->onTop(searchBox, START, CENTER, padding * 2.f);
-    sourceSearch->setCallback(this);
-
-    searchIcon = new Icon(this);
-    searchIcon->setImageData(search, search_len, 85, 85, IMAGE_GENERATE_MIPMAPS);
-    searchIcon->setSize(sourceSearch->getHeight() - padding, sourceSearch->getHeight() - padding, true);
-    searchIcon->onTop(searchBox, END, CENTER, padding * 2.f);
-
-    sourceList->setHeight(Layout::measureVertical(sourceList, START, searchBox, START) - 2.f * padding);
-
-    archiveList = new DropDown(this);
-    archiveList->setFontSize(18.0f);
-    archiveList->setSize(240, archiveList->getFontSize(), true);
-    archiveList->rightOf(searchBox, CENTER, 14);
-    archiveList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    archiveList->menu->setFontSize(16.0f);
-    archiveList->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    archiveList->addItem("All");
-    archiveList->setItem(0, false);
-    archiveList->setDisplayNumber(6);
-    archiveList->setCallback(this);
-
-    databaseLoading = new Spinner(this);
-    databaseLoading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
-    databaseLoading->rightOf(archiveList, CENTER, padding * 2.f);
-
-    databaseProgress = new Label(this, "");
-    databaseProgress->rightOf(databaseLoading, START);
-    databaseProgress->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-
-    previewPlaybackBtn = new Button(this);
-    previewPlaybackBtn->setLabel("Stop");
-    previewPlaybackBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    previewPlaybackBtn->resizeToFit();
-    previewPlaybackBtn->onTop(sourceBrowserPanel, END, END, padding * 2.f);
-    previewPlaybackBtn->setCallback(this);
-    previewPlaybackBtn->setVisible(false);
-
-    randomSourceBtn = new Button(this);
-    randomSourceBtn->setLabel("Random");
-    randomSourceBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    randomSourceBtn->resizeToFit();
-    randomSourceBtn->below(sourceList, Widget_Align::END, padding * 2.f);
-    randomSourceBtn->setCallback(this);
-
-    sourceBrowserPanel->addChildWidget(sourceList);
-    sourceBrowserPanel->addChildWidget(openTagBrowserBtn);
-    sourceBrowserPanel->addChildWidget(searchBox);
-    sourceBrowserPanel->addChildWidget(sourceSearch);
-
-    // 2 ----- Sample Editor Panel
-    sampleEditorPanel = new Panel(this);
-    sampleEditorPanel->setSize(col1Width, panelHeights * 0.5f, true);
-    sampleEditorPanel->below(sourceBrowserPanel, START, padding);
-    sampleEditorPanel->setFont("VG5000", VG5000, VG5000_len);
-    sampleEditorPanel->label = "2";
-    sampleEditorPanel->title = "Sample Editor";
-
-    sourceWaveformDisplay = new Waveform(this);
-    sourceWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 4.f * padding, sampleEditorPanel->getHeight() * 0.4f, true);
-    sourceWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, sampleEditorPanel->getFontSize() * 2.f);
-    sourceWaveformDisplay->selectable = true;
-    sourceWaveformDisplay->setCallback(this);
-    sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
-    sourceWaveformDisplay->setWaveformFeatures(&plugin->fSourceFeatures);
-    sourceWaveformDisplay->background_color = WaiveColors::dark;
-    sampleEditorPanel->addChildWidget(sourceWaveformDisplay);
-
-    sourcePreviewBtn = new Button(this);
-    sourcePreviewBtn->setLabel("▶");
-    sourcePreviewBtn->drawBackground = false;
-    sourcePreviewBtn->resizeToFit();
-    sourcePreviewBtn->onTop(sourceWaveformDisplay, END, START, padding);
-    sourcePreviewBtn->setCallback(this);
-
-    sourceLoading = new Spinner(this);
-    sourceLoading->setSize(16, 16);
-    sourceLoading->onTop(sourceWaveformDisplay, START, START, padding * 2);
-    sourceLoading->setLoading(false);
-
-    progress = new Label(this, "");
-    progress->setFontSize(12.f);
-    progress->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    progress->resizeToFit();
-    progress->rightOf(sourceLoading, START, padding);
-
-    presetLabel = new Label(this, "Detect:");
-    presetLabel->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    presetLabel->resizeToFit();
-
-    knobsLabel = new Label(this, "Adjust");
-    knobsLabel->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    knobsLabel->resizeToFit();
-
-    makeKick = new Button(this);
-    makeKick->setLabel("Kick");
-    makeKick->setFontSize(16.f);
-    makeKick->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    makeKick->setSize(100.f, 32.f);
-    makeKick->setCallback(this);
-
-    makeSnare = new Button(this);
-    makeSnare->setLabel("Snare");
-    makeSnare->setFontSize(16.f);
-    makeSnare->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    makeSnare->setSize(100.f, 32.f);
-    makeSnare->setCallback(this);
-
-    makeHihat = new Button(this);
-    makeHihat->setLabel("Hi-Hat");
-    makeHihat->setFontSize(16.f);
-    makeHihat->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    makeHihat->setSize(100.f, 32.f);
-    makeHihat->setCallback(this);
-
-    makeClap = new Button(this);
-    makeClap->setLabel("Clap");
-    makeClap->setFontSize(16.f);
-    makeClap->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    makeClap->setSize(100.f, 32.f);
-    makeClap->setCallback(this);
-
-    presetButtons = new HBox(this);
-    presetButtons->addWidget(presetLabel);
-    presetButtons->setWidgetJustify_Content(0, HBox::Justify_Content::left);
-    presetButtons->addWidget(makeKick);
-    presetButtons->addWidget(makeSnare);
-    presetButtons->addWidget(makeHihat);
-    presetButtons->addWidget(makeClap);
-    presetButtons->below(sourceWaveformDisplay, START, 2.f * padding);
-    presetButtons->setWidth(sourceWaveformDisplay->getWidth());
-    presetButtons->setHeight(makeKick->getHeight());
-    presetButtons->justify_content = HBox::Justify_Content::space_evenly;
-    presetButtons->positionWidgets();
-
-    presetButtons->setVisible(false);
-
-    pitch = createWAIVEKnob(kSamplePitch, "pitch", 0.25f, 4.f, 1.0f);
-    volume = createWAIVEKnob(kSampleVolume, "volume", 0.0f, 2.0f, 1.0f);
-    percussionBoost = createWAIVEKnob(kPercussiveBoost, "perc.", 0.0f, 2.0f, 0.5f);
-
-    ampAttack = createWAIVEKnob(kAmpAttack, "attack", 0.0f, 500.0f, 10.0f);
-    ampAttack->format = "{:.0f}ms";
-    ampDecay = createWAIVEKnob(kAmpDecay, "decay", 0.0f, 500.0f, 50.0f);
-    ampDecay->format = "{:.0f}ms";
-    ampSustain = createWAIVEKnob(kAmpSustain, "sustain", 0.0f, 1.0f, 0.7f);
-    ampRelease = createWAIVEKnob(kAmpRelease, "release", 0.0f, 500.0f, 100.0f);
-    ampRelease->format = "{:.0f}ms";
-    sustainLength = createWAIVEKnob(kSustainLength, "length", 0.0f, 1000.0f, 100.f);
-    sustainLength->format = "{:.0f}ms";
-
-    filterCutoff = createWAIVEKnob(kFilterCutoff, "cutoff", 0.0, 0.999, 0.999);
-    filterResonance = createWAIVEKnob(kFilterResonance, "res.", 0.0, 1.0, 0.0);
-
-    filterType = new DropDown(this);
-    filterType->setFontSize(16.0f);
-    filterType->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    filterType->menu->setFontSize(16.0f);
-    filterType->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    filterType->addItem("LP");
-    filterType->addItem("HP");
-    filterType->addItem("BP");
-    filterType->setId(kFilterType);
-    filterType->setDisplayNumber(3);
-    filterType->setSize(35, 20);
-    filterType->setItem(0, false);
-    filterType->setCallback(this);
-
-    editorKnobs = new HBox(this);
-    editorKnobs->addWidget(knobsLabel);
-    editorKnobs->addWidget(pitch);
-    editorKnobs->addWidget(volume);
-    editorKnobs->addWidget(percussionBoost);
-    editorKnobs->addWidget(ampAttack);
-    editorKnobs->addWidget(ampDecay);
-    editorKnobs->addWidget(ampSustain);
-    editorKnobs->addWidget(ampRelease);
-    editorKnobs->addWidget(sustainLength);
-    editorKnobs->addWidget(filterCutoff);
-    editorKnobs->addWidget(filterResonance);
-    editorKnobs->addWidget(filterType);
-    editorKnobs->below(presetButtons, START, padding);
-    editorKnobs->setWidth(presetButtons->getWidth());
-    editorKnobs->justify_content = HBox::Justify_Content::space_between;
-    editorKnobs->positionWidgets();
-
-    editorKnobs->setVisible(false);
-
-    instructions = new Label(this, "Load a source or import your own audio to extract samples from.");
-    instructions->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    instructions->resizeToFit();
-    instructions->below(sourceWaveformDisplay, CENTER, Layout::measureVertical(sourceWaveformDisplay, END, sampleEditorPanel, END) / 2.f);
-
-    valueIndicator = new ValueIndicator(this);
-    valueIndicator->setSize(70, 20);
-    valueIndicator->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    valueIndicator->hide();
-    valueIndicator->background_color = WaiveColors::grey2;
-
-    // 3 ----- Sample Viewer Panel
-    samplePanel = new Panel(this);
-    samplePanel->setSize(col2Width, panelHeights / 3.f, true);
-    samplePanel->rightOf(sourceBrowserPanel, START, padding);
-    samplePanel->setFont("VG5000", VG5000, VG5000_len);
-    samplePanel->label = "3";
-    samplePanel->title = "Sample";
-
-    sampleWaveformDisplay = new Waveform(this);
-    sampleWaveformDisplay->setSize(samplePanel->getWidth() - 4.f * padding, samplePanel->getHeight() * 0.4f, true);
-    sampleWaveformDisplay->onTop(samplePanel, CENTER, START, samplePanel->getFontSize() * 2.f);
-    sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
-    sampleWaveformDisplay->background_color = WaiveColors::accent1;
-    samplePanel->addChildWidget(sampleWaveformDisplay);
-
-    playSampleBtn = new Button(this);
-    playSampleBtn->setLabel("▶");
-    playSampleBtn->drawBackground = false;
-    playSampleBtn->resizeToFit();
-    playSampleBtn->onTop(sampleWaveformDisplay, END, START, padding);
-    playSampleBtn->setCallback(this);
-
-    sampleName = new TextInput(this);
-    sampleName->setSize(samplePanel->getWidth() * 0.8f, 20, true);
-    sampleName->below(sampleWaveformDisplay, CENTER, padding);
-    sampleName->setCallback(this);
-    sampleName->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    sampleName->align = Align::ALIGN_CENTER;
-    sampleName->foreground_color = WaiveColors::light1;
-
-    saveSampleBtn = new Button(this);
-    saveSampleBtn->setLabel("Add to pack");
-    saveSampleBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    saveSampleBtn->resizeToFit();
-    saveSampleBtn->setCallback(this);
-    saveSampleBtn->setEnabled(false);
-
-    newSampleBtn = new Button(this);
-    newSampleBtn->setLabel("New sample");
-    newSampleBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    newSampleBtn->resizeToFit();
-    newSampleBtn->setCallback(this);
-
-    HBox alignSampleButtons(this);
-    alignSampleButtons.addWidget(newSampleBtn);
-    alignSampleButtons.addWidget(saveSampleBtn);
-    alignSampleButtons.justify_content = HBox::Justify_Content::center;
-    alignSampleButtons.padding = 2.f * padding;
-    alignSampleButtons.resizeToFit();
-    alignSampleButtons.setWidth(samplePanel->getWidth() - 4.f * padding);
-    alignSampleButtons.onTop(samplePanel, CENTER, END, padding * 2.f);
-    alignSampleButtons.positionWidgets();
-
-    // 4 ----- Sample Player Panel
-    samplePlayerPanel = new Panel(this);
-    samplePlayerPanel->setSize(col2Width, panelHeights * 2.f / 3.f, true);
-    samplePlayerPanel->rightOf(sampleEditorPanel, END, padding);
-    samplePlayerPanel->setFont("VG5000", VG5000, VG5000_len);
-    samplePlayerPanel->label = "4";
-    samplePlayerPanel->title = "Sample Player";
-
-    openMapBtn = new Button(this);
-    openMapBtn->setLabel("Sample Map");
-    openMapBtn->isToggle = true;
-    openMapBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    openMapBtn->resizeToFit();
-    openMapBtn->setCallback(this);
-
-    browseFilesBtn = new Button(this);
-    browseFilesBtn->setLabel("View Folder");
-    browseFilesBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    browseFilesBtn->resizeToFit();
-    browseFilesBtn->setCallback(this);
-
-    HBox alignPlayerButtons(this);
-    alignPlayerButtons.addWidget(openMapBtn);
-    alignPlayerButtons.addWidget(browseFilesBtn);
-    alignPlayerButtons.justify_content = HBox::Justify_Content::center;
-    alignPlayerButtons.padding = 2.f * padding;
-    alignPlayerButtons.resizeToFit();
-    alignPlayerButtons.setWidth(samplePlayerPanel->getWidth() - 4.f * padding);
-    alignPlayerButtons.onTop(samplePlayerPanel, CENTER, END, padding * 2.f);
-    alignPlayerButtons.positionWidgets();
-
-    sampleSlotsContainer = new VBox(this);
-    sampleSlotsContainer->justify_content = VBox::Justify_Content::space_evenly;
-    sampleSlotsContainer->setWidth(samplePlayerPanel->getWidth() - 4.f * padding);
-    sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, samplePlayerPanel->getFontSize() * 2.f);
-    sampleSlotsContainer->setHeight(Layout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - padding);
-    samplePlayerPanel->addChildWidget(sampleSlotsContainer);
-
-    for (int i = 0; i < 8; i++)
     {
-        SampleSlot *slot = new SampleSlot(this);
-        slot->setSamplePlayer(&plugin->samplePlayers[i]);
-        slot->setCallback(this);
-        slot->slotId = i;
-        slot->setSize(sampleSlotsContainer->getWidth(), 35, true);
-        slot->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        sourceBrowserPanel = new Panel(this);
+        sourceBrowserPanel->setSize(col1Width, panelHeights * 0.5f, true);
+        sourceBrowserPanel->setAbsolutePos(padding, padding);
+        sourceBrowserPanel->setFont("VG5000", VG5000, VG5000_len);
+        sourceBrowserPanel->label = "1";
+        sourceBrowserPanel->title = "Source";
 
-        sampleSlotsContainer->addWidget(slot);
-        sampleSlots.push_back(slot);
+        importSource = new Button(this);
+        importSource->setLabel("Import source");
+        importSource->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        importSource->resizeToFit();
+        importSource->onTop(sourceBrowserPanel, END, START, padding);
+        importSource->setCallback(this);
+
+        sourceList = new SourceList(this);
+        sourceList->setSize(sourceBrowserPanel->getWidth() - 4.f * padding, sourceBrowserPanel->getHeight() * 0.55f, true);
+        sourceList->onTop(sourceBrowserPanel, CENTER, START, sourceBrowserPanel->getFontSize() * 2.5f);
+        sourceList->source_info = &(plugin->sd.sourcesList);
+        sourceList->source_info_mtx = &(plugin->sd.sourceListMutex);
+        sourceList->scrollHandle = WaiveColors::light2;
+        sourceList->scrollGutter = WaiveColors::light1;
+        sourceList->background_color = WaiveColors::grey2;
+        sourceList->accent_color = sourceBrowserPanel->background_color;
+        sourceList->padding = 0.0f;
+        sourceList->margin = 0.0f;
+        sourceList->setFontSize(16.f);
+        sourceList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        sourceList->setCallback(this);
+
+        openTagBrowserBtn = new Button(this);
+        openTagBrowserBtn->isToggle = true;
+        openTagBrowserBtn->setLabel("Tags");
+        openTagBrowserBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        openTagBrowserBtn->resizeToFit();
+        openTagBrowserBtn->onTop(sourceBrowserPanel, START, END, padding * 2.f);
+        openTagBrowserBtn->setCallback(this);
+
+        searchBox = new Panel(this);
+        searchBox->setSize(300, openTagBrowserBtn->getHeight(), true);
+        searchBox->radius = searchBox->getHeight() / 2;
+        searchBox->background_color = WaiveColors::grey2;
+        searchBox->rightOf(openTagBrowserBtn);
+
+        sourceSearch = new TextInput(this);
+        sourceSearch->placeholder = "Search...";
+        sourceSearch->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        sourceSearch->foreground_color = WaiveColors::light1;
+        sourceSearch->background_color = searchBox->background_color;
+        sourceSearch->setSize(searchBox->getWidth() - padding * 4.f - sourceSearch->getFontSize(), sourceSearch->getFontSize(), true);
+        sourceSearch->onTop(searchBox, START, CENTER, padding * 2.f);
+        sourceSearch->setCallback(this);
+
+        searchIcon = new Icon(this);
+        searchIcon->setImageData(search, search_len, 85, 85, IMAGE_GENERATE_MIPMAPS);
+        searchIcon->setSize(sourceSearch->getHeight() - padding, sourceSearch->getHeight() - padding, true);
+        searchIcon->onTop(searchBox, END, CENTER, padding * 2.f);
+
+        sourceList->setHeight(Layout::measureVertical(sourceList, START, searchBox, START) - 2.f * padding);
+
+        archiveList = new DropDown(this);
+        archiveList->setFontSize(18.0f);
+        archiveList->setSize(240, archiveList->getFontSize(), true);
+        archiveList->rightOf(searchBox, CENTER, 14);
+        archiveList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        archiveList->menu->setFontSize(16.0f);
+        archiveList->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        archiveList->addItem("All");
+        archiveList->setItem(0, false);
+        archiveList->setDisplayNumber(6);
+        archiveList->setCallback(this);
+
+        databaseLoading = new Spinner(this);
+        databaseLoading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
+        databaseLoading->rightOf(archiveList, CENTER, padding * 2.f);
+
+        databaseProgress = new Label(this, "");
+        databaseProgress->rightOf(databaseLoading, START);
+        databaseProgress->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+
+        previewPlaybackBtn = new Button(this);
+        previewPlaybackBtn->setLabel("Stop");
+        previewPlaybackBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        previewPlaybackBtn->resizeToFit();
+        previewPlaybackBtn->onTop(sourceBrowserPanel, END, END, padding * 2.f);
+        previewPlaybackBtn->setCallback(this);
+        previewPlaybackBtn->setVisible(false);
+
+        randomSourceBtn = new Button(this);
+        randomSourceBtn->setLabel("Random");
+        randomSourceBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        randomSourceBtn->resizeToFit();
+        randomSourceBtn->below(sourceList, Widget_Align::END, padding * 2.f);
+        randomSourceBtn->setCallback(this);
+
+        sourceBrowserPanel->addChildWidget(sourceList);
+        sourceBrowserPanel->addChildWidget(openTagBrowserBtn);
+        sourceBrowserPanel->addChildWidget(searchBox);
+        sourceBrowserPanel->addChildWidget(sourceSearch);
     }
 
-    sampleSlotsContainer->positionWidgets();
-    for (int i = 0; i < sampleSlots.size(); i++)
-        sampleSlots[i]->repositionWidgets();
+    // 2 ----- Sample Editor Panel
+    {
+        sampleEditorPanel = new Panel(this);
+        sampleEditorPanel->setSize(col1Width, panelHeights * 0.5f, true);
+        sampleEditorPanel->below(sourceBrowserPanel, START, padding);
+        sampleEditorPanel->setFont("VG5000", VG5000, VG5000_len);
+        sampleEditorPanel->label = "2";
+        sampleEditorPanel->title = "Sample Editor";
+
+        sourceWaveformDisplay = new Waveform(this);
+        sourceWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 4.f * padding, sampleEditorPanel->getHeight() * 0.4f, true);
+        sourceWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, sampleEditorPanel->getFontSize() * 2.f);
+        sourceWaveformDisplay->selectable = true;
+        sourceWaveformDisplay->setCallback(this);
+        sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
+        sourceWaveformDisplay->setWaveformFeatures(&plugin->fSourceFeatures);
+        sourceWaveformDisplay->background_color = WaiveColors::dark;
+        sampleEditorPanel->addChildWidget(sourceWaveformDisplay);
+
+        sourcePreviewBtn = new Button(this);
+        sourcePreviewBtn->setLabel("▶");
+        sourcePreviewBtn->drawBackground = false;
+        sourcePreviewBtn->resizeToFit();
+        sourcePreviewBtn->onTop(sourceWaveformDisplay, END, START, padding);
+        sourcePreviewBtn->setCallback(this);
+
+        sourceLoading = new Spinner(this);
+        sourceLoading->setSize(16, 16);
+        sourceLoading->onTop(sourceWaveformDisplay, START, START, padding * 2);
+        sourceLoading->setLoading(false);
+
+        progress = new Label(this, "");
+        progress->setFontSize(12.f);
+        progress->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        progress->resizeToFit();
+        progress->rightOf(sourceLoading, START, padding);
+
+        presetLabel = new Label(this, "Detect:");
+        presetLabel->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        presetLabel->resizeToFit();
+
+        knobsLabel = new Label(this, "Adjust");
+        knobsLabel->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        knobsLabel->resizeToFit();
+
+        makeKick = new Button(this);
+        makeKick->setLabel("Kick");
+        makeKick->setFontSize(16.f);
+        makeKick->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        makeKick->setSize(100.f, 32.f);
+        makeKick->setCallback(this);
+
+        makeSnare = new Button(this);
+        makeSnare->setLabel("Snare");
+        makeSnare->setFontSize(16.f);
+        makeSnare->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        makeSnare->setSize(100.f, 32.f);
+        makeSnare->setCallback(this);
+
+        makeHihat = new Button(this);
+        makeHihat->setLabel("Hi-Hat");
+        makeHihat->setFontSize(16.f);
+        makeHihat->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        makeHihat->setSize(100.f, 32.f);
+        makeHihat->setCallback(this);
+
+        makeClap = new Button(this);
+        makeClap->setLabel("Clap");
+        makeClap->setFontSize(16.f);
+        makeClap->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        makeClap->setSize(100.f, 32.f);
+        makeClap->setCallback(this);
+
+        presetButtons = new HBox(this);
+        presetButtons->addWidget(presetLabel);
+        presetButtons->setWidgetJustify_Content(0, HBox::Justify_Content::left);
+        presetButtons->addWidget(makeKick);
+        presetButtons->addWidget(makeSnare);
+        presetButtons->addWidget(makeHihat);
+        presetButtons->addWidget(makeClap);
+        presetButtons->below(sourceWaveformDisplay, START, 2.f * padding);
+        presetButtons->setWidth(sourceWaveformDisplay->getWidth());
+        presetButtons->setHeight(makeKick->getHeight());
+        presetButtons->justify_content = HBox::Justify_Content::space_evenly;
+        presetButtons->positionWidgets();
+
+        presetButtons->setVisible(false);
+
+        pitch = createWAIVEKnob(kSamplePitch, "pitch", 0.25f, 4.f, 1.0f);
+        volume = createWAIVEKnob(kSampleVolume, "volume", 0.0f, 2.0f, 1.0f);
+        percussionBoost = createWAIVEKnob(kPercussiveBoost, "perc.", 0.0f, 2.0f, 0.5f);
+
+        ampAttack = createWAIVEKnob(kAmpAttack, "attack", 0.0f, 500.0f, 10.0f);
+        ampAttack->format = "{:.0f}ms";
+        ampDecay = createWAIVEKnob(kAmpDecay, "decay", 0.0f, 500.0f, 50.0f);
+        ampDecay->format = "{:.0f}ms";
+        ampSustain = createWAIVEKnob(kAmpSustain, "sustain", 0.0f, 1.0f, 0.7f);
+        ampRelease = createWAIVEKnob(kAmpRelease, "release", 0.0f, 500.0f, 100.0f);
+        ampRelease->format = "{:.0f}ms";
+        sustainLength = createWAIVEKnob(kSustainLength, "length", 0.0f, 1000.0f, 100.f);
+        sustainLength->format = "{:.0f}ms";
+
+        filterCutoff = createWAIVEKnob(kFilterCutoff, "cutoff", 0.0, 0.999, 0.999);
+        filterResonance = createWAIVEKnob(kFilterResonance, "res.", 0.0, 1.0, 0.0);
+
+        filterType = new DropDown(this);
+        filterType->setFontSize(16.0f);
+        filterType->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        filterType->menu->setFontSize(16.0f);
+        filterType->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        filterType->addItem("LP");
+        filterType->addItem("HP");
+        filterType->addItem("BP");
+        filterType->setId(kFilterType);
+        filterType->setDisplayNumber(3);
+        filterType->setSize(35, 20);
+        filterType->setItem(0, false);
+        filterType->setCallback(this);
+
+        editorKnobs = new HBox(this);
+        editorKnobs->addWidget(knobsLabel);
+        editorKnobs->addWidget(pitch);
+        editorKnobs->addWidget(volume);
+        editorKnobs->addWidget(percussionBoost);
+        editorKnobs->addWidget(ampAttack);
+        editorKnobs->addWidget(ampDecay);
+        editorKnobs->addWidget(ampSustain);
+        editorKnobs->addWidget(ampRelease);
+        editorKnobs->addWidget(sustainLength);
+        editorKnobs->addWidget(filterCutoff);
+        editorKnobs->addWidget(filterResonance);
+        editorKnobs->addWidget(filterType);
+        editorKnobs->below(presetButtons, START, padding);
+        editorKnobs->setWidth(presetButtons->getWidth());
+        editorKnobs->justify_content = HBox::Justify_Content::space_between;
+        editorKnobs->positionWidgets();
+
+        editorKnobs->setVisible(false);
+
+        instructions = new Label(this, "Load a source or import your own audio to extract samples from.");
+        instructions->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        instructions->resizeToFit();
+        instructions->below(sourceWaveformDisplay, CENTER, Layout::measureVertical(sourceWaveformDisplay, END, sampleEditorPanel, END) / 2.f);
+
+        valueIndicator = new ValueIndicator(this);
+        valueIndicator->setSize(70, 20);
+        valueIndicator->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        valueIndicator->hide();
+        valueIndicator->background_color = WaiveColors::grey2;
+    }
+
+    // 3 ----- Sample Viewer Panel
+    {
+        samplePanel = new Panel(this);
+        samplePanel->setSize(col2Width, panelHeights / 3.f, true);
+        samplePanel->rightOf(sourceBrowserPanel, START, padding);
+        samplePanel->setFont("VG5000", VG5000, VG5000_len);
+        samplePanel->label = "3";
+        samplePanel->title = "Sample";
+
+        sampleWaveformDisplay = new Waveform(this);
+        sampleWaveformDisplay->setSize(samplePanel->getWidth() - 4.f * padding, samplePanel->getHeight() * 0.4f, true);
+        sampleWaveformDisplay->onTop(samplePanel, CENTER, START, samplePanel->getFontSize() * 2.f);
+        sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
+        sampleWaveformDisplay->background_color = WaiveColors::accent1;
+        samplePanel->addChildWidget(sampleWaveformDisplay);
+
+        playSampleBtn = new Button(this);
+        playSampleBtn->setLabel("▶");
+        playSampleBtn->drawBackground = false;
+        playSampleBtn->resizeToFit();
+        playSampleBtn->onTop(sampleWaveformDisplay, END, START, padding);
+        playSampleBtn->setCallback(this);
+
+        sampleName = new TextInput(this);
+        sampleName->setSize(samplePanel->getWidth() * 0.8f, 20, true);
+        sampleName->below(sampleWaveformDisplay, CENTER, padding);
+        sampleName->setCallback(this);
+        sampleName->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        sampleName->align = Align::ALIGN_CENTER;
+        sampleName->foreground_color = WaiveColors::light1;
+
+        saveSampleBtn = new Button(this);
+        saveSampleBtn->setLabel("Add to pack");
+        saveSampleBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        saveSampleBtn->resizeToFit();
+        saveSampleBtn->setCallback(this);
+        saveSampleBtn->setEnabled(false);
+
+        newSampleBtn = new Button(this);
+        newSampleBtn->setLabel("New sample");
+        newSampleBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        newSampleBtn->resizeToFit();
+        newSampleBtn->setCallback(this);
+
+        HBox alignSampleButtons(this);
+        alignSampleButtons.addWidget(newSampleBtn);
+        alignSampleButtons.addWidget(saveSampleBtn);
+        alignSampleButtons.justify_content = HBox::Justify_Content::center;
+        alignSampleButtons.padding = 2.f * padding;
+        alignSampleButtons.resizeToFit();
+        alignSampleButtons.setWidth(samplePanel->getWidth() - 4.f * padding);
+        alignSampleButtons.onTop(samplePanel, CENTER, END, padding * 2.f);
+        alignSampleButtons.positionWidgets();
+    }
+
+    // 4 ----- Sample Player Panel
+    {
+        samplePlayerPanel = new Panel(this);
+        samplePlayerPanel->setSize(col2Width, panelHeights * 2.f / 3.f, true);
+        samplePlayerPanel->rightOf(sampleEditorPanel, END, padding);
+        samplePlayerPanel->setFont("VG5000", VG5000, VG5000_len);
+        samplePlayerPanel->label = "4";
+        samplePlayerPanel->title = "Sample Player";
+
+        openMapBtn = new Button(this);
+        openMapBtn->setLabel("Sample Map");
+        openMapBtn->isToggle = true;
+        openMapBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        openMapBtn->resizeToFit();
+        openMapBtn->setCallback(this);
+
+        browseFilesBtn = new Button(this);
+        browseFilesBtn->setLabel("View Folder");
+        browseFilesBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        browseFilesBtn->resizeToFit();
+        browseFilesBtn->setCallback(this);
+
+        HBox alignPlayerButtons(this);
+        alignPlayerButtons.addWidget(openMapBtn);
+        alignPlayerButtons.addWidget(browseFilesBtn);
+        alignPlayerButtons.justify_content = HBox::Justify_Content::center;
+        alignPlayerButtons.padding = 2.f * padding;
+        alignPlayerButtons.resizeToFit();
+        alignPlayerButtons.setWidth(samplePlayerPanel->getWidth() - 4.f * padding);
+        alignPlayerButtons.onTop(samplePlayerPanel, CENTER, END, padding * 2.f);
+        alignPlayerButtons.positionWidgets();
+
+        sampleSlotsContainer = new VBox(this);
+        sampleSlotsContainer->justify_content = VBox::Justify_Content::space_evenly;
+        sampleSlotsContainer->setWidth(samplePlayerPanel->getWidth() - 4.f * padding);
+        sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, samplePlayerPanel->getFontSize() * 2.f);
+        sampleSlotsContainer->setHeight(Layout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - padding);
+        samplePlayerPanel->addChildWidget(sampleSlotsContainer);
+
+        for (int i = 0; i < 8; i++)
+        {
+            SampleSlot *slot = new SampleSlot(this);
+            slot->setSamplePlayer(&plugin->samplePlayers[i]);
+            slot->setCallback(this);
+            slot->slotId = i;
+            slot->setSize(sampleSlotsContainer->getWidth(), sampleSlotsContainer->getHeight() / 8 - 4, true);
+            slot->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+            slot->currentSample = plugin->fCurrentSample;
+
+            sampleSlotsContainer->addWidget(slot);
+            sampleSlots.push_back(slot);
+        }
+
+        sampleSlotsContainer->positionWidgets();
+        for (int i = 0; i < sampleSlots.size(); i++)
+            sampleSlots[i]->repositionWidgets();
+    }
 
     // 5 ----- Sample Map
-    sampleBrowserRoot = new Popup(
-        this,
-        sourceBrowserPanel->getAbsoluteX(),
-        sourceBrowserPanel->getAbsoluteY(),
-        sourceBrowserPanel->getWidth(),
-        Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END),
-        true);
-    sampleBrowserRoot->title = "Browse samples";
-    sampleBrowserRoot->setFont("VG5000", VG5000, VG5000_len);
-    sampleBrowserRoot->close();
-    sampleBrowserRoot->setCallback(this);
+    {
+        sampleBrowserRoot = new Popup(
+            this,
+            sourceBrowserPanel->getAbsoluteX(),
+            sourceBrowserPanel->getAbsoluteY(),
+            sourceBrowserPanel->getWidth(),
+            Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END),
+            true);
+        sampleBrowserRoot->title = "Browse samples";
+        sampleBrowserRoot->setFont("VG5000", VG5000, VG5000_len);
+        sampleBrowserRoot->close();
+        sampleBrowserRoot->setCallback(this);
 
-    sampleBrowser = new SampleBrowser(sampleBrowserRoot, &plugin->sd);
-    sampleBrowser->setCallback(this);
-    sampleBrowserRoot->addChildWidget(sampleBrowser);
+        sampleBrowser = new SampleBrowser(sampleBrowserRoot, &plugin->sd);
+        sampleBrowser->setCallback(this);
+        sampleBrowserRoot->addChildWidget(sampleBrowser);
+    }
 
     // 6 ----- Tag Map
-    tagRoot = new Popup(
-        this,
-        sampleEditorPanel->getAbsoluteX(),
-        sampleEditorPanel->getAbsoluteY(),
-        sampleEditorPanel->getWidth(),
-        sampleEditorPanel->getHeight(),
-        true);
-    tagRoot->title = "Browse tags";
-    tagRoot->setFont("VG5000", VG5000, VG5000_len);
-    tagRoot->close();
-    tagRoot->setCallback(this);
+    {
+        tagRoot = new Popup(
+            this,
+            sampleEditorPanel->getAbsoluteX(),
+            sampleEditorPanel->getAbsoluteY(),
+            sampleEditorPanel->getWidth(),
+            sampleEditorPanel->getHeight(),
+            true);
+        tagRoot->title = "Browse tags";
+        tagRoot->setFont("VG5000", VG5000, VG5000_len);
+        tagRoot->close();
+        tagRoot->setCallback(this);
 
-    tagBrowser = new TagBrowser(tagRoot, &plugin->sd);
-    tagRoot->addChildWidget(tagBrowser);
+        tagBrowser = new TagBrowser(tagRoot, &plugin->sd);
+        tagRoot->addChildWidget(tagBrowser);
+    }
 
     setGeometryConstraints(width, height, false, false);
 
@@ -420,20 +433,22 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         setSize(width, height);
 
     // register notifications
-    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
-    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
-    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
-    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
-    plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+    {
+        plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+        plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+        plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+        plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+        plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
 
-    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
-    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
-    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
-    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
-    plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+        plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+        plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+        plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+        plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+        plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
 
-    plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
-    plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
+        plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
+        plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
+    }
 
     updateWidgets();
 
@@ -939,7 +954,7 @@ void WAIVESamplerUI::updateWidgets()
 
 void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg)
 {
-    // std::cout << "WAIVESamplerUI::onPluginUpdated" << std::endl;
+    std::cout << "WAIVESamplerUI::onPluginUpdated " << arg << std::endl;
     bool sourceAvailable;
     switch (arg)
     {
@@ -961,6 +976,12 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         break;
     case WAIVESampler::kSampleLoaded:
         sourceList->repaint();
+        for (int i = 0; i < sampleSlots.size(); i++)
+        {
+            sampleSlots[i]->currentSample = plugin->fCurrentSample;
+            sampleSlots[i]->repaint();
+        }
+
         if (plugin->fCurrentSample == nullptr)
         {
             // sampleWaveformDisplay->setWaveform(nullptr);
@@ -1026,6 +1047,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
     case WAIVESampler::kSlotLoaded:
         for (int i = 0; i < sampleSlots.size(); i++)
         {
+            sampleSlots[i]->currentSample = plugin->fCurrentSample;
             sampleSlots[i]->repaint();
         }
         break;

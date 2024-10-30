@@ -6,7 +6,8 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     : WidgetGroup(parent),
       samplePlayer(nullptr),
       lastPlaying(PlayState::STOPPED),
-      callback(nullptr)
+      callback(nullptr),
+      currentSample(nullptr)
 {
     contextMenu = new Menu(parent);
     contextMenu->addItem("Clear");
@@ -105,6 +106,15 @@ void SampleSlot::onNanoDisplay()
     // sample info
     if (samplePlayer != nullptr && samplePlayer->active && samplePlayer->sampleInfo != nullptr)
     {
+        if (currentSample != nullptr && currentSample == samplePlayer->sampleInfo)
+        {
+            beginPath();
+            roundedRect(0, 0, width, height, 3 * scale_factor);
+            fillColor(foreground_color);
+            fill();
+            closePath();
+        }
+
         std::string info = samplePlayer->sampleInfo->name;
         float x = triggerBtn->getWidth() + 10;
         beginPath();

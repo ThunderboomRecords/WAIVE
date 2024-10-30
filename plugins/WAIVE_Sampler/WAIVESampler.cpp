@@ -815,6 +815,7 @@ void WAIVESampler::clear()
     fCurrentSample = nullptr;
 
     pluginUpdate.notify(this, PluginUpdate::kSourceUpdated);
+    pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
@@ -968,6 +969,7 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     if (s == nullptr)
     {
         fCurrentSample = nullptr;
+        pluginUpdate.notify(this, PluginUpdate::kSampleCleared);
         pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
 
         return;
