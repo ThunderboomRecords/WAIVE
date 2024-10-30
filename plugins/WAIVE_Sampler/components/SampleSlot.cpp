@@ -31,6 +31,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     midiSelect->setFontSize(16.0f);
     midiSelect->setFont("VG5000", VG5000, VG5000_len);
     midiSelect->setSize(35, 20);
+    midiSelect->setCallback(this);
 
     contextMenu = new Menu(parent);
     contextMenu->addItem("Clear");
