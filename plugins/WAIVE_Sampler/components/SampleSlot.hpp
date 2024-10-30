@@ -51,7 +51,7 @@ private:
     PlayState lastPlaying;
 
     Menu *contextMenu;
-    Button *triggerBtn;
+    Button *triggerBtn, *clearBtn;
     DropDown *midiSelect;
 
     DISTRHO_LEAK_DETECTOR(SampleSlot);

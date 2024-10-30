@@ -9,20 +9,20 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
       callback(nullptr),
       currentSample(nullptr)
 {
-    contextMenu = new Menu(parent);
-    contextMenu->addItem("Clear");
-    contextMenu->setCallback(this);
-    contextMenu->setDisplayNumber(1);
-    contextMenu->setSize(100, 30);
-    contextMenu->setFont("VG5000", VG5000, VG5000_len);
-    contextMenu->calculateHeight();
-    contextMenu->hide();
-
     triggerBtn = new Button(parent);
     triggerBtn->setCallback(this);
     triggerBtn->setLabel("▶");
     triggerBtn->setSize(20, 20);
     triggerBtn->drawBackground = false;
+    triggerBtn->toFront();
+
+    clearBtn = new Button(parent);
+    clearBtn->setCallback(this);
+    clearBtn->setLabel("✕");
+    clearBtn->setSize(20, 20);
+    clearBtn->drawBackground = false;
+    clearBtn->toFront();
+    clearBtn->hide();
 
     midiSelect = new DropDown(parent);
     for (int i = 0; i < 128; i++)
@@ -32,8 +32,19 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     midiSelect->setFont("VG5000", VG5000, VG5000_len);
     midiSelect->setSize(35, 20);
 
+    contextMenu = new Menu(parent);
+    contextMenu->addItem("Clear");
+    contextMenu->setCallback(this);
+    contextMenu->setDisplayNumber(1);
+    contextMenu->setSize(100, 30);
+    contextMenu->setFont("VG5000", VG5000, VG5000_len);
+    contextMenu->calculateHeight();
+    contextMenu->toFront();
+    contextMenu->hide();
+
     addChildWidget(triggerBtn, {triggerBtn, this, Position::ON_TOP, Widget_Align::START, Widget_Align::CENTER, 5});
     addChildWidget(midiSelect, {midiSelect, this, Position::ON_TOP, Widget_Align::END, Widget_Align::CENTER, 5});
+    addChildWidget(clearBtn, {clearBtn, midiSelect, Position::LEFT_OF, Widget_Align::CENTER, Widget_Align::CENTER, 5});
 }
 
 void SampleSlot::setSamplePlayer(SamplePlayer *sp)
@@ -59,7 +70,7 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
         contextMenu->toFront();
         contextMenu->show();
 
-        return true;
+        // return true;
     }
     else if (ev.button == kMouseButtonLeft)
     {
@@ -75,7 +86,15 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
     return false;
 }
 
-bool SampleSlot::onMotion(const MotionEvent &ev) { return false; }
+bool SampleSlot::onMotion(const MotionEvent &ev)
+{
+    if (samplePlayer->sampleInfo != nullptr && contains(ev.pos) && !clearBtn->isVisible())
+        clearBtn->setVisible(true);
+    else if (clearBtn->isVisible() && (samplePlayer->sampleInfo == nullptr || !contains(ev.pos)))
+        clearBtn->setVisible(false);
+
+    return false;
+}
 
 void SampleSlot::onMenuItemSelection(Menu *menu, int item, const std::string &value)
 {
@@ -129,8 +148,17 @@ void SampleSlot::onNanoDisplay()
 
 void SampleSlot::buttonClicked(Button *button)
 {
-    if (samplePlayer != nullptr)
-        samplePlayer->state = PlayState::TRIGGERED;
+    if (button == triggerBtn)
+    {
+        if (samplePlayer != nullptr)
+            samplePlayer->state = PlayState::TRIGGERED;
+    }
+    else if (button == clearBtn)
+    {
+        if (callback != nullptr)
+            callback->sampleSlotCleared(this, slotId);
+        clearBtn->hide();
+    }
 }
 
 void SampleSlot::dropdownSelection(DropDown *widget, int item)
