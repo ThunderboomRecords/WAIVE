@@ -8,8 +8,8 @@ Popup::Popup(Widget *widget, float x, float y, float width, float height, bool i
       callback(nullptr)
 {
     close_btn = new Button(widget);
-    close_btn->setLabel("x");
-    close_btn->setSize(20, 20);
+    close_btn->setLabel("✕");
+    close_btn->setSize(24, 24);
     close_btn->setCallback(this);
     close_btn->onTop(this, Widget_Align::END, Widget_Align::START, 10);
 
