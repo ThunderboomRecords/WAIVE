@@ -25,7 +25,7 @@ void Popup::onNanoDisplay()
     fillColor(background_color);
     strokeColor(accent_color);
     strokeWidth(2.f);
-    roundedRect(0, 0, width, height, border_radius);
+    roundedRect(1, 1, width - 1, height - 1, border_radius);
     fill();
     stroke();
     closePath();
@@ -41,20 +41,6 @@ void Popup::onNanoDisplay()
         closePath();
     }
 }
-
-// bool Popup::onMouse(const MouseEvent &ev)
-// {
-//     // if (!isVisible())
-//     //     return false;
-
-//     // if (contains(ev.pos))
-//     // {
-//     //     //     close();
-//     //     //     return true;
-//     //     return true;
-//     // }
-//     return false;
-// }
 
 void Popup::buttonClicked(Button *button)
 {
@@ -83,8 +69,6 @@ void Popup::close()
 
     if (callback != nullptr)
         callback->popupClosed(this);
-
-    // getParentWidget()->repaint();
 }
 
 void Popup::setCallback(Callback *cb)

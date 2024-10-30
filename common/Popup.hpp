@@ -37,6 +37,8 @@ private:
     Button *close_btn;
 
     Callback *callback;
+
+    DISTRHO_LEAK_DETECTOR(Popup);
 };
 
 END_NAMESPACE_DISTRHO
