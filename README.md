@@ -112,8 +112,14 @@ We use a combination of MIDI data and raw audio to collect rhythm information to
 Rhythmic datasets include:
 - [Groove MIDI Dataset](https://magenta.tensorflow.org/datasets/groove) from Magenta
 - [Folkloras](http://etnomuzikologai.lmta.lt/), Baltic folk music archive.
-- [Free Music Archive](https://freemusicarchive.org/) selected electronic dance tracks.
+- [Free Music Archive](https://freemusicarchive.org/) selected electronic dance tracks
 
+**WAIVE-Sampler** uses common techniques from machine listening to make measurements (called "features") of the audio, giving each sound a unique fingerprint and description of the audio content which can then be interpreted by other algorithms. At the same time, another method attempts to identify when percussive moments (called "onsets") occur using Complex Spectral Difference. The features are used to automatically identify appropriate moments in the Source audio that could be used for different drum hits, e.g. onsets that contain a broadband of frequency content can be shaped to make a snare sound.
+
+For the Sample Map, the (log) Mel Spectrogram of the sample is measured, which computes a detailed representation of the frequency content of the audio. A simple, pretrained fully connected neural-net reads the measured features and outputs a 2D coordinate on where the audio sample should be placed on the map, e.g. such that kick drum sounds a grouped together, away from the hi-hat samples.
+
+For the Tag cloud, we use an off-the-shelf word embedding model ([GloVe](https://nlp.stanford.edu/projects/glove/)) to produce a 2D representation (using TSNE dimensionality reduction) of all the tags in the database, such that semantically similar tags a clustered together to enable easier exploration of the available sources.
+  
 #### References
 - [Jon Gillick, Adam Roberts, Jesse Engel, Douglas Eck, and David Bamman (2019) 'Learning to Groove with Inverse Sequence Transformations.'](https://magenta.tensorflow.org/datasets/groove), International Conference on Machine Learning 2019 (ICML). 
 - [Gillick, J., Yang, J., Cella, C.-E. and Bamman, D. (2021) ‘Drumroll Please: Modeling Multi-Scale Rhythmic Gestures with Flexible Grids’](https://transactions.ismir.net/articles/10.5334/tismir.98#42-data-representations-for-comparison), Transactions of the International Society for Music Information Retrieval, 4(1), p. 156–166
