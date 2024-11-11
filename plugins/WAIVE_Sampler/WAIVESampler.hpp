@@ -13,10 +13,11 @@
 #include <fmt/core.h>
 #include <sndfile.hh>
 
-#include "ThreadsafeQueue.hpp"
 #include "DistrhoPluginInfo.h"
 #include "DistrhoPlugin.hpp"
 #include "WAIVESamplerParams.h"
+#include "ThreadsafeQueue.hpp"
+#include "SamplePlayer.hpp"
 #include "SampleDatabase.hpp"
 #include "Envelopes.hpp"
 #include "WaveformFeatures.hpp"
@@ -55,33 +56,9 @@ const int V_PAT = 0;
 
 START_NAMESPACE_DISTRHO
 
-enum PlayState
-{
-    STOPPED = 0,
-    TRIGGERED,
-    PLAYING
-};
-
 class ImporterTask;
 class FeatureExtractorTask;
 class WaveformLoaderTask;
-
-struct SamplePlayer
-{
-    std::vector<float> *waveform = nullptr;
-    long length = 0;
-    long ptr = 0;
-    long startAt = 0;
-    int midi = -1;
-    float gain = 1.0f;
-    float velocity = 0.8f;
-    float pitch = 60.f;
-    float pan = 0.0f;
-    PlayState state = PlayState::STOPPED;
-    bool active = false;
-    std::shared_ptr<SampleInfo> sampleInfo = nullptr;
-    void clear();
-};
 
 int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags = 0);
 bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int sampleRate);
