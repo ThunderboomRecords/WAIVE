@@ -11,6 +11,7 @@ dpf_add_plugin(
       au
   FILES_DSP
       WAIVESampler.cpp
+      Tasks.cpp
       SampleDatabase.cpp
       FeatureExtractor.cpp
       Envelopes.cpp

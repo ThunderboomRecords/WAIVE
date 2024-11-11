@@ -1,6 +1,14 @@
+#ifndef THREADSAFE_QUEUE_H
+#define THREADSAFE_QUEUE_H
+
+#include <queue>
+#include <mutex>
+#include <optional>
+
 template <typename T>
 class ThreadsafeQueue
 {
+private:
     std::queue<T> queue_;
     mutable std::mutex mutex_;
 
@@ -41,3 +49,5 @@ public:
         queue_.push(item);
     }
 };
+
+#endif // THREADSAFE_QUEUE_H

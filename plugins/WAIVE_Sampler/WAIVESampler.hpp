@@ -13,7 +13,7 @@
 #include <fmt/core.h>
 #include <sndfile.hh>
 
-#include "ThreadsafeQueue.cpp"
+#include "ThreadsafeQueue.hpp"
 #include "DistrhoPluginInfo.h"
 #include "DistrhoPlugin.hpp"
 #include "WAIVESamplerParams.h"
@@ -230,58 +230,6 @@ private:
     friend class SampleEditorControls;
     friend class ImporterTask;
     friend class FeatureExtractorTask;
-};
-
-class ImporterTask : public Poco::Task
-{
-public:
-    ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *queue);
-    void runTask() override;
-
-private:
-    WAIVESampler *_ws;
-    ThreadsafeQueue<std::string> *_queue;
-
-    void import(const std::string &fp);
-};
-
-class FeatureExtractorTask : public Poco::Task
-{
-public:
-    FeatureExtractorTask(WAIVESampler *ws);
-    void runTask() override;
-
-private:
-    WAIVESampler *_ws;
-};
-
-class WaveformLoaderTask : public Poco::Task
-{
-public:
-    WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex *_mutex, const std::string &_fp, int sampleRate);
-    ~WaveformLoaderTask();
-    void runTask() override;
-    std::string fp;
-
-private:
-    std::shared_ptr<std::vector<float>> buffer;
-    std::mutex *mutex;
-    int sampleRate, flags;
-};
-
-class TestTask : public Poco::Task
-{
-public:
-    TestTask(std::string name) : Poco::Task(name)
-    {
-        std::cout << "TestTask init" << std::endl;
-    };
-    void runTask() override
-    {
-        std::cout << "TestTask runTask" << std::endl;
-        sleep(1000);
-        std::cout << "TestTask done" << std::endl;
-    };
 };
 
 END_NAMESPACE_DISTRHO
