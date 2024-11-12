@@ -1,9 +1,6 @@
 #ifndef SAMPLE_BROWSER_HPP_INCLUDED
 #define SAMPLE_BROWSER_HPP_INCLUDED
 
-// #include "NanoVG.hpp"
-// #include "Window.hpp"
-
 #include "WidgetGroup.hpp"
 
 #include "Label.hpp"
@@ -14,7 +11,8 @@
 START_NAMESPACE_DISTRHO
 
 class SampleBrowser
-    : public WidgetGroup
+    : public WidgetGroup,
+      public Button::Callback
 {
 public:
     explicit SampleBrowser(WAIVEWidget *parent, SampleDatabase *sd_);
@@ -26,12 +24,13 @@ public:
 
 protected:
     void onNanoDisplay() override;
+    void buttonClicked(Button *btn) override;
 
 private:
     SampleDatabase *sd;
 
     SampleMap *sampleMap;
-    Button *importSampleBtn;
+    Button *importSampleBtn, *previewToggle;
 
     DISTRHO_LEAK_DETECTOR(SampleBrowser);
 };

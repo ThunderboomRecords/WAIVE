@@ -16,6 +16,7 @@ SampleMap::SampleMap(Widget *widget) noexcept
       highlightSample(-1),
       contextMenuSample(-1),
       selectedSample(nullptr),
+      preview(true),
       callback(nullptr)
 {
     menu = new Menu(widget);
@@ -145,7 +146,7 @@ bool SampleMap::onMotion(const MotionEvent &ev)
         {
             highlightSample = nearest;
 
-            if (callback != nullptr)
+            if (callback != nullptr && preview)
                 callback->mapSampleHovered(highlightSample);
 
             repaint();

@@ -26,6 +26,15 @@ SampleBrowser::SampleBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
     loading->setLoading(false);
     addChildWidget(loading);
 
+    previewToggle = new Button(widget);
+    previewToggle->isToggle = true;
+    previewToggle->setToggled(true);
+    previewToggle->setLabel("Preview");
+    previewToggle->resizeToFit();
+    previewToggle->onTop(sampleMap, Widget_Align::START, Widget_Align::START);
+    previewToggle->setCallback(this);
+    addChildWidget(previewToggle);
+
     sd->databaseUpdate += Poco::delegate(this, &SampleBrowser::onDatabaseChanged);
 }
 
@@ -56,6 +65,12 @@ void SampleBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase:
 
     repaint();
 }
+
+void SampleBrowser::buttonClicked(Button *btn)
+{
+    if (btn == previewToggle)
+        sampleMap->preview = previewToggle->getToggled();
+};
 
 void SampleBrowser::setCallback(SampleMap::Callback *cb)
 {

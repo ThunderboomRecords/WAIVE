@@ -20,7 +20,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void mapSampleHovered(int id) = 0;
         virtual void mapSampleSelected(int id) = 0;
         virtual void mapSampleLoadSlot(int index, int slot) = 0;
@@ -33,6 +33,7 @@ public:
     std::vector<std::shared_ptr<SampleInfo>> *allSamples;
     std::shared_ptr<SampleInfo> *selectedSample;
     int highlightSample, contextMenuSample;
+    bool preview;
 
     Menu *menu;
 

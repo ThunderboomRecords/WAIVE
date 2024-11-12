@@ -137,7 +137,6 @@ void SampleSlot::onNanoDisplay()
         }
 
         // Draw playing highlight
-        std::cout << step << std::endl;
         beginPath();
         roundedRect(1, 1, width - 2, height - 2, 3 * scale_factor);
         strokeColor(.5f, .5f, .5f, step);
