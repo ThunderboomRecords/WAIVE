@@ -381,6 +381,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
             slot->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
             slot->currentSample = plugin->fCurrentSample;
 
+            addIdleCallback(slot);
+
             sampleSlotsContainer->addWidget(slot);
             sampleSlots.push_back(slot);
         }

@@ -7,6 +7,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
       samplePlayer(nullptr),
       lastPlaying(PlayState::STOPPED),
       callback(nullptr),
+      step(0.f),
       currentSample(nullptr)
 {
     triggerBtn = new Button(parent);
@@ -135,6 +136,15 @@ void SampleSlot::onNanoDisplay()
             closePath();
         }
 
+        // Draw playing highlight
+        std::cout << step << std::endl;
+        beginPath();
+        roundedRect(1, 1, width - 2, height - 2, 3 * scale_factor);
+        strokeColor(.5f, .5f, .5f, step);
+        strokeWidth(2.f);
+        stroke();
+        closePath();
+
         std::string info = samplePlayer->sampleInfo->name;
         float x = triggerBtn->getWidth() + 10;
         beginPath();
@@ -176,6 +186,23 @@ void SampleSlot::setMidiNumber(int midi, bool sendCallback)
 void SampleSlot::setCallback(Callback *cb)
 {
     callback = cb;
+}
+
+void SampleSlot::idleCallback()
+{
+    float lastStep = step;
+
+    if (samplePlayer == nullptr || !samplePlayer->active)
+        step = 0.f;
+    else if (samplePlayer->state == PlayState::STOPPED)
+        step = 0.f;
+    else
+        step = (48000.f - (float)samplePlayer->ptr) / 48000.f;
+
+    step = std::clamp(step, 0.f, 1.f);
+
+    if (step != lastStep)
+        repaint();
 }
 
 END_NAMESPACE_DISTRHO

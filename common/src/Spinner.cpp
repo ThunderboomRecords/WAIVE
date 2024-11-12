@@ -3,7 +3,10 @@
 START_NAMESPACE_DISTRHO
 
 Spinner::Spinner(Widget *widget) noexcept
-    : WAIVEWidget(widget), loading(false), angle(0.0f), foreground_color(Color(80, 80, 80)) {}
+    : WAIVEWidget(widget), loading(false), angle(0.0f)
+{
+    foreground_color = Color(80, 80, 80);
+}
 
 void Spinner::setLoading(bool l)
 {

@@ -15,6 +15,7 @@ START_NAMESPACE_DISTRHO
 
 class SampleSlot : public WidgetGroup,
                    public Menu::Callback,
+                   public IdleCallback,
                    Button::Callback,
                    DropDown::Callback
 {
@@ -29,6 +30,8 @@ public:
     explicit SampleSlot(Widget *widget) noexcept;
 
     void setCallback(Callback *cb);
+    void idleCallback() override;
+
     void setSamplePlayer(SamplePlayer *sp);
     void setMidiNumber(int midi, bool sendCallback);
     SamplePlayer *getSamplePlayer() const;
@@ -53,6 +56,8 @@ private:
     Menu *contextMenu;
     Button *triggerBtn, *clearBtn;
     DropDown *midiSelect;
+
+    float step;
 
     DISTRHO_LEAK_DETECTOR(SampleSlot);
 };

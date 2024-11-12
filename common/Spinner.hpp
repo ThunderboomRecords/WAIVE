@@ -14,8 +14,6 @@ public:
     bool getLoading() const;
     void idleCallback() override;
 
-    Color foreground_color;
-
 protected:
     void onNanoDisplay() override;
 
