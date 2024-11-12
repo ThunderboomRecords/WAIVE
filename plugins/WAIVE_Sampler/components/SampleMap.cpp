@@ -236,6 +236,10 @@ void SampleMap::onNanoDisplay()
     fill();
     closePath();
 
+    float hX, hY;
+    Color hC;
+    int hI = -1;
+
     for (int i = 0; i < allSamples->size(); i++)
     {
         float embedX = allSamples->at(i)->embedX;
@@ -249,8 +253,14 @@ void SampleMap::onNanoDisplay()
         int sampleId = allSamples->at(i)->getId();
 
         float r = 4.0f * scale_factor;
-        if (highlightSample >= -1 && highlightSample == sampleId)
+        if (highlightSample > -1 && highlightSample == sampleId)
+        {
             r *= 2.0f;
+            hC = get2DColor(embedX, embedY);
+            hX = pMap.getX();
+            hY = pMap.getY();
+            hI = i;
+        }
 
         beginPath();
         fillColor(get2DColor(embedX, embedY));
@@ -267,6 +277,28 @@ void SampleMap::onNanoDisplay()
             stroke();
             closePath();
         }
+    }
+
+    if (hI > -1)
+    {
+        // Draw sample name
+        std::string name = allSamples->at(hI)->name;
+        Rectangle<float> bounds;
+        fontSize(getFontSize());
+        fontFaceId(font);
+        textBounds(0, 0, name.c_str(), nullptr, bounds);
+
+        beginPath();
+        fillColor(hC);
+        rect(hX, hY - bounds.getHeight() - 4, bounds.getWidth() + 4, bounds.getHeight() + 4);
+        fill();
+        closePath();
+
+        beginPath();
+        fillColor(text_color);
+        textAlign(Align::ALIGN_LEFT | Align::ALIGN_BOTTOM);
+        text(hX + 2, hY - 2, name.c_str(), nullptr);
+        closePath();
     }
 }
 
