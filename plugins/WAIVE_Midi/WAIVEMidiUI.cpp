@@ -43,9 +43,23 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     score_grid->fScore = &plugin->fScore;
     score_grid->ui = this;
 
-    score_label->above(score_grid, Widget_Align::START, padding);
+    score_label->above(score_grid, Widget_Align::START, padding * 2);
 
-    new_score->above(score_grid, Widget_Align::END, padding);
+    score_genre = new DropDown(this);
+    score_genre->setSize(80, score_genre->getFontSize(), true);
+    for (int i = 0; i < 22; i++)
+        score_genre->addItem(score_genres[i]);
+    score_genre->setDisplayNumber(8);
+    score_genre->setItem(0, false);
+    score_genre->setFontSize(18.0f);
+    score_genre->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    score_genre->menu->setFontSize(18.0f);
+    score_genre->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    score_genre->above(score_grid, Widget_Align::END, padding);
+    score_genre->setCallback(this);
+
+    new_score->leftOf(score_genre, Widget_Align::END, padding);
+    score_genre->rightOf(new_score, Widget_Align::CENTER, padding);
 
     var_score = new Button(this);
     var_score->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
@@ -87,12 +101,27 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     groove_label->resizeToFit();
     groove_label->above(groove_graph, Widget_Align::START, padding * 2);
 
+    groove_genre = new DropDown(this);
+    groove_genre->setSize(80, groove_genre->getFontSize(), true);
+    for (int i = 0; i < 22; i++)
+        groove_genre->addItem(groove_genres[i]);
+    groove_genre->setDisplayNumber(8);
+    groove_genre->setItem(0, false);
+    groove_genre->setFontSize(18.0f);
+    groove_genre->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    groove_genre->menu->setFontSize(18.0f);
+    groove_genre->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    groove_genre->above(groove_graph, Widget_Align::END, padding);
+    groove_genre->setCallback(this);
+
     new_groove = new Button(this);
     new_groove->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     new_groove->setLabel("new");
     new_groove->resizeToFit();
     new_groove->setCallback(this);
-    new_groove->above(groove_graph, Widget_Align::END, padding);
+    new_groove->leftOf(groove_genre, Widget_Align::END, padding);
+
+    groove_genre->rightOf(new_groove, Widget_Align::CENTER, padding);
 
     var_groove = new Button(this);
     var_groove->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
@@ -167,6 +196,16 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     drum_playhead->progress = &plugin->progress;
     addIdleCallback(drum_playhead);
 
+    score_map = new XYSlider(this);
+    // score_map->setSize(100, 100);
+    // score_map->below(drum_pattern, Widget_Align::START, padding);
+    // score_map->setCallback(this);
+
+    groove_map = new XYSlider(this);
+    // groove_map->setSize(100, 100);
+    // groove_map->rightOf(score_map, Widget_Align::START, padding);
+    // groove_map->setCallback(this);
+
     setGeometryConstraints(width, height, false, false);
 
     if (fScaleFactor != 1.0)
@@ -181,6 +220,18 @@ void WAIVEMidiUI::parameterChanged(uint32_t index, float value)
     {
     case kThreshold:
         threshold->setValue(value);
+        break;
+    case kScoreX:
+        score_map->setXValue(value);
+        break;
+    case kScoreY:
+        score_map->setYValue(value);
+        break;
+    case kGrooveX:
+        groove_map->setXValue(value);
+        break;
+    case kGrooveY:
+        groove_map->setYValue(value);
         break;
     default:
         break;
@@ -244,25 +295,49 @@ void WAIVEMidiUI::grooveClicked(GrooveGraph *graph)
     repaint();
 }
 
-void WAIVEMidiUI::knobDragStarted(Knob *knob){};
+void WAIVEMidiUI::knobDragStarted(Knob *knob) {};
 
-void WAIVEMidiUI::knobDragFinished(Knob *knob, float value){};
+void WAIVEMidiUI::knobDragFinished(Knob *knob, float value) {};
 
 void WAIVEMidiUI::knobValueChanged(Knob *knob, float value)
 {
     if (knob == threshold)
-    {
-        std::cout << "threshold changed" << std::endl;
         setParameterValue(kThreshold, value);
+};
+
+void WAIVEMidiUI::xyDragStarted(XYSlider *xySlider) {};
+
+void WAIVEMidiUI::xyDragFinished(XYSlider *xySlider, float x, float y) {};
+
+void WAIVEMidiUI::xyValueChanged(XYSlider *xySlider, float x, float y)
+{
+    if (xySlider == score_map)
+    {
+        setParameterValue(kScoreX, x);
+        setParameterValue(kScoreY, y);
     }
 };
 
 void WAIVEMidiUI::dropdownSelection(DropDown *widget, int item)
 {
     std::cout << widget->getId() << " set to " << item << std::endl;
-    // midiMap[widget->getId()] = item;
-    plugin->setMidiNote(widget->getId(), (uint8_t)item);
-    // plugin->computeNotes();
+
+    if (widget == score_genre)
+    {
+        plugin->score_genre = item;
+        plugin->generateScore();
+        plugin->generateFullPattern();
+    }
+    else if (widget == groove_genre)
+    {
+        plugin->groove_genre = item;
+        plugin->generateGroove();
+        plugin->generateFullPattern();
+    }
+    else
+    {
+        plugin->setMidiNote(widget->getId(), (uint8_t)item);
+    }
 }
 
 END_NAMESPACE_DISTRHO

@@ -6,7 +6,9 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
                          fThreshold(0.7f),
                          ticks_per_beat(1920),
                          loopTick(0.0),
-                         progress(0.0f)
+                         progress(0.0f),
+                         score_genre(0),
+                         groove_genre(0)
 {
 
     sampleRate = getSampleRate();
@@ -141,12 +143,44 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
 void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
 {
-    std::cout << "WAIVEMidi::initParameter index " << index << std::endl;
+    // std::cout << "WAIVEMidi::initParameter index " << index << std::endl;
     switch (index)
     {
     case kThreshold:
         parameter.name = "Complexity";
         parameter.symbol = "complexity";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.5f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
+    case kScoreX:
+        parameter.name = "ScoreX";
+        parameter.symbol = "scoreX";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.5f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
+    case kScoreY:
+        parameter.name = "ScoreY";
+        parameter.symbol = "scoreY";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.5f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
+    case kGrooveX:
+        parameter.name = "GrooveX";
+        parameter.symbol = "grooveX";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.5f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
+    case kGrooveY:
+        parameter.name = "GrooveY";
+        parameter.symbol = "grooveY";
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 1.0f;
         parameter.ranges.def = 0.5f;
@@ -197,6 +231,18 @@ float WAIVEMidi::getParameterValue(uint32_t index) const
     case kThreshold:
         val = fThreshold;
         break;
+    case kScoreX:
+        val = fScoreX;
+        break;
+    case kScoreY:
+        val = fScoreY;
+        break;
+    case kGrooveX:
+        val = fGrooveX;
+        break;
+    case kGrooveY:
+        val = fGrooveY;
+        break;
     case kScoreNew:
     case kScoreVar:
     case kGrooveNew:
@@ -217,6 +263,18 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
     case kThreshold:
         fThreshold = value;
         generateFullPattern();
+        break;
+    case kScoreX:
+        fScoreX = value;
+        break;
+    case kScoreY:
+        fScoreY = value;
+        break;
+    case kGrooveX:
+        fGrooveX = value;
+        break;
+    case kGrooveY:
+        fGrooveY = value;
         break;
     case kGrooveNew:
         if (value != 1.f)
@@ -417,7 +475,8 @@ void WAIVEMidi::generateScore()
     for (size_t i = 0; i < mScoreZ.size(); i++)
     {
         float z = distribution(generator);
-        z = z * score_stds[i % 64] + score_means[i % 64];
+        z = z * score_genre_stds[score_genre][i % 64] + score_genre_means[score_genre][i % 64];
+        // z = z * score_stds[i % 64] + score_means[i % 64];
         mScoreZ[i] = z;
     }
 
@@ -506,7 +565,8 @@ void WAIVEMidi::generateGroove()
     for (size_t i = 0; i < mGrooveZ.size(); i++)
     {
         float z = distribution(generator);
-        z = z * groove_stds[i % 32] + groove_means[i % 32];
+        z = z * groove_genre_stds[groove_genre][i % 32] + groove_genre_means[groove_genre][i % 32];
+        // z = z * groove_stds[i % 32] + groove_means[i % 32];
         mGrooveZ[i] = z;
     }
 

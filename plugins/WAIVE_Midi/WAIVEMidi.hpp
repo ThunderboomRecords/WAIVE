@@ -109,6 +109,7 @@ protected:
 
 private:
     float fThreshold;
+    float fScoreX, fScoreY, fGrooveX, fGrooveY;
 
     double sampleRate;
 
@@ -163,6 +164,8 @@ private:
     const int max_events[9] = {3, 7, 3, 3, 3, 4, 3, 2, 2};
     int s_map[9];
     int ticks_per_beat;
+
+    int score_genre, groove_genre;
 
     std::mutex noteMtx;
     std::vector<Note> notes;
