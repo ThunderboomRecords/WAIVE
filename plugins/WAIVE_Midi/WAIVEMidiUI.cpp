@@ -196,6 +196,15 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     drum_playhead->progress = &plugin->progress;
     addIdleCallback(drum_playhead);
 
+    quantize = new Button(this);
+    quantize->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    quantize->setLabel("quantize");
+    quantize->resizeToFit();
+    quantize->below(drum_pattern, Widget_Align::END, padding);
+    quantize->isToggle = true;
+    quantize->setToggled(false);
+    quantize->setCallback(this);
+
     score_map = new XYSlider(this);
     // score_map->setSize(100, 100);
     // score_map->below(drum_pattern, Widget_Align::START, padding);
@@ -285,6 +294,11 @@ void WAIVEMidiUI::buttonClicked(Button *button)
     else if (button == var_groove)
     {
         plugin->variationGroove();
+        plugin->generateFullPattern();
+    }
+    else if (button == quantize)
+    {
+        plugin->quantize = button->getToggled();
         plugin->generateFullPattern();
     }
 }

@@ -65,7 +65,7 @@ private:
     DrumPattern *drum_pattern;
     Label *score_label, *groove_label, *threshold_label;
     std::vector<std::shared_ptr<Label>> drum_names;
-    Button *new_score, *var_score, *new_groove, *var_groove;
+    Button *new_score, *var_score, *new_groove, *var_groove, *quantize;
     Knob *threshold;
     XYSlider *score_map, *groove_map;
     DropDown *score_genre, *groove_genre;

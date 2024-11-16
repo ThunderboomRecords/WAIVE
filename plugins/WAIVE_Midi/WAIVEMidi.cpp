@@ -8,7 +8,8 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
                          loopTick(0.0),
                          progress(0.0f),
                          score_genre(0),
-                         groove_genre(0)
+                         groove_genre(0),
+                         quantize(false)
 {
 
     sampleRate = getSampleRate();
@@ -703,8 +704,10 @@ void WAIVEMidi::computeNotes()
                 uint8_t velocity = (uint8_t)(vel * 255.0f);
 
                 float offset = fDrumPattern[i][index][2];
+                if (quantize)
+                    offset = offset < .5f ? 0.f : 1.f;
 
-                int tickOn = (int)((i + offset) * tp16th);
+                int tickOn = (int)(((float)i + offset) * tp16th);
                 tickOn = std::max(tickOn, 0);
 
                 Note noteOn = {
@@ -742,10 +745,20 @@ void WAIVEMidi::computeNotes()
         // then reorder again
         std::sort(newNotes[j].begin(), newNotes[j].end(), compareNotes);
 
+        int prevOnTick = -1;
         // std::cout << "Instrument " << j << std::endl;
         for (int i = 0; i < newNotes[j].size(); i++)
         {
             Note n = newNotes[j][i];
+
+            // avoid instantaneous notes
+            if (n.noteOn)
+            {
+                if (n.tick == prevOnTick)
+                    continue;
+                prevOnTick = n.tick;
+            }
+
             // if(n.noteOn)
             //     printf("  % 4d: %02d noteOn  velocity %d \n", n.tick, n.midiNote, n.velocity);
             // else

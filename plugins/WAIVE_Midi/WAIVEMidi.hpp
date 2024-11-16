@@ -166,6 +166,7 @@ private:
     int ticks_per_beat;
 
     int score_genre, groove_genre;
+    bool quantize;
 
     std::mutex noteMtx;
     std::vector<Note> notes;
