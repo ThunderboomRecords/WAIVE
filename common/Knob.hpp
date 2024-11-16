@@ -1,10 +1,6 @@
 #ifndef KNOB_HPP_INCLUDED
 #define KNOB_HPP_INCLUDED
 
-// #include "Window.hpp"
-// #include "Widget.hpp"
-#include "NanoVG.hpp"
-#include <iostream>
 #include "WAIVEWidget.hpp"
 
 START_NAMESPACE_DISTRHO
@@ -15,7 +11,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void knobDragStarted(Knob *knob) = 0;
         virtual void knobDragFinished(Knob *knob, float value) = 0;
         virtual void knobValueChanged(Knob *knob, float value) = 0;
@@ -25,7 +21,7 @@ public:
 
     void setCallback(Callback *cb);
     void setValue(float val, bool sendCallback = false) noexcept;
-    float getValue() noexcept;
+    float getValue() const noexcept;
     std::string getFormat() noexcept;
     void setRadius(float r, bool ignore_sf = false);
     void resizeToFit();

@@ -22,7 +22,7 @@ Knob::Knob(Widget *parent) noexcept
     gauge_width = 8.f * scale_factor;
 }
 
-float Knob::getValue() noexcept
+float Knob::getValue() const noexcept
 {
     return value_;
 }

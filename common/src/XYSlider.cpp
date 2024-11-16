@@ -5,23 +5,21 @@ START_NAMESPACE_DISTRHO
 using DGL_NAMESPACE::Color;
 
 XYSlider::XYSlider(Widget *parent) noexcept
-    : NanoSubWidget(parent)
+    : WAIVEWidget(parent)
 {
     dragging_ = false;
     value_x_ = 0.0f;
     value_y_ = 0.0f;
     minX = minY = 0.0f;
     maxX = maxY = 1.0f;
-    fg_color = Color(40, 40, 40);
-    bg_color = Color(255, 255, 255);
 }
 
-float XYSlider::getXValue() noexcept
+float XYSlider::getXValue() const noexcept
 {
     return value_x_;
 }
 
-float XYSlider::getYValue() noexcept
+float XYSlider::getYValue() const noexcept
 {
     return value_y_;
 }
@@ -31,9 +29,7 @@ void XYSlider::setXValue(float x, bool sendCallback) noexcept
     value_x_ = x;
 
     if (sendCallback && callback != nullptr)
-    {
         callback->xyValueChanged(this, value_x_, value_y_);
-    }
 }
 
 void XYSlider::setYValue(float y, bool sendCallback) noexcept
@@ -41,9 +37,7 @@ void XYSlider::setYValue(float y, bool sendCallback) noexcept
     value_y_ = y;
 
     if (sendCallback && callback != nullptr)
-    {
         callback->xyValueChanged(this, value_x_, value_y_);
-    }
 }
 
 bool XYSlider::onMouse(const MouseEvent &ev)
@@ -59,17 +53,13 @@ bool XYSlider::onMouse(const MouseEvent &ev)
         dragging_ = true;
 
         if (callback != nullptr)
-        {
             callback->xyDragStarted(this);
-        }
 
         updateXY(ev.pos);
         return false;
     }
     else if (dragging_)
-    {
         dragging_ = false;
-    }
 
     return false;
 }
@@ -114,8 +104,8 @@ void XYSlider::onNanoDisplay()
     const float height = getHeight();
 
     beginPath();
-    fillColor(bg_color);
-    strokeColor(fg_color);
+    fillColor(background_color);
+    strokeColor(foreground_color);
     rect(0, 0, width, height);
     fill();
     stroke();
@@ -125,20 +115,10 @@ void XYSlider::onNanoDisplay()
     float y_ = (value_y_ - minY) / (maxY - minY);
 
     beginPath();
-    fillColor(marker_color);
-    circle(x_ * width, y_ * height, 5);
-    fill();
-    closePath();
-
-    beginPath();
-    strokeColor(fg_color);
+    strokeColor(accent_color);
+    strokeWidth(1.f);
     moveTo(0, y_ * height);
     lineTo(width, y_ * height);
-    stroke();
-    closePath();
-
-    beginPath();
-    strokeColor(fg_color);
     moveTo(x_ * width, 0);
     lineTo(x_ * width, height);
     stroke();
