@@ -41,10 +41,12 @@ dpf_add_plugin(
 
 find_library(FOUNDATION Foundation)
 find_library(COREFOUNDATION CoreFoundation)
+find_package(fmt CONFIG REQUIRED)
 
 target_link_libraries(
     WAIVE_Midi 
     PUBLIC 
+    fmt::fmt
     ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
     ${CoreFoundation}
     ${Foundation}

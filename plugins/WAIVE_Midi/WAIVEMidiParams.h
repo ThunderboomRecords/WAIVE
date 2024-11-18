@@ -12,6 +12,15 @@ enum Parameters
     kGrooveVar,
     kScoreNew,
     kScoreVar,
+    kThreshold1,
+    kThreshold2,
+    kThreshold3,
+    kThreshold4,
+    kThreshold5,
+    kThreshold6,
+    kThreshold7,
+    kThreshold8,
+    kThreshold9,
     kParameterCount
 };
 

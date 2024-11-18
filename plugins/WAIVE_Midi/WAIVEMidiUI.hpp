@@ -25,7 +25,7 @@
 
 START_NAMESPACE_DISTRHO
 
-const unsigned int UI_W = 880;
+const unsigned int UI_W = 920;
 const unsigned int UI_H = 460;
 
 class WAIVEMidiUI : public UI,
@@ -70,6 +70,7 @@ private:
     XYSlider *score_map, *groove_map;
     DropDown *score_genre, *groove_genre;
     std::vector<std::shared_ptr<DropDown>> midi_notes;
+    std::vector<std::shared_ptr<Knob>> thresholds;
 
     Playhead *drum_playhead;
 

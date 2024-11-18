@@ -9,6 +9,8 @@
 #include <chrono>
 #include <mutex>
 
+#include <fmt/core.h>
+
 #include "DistrhoPluginInfo.h"
 #include "DistrhoPlugin.hpp"
 #include "WAIVEMidiParams.h"
@@ -160,6 +162,8 @@ private:
     std::vector<GrooveEvent> fGroove;
     float fScore[16][9];
     float fDrumPattern[16][30][3];
+    float fThresholds[9];
+    bool hold_update;
 
     const int max_events[9] = {3, 7, 3, 3, 3, 4, 3, 2, 2};
     int s_map[9];

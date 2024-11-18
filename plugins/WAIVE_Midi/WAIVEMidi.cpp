@@ -9,6 +9,7 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
                          progress(0.0f),
                          score_genre(0),
                          groove_genre(0),
+                         hold_update(false),
                          quantize(false)
 {
 
@@ -16,9 +17,7 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
     s_map[0] = 0;
     for (int i = 1; i < 9; i++)
-    {
         s_map[i] = s_map[i - 1] + max_events[i - 1];
-    }
 
     seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::cout << seed << std::endl;
@@ -132,7 +131,10 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
     midiNotes.resize(9);
     for (int i = 0; i < 9; i++)
+    {
         midiNotes[i] = midiMap[i];
+        fThresholds[i] = fThreshold;
+    }
 
     notes.reserve(16 * 9 * 3);
     notesPointer = notes.begin();
@@ -145,6 +147,8 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
 {
     // std::cout << "WAIVEMidi::initParameter index " << index << std::endl;
+    int instrument = 0;
+    char nameFmt[] = "Complexity %d";
     switch (index)
     {
     case kThreshold:
@@ -219,6 +223,23 @@ void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.def = 0.0f;
         parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
         break;
+    case kThreshold1:
+    case kThreshold2:
+    case kThreshold3:
+    case kThreshold4:
+    case kThreshold5:
+    case kThreshold6:
+    case kThreshold7:
+    case kThreshold8:
+    case kThreshold9:
+        instrument = index - kThreshold1;
+        parameter.name = fmt::format("Complexity {:d}", instrument + 1).c_str();
+        parameter.symbol = fmt::format("complexity{:d}", instrument + 1).c_str();
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.8f;
+        parameter.hints = kParameterIsAutomatable;
+        break;
     default:
         break;
     }
@@ -250,6 +271,17 @@ float WAIVEMidi::getParameterValue(uint32_t index) const
     case kGrooveVar:
         val = 0.0f;
         break;
+    case kThreshold1:
+    case kThreshold2:
+    case kThreshold3:
+    case kThreshold4:
+    case kThreshold5:
+    case kThreshold6:
+    case kThreshold7:
+    case kThreshold8:
+    case kThreshold9:
+        val = fThresholds[index - kThreshold1];
+        break;
     default:
         break;
     }
@@ -263,6 +295,13 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
     {
     case kThreshold:
         fThreshold = value;
+
+        hold_update = true;
+        for (int i = 0; i < 9; i++)
+            setParameterValue(kThreshold1 + i, value);
+        // fThresholds[i] = fThreshold;
+        hold_update = false;
+
         generateFullPattern();
         break;
     case kScoreX:
@@ -300,6 +339,19 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
             break;
         variationScore();
         generateFullPattern();
+        break;
+    case kThreshold1:
+    case kThreshold2:
+    case kThreshold3:
+    case kThreshold4:
+    case kThreshold5:
+    case kThreshold6:
+    case kThreshold7:
+    case kThreshold8:
+    case kThreshold9:
+        fThresholds[index - kThreshold1] = value;
+        if (!hold_update)
+            generateFullPattern();
         break;
     default:
         break;
@@ -695,7 +747,7 @@ void WAIVEMidi::computeNotes()
             {
                 int index = s_map[j] + k;
 
-                if (fDrumPattern[i][index][0] < (1.f - fThreshold))
+                if (fDrumPattern[i][index][0] < (1.f - fThresholds[j]))
                     break;
 
                 float vel = fDrumPattern[i][index][1];

@@ -15,7 +15,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
 
     logo_font = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
 
-    float col2_width = (350 + 35) * fScaleFactor + 3.f * padding;
+    float col2_width = (350 + 35 + 35) * fScaleFactor + 3.f * padding;
     float col1_width = width - col2_width - 3.f * padding;
     float col_height = height - 2.f * padding;
 
@@ -172,6 +172,24 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     midiNoteSelects.rightOf(drum_pattern, Widget_Align::CENTER, padding);
     midiNoteSelects.positionWidgets();
 
+    thresholds.reserve(9);
+    for (int i = 8; i >= 0; i--)
+    {
+        auto t = std::make_shared<Knob>(this);
+        t->setId(kThreshold9 - i);
+        t->setSize(midi_notes[i].get()->getHeight(), midi_notes[i].get()->getHeight(), true);
+        t->setRadius(12.f);
+        t->gauge_width = 3.f * fScaleFactor;
+        t->min = 0.1f;
+        t->max = 1.0f;
+        t->setValue(0.8f);
+        t->setCallback(this);
+        t->resizeToFit();
+
+        t->rightOf(midi_notes[i].get());
+        thresholds.push_back(std::move(t));
+    }
+
     threshold = new Knob(this);
     threshold->setId(kThreshold);
     threshold->setCallback(this);
@@ -182,7 +200,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     threshold->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     threshold->setRadius(12.f);
     threshold->resizeToFit();
-    threshold->above(drum_pattern, Widget_Align::END, padding);
+    threshold->above(thresholds[8].get(), Widget_Align::CENTER, padding);
 
     threshold_label = new Label(this, "complexity");
     threshold_label->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
@@ -200,7 +218,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     quantize->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     quantize->setLabel("quantize");
     quantize->resizeToFit();
-    quantize->below(drum_pattern, Widget_Align::END, padding);
+    quantize->above(drum_pattern, Widget_Align::START, padding);
     quantize->isToggle = true;
     quantize->setToggled(false);
     quantize->setCallback(this);
@@ -229,6 +247,8 @@ void WAIVEMidiUI::parameterChanged(uint32_t index, float value)
     {
     case kThreshold:
         threshold->setValue(value);
+        for (int i = 0; i < 9; i++)
+            thresholds[i].get()->setValue(value);
         break;
     case kScoreX:
         score_map->setXValue(value);
@@ -241,6 +261,17 @@ void WAIVEMidiUI::parameterChanged(uint32_t index, float value)
         break;
     case kGrooveY:
         groove_map->setYValue(value);
+        break;
+    case kThreshold1:
+    case kThreshold2:
+    case kThreshold3:
+    case kThreshold4:
+    case kThreshold5:
+    case kThreshold6:
+    case kThreshold7:
+    case kThreshold8:
+    case kThreshold9:
+        thresholds[index - kThreshold1]->setValue(value);
         break;
     default:
         break;
@@ -315,8 +346,11 @@ void WAIVEMidiUI::knobDragFinished(Knob *knob, float value) {};
 
 void WAIVEMidiUI::knobValueChanged(Knob *knob, float value)
 {
+    setParameterValue(knob->getId(), value);
+
     if (knob == threshold)
-        setParameterValue(kThreshold, value);
+        for (int i = 0; i < 9; i++)
+            thresholds[i].get()->setValue(value);
 };
 
 void WAIVEMidiUI::xyDragStarted(XYSlider *xySlider) {};
