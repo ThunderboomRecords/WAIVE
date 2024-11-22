@@ -86,7 +86,7 @@ void DrumPattern::onNanoDisplay()
                     float hue = (8 - row) / 10.0f;
                     Color base = Color::fromHSL(hue, 0.8f, 0.1f);
                     Color top = Color::fromHSL(hue, 0.8f, 0.8f);
-                    base.interpolate(top, velocity / 255.0f);
+                    base.interpolate(top, velocity / 127.0f);
 
                     beginPath();
                     strokeColor(40, 40, 40);

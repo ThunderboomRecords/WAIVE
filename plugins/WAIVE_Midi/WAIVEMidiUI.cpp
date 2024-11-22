@@ -223,6 +223,13 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     quantize->setToggled(false);
     quantize->setCallback(this);
 
+    export_btn = new Button(this);
+    export_btn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    export_btn->setLabel("export...");
+    export_btn->resizeToFit();
+    export_btn->below(drum_pattern, Widget_Align::END, padding);
+    export_btn->setCallback(this);
+
     score_map = new XYSlider(this);
     // score_map->setSize(100, 100);
     // score_map->below(drum_pattern, Widget_Align::START, padding);
@@ -331,6 +338,29 @@ void WAIVEMidiUI::buttonClicked(Button *button)
     {
         plugin->quantize = button->getToggled();
         plugin->generateFullPattern();
+    }
+    else if (button == export_btn)
+    {
+        // create suitable file name
+        std::string saveName = score_genres[plugin->score_genre];
+        if (plugin->score_genre != plugin->groove_genre)
+        {
+            saveName += "_";
+            saveName += groove_genres[plugin->groove_genre];
+        }
+        saveName += ".mid";
+
+        char const *filename = nullptr;
+        char const *filterPatterns[1] = {"*.mp3"};
+        filename = tinyfd_saveFileDialog(
+            "Export MIDI file...",
+            saveName.c_str(),
+            1,
+            filterPatterns,
+            "MIDI files");
+
+        if (filename)
+            setState("export", filename);
     }
 }
 

@@ -23,6 +23,7 @@ dpf_add_plugin(
       ./components/ScoreGrid.cpp
       ./components/GrooveGraph.cpp
       ./components/DrumPattern.cpp
+      ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
@@ -61,5 +62,6 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/common/fonts
     ${CMAKE_SOURCE_DIR}/common/icons
+    ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs
     ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
 )

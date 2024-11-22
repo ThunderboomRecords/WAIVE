@@ -363,9 +363,9 @@ void WAIVEMidi::setState(const char *key, const char *value)
     printf("WAIVEMidi::setState\n");
     printf("  %s: %s\n", key, value);
     if (std::strcmp(key, "score") == 0)
-    {
         encodeScore();
-    }
+    else if (std::strcmp(key, "export") == 0)
+        exportMidiFile(notes, value);
 }
 
 String WAIVEMidi::getState(const char *key) const
@@ -723,7 +723,7 @@ void WAIVEMidi::computeNotes()
 {
     std::lock_guard<std::mutex> lk(noteMtx);
 
-    int tp16th = ticks_per_beat / 4;
+    uint32_t tp16th = ticks_per_beat / 4;
 
     int nextTick = -1;
     if (notesPointer != notes.end())
@@ -753,17 +753,23 @@ void WAIVEMidi::computeNotes()
                 float vel = fDrumPattern[i][index][1];
                 vel = 0.5f * (vel + 1.0f);
 
-                uint8_t velocity = (uint8_t)(vel * 255.0f);
+                uint8_t velocity = (uint8_t)(vel * 127.0f);
 
                 float offset = fDrumPattern[i][index][2];
                 if (quantize)
                     offset = offset < .5f ? 0.f : 1.f;
 
-                int tickOn = (int)(((float)i + offset) * tp16th);
-                tickOn = std::max(tickOn, 0);
+                uint32_t tickOn = (uint32_t)(((float)i + offset) * tp16th);
+                tickOn = std::max(tickOn, static_cast<uint32_t>(0));
 
                 Note noteOn = {
-                    tickOn, velocity, midiNotes[j], 9, true, j};
+                    tickOn,
+                    velocity,
+                    midiNotes[j],
+                    DRUM_CHANNEL,
+                    true,
+                    j,
+                };
 
                 newNotes[j].push_back(noteOn);
             }
@@ -779,19 +785,31 @@ void WAIVEMidi::computeNotes()
         int nNotes = newNotes[j].size();
         for (int i = 0; i < nNotes - 1; i++)
         {
-            int thisOnTick = newNotes[j][i].tick;
-            int nextOnTick = newNotes[j][i + 1].tick;
-            int noteOffTick = std::min(thisOnTick + tp16th, nextOnTick);
+            uint32_t thisOnTick = newNotes[j][i].tick;
+            uint32_t nextOnTick = newNotes[j][i + 1].tick;
+            uint32_t noteOffTick = std::min(thisOnTick + tp16th, nextOnTick);
 
             Note noteOff = {
-                noteOffTick, 0, newNotes[j][i].midiNote, 9, false, j};
+                noteOffTick,
+                0,
+                newNotes[j][i].midiNote,
+                DRUM_CHANNEL,
+                false,
+                j,
+            };
             newNotes[j].push_back(noteOff);
         }
 
         // add final noteOff
-        int noteOffTick = std::min(newNotes[j][nNotes - 1].tick + tp16th, tp16th * 16 * 4 - 1);
+        uint32_t noteOffTick = std::min(newNotes[j][nNotes - 1].tick + tp16th, tp16th * 16 * 4 - 1);
         Note noteOff = {
-            noteOffTick, 0, newNotes[j][nNotes - 1].midiNote, 9, false, j};
+            noteOffTick,
+            0,
+            newNotes[j][nNotes - 1].midiNote,
+            DRUM_CHANNEL,
+            false,
+            j,
+        };
         newNotes[j].push_back(noteOff);
 
         // then reorder again
