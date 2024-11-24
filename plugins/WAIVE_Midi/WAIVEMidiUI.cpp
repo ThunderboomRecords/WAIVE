@@ -230,16 +230,6 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     export_btn->below(drum_pattern, Widget_Align::END, padding);
     export_btn->setCallback(this);
 
-    score_map = new XYSlider(this);
-    // score_map->setSize(100, 100);
-    // score_map->below(drum_pattern, Widget_Align::START, padding);
-    // score_map->setCallback(this);
-
-    groove_map = new XYSlider(this);
-    // groove_map->setSize(100, 100);
-    // groove_map->rightOf(score_map, Widget_Align::START, padding);
-    // groove_map->setCallback(this);
-
     setGeometryConstraints(width, height, false, false);
 
     if (fScaleFactor != 1.0)
@@ -257,17 +247,11 @@ void WAIVEMidiUI::parameterChanged(uint32_t index, float value)
         for (int i = 0; i < 9; i++)
             thresholds[i].get()->setValue(value);
         break;
-    case kScoreX:
-        score_map->setXValue(value);
+    case kScoreGenre:
+        score_genre->setItem((int)value, false);
         break;
-    case kScoreY:
-        score_map->setYValue(value);
-        break;
-    case kGrooveX:
-        groove_map->setXValue(value);
-        break;
-    case kGrooveY:
-        groove_map->setYValue(value);
+    case kGrooveGenre:
+        groove_genre->setItem((int)value, false);
         break;
     case kThreshold1:
     case kThreshold2:
@@ -383,39 +367,16 @@ void WAIVEMidiUI::knobValueChanged(Knob *knob, float value)
             thresholds[i].get()->setValue(value);
 };
 
-void WAIVEMidiUI::xyDragStarted(XYSlider *xySlider) {};
-
-void WAIVEMidiUI::xyDragFinished(XYSlider *xySlider, float x, float y) {};
-
-void WAIVEMidiUI::xyValueChanged(XYSlider *xySlider, float x, float y)
-{
-    if (xySlider == score_map)
-    {
-        setParameterValue(kScoreX, x);
-        setParameterValue(kScoreY, y);
-    }
-};
-
 void WAIVEMidiUI::dropdownSelection(DropDown *widget, int item)
 {
     std::cout << widget->getId() << " set to " << item << std::endl;
 
     if (widget == score_genre)
-    {
-        plugin->score_genre = item;
-        plugin->generateScore();
-        plugin->generateFullPattern();
-    }
+        setParameterValue(kScoreGenre, item);
     else if (widget == groove_genre)
-    {
-        plugin->groove_genre = item;
-        plugin->generateGroove();
-        plugin->generateFullPattern();
-    }
+        setParameterValue(kGrooveGenre, item);
     else
-    {
         plugin->setMidiNote(widget->getId(), (uint8_t)item);
-    }
 }
 
 END_NAMESPACE_DISTRHO

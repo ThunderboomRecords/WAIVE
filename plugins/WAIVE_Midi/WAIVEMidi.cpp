@@ -159,46 +159,6 @@ void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.def = 0.5f;
         parameter.hints = kParameterIsAutomatable;
         break;
-    case kScoreX:
-        parameter.name = "ScoreX";
-        parameter.symbol = "scoreX";
-        parameter.ranges.min = 0.0f;
-        parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 0.5f;
-        parameter.hints = kParameterIsAutomatable;
-        break;
-    case kScoreY:
-        parameter.name = "ScoreY";
-        parameter.symbol = "scoreY";
-        parameter.ranges.min = 0.0f;
-        parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 0.5f;
-        parameter.hints = kParameterIsAutomatable;
-        break;
-    case kGrooveX:
-        parameter.name = "GrooveX";
-        parameter.symbol = "grooveX";
-        parameter.ranges.min = 0.0f;
-        parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 0.5f;
-        parameter.hints = kParameterIsAutomatable;
-        break;
-    case kGrooveY:
-        parameter.name = "GrooveY";
-        parameter.symbol = "grooveY";
-        parameter.ranges.min = 0.0f;
-        parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 0.5f;
-        parameter.hints = kParameterIsAutomatable;
-        break;
-    case kGrooveNew:
-        parameter.name = "New Groove";
-        parameter.symbol = "new_groove";
-        parameter.ranges.min = 0.0f;
-        parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 0.0f;
-        parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
-        break;
     case kGrooveVar:
         parameter.name = "Variation Groove";
         parameter.symbol = "variation_groove";
@@ -222,6 +182,22 @@ void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.max = 1.0f;
         parameter.ranges.def = 0.0f;
         parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
+        break;
+    case kScoreGenre:
+        parameter.name = "Score Genre";
+        parameter.symbol = "score_genre";
+        parameter.ranges.min = 0;
+        parameter.ranges.max = NUM_SCORE_GENRES;
+        parameter.ranges.def = NUM_SCORE_GENRES - 1;
+        parameter.hints = kParameterIsInteger | kParameterIsAutomatable;
+        break;
+    case kGrooveGenre:
+        parameter.name = "Groove Genre";
+        parameter.symbol = "groove_genre";
+        parameter.ranges.min = 0;
+        parameter.ranges.max = NUM_GROOVE_GENRES;
+        parameter.ranges.def = NUM_GROOVE_GENRES - 1;
+        parameter.hints = kParameterIsInteger | kParameterIsAutomatable;
         break;
     case kThreshold1:
     case kThreshold2:
@@ -253,23 +229,17 @@ float WAIVEMidi::getParameterValue(uint32_t index) const
     case kThreshold:
         val = fThreshold;
         break;
-    case kScoreX:
-        val = fScoreX;
-        break;
-    case kScoreY:
-        val = fScoreY;
-        break;
-    case kGrooveX:
-        val = fGrooveX;
-        break;
-    case kGrooveY:
-        val = fGrooveY;
-        break;
     case kScoreNew:
     case kScoreVar:
     case kGrooveNew:
     case kGrooveVar:
         val = 0.0f;
+        break;
+    case kScoreGenre:
+        val = score_genre;
+        break;
+    case kGrooveGenre:
+        val = groove_genre;
         break;
     case kThreshold1:
     case kThreshold2:
@@ -304,18 +274,6 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
 
         generateFullPattern();
         break;
-    case kScoreX:
-        fScoreX = value;
-        break;
-    case kScoreY:
-        fScoreY = value;
-        break;
-    case kGrooveX:
-        fGrooveX = value;
-        break;
-    case kGrooveY:
-        fGrooveY = value;
-        break;
     case kGrooveNew:
         if (value != 1.f)
             break;
@@ -338,6 +296,16 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
         if (value != 1.f)
             break;
         variationScore();
+        generateFullPattern();
+        break;
+    case kScoreGenre:
+        score_genre = (int)value;
+        generateScore();
+        generateFullPattern();
+        break;
+    case kGrooveGenre:
+        groove_genre = (int)value;
+        generateGroove();
         generateFullPattern();
         break;
     case kThreshold1:

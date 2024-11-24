@@ -11,7 +11,6 @@
 #include "Panel.hpp"
 #include "DropDown.hpp"
 #include "Playhead.hpp"
-#include "XYSlider.hpp"
 #include "ScoreGrid.hpp"
 #include "GrooveGraph.hpp"
 #include "DrumPattern.hpp"
@@ -34,7 +33,6 @@ class WAIVEMidiUI : public UI,
                     public GrooveGraph::Callback,
                     public Button::Callback,
                     public Knob::Callback,
-                    public XYSlider::Callback,
                     public DropDown::Callback
 {
 public:
@@ -51,9 +49,6 @@ protected:
     void knobDragFinished(Knob *knob, float value) override;
     void knobValueChanged(Knob *knob, float value) override;
     void dropdownSelection(DropDown *widget, int item) override;
-    void xyDragStarted(XYSlider *xySlider) override;
-    void xyDragFinished(XYSlider *xySlider, float x, float y) override;
-    void xyValueChanged(XYSlider *xySlider, float x, float y) override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
 private:
@@ -69,7 +64,6 @@ private:
     std::vector<std::shared_ptr<Label>> drum_names;
     Button *new_score, *var_score, *new_groove, *var_groove, *quantize, *export_btn;
     Knob *threshold;
-    XYSlider *score_map, *groove_map;
     DropDown *score_genre, *groove_genre;
     std::vector<std::shared_ptr<DropDown>> midi_notes;
     std::vector<std::shared_ptr<Knob>> thresholds;

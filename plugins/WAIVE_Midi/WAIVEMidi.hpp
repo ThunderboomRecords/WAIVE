@@ -111,7 +111,6 @@ protected:
 
 private:
     float fThreshold;
-    float fScoreX, fScoreY, fGrooveX, fGrooveY;
 
     double sampleRate;
 
