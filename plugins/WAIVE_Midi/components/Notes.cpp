@@ -90,11 +90,11 @@ bool exportMidiFile(const std::vector<Note> &events, const std::string &filename
     }
 
     // Write MIDI header chunk
-    outFile.write("MThd", 4);     // Header identifier
-    writeBigEndian4(outFile, 6);  // Header size
-    writeBigEndian2(outFile, 0);  // Format type (single track)
-    writeBigEndian2(outFile, 1);  // Number of tracks
-    writeBigEndian2(outFile, 96); // Division (ticks per quarter note)
+    outFile.write("MThd", 4);       // Header identifier
+    writeBigEndian4(outFile, 6);    // Header size
+    writeBigEndian2(outFile, 0);    // Format type (single track)
+    writeBigEndian2(outFile, 1);    // Number of tracks
+    writeBigEndian2(outFile, 1920); // Division (ticks per quarter note)
 
     // Write track chunk
     outFile.write("MTrk", 4); // Track identifier
