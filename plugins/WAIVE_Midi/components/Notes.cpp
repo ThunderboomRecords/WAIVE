@@ -104,7 +104,7 @@ bool exportMidiFile(const std::vector<Note> &events, const std::string &filename
     // Write track events
     uint32_t previousTime = 0;
     int count = 0;
-    std::cout << "TRACK EVENTS" << std::endl;
+    // std::cout << "TRACK EVENTS" << std::endl;
 
     for (const auto &event : sortedEvents)
     {
@@ -119,15 +119,15 @@ bool exportMidiFile(const std::vector<Note> &events, const std::string &filename
         outFile.put(event.midiNote);
         outFile.put(event.velocity);
 
-        std::cout << " Event " << std::hex << count << ":" << std::endl;
-        std::cout << " - Delta:     " << std::hex << deltaTime << std::dec << " (" << deltaTime << ")" << std::endl;
-        std::cout << " - Status:    " << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(statusByte) << std::dec << " (" << static_cast<int>(statusByte) << ")" << std::endl;
-        std::cout << " - Midi note: " << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(event.midiNote) << std::dec << " (" << static_cast<int>(event.midiNote) << ") " << std::endl;
-        std::cout << " - Velocity:  " << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(event.velocity) << std::dec << " (" << static_cast<int>(event.velocity) << ")" << std::endl;
+        // std::cout << " Event " << std::hex << count << ":" << std::endl;
+        // std::cout << " - Delta:     " << std::hex << deltaTime << std::dec << " (" << deltaTime << ")" << std::endl;
+        // std::cout << " - Status:    " << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(statusByte) << std::dec << " (" << static_cast<int>(statusByte) << ")" << std::endl;
+        // std::cout << " - Midi note: " << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(event.midiNote) << std::dec << " (" << static_cast<int>(event.midiNote) << ") " << std::endl;
+        // std::cout << " - Velocity:  " << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(event.velocity) << std::dec << " (" << static_cast<int>(event.velocity) << ")" << std::endl;
 
         count++;
     }
-    std::cout << "Track events done" << std::endl;
+    // std::cout << "Track events done" << std::endl;
 
     // Write End of Track meta-event
     writeVariableLength(outFile, 0); // Delta time
@@ -138,7 +138,7 @@ bool exportMidiFile(const std::vector<Note> &events, const std::string &filename
     // Update track size
     std::streampos endPos = outFile.tellp();
     uint32_t trackSize = static_cast<uint32_t>(endPos - sizePos - 4);
-    std::cout << "trackSize: " << trackSize << "(endPos: " << endPos << ", sizePos: " << sizePos << ")" << std::endl;
+    // std::cout << "trackSize: " << trackSize << "(endPos: " << endPos << ", sizePos: " << sizePos << ")" << std::endl;
     outFile.seekp(sizePos);
     writeBigEndian4(outFile, trackSize);
 

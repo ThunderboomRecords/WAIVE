@@ -297,7 +297,6 @@ void WAIVEMidiUI::uiScaleFactorChanged(const double scaleFactor)
 
 void WAIVEMidiUI::buttonClicked(Button *button)
 {
-    // std::cout << "button clicked" << std::endl;
     if (button == new_score)
     {
         plugin->generateScore();

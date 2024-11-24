@@ -20,7 +20,6 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
         s_map[i] = s_map[i - 1] + max_events[i - 1];
 
     seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::cout << seed << std::endl;
 
     generator = std::default_random_engine(seed);
     distribution = std::normal_distribution<float>(0.0f, 1.0f);
@@ -146,7 +145,6 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
 void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
 {
-    // std::cout << "WAIVEMidi::initParameter index " << index << std::endl;
     int instrument = 0;
     char nameFmt[] = "Complexity %d";
     switch (index)
@@ -697,8 +695,6 @@ void WAIVEMidi::computeNotes()
     if (notesPointer != notes.end())
         nextTick = (*notesPointer).tick;
 
-    // std::cout << "WAIVEMidi::computeNotes()\n  tp16th: " << tp16th << std::endl;
-
     notes.clear();
 
     // Dim 0: Instrument
@@ -784,7 +780,6 @@ void WAIVEMidi::computeNotes()
         std::sort(newNotes[j].begin(), newNotes[j].end(), compareNotes);
 
         int prevOnTick = -1;
-        // std::cout << "Instrument " << j << std::endl;
         for (int i = 0; i < newNotes[j].size(); i++)
         {
             Note n = newNotes[j][i];
@@ -797,14 +792,8 @@ void WAIVEMidi::computeNotes()
                 prevOnTick = n.tick;
             }
 
-            // if(n.noteOn)
-            //     printf("  % 4d: %02d noteOn  velocity %d \n", n.tick, n.midiNote, n.velocity);
-            // else
-            //     printf("  % 4d: %02d noteOff velocity %d \n", n.tick, n.midiNote, n.velocity);
-
             notes.push_back(n);
         }
-        // std::cout << std::endl;
     }
 
     std::sort(notes.begin(), notes.end(), compareNotes);

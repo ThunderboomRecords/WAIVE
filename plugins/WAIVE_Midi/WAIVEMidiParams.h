@@ -4,10 +4,6 @@
 enum Parameters
 {
     kThreshold = 0,
-    // kScoreX,
-    // kScoreY,
-    // kGrooveX,
-    // kGrooveY,
     kGrooveNew,
     kGrooveVar,
     kScoreNew,
