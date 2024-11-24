@@ -150,7 +150,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     for (int i = 8; i >= 0; i--)
     {
         auto t = std::make_shared<Knob>(this);
-        t->setId(kThreshold9 - i);
+        t->setId(kThreshold1 + i);
         t->setSize(35, 20);
         t->setRadius(12.f);
         t->gauge_width = 3.f * fScaleFactor;
