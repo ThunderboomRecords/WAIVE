@@ -143,8 +143,49 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     drum_pattern->noteMtx = &plugin->noteMtx;
     drum_pattern->onTop(result_panel, Widget_Align::START, Widget_Align::START, padding, Layout::measureVertical(edit_panel, Widget_Align::START, score_grid, Widget_Align::START));
 
-    VBox midiNoteSelects(this);
-    midiNoteSelects.setHeight(drum_pattern->getHeight());
+    VBox thresholdsContainer(this);
+    thresholdsContainer.setHeight(drum_pattern->getHeight());
+
+    thresholds.reserve(9);
+    for (int i = 8; i >= 0; i--)
+    {
+        auto t = std::make_shared<Knob>(this);
+        t->setId(kThreshold9 - i);
+        t->setSize(35, 20);
+        t->setRadius(12.f);
+        t->gauge_width = 3.f * fScaleFactor;
+        t->min = 0.1f;
+        t->max = 1.0f;
+        t->setValue(0.8f);
+        t->setCallback(this);
+        t->resizeToFit();
+
+        thresholds.push_back(std::move(t));
+        thresholdsContainer.addWidget(thresholds.back().get());
+    }
+
+    thresholdsContainer.align_items = VBox::Align_Items::left;
+    thresholdsContainer.justify_content = VBox::Justify_Content::space_evenly;
+    thresholdsContainer.rightOf(drum_pattern, Widget_Align::CENTER, padding);
+    thresholdsContainer.positionWidgets();
+
+    threshold = new Knob(this);
+    threshold->setId(kThreshold);
+    threshold->setCallback(this);
+    threshold->min = 0.1f;
+    threshold->max = 1.0f;
+    threshold->setValue(0.8f);
+    threshold->gauge_width = 3.f * fScaleFactor;
+    threshold->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    threshold->setRadius(12.f);
+    threshold->resizeToFit();
+    threshold->above(thresholds[0].get(), Widget_Align::CENTER, padding);
+
+    threshold_label = new Label(this, "complexity");
+    threshold_label->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    threshold_label->text_color = WaiveColors::text;
+    threshold_label->resizeToFit();
+    threshold_label->leftOf(threshold, Widget_Align::CENTER, padding);
 
     midi_notes.reserve(9);
     for (int i = 8; i >= 0; i--)
@@ -162,51 +203,10 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
         midiNote->setSize(35, 20);
         midiNote->setId(i);
         midiNote->setCallback(this);
+        midiNote->rightOf(thresholds[i].get(), Widget_Align::CENTER, padding);
 
         midi_notes.push_back(std::move(midiNote));
-        midiNoteSelects.addWidget(midi_notes.back().get());
     }
-
-    midiNoteSelects.align_items = VBox::Align_Items::left;
-    midiNoteSelects.justify_content = VBox::Justify_Content::space_evenly;
-    midiNoteSelects.rightOf(drum_pattern, Widget_Align::CENTER, padding);
-    midiNoteSelects.positionWidgets();
-
-    thresholds.reserve(9);
-    for (int i = 8; i >= 0; i--)
-    {
-        auto t = std::make_shared<Knob>(this);
-        t->setId(kThreshold9 - i);
-        t->setSize(midi_notes[i].get()->getHeight(), midi_notes[i].get()->getHeight(), true);
-        t->setRadius(12.f);
-        t->gauge_width = 3.f * fScaleFactor;
-        t->min = 0.1f;
-        t->max = 1.0f;
-        t->setValue(0.8f);
-        t->setCallback(this);
-        t->resizeToFit();
-
-        t->rightOf(midi_notes[i].get());
-        thresholds.push_back(std::move(t));
-    }
-
-    threshold = new Knob(this);
-    threshold->setId(kThreshold);
-    threshold->setCallback(this);
-    threshold->min = 0.1f;
-    threshold->max = 1.0f;
-    threshold->setValue(0.8f);
-    threshold->gauge_width = 3.f * fScaleFactor;
-    threshold->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    threshold->setRadius(12.f);
-    threshold->resizeToFit();
-    threshold->above(thresholds[8].get(), Widget_Align::CENTER, padding);
-
-    threshold_label = new Label(this, "complexity");
-    threshold_label->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    threshold_label->text_color = WaiveColors::text;
-    threshold_label->resizeToFit();
-    threshold_label->leftOf(threshold, Widget_Align::CENTER, padding);
 
     drum_playhead = new Playhead(this);
     drum_playhead->setAbsolutePos(drum_pattern->getAbsolutePos());
