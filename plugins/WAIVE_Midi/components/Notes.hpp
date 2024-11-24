@@ -47,7 +47,7 @@ static char *midiNoteLabels[9] = {
     (char *)"snare",
     (char *)"mid tom",
     (char *)"high tom",
-    (char *)"percusion",
+    (char *)"percussion",
     (char *)"hihat closed",
     (char *)"hihat open",
     (char *)"ride",
