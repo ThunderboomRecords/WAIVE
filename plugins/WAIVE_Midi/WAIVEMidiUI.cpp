@@ -205,7 +205,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
         midiNote->setSize(35, 20);
         midiNote->setId(i);
         midiNote->setCallback(this);
-        midiNote->rightOf(thresholds[i].get(), Widget_Align::CENTER, padding);
+        midiNote->rightOf(thresholds[8 - i].get(), Widget_Align::CENTER, padding);
 
         midi_notes.push_back(std::move(midiNote));
     }
