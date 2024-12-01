@@ -3,12 +3,12 @@
 START_NAMESPACE_DISTRHO
 
 WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
-                         fThreshold(0.7f),
+                         fThreshold(0.4f),
                          ticks_per_beat(1920),
                          loopTick(0.0),
                          progress(0.0f),
-                         score_genre(0),
-                         groove_genre(0),
+                         score_genre(NUM_GROOVE_GENRES - 1),
+                         groove_genre(NUM_GROOVE_GENRES - 1),
                          hold_update(false),
                          quantize(false)
 {
@@ -154,7 +154,7 @@ void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
         parameter.symbol = "complexity";
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 0.5f;
+        parameter.ranges.def = 0.4f;
         parameter.hints = kParameterIsAutomatable;
         break;
     case kGrooveVar:
@@ -211,7 +211,7 @@ void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
         parameter.symbol = fmt::format("complexity{:d}", instrument + 1).c_str();
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 1.0f;
-        parameter.ranges.def = 0.8f;
+        parameter.ranges.def = 0.4f;
         parameter.hints = kParameterIsAutomatable;
         break;
     default:

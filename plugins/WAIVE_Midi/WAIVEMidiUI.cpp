@@ -50,7 +50,8 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     for (int i = 0; i < 22; i++)
         score_genre->addItem(score_genres[i]);
     score_genre->setDisplayNumber(8);
-    score_genre->setItem(0, false);
+    score_genre->resizeToFit();
+    score_genre->setItem(plugin->getParameterValue(kScoreGenre), false);
     score_genre->setFontSize(18.0f);
     score_genre->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     score_genre->menu->setFontSize(18.0f);
@@ -106,7 +107,8 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     for (int i = 0; i < 22; i++)
         groove_genre->addItem(groove_genres[i]);
     groove_genre->setDisplayNumber(8);
-    groove_genre->setItem(0, false);
+    groove_genre->resizeToFit();
+    groove_genre->setItem(plugin->getParameterValue(kGrooveGenre), false);
     groove_genre->setFontSize(18.0f);
     groove_genre->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     groove_genre->menu->setFontSize(18.0f);
@@ -154,9 +156,9 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
         t->setSize(35, 20);
         t->setRadius(12.f);
         t->gauge_width = 3.f * fScaleFactor;
-        t->min = 0.1f;
+        t->min = 0.0f;
         t->max = 1.0f;
-        t->setValue(0.8f);
+        t->setValue(plugin->getParameterValue(kThreshold1 + i));
         t->setCallback(this);
         t->resizeToFit();
 
@@ -172,9 +174,9 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     threshold = new Knob(this);
     threshold->setId(kThreshold);
     threshold->setCallback(this);
-    threshold->min = 0.1f;
+    threshold->min = 0.0f;
     threshold->max = 1.0f;
-    threshold->setValue(0.8f);
+    threshold->setValue(plugin->getParameterValue(kThreshold));
     threshold->gauge_width = 3.f * fScaleFactor;
     threshold->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     threshold->setRadius(12.f);
