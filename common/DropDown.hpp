@@ -25,6 +25,7 @@ public:
     void setDisplayNumber(int number);
     void setItem(int item, bool sendCallback);
     std::string getCurrentItem() const;
+    void resizeToFit();
 
     Menu *menu;
     Align alignment;

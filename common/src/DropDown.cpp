@@ -130,6 +130,14 @@ std::string DropDown::getCurrentItem() const
     return menu->getCurrentItem();
 }
 
+void DropDown::resizeToFit()
+{
+    menu->calculateHeight();
+    menu->calculateWidth();
+    setHeight(menu->getFontSize());
+    setWidth(menu->getWidth());
+}
+
 void DropDown::setCallback(Callback *cb)
 {
     callback = cb;
