@@ -225,7 +225,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         ampSustain = createWAIVEKnob(kAmpSustain, "sustain", 0.0f, 1.0f, 0.7f);
         ampRelease = createWAIVEKnob(kAmpRelease, "release", 0.0f, 500.0f, 100.0f);
         ampRelease->format = "{:.0f}ms";
-        sustainLength = createWAIVEKnob(kSustainLength, "length", 0.0f, 1000.0f, 100.f);
+        sustainLength = createWAIVEKnob(kSustainLength, "length", 0.0f, 5000.0f, 200.f);
         sustainLength->format = "{:.0f}ms";
 
         filterCutoff = createWAIVEKnob(kFilterCutoff, "cutoff", 0.0, 0.999, 0.999);
