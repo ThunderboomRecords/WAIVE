@@ -39,15 +39,12 @@ void DropDown::onNanoDisplay()
         closePath();
     }
 
-    if (hover)
-    {
-        beginPath();
-        strokeColor(highlight_color);
-        strokeWidth(2.0f);
-        rect(0, 0, width, height);
-        stroke();
-        closePath();
-    }
+    beginPath();
+    strokeColor(highlight_color);
+    strokeWidth(2.0f);
+    rect(0, 0, width, height);
+    stroke();
+    closePath();
 
     if (currentItem.size() > 0)
     {
@@ -59,6 +56,11 @@ void DropDown::onNanoDisplay()
         {
             textAlign(Align::ALIGN_LEFT | Align::ALIGN_MIDDLE);
             text(2, height / 2, currentItem.c_str(), nullptr);
+        }
+        else if (alignment == Align::ALIGN_CENTER)
+        {
+            textAlign(Align::ALIGN_CENTER | Align::ALIGN_MIDDLE);
+            text(width / 2, height / 2, currentItem.c_str(), nullptr);
         }
         else
         {

@@ -129,6 +129,14 @@ void Waveform::onNanoDisplay()
     fill();
     closePath();
 
+    beginPath();
+    strokeColor(text_color);
+    strokeWidth(1.f);
+    moveTo(0, half);
+    lineTo(width, half);
+    stroke();
+    closePath();
+
     if (!waveformCached || wf == nullptr || waveformLength == 0)
         return;
 

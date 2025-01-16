@@ -29,8 +29,11 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     for (int i = 0; i < 128; i++)
         midiSelect->addItem(fmt::format("{:d}", i).c_str());
     midiSelect->setDisplayNumber(6);
-    midiSelect->setFontSize(16.0f);
-    midiSelect->setFont("VG5000", VG5000, VG5000_len);
+    midiSelect->alignment = Align::ALIGN_CENTER;
+    midiSelect->setFontSize(12.0f);
+    midiSelect->menu->setFontSize(12.0f);
+    midiSelect->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    midiSelect->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     midiSelect->setSize(35, 20);
     midiSelect->setCallback(this);
 
@@ -39,7 +42,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     contextMenu->setCallback(this);
     contextMenu->setDisplayNumber(1);
     contextMenu->setSize(100, 30);
-    contextMenu->setFont("VG5000", VG5000, VG5000_len);
+    contextMenu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
     contextMenu->calculateHeight();
     contextMenu->toFront();
     contextMenu->hide();

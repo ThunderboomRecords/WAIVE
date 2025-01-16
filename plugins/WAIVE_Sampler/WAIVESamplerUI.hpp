@@ -55,8 +55,8 @@
 
 START_NAMESPACE_DISTRHO
 
-const unsigned int UI_W = 1000;
-const unsigned int UI_H = 582;
+const unsigned int UI_W = 862;
+const unsigned int UI_H = 662;
 
 class WAIVESamplerUI;
 
@@ -159,9 +159,9 @@ private:
     TagBrowser *tagBrowser;
 
     // 2. Sample Editor Components
-    Waveform *sourceWaveformDisplay;
+    // Waveform *sourceWaveformDisplay;
     HBox *presetButtons, *editorKnobs;
-    Button *makeKick, *makeSnare, *makeHihat, *makeClap, *sourcePreviewBtn;
+    Button *makeKick, *makeSnare, *makeHihat, *makeClap;
     Label *presetLabel, *knobsLabel;
     Knob *pitch, *volume, *percussionBoost;
     Knob *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
@@ -170,12 +170,11 @@ private:
     Spinner *sourceLoading;
     Label *instructions, *progress;
 
-    // 3. Sample Panel Components
     Waveform *sampleWaveformDisplay;
-    TextInput *sampleName;
+    // TextInput *sampleName;
     Button *saveSampleBtn, *playSampleBtn, *newSampleBtn;
 
-    // 4. Sample Pack Components
+    // 3. Sample Pack Components
     VBox *sampleSlotsContainer;
     std::vector<SampleSlot *> sampleSlots;
     Button *openMapBtn, *browseFilesBtn;
@@ -183,9 +182,6 @@ private:
     // SampleBrowserRoot *sampleBrowserRoot;
     SampleBrowser *sampleBrowser;
     Popup *sampleBrowserRoot;
-
-    // OTHER
-    ValueIndicator *valueIndicator;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 };

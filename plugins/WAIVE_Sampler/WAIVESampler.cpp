@@ -35,23 +35,23 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     sd.databaseUpdate += Poco::delegate(this, &WAIVESampler::onDatabaseChanged);
     sd.taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
 
-    samplePlayerWaveforms.resize(11);
-    for (int i = 0; i < 11; i++)
+    samplePlayerWaveforms.resize(NUM_SLOTS + 3);
+    for (int i = 0; i < NUM_SLOTS + 3; i++)
     {
         SamplePlayer sp;
         sp.waveform = &samplePlayerWaveforms[i];
         samplePlayers.push_back(sp);
     }
 
-    editorPreviewPlayer = &samplePlayers[8];
-    editorPreviewWaveform = &samplePlayerWaveforms[8];
-    mapPreviewPlayer = &samplePlayers[9];
-    mapPreviewWaveform = &samplePlayerWaveforms[9];
-    sourcePreviewPlayer = &samplePlayers[10];
-    sourcePreviewWaveform = &samplePlayerWaveforms[10];
+    editorPreviewPlayer = &samplePlayers[NUM_SLOTS];
+    editorPreviewWaveform = &samplePlayerWaveforms[NUM_SLOTS];
+    mapPreviewPlayer = &samplePlayers[NUM_SLOTS + 1];
+    mapPreviewWaveform = &samplePlayerWaveforms[NUM_SLOTS + 1];
+    sourcePreviewPlayer = &samplePlayers[NUM_SLOTS + 2];
+    sourcePreviewWaveform = &samplePlayerWaveforms[NUM_SLOTS + 2];
 
-    for (int i = 0; i < 8; i++)
-        samplePlayers[i].midi = defaultMidiMap[i];
+    for (int i = 0; i < NUM_SLOTS; i++)
+        samplePlayers[i].midi = defaultMidiMap[i % 9];
 
     // Load models
     // std::cout << "Loading TSNE model...\n";
@@ -200,12 +200,22 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
     case kSlot6MidiNumber:
     case kSlot7MidiNumber:
     case kSlot8MidiNumber:
+    case kSlot9MidiNumber:
+    case kSlot10MidiNumber:
+    case kSlot11MidiNumber:
+    case kSlot12MidiNumber:
+    case kSlot13MidiNumber:
+    case kSlot14MidiNumber:
+    case kSlot15MidiNumber:
+    case kSlot16MidiNumber:
+    case kSlot17MidiNumber:
+    case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
         parameter.name = fmt::format("Sample {:d} Midi Number", slot + 1).c_str();
         parameter.symbol = fmt::format("Sample{:d}Midi", slot + 1).c_str();
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 127.0f;
-        parameter.ranges.def = (float)defaultMidiMap[slot];
+        parameter.ranges.def = (float)defaultMidiMap[slot % 9];
         parameter.hints |= kParameterIsInteger;
         break;
     default:
@@ -267,6 +277,16 @@ float WAIVESampler::getParameterValue(uint32_t index) const
     case kSlot6MidiNumber:
     case kSlot7MidiNumber:
     case kSlot8MidiNumber:
+    case kSlot9MidiNumber:
+    case kSlot10MidiNumber:
+    case kSlot11MidiNumber:
+    case kSlot12MidiNumber:
+    case kSlot13MidiNumber:
+    case kSlot14MidiNumber:
+    case kSlot15MidiNumber:
+    case kSlot16MidiNumber:
+    case kSlot17MidiNumber:
+    case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
         val = (float)samplePlayers[slot].midi;
         break;
@@ -342,6 +362,16 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
     case kSlot6MidiNumber:
     case kSlot7MidiNumber:
     case kSlot8MidiNumber:
+    case kSlot9MidiNumber:
+    case kSlot10MidiNumber:
+    case kSlot11MidiNumber:
+    case kSlot12MidiNumber:
+    case kSlot13MidiNumber:
+    case kSlot14MidiNumber:
+    case kSlot15MidiNumber:
+    case kSlot16MidiNumber:
+    case kSlot17MidiNumber:
+    case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
         samplePlayers[slot].midi = (int)value;
         break;

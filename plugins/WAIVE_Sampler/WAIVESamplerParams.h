@@ -18,6 +18,9 @@
 // sample waveforms
 #define SAMPLE_DIR "Samples"
 
+// Number of SampleSlots
+#define NUM_SLOTS 18
+
 enum Parameters
 {
     kSampleVolume = 0,
@@ -39,6 +42,16 @@ enum Parameters
     kSlot6MidiNumber,
     kSlot7MidiNumber,
     kSlot8MidiNumber,
+    kSlot9MidiNumber,
+    kSlot10MidiNumber,
+    kSlot11MidiNumber,
+    kSlot12MidiNumber,
+    kSlot13MidiNumber,
+    kSlot14MidiNumber,
+    kSlot15MidiNumber,
+    kSlot16MidiNumber,
+    kSlot17MidiNumber,
+    kSlot18MidiNumber,
     kParameterCount
 };
 

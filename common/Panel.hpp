@@ -13,7 +13,7 @@ public:
     std::string title;
     std::string label;
 
-    float padding;
+    float padding_h, padding_v;
     float radius;
 
 protected:

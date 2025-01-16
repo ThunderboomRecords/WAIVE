@@ -13,36 +13,38 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     float width = UI_W * fScaleFactor;
     float height = UI_H * fScaleFactor;
-    float padding = 4.f * fScaleFactor;
+    float padding = 10.f * fScaleFactor;
+
+    std::cout << "fScaleFactor: " << fScaleFactor << std::endl;
+    std::cout << "UI_W: " << UI_W << ", UI_H: " << UI_H << std::endl;
+    std::cout << "width: " << width << ", height: " << height << std::endl;
 
     fontTitle = createFontFromMemory("VG5000", VG5000, VG5000_len, false);
     fontMain = createFontFromMemory("Poppins-Light", Poppins_Light, Poppins_Light_len, false);
 
-    float panelWidths = width - 3.f * padding;
-    float panelHeights = height - 3.f * padding;
-
-    float col1Width = panelWidths * 2.f / 3.f;
-    float col2Width = panelWidths - col1Width;
+    float col1Width = 539.f;
+    float col2Width = 298.f;
 
     // 1 ----- Source Browser Panel
     {
         sourceBrowserPanel = new Panel(this);
-        sourceBrowserPanel->setSize(col1Width, panelHeights * 0.5f, true);
+        sourceBrowserPanel->setSize(col1Width, 254.f);
         sourceBrowserPanel->setAbsolutePos(padding, padding);
         sourceBrowserPanel->setFont("VG5000", VG5000, VG5000_len);
         sourceBrowserPanel->label = "1";
         sourceBrowserPanel->title = "Source";
 
         importSource = new Button(this);
-        importSource->setLabel("Import source");
+        importSource->setLabel("Import");
         importSource->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        importSource->setFontSize(14.f);
         importSource->resizeToFit();
-        importSource->onTop(sourceBrowserPanel, END, START, padding);
+        importSource->onTop(sourceBrowserPanel, END, START, 14);
         importSource->setCallback(this);
 
         sourceList = new SourceList(this);
-        sourceList->setSize(sourceBrowserPanel->getWidth() - 4.f * padding, sourceBrowserPanel->getHeight() * 0.55f, true);
-        sourceList->onTop(sourceBrowserPanel, CENTER, START, sourceBrowserPanel->getFontSize() * 2.5f);
+        sourceList->setSize(539.f - 24.f - 24.f, 150.f);
+        sourceList->onTop(sourceBrowserPanel, CENTER, START, 52.f);
         sourceList->source_info = &(plugin->sd.sourcesList);
         sourceList->source_info_mtx = &(plugin->sd.sourceListMutex);
         sourceList->scrollHandle = WaiveColors::light2;
@@ -57,14 +59,19 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         openTagBrowserBtn = new Button(this);
         openTagBrowserBtn->isToggle = true;
-        openTagBrowserBtn->setLabel("Tags");
+        openTagBrowserBtn->setLabel("Filter");
         openTagBrowserBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        openTagBrowserBtn->setFontSize(14.f);
         openTagBrowserBtn->resizeToFit();
-        openTagBrowserBtn->onTop(sourceBrowserPanel, START, END, padding * 2.f);
+        float spacing = Layout::measureVertical(sourceList, Widget_Align::END, sourceBrowserPanel, Widget_Align::END);
+        spacing = (spacing - openTagBrowserBtn->getHeight()) / 2.f;
+        std::cout << "spacing: " << spacing << std::endl;
+        openTagBrowserBtn->below(sourceList, START, spacing);
         openTagBrowserBtn->setCallback(this);
 
         searchBox = new Panel(this);
-        searchBox->setSize(300, openTagBrowserBtn->getHeight(), true);
+        searchBox->setSize(260 * fScaleFactor, openTagBrowserBtn->getHeight(), true);
+        searchBox->setFontSize(14.f);
         searchBox->radius = searchBox->getHeight() / 2;
         searchBox->background_color = WaiveColors::grey2;
         searchBox->rightOf(openTagBrowserBtn);
@@ -72,6 +79,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceSearch = new TextInput(this);
         sourceSearch->placeholder = "Search...";
         sourceSearch->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        sourceSearch->setFontSize(14.f);
         sourceSearch->foreground_color = WaiveColors::light1;
         sourceSearch->background_color = searchBox->background_color;
         sourceSearch->setSize(searchBox->getWidth() - padding * 4.f - sourceSearch->getFontSize(), sourceSearch->getFontSize(), true);
@@ -80,10 +88,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         searchIcon = new Icon(this);
         searchIcon->setImageData(search, search_len, 85, 85, IMAGE_GENERATE_MIPMAPS);
-        searchIcon->setSize(sourceSearch->getHeight() - padding, sourceSearch->getHeight() - padding, true);
-        searchIcon->onTop(searchBox, END, CENTER, padding * 2.f);
-
-        sourceList->setHeight(Layout::measureVertical(sourceList, START, searchBox, START) - 2.f * padding);
+        searchIcon->setSize(sourceSearch->getFontSize() - 4.f, sourceSearch->getFontSize() - 4.f, true);
+        searchIcon->onTop(searchBox, END, CENTER, searchBox->radius);
 
         archiveList = new DropDown(this);
         archiveList->setFontSize(18.0f);
@@ -116,8 +122,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         randomSourceBtn = new Button(this);
         randomSourceBtn->setLabel("Random");
         randomSourceBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        randomSourceBtn->setFontSize(14.f);
         randomSourceBtn->resizeToFit();
-        randomSourceBtn->below(sourceList, Widget_Align::END, padding * 2.f);
+        randomSourceBtn->below(sourceList, Widget_Align::END, spacing);
         randomSourceBtn->setCallback(this);
 
         sourceBrowserPanel->addChildWidget(sourceList);
@@ -129,32 +136,39 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     // 2 ----- Sample Editor Panel
     {
         sampleEditorPanel = new Panel(this);
-        sampleEditorPanel->setSize(col1Width, panelHeights * 0.5f, true);
-        sampleEditorPanel->below(sourceBrowserPanel, START, padding);
+        sampleEditorPanel->setSize(col1Width, 356.f);
+        sampleEditorPanel->below(sourceBrowserPanel, START, 5.f);
         sampleEditorPanel->setFont("VG5000", VG5000, VG5000_len);
         sampleEditorPanel->label = "2";
-        sampleEditorPanel->title = "Sample Editor";
+        sampleEditorPanel->title = "Sample";
 
-        sourceWaveformDisplay = new Waveform(this);
-        sourceWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 4.f * padding, sampleEditorPanel->getHeight() * 0.4f, true);
-        sourceWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, sampleEditorPanel->getFontSize() * 2.f);
-        sourceWaveformDisplay->selectable = true;
-        sourceWaveformDisplay->setCallback(this);
-        sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
-        sourceWaveformDisplay->setWaveformFeatures(&plugin->fSourceFeatures);
-        sourceWaveformDisplay->background_color = WaiveColors::dark;
-        sampleEditorPanel->addChildWidget(sourceWaveformDisplay);
+        sampleWaveformDisplay = new Waveform(this);
+        sampleWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 2.f * 24.f, 100.f * fScaleFactor, true);
+        sampleWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, (103.f - 50.f));
+        sampleWaveformDisplay->background_color = sampleEditorPanel->background_color;
+        sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
+        sampleEditorPanel->addChildWidget(sampleWaveformDisplay);
 
-        sourcePreviewBtn = new Button(this);
-        sourcePreviewBtn->setLabel("▶");
-        sourcePreviewBtn->drawBackground = false;
-        sourcePreviewBtn->resizeToFit();
-        sourcePreviewBtn->onTop(sourceWaveformDisplay, END, START, padding);
-        sourcePreviewBtn->setCallback(this);
+        // sourceWaveformDisplay = new Waveform(this);
+        // sourceWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 4.f * padding, sampleEditorPanel->getHeight() * 0.4f, true);
+        // sourceWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, sampleEditorPanel->getFontSize() * 2.f);
+        // sourceWaveformDisplay->selectable = true;
+        // sourceWaveformDisplay->setCallback(this);
+        // sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
+        // sourceWaveformDisplay->setWaveformFeatures(&plugin->fSourceFeatures);
+        // sourceWaveformDisplay->background_color = WaiveColors::dark;
+        // sampleEditorPanel->addChildWidget(sourceWaveformDisplay);
+
+        // sourcePreviewBtn = new Button(this);
+        // sourcePreviewBtn->setLabel("▶");
+        // sourcePreviewBtn->drawBackground = false;
+        // sourcePreviewBtn->resizeToFit();
+        // sourcePreviewBtn->onTop(sampleWaveformDisplay, END, START, padding);
+        // sourcePreviewBtn->setCallback(this);
 
         sourceLoading = new Spinner(this);
         sourceLoading->setSize(16, 16);
-        sourceLoading->onTop(sourceWaveformDisplay, START, START, padding * 2);
+        sourceLoading->onTop(sampleWaveformDisplay, START, START, padding * 2);
         sourceLoading->setLoading(false);
 
         progress = new Label(this, "");
@@ -163,7 +177,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         progress->resizeToFit();
         progress->rightOf(sourceLoading, START, padding);
 
-        presetLabel = new Label(this, "Detect:");
+        presetLabel = new Label(this, "Detect");
         presetLabel->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         presetLabel->resizeToFit();
 
@@ -206,42 +220,46 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         presetButtons->addWidget(makeSnare);
         presetButtons->addWidget(makeHihat);
         presetButtons->addWidget(makeClap);
-        presetButtons->below(sourceWaveformDisplay, START, 2.f * padding);
-        presetButtons->setWidth(sourceWaveformDisplay->getWidth());
+        presetButtons->below(sampleWaveformDisplay, START, 2.f * padding);
+        presetButtons->setWidth(sampleWaveformDisplay->getWidth());
         presetButtons->setHeight(makeKick->getHeight());
         presetButtons->justify_content = HBox::Justify_Content::space_evenly;
         presetButtons->positionWidgets();
 
         presetButtons->setVisible(false);
 
-        pitch = createWAIVEKnob(kSamplePitch, "pitch", 0.25f, 4.f, 1.0f);
-        volume = createWAIVEKnob(kSampleVolume, "volume", 0.0f, 2.0f, 1.0f);
-        percussionBoost = createWAIVEKnob(kPercussiveBoost, "perc.", 0.0f, 2.0f, 0.5f);
-
-        ampAttack = createWAIVEKnob(kAmpAttack, "attack", 0.0f, 500.0f, 10.0f);
-        ampAttack->format = "{:.0f}ms";
-        ampDecay = createWAIVEKnob(kAmpDecay, "decay", 0.0f, 500.0f, 50.0f);
-        ampDecay->format = "{:.0f}ms";
-        ampSustain = createWAIVEKnob(kAmpSustain, "sustain", 0.0f, 1.0f, 0.7f);
-        ampRelease = createWAIVEKnob(kAmpRelease, "release", 0.0f, 500.0f, 100.0f);
-        ampRelease->format = "{:.0f}ms";
-        sustainLength = createWAIVEKnob(kSustainLength, "length", 0.0f, 5000.0f, 200.f);
+        sustainLength = createWAIVEKnob(kSustainLength, "Length", 0.0f, 5000.0f, 200.f);
         sustainLength->format = "{:.0f}ms";
+        sustainLength->vertical = false;
+        sustainLength->resizeToFit();
+        sustainLength->onTop(sampleEditorPanel, Widget_Align::END, Widget_Align::START, 24.f, 16.f);
 
-        filterCutoff = createWAIVEKnob(kFilterCutoff, "cutoff", 0.0, 0.999, 0.999);
-        filterResonance = createWAIVEKnob(kFilterResonance, "res.", 0.0, 1.0, 0.0);
+        pitch = createWAIVEKnob(kSamplePitch, "Pitch", 0.25f, 4.f, 1.0f);
+        volume = createWAIVEKnob(kSampleVolume, "Volume", 0.0f, 2.0f, 1.0f);
+        percussionBoost = createWAIVEKnob(kPercussiveBoost, "Hit", 0.0f, 2.0f, 0.5f);
+
+        ampAttack = createWAIVEKnob(kAmpAttack, "Attack", 0.0f, 500.0f, 10.0f);
+        ampAttack->format = "{:.0f}ms";
+        ampDecay = createWAIVEKnob(kAmpDecay, "Decay", 0.0f, 500.0f, 50.0f);
+        ampDecay->format = "{:.0f}ms";
+        ampSustain = createWAIVEKnob(kAmpSustain, "Sustain", 0.0f, 1.0f, 0.7f);
+        ampRelease = createWAIVEKnob(kAmpRelease, "Release", 0.0f, 500.0f, 100.0f);
+        ampRelease->format = "{:.0f}ms";
+
+        filterCutoff = createWAIVEKnob(kFilterCutoff, "Cutoff", 0.0, 0.999, 0.999);
+        filterResonance = createWAIVEKnob(kFilterResonance, "Res.", 0.0, 1.0, 0.0);
 
         filterType = new DropDown(this);
         filterType->setFontSize(16.0f);
         filterType->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         filterType->menu->setFontSize(16.0f);
         filterType->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-        filterType->addItem("LP");
-        filterType->addItem("HP");
-        filterType->addItem("BP");
+        filterType->addItem("Low");
+        filterType->addItem("High");
+        filterType->addItem("Band");
         filterType->setId(kFilterType);
         filterType->setDisplayNumber(3);
-        filterType->setSize(35, 20);
+        filterType->resizeToFit();
         filterType->setItem(0, false);
         filterType->setCallback(this);
 
@@ -254,7 +272,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         editorKnobs->addWidget(ampDecay);
         editorKnobs->addWidget(ampSustain);
         editorKnobs->addWidget(ampRelease);
-        editorKnobs->addWidget(sustainLength);
+        // editorKnobs->addWidget(sustainLength);
         editorKnobs->addWidget(filterCutoff);
         editorKnobs->addWidget(filterResonance);
         editorKnobs->addWidget(filterType);
@@ -268,78 +286,67 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         instructions = new Label(this, "Load a source or import your own audio to extract samples from.");
         instructions->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         instructions->resizeToFit();
-        instructions->below(sourceWaveformDisplay, CENTER, Layout::measureVertical(sourceWaveformDisplay, END, sampleEditorPanel, END) / 2.f);
-
-        valueIndicator = new ValueIndicator(this);
-        valueIndicator->setSize(70, 20);
-        valueIndicator->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-        valueIndicator->hide();
-        valueIndicator->background_color = WaiveColors::grey2;
-    }
-
-    // 3 ----- Sample Viewer Panel
-    {
-        samplePanel = new Panel(this);
-        samplePanel->setSize(col2Width, panelHeights / 3.f, true);
-        samplePanel->rightOf(sourceBrowserPanel, START, padding);
-        samplePanel->setFont("VG5000", VG5000, VG5000_len);
-        samplePanel->label = "3";
-        samplePanel->title = "Sample";
-
-        sampleWaveformDisplay = new Waveform(this);
-        sampleWaveformDisplay->setSize(samplePanel->getWidth() - 4.f * padding, samplePanel->getHeight() * 0.4f, true);
-        sampleWaveformDisplay->onTop(samplePanel, CENTER, START, samplePanel->getFontSize() * 2.f);
-        sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
-        sampleWaveformDisplay->background_color = WaiveColors::accent1;
-        samplePanel->addChildWidget(sampleWaveformDisplay);
-
-        playSampleBtn = new Button(this);
-        playSampleBtn->setLabel("▶");
-        playSampleBtn->drawBackground = false;
-        playSampleBtn->resizeToFit();
-        playSampleBtn->onTop(sampleWaveformDisplay, END, START, padding);
-        playSampleBtn->setCallback(this);
-
-        sampleName = new TextInput(this);
-        sampleName->setSize(samplePanel->getWidth() * 0.8f, 20, true);
-        sampleName->below(sampleWaveformDisplay, CENTER, padding);
-        sampleName->setCallback(this);
-        sampleName->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-        sampleName->align = Align::ALIGN_CENTER;
-        sampleName->foreground_color = WaiveColors::light1;
+        instructions->below(sampleWaveformDisplay, CENTER, Layout::measureVertical(sampleWaveformDisplay, END, sampleEditorPanel, END) / 2.f);
 
         saveSampleBtn = new Button(this);
-        saveSampleBtn->setLabel("Add to pack");
+        saveSampleBtn->setLabel("Add To Player");
         saveSampleBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         saveSampleBtn->resizeToFit();
         saveSampleBtn->setCallback(this);
         saveSampleBtn->setEnabled(false);
+        saveSampleBtn->onTop(sampleEditorPanel, Widget_Align::CENTER, Widget_Align::END, padding, 24.f);
 
-        newSampleBtn = new Button(this);
-        newSampleBtn->setLabel("New sample");
-        newSampleBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-        newSampleBtn->resizeToFit();
-        newSampleBtn->setCallback(this);
-
-        HBox alignSampleButtons(this);
-        alignSampleButtons.addWidget(newSampleBtn);
-        alignSampleButtons.addWidget(saveSampleBtn);
-        alignSampleButtons.justify_content = HBox::Justify_Content::center;
-        alignSampleButtons.padding = 2.f * padding;
-        alignSampleButtons.resizeToFit();
-        alignSampleButtons.setWidth(samplePanel->getWidth() - 4.f * padding);
-        alignSampleButtons.onTop(samplePanel, CENTER, END, padding * 2.f);
-        alignSampleButtons.positionWidgets();
+        playSampleBtn = new Button(this);
+        playSampleBtn->setLabel(" ▶");
+        playSampleBtn->background_color = WaiveColors::text;
+        playSampleBtn->text_color = WaiveColors::dark;
+        playSampleBtn->resizeToFit();
+        playSampleBtn->leftOf(saveSampleBtn, CENTER, 10.f);
+        playSampleBtn->setCallback(this);
     }
 
-    // 4 ----- Sample Player Panel
+    // 3 ----- Sample Viewer Panel
+    {
+        // samplePanel = new Panel(this);
+        // samplePanel->setSize(col2Width, panelHeights / 3.f, true);
+        // samplePanel->rightOf(sourceBrowserPanel, START, padding);
+        // samplePanel->setFont("VG5000", VG5000, VG5000_len);
+        // samplePanel->label = "3";
+        // samplePanel->title = "Sample";
+
+        // sampleName = new TextInput(this);
+        // sampleName->setSize(samplePanel->getWidth() * 0.8f, 20, true);
+        // sampleName->below(sampleWaveformDisplay, CENTER, padding);
+        // sampleName->setCallback(this);
+        // sampleName->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        // sampleName->align = Align::ALIGN_CENTER;
+        // sampleName->foreground_color = WaiveColors::light1;
+
+        newSampleBtn = new Button(this);
+        // newSampleBtn->setLabel("New sample");
+        // newSampleBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        // newSampleBtn->resizeToFit();
+        // newSampleBtn->setCallback(this);
+
+        // HBox alignSampleButtons(this);
+        // alignSampleButtons.addWidget(newSampleBtn);
+        // alignSampleButtons.addWidget(saveSampleBtn);
+        // alignSampleButtons.justify_content = HBox::Justify_Content::center;
+        // alignSampleButtons.padding = 2.f * padding;
+        // alignSampleButtons.resizeToFit();
+        // alignSampleButtons.setWidth(samplePanel->getWidth() - 4.f * padding);
+        // alignSampleButtons.onTop(samplePanel, CENTER, END, padding * 2.f);
+        // alignSampleButtons.positionWidgets();
+    }
+
+    // 3 ----- Sample Player Panel
     {
         samplePlayerPanel = new Panel(this);
-        samplePlayerPanel->setSize(col2Width, panelHeights * 2.f / 3.f, true);
-        samplePlayerPanel->rightOf(sampleEditorPanel, END, padding);
+        samplePlayerPanel->setSize(col2Width, Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END), true);
+        samplePlayerPanel->setAbsolutePos(width - padding - col2Width, padding);
         samplePlayerPanel->setFont("VG5000", VG5000, VG5000_len);
-        samplePlayerPanel->label = "4";
-        samplePlayerPanel->title = "Sample Player";
+        samplePlayerPanel->label = "3";
+        samplePlayerPanel->title = "Player";
 
         openMapBtn = new Button(this);
         openMapBtn->setLabel("Sample Map");
@@ -371,14 +378,15 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleSlotsContainer->setHeight(Layout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - padding);
         samplePlayerPanel->addChildWidget(sampleSlotsContainer);
 
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < NUM_SLOTS; i++)
         {
             SampleSlot *slot = new SampleSlot(this);
             slot->setSamplePlayer(&plugin->samplePlayers[i]);
             slot->setCallback(this);
             slot->slotId = i;
-            slot->setSize(sampleSlotsContainer->getWidth(), sampleSlotsContainer->getHeight() / 8 - 4, true);
+            slot->setSize(sampleSlotsContainer->getWidth(), sampleSlotsContainer->getHeight() / NUM_SLOTS - 4, true);
             slot->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+            slot->setFontSize(12.f);
             slot->currentSample = plugin->fCurrentSample;
 
             addIdleCallback(slot);
@@ -392,7 +400,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
             sampleSlots[i]->repositionWidgets();
     }
 
-    // 5 ----- Sample Map
+    // 4 ----- Sample Map
     {
         sampleBrowserRoot = new Popup(
             this,
@@ -411,7 +419,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleBrowserRoot->addChildWidget(sampleBrowser);
     }
 
-    // 6 ----- Tag Map
+    // 5 ----- Filter Map
     {
         tagRoot = new Popup(
             this,
@@ -456,7 +464,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     plugin->sd.checkLatestRemoteVersion();
 
-    // printf("** WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
+    printf("** WAIVESamplerUI initialised: (%.0f, %.0f)\n", width, height);
 }
 
 WAIVESamplerUI::~WAIVESamplerUI()
@@ -527,6 +535,16 @@ void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
     case kSlot6MidiNumber:
     case kSlot7MidiNumber:
     case kSlot8MidiNumber:
+    case kSlot9MidiNumber:
+    case kSlot10MidiNumber:
+    case kSlot11MidiNumber:
+    case kSlot12MidiNumber:
+    case kSlot13MidiNumber:
+    case kSlot14MidiNumber:
+    case kSlot15MidiNumber:
+    case kSlot16MidiNumber:
+    case kSlot17MidiNumber:
+    case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
         sampleSlots[slot]->setMidiNumber(value, false);
         break;
@@ -546,19 +564,19 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
 
 void WAIVESamplerUI::knobDragStarted(Knob *knob)
 {
-    valueIndicator->setAbsoluteX(knob->getAbsoluteX());
-    valueIndicator->setWidth(knob->getWidth());
-    valueIndicator->setAbsoluteY(knob->getAbsoluteY() + knob->getHeight());
-    valueIndicator->setFormatString(knob->getFormat());
-    valueIndicator->setValue(knob->getValue());
-    valueIndicator->toFront();
-    valueIndicator->show();
+    // valueIndicator->setAbsoluteX(knob->getAbsoluteX());
+    // valueIndicator->setWidth(knob->getWidth());
+    // valueIndicator->setAbsoluteY(knob->getAbsoluteY() + knob->getHeight());
+    // valueIndicator->setFormatString(knob->getFormat());
+    // valueIndicator->setValue(knob->getValue());
+    // valueIndicator->toFront();
+    // valueIndicator->show();
 }
 
 void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 {
-    valueIndicator->hide();
-    repaint();
+    // valueIndicator->hide();
+    // repaint();
 
     plugin->triggerPreview();
 }
@@ -566,7 +584,7 @@ void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 {
     setParameterValue(knob->getId(), value);
-    valueIndicator->setValue(knob->getValue());
+    // valueIndicator->setValue(knob->getValue());
 }
 
 void WAIVESamplerUI::buttonClicked(Button *button)
@@ -582,8 +600,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->stopSourcePreview();
         previewPlaybackBtn->setVisible(false);
     }
-    else if (button == sourcePreviewBtn)
-        plugin->playSourcePreview();
+    // else if (button == sourcePreviewBtn)
+    //     plugin->playSourcePreview();
     else if (button == newSampleBtn)
         plugin->newSample();
     else if (button == makeKick)
@@ -607,7 +625,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->loadPreset(Presets::KickPreset);
 
         // 3. Set sample name
-        sampleName->setText(plugin->sd.getNewSampleName("kick.wav").c_str(), true);
+        // sampleName->setText(plugin->sd.getNewSampleName("kick.wav").c_str(), true);
     }
     else if (button == makeSnare)
     {
@@ -635,7 +653,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         // 3. Set sample name
         std::cout << plugin->fSourceTagString << std::endl;
-        sampleName->setText(plugin->sd.getNewSampleName("snare.wav").c_str(), true);
+        // sampleName->setText(plugin->sd.getNewSampleName("snare.wav").c_str(), true);
     }
     else if (button == makeHihat)
     {
@@ -662,7 +680,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->loadPreset(Presets::HiHat);
 
         // 3. Set sample name
-        sampleName->setText(plugin->sd.getNewSampleName("hihat.wav").c_str(), true);
+        // sampleName->setText(plugin->sd.getNewSampleName("hihat.wav").c_str(), true);
     }
     else if (button == makeClap)
     {
@@ -689,7 +707,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->loadPreset(Presets::Clap);
 
         // 3. Set sample name
-        sampleName->setText(plugin->sd.getNewSampleName("clap.wav").c_str(), true);
+        // sampleName->setText(plugin->sd.getNewSampleName("clap.wav").c_str(), true);
     }
     else if (button == browseFilesBtn)
         SystemOpenDirectory(plugin->sd.getSampleFolder());
@@ -786,34 +804,34 @@ void WAIVESamplerUI::mapSampleLoadSlot(int id, int slot)
 
 void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
 {
-    if (textInput == sampleName)
-    {
-        if (text.length() == 0)
-        {
-            textInput->undo();
-            return;
-        }
+    // if (textInput == sampleName)
+    // {
+    //     if (text.length() == 0)
+    //     {
+    //         textInput->undo();
+    //         return;
+    //     }
 
-        if (plugin->fCurrentSample != nullptr)
-            plugin->sd.renameSample(plugin->fCurrentSample, text);
-    }
-    else if (textInput == sourceSearch)
-    {
-        std::string search = "";
-        search.reserve(text.size());
+    //     if (plugin->fCurrentSample != nullptr)
+    //         plugin->sd.renameSample(plugin->fCurrentSample, text);
+    // }
+    // else if (textInput == sourceSearch)
+    // {
+    //     std::string search = "";
+    //     search.reserve(text.size());
 
-        for (int i = 0; i < text.size(); i++)
-        {
-            if (text[i] != '"')
-                search += text[i];
-        }
+    //     for (int i = 0; i < text.size(); i++)
+    //     {
+    //         if (text[i] != '"')
+    //             search += text[i];
+    //     }
 
-        if (text.compare(plugin->sd.filterConditions.searchString) != 0)
-        {
-            plugin->sd.filterConditions.searchString.assign(search);
-            plugin->sd.filterSources();
-        }
-    }
+    //     if (text.compare(plugin->sd.filterConditions.searchString) != 0)
+    //     {
+    //         plugin->sd.filterConditions.searchString.assign(search);
+    //         plugin->sd.filterSources();
+    //     }
+    // }
 }
 
 void WAIVESamplerUI::textInputChanged(TextInput *textInput, std::string text)
@@ -926,9 +944,9 @@ void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
 
 void WAIVESamplerUI::updateWidgets()
 {
-    sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
-    sourceWaveformDisplay->setWaveformLength(plugin->fSourceLength);
-    sourceWaveformDisplay->waveformNew();
+    // sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
+    // sourceWaveformDisplay->setWaveformLength(plugin->fSourceLength);
+    // sourceWaveformDisplay->waveformNew();
     bool sourceAvailable = plugin->fSourceLength > 0;
     saveSampleBtn->setEnabled(sourceAvailable);
     sourceLoading->setLoading(false);
@@ -946,12 +964,6 @@ void WAIVESamplerUI::updateWidgets()
             saveSampleBtn->setLabel("Save");
         playSampleBtn->setEnabled(true);
     }
-    else
-    {
-        sampleWaveformDisplay->setWaveformLength(0);
-        sampleWaveformDisplay->waveformNew();
-        playSampleBtn->setEnabled(false);
-    }
 }
 
 void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg)
@@ -964,9 +976,9 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         break;
     case WAIVESampler::kSourceLoaded:
     case WAIVESampler::kSourceUpdated:
-        sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
-        sourceWaveformDisplay->setWaveformLength(plugin->fSourceLength);
-        sourceWaveformDisplay->waveformNew();
+        // sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
+        // sourceWaveformDisplay->setWaveformLength(plugin->fSourceLength);
+        // sourceWaveformDisplay->waveformNew();
         sourceAvailable = plugin->fSourceLength > 0;
         saveSampleBtn->setEnabled(sourceAvailable);
         sourceLoading->setLoading(false);
@@ -986,7 +998,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
 
         if (plugin->fCurrentSample == nullptr)
         {
-            // sampleWaveformDisplay->setWaveform(nullptr);
+            sampleWaveformDisplay->setWaveform(nullptr);
             sampleWaveformDisplay->setWaveformLength(0);
             sampleWaveformDisplay->waveformNew();
             playSampleBtn->setEnabled(false);
@@ -1037,12 +1049,12 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             ampSustain->setValue(plugin->ampEnvGen.getSustain(), false);
             ampRelease->setValue(plugin->ampEnvGen.getRelease(), false);
 
-            sourceWaveformDisplay->setSelection(plugin->fCurrentSample->sourceStart, false);
+            // sourceWaveformDisplay->setSelection(plugin->fCurrentSample->sourceStart, false);
             if (plugin->fCurrentSample->saved)
                 saveSampleBtn->setLabel("Update");
             else
                 saveSampleBtn->setLabel("Save");
-            sampleName->setText(plugin->fCurrentSample->name.c_str(), false);
+            // sampleName->setText(plugin->fCurrentSample->name.c_str(), false);
         }
 
         break;
@@ -1101,14 +1113,14 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
         progress->setLabel(fmt::format("Analysing...[{:d}%]", (int)(pTask->progress() * 100.f)));
         progress->resizeToFit();
         progress->setVisible(true);
-        sourceWaveformDisplay->repaint();
+        // sourceWaveformDisplay->repaint();
     }
     else if (taskName == "WaveformLoaderTask")
     {
         progress->setLabel(fmt::format("Importing...[{:d}%]", (int)(pTask->progress() * 100.f)));
         progress->resizeToFit();
         progress->setVisible(true);
-        sourceWaveformDisplay->repaint();
+        // sourceWaveformDisplay->repaint();
     }
     else if (taskName == "ParseSourceList")
     {
@@ -1283,11 +1295,13 @@ Knob *WAIVESamplerUI::createWAIVEKnob(
     knob->min = min;
     knob->max = max;
     knob->setValue(value);
-    knob->gauge_width = 3.0f * fScaleFactor;
+    knob->gauge_width = 1.0f * fScaleFactor;
+    knob->accent_color = WaiveColors::text;
+    knob->foreground_color = WaiveColors::light1;
     knob->setCallback(this);
     knob->setFontSize(14.f);
     knob->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    knob->setRadius(16.f);
+    knob->setRadius(12.f);
     knob->resizeToFit();
 
     return knob;

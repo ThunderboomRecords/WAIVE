@@ -3,7 +3,7 @@
 START_NAMESPACE_DISTRHO
 
 Panel::Panel(Widget *widget)
-    : WidgetGroup(widget), padding(10.f), radius(10.f)
+    : WidgetGroup(widget), padding_h(24.f), padding_v(16.f), radius(6.f)
 {
     // font_size = 18.f;
 }
@@ -26,20 +26,20 @@ void Panel::onNanoDisplay()
         fontFaceId(font);
         fontSize(getFontSize());
         textAlign(ALIGN_TOP | ALIGN_LEFT);
-        text(padding, padding, label.c_str(), nullptr);
+        text(padding_h, padding_v, (label + "  " + title).c_str(), nullptr);
         closePath();
     }
 
-    if (title.size() > 0)
-    {
-        beginPath();
-        fillColor(text_color);
-        fontFaceId(font);
-        fontSize(getFontSize());
-        textAlign(ALIGN_TOP | ALIGN_CENTER);
-        text(width * 0.5f, padding, title.c_str(), nullptr);
-        closePath();
-    }
+    // if (title.size() > 0)
+    // {
+    //     beginPath();
+    //     fillColor(text_color);
+    //     fontFaceId(font);
+    //     fontSize(getFontSize());
+    //     textAlign(ALIGN_TOP | ALIGN_CENTER);
+    //     text(width * 0.5f, padding, title.c_str(), nullptr);
+    //     closePath();
+    // }
 }
 
 END_NAMESPACE_DISTRHO
