@@ -3,9 +3,17 @@
 START_NAMESPACE_DISTRHO
 
 Panel::Panel(Widget *widget)
-    : WidgetGroup(widget), padding_h(24.f), padding_v(16.f), radius(6.f)
+    : WidgetGroup(widget),
+      padding_h(24.f),
+      padding_v(16.f),
+      radius(6.f),
+      expandable(false),
+      expanded(false),
+      hiddenWidgets(this),
+      expand_down(true),
+      expand_right(true)
 {
-    // font_size = 18.f;
+    addChildWidget(&hiddenWidgets);
 }
 
 void Panel::onNanoDisplay()
@@ -29,17 +37,77 @@ void Panel::onNanoDisplay()
         text(padding_h, padding_v, (label + "  " + title).c_str(), nullptr);
         closePath();
     }
+}
 
-    // if (title.size() > 0)
-    // {
-    //     beginPath();
-    //     fillColor(text_color);
-    //     fontFaceId(font);
-    //     fontSize(getFontSize());
-    //     textAlign(ALIGN_TOP | ALIGN_CENTER);
-    //     text(width * 0.5f, padding, title.c_str(), nullptr);
-    //     closePath();
-    // }
+void Panel::setSize(uint width, uint height, bool ignore_sf)
+{
+    size_w = width;
+    size_h = height;
+
+    WAIVEWidget::setSize(width, height, ignore_sf);
+}
+
+void Panel::setSize(const Size<uint> &size, bool ignore_sf)
+{
+    size_w = size.getWidth();
+    size_h = size.getHeight();
+
+    WAIVEWidget::setSize(size, ignore_sf);
+}
+
+void Panel::expand()
+{
+    if (!expandable)
+        return;
+
+    std::cout << "Panel::expand()" << std::endl;
+    std::cout << "setSize: " << expand_h << ", " << expand_v << std::endl;
+
+    expanded = true;
+
+    WAIVEWidget::toFront();
+    toFront();
+    WAIVEWidget::setSize(expand_h, expand_v);
+
+    if (!expand_right)
+        setAbsoluteX(getAbsoluteX() - (expand_h - size_w));
+
+    if (!expand_down)
+        setAbsoluteY(getAbsoluteY() - (expand_v - size_h));
+
+    hiddenWidgets.setVisible(true);
+    // hiddenWidgets.toFront();
+    repaint();
+}
+
+void Panel::collapse()
+{
+    if (!expandable)
+        return;
+
+    std::cout << "Panel::collapse()" << std::endl;
+    std::cout << "setSize: " << size_w << ", " << size_h << std::endl;
+
+    expanded = false;
+
+    WAIVEWidget::setSize(size_w, size_h);
+
+    if (!expand_right)
+        setAbsoluteX(getAbsoluteX() + (expand_h - size_w));
+
+    if (!expand_down)
+        setAbsoluteY(getAbsoluteY() + (expand_v - size_h));
+
+    hiddenWidgets.setVisible(false);
+    repaint();
+}
+
+void Panel::toggle()
+{
+    if (expanded)
+        collapse();
+    else
+        expand();
 }
 
 END_NAMESPACE_DISTRHO

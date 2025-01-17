@@ -234,7 +234,7 @@ void TagMap::onNanoDisplay()
         if (!contains(pMap))
             continue;
 
-        float r = 4.0f * scale_factor;
+        float r = 2.0f * scale_factor;
         if (highlighted == &element)
             r *= 2.0f;
 

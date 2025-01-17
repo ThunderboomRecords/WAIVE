@@ -12,6 +12,7 @@ Button::Button(Widget *parent)
       isToggle(false)
 {
     background_color = WaiveColors::grey2;
+    accent_color = WaiveColors::light2;
 }
 
 void Button::setLabel(const std::string &label_)
@@ -31,7 +32,6 @@ void Button::resizeToFit()
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
-    // setHeight(bounds.getHeight() * 2.f);
     setHeight(getFontSize() * 2.f);
     setWidth(bounds.getWidth() + getHeight());
 }
@@ -74,7 +74,10 @@ void Button::onNanoDisplay()
     beginPath();
     fontSize(getFontSize());
     fontFaceId(font);
-    fillColor(text_color);
+    if (isToggle && fToggleValue)
+        fillColor(WaiveColors::dark);
+    else
+        fillColor(text_color);
     textAlign(ALIGN_CENTER | ALIGN_MIDDLE);
     text(width / 2, height / 2, label.c_str(), nullptr);
     closePath();
@@ -91,7 +94,6 @@ void Button::onNanoDisplay()
 
 bool Button::onMouse(const MouseEvent &ev)
 {
-    // std::cout << "Button::onMouse " << label << ": " << fEnabled << " " << (callback != nullptr) << " " << ev.press << " " << (ev.button == kMouseButtonLeft) << " " << contains(ev.pos) << std::endl;
     if (
         fEnabled &&
         callback != nullptr &&

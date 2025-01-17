@@ -168,7 +168,7 @@
         "__tuple": "cpp",
         "__string": "cpp"
     },
-    "C_Cpp.default.compilerPath": "/usr/bin/gcc",
+    "C_Cpp.default.compilerPath": "/usr/bin/clang++",
     "C_Cpp.errorSquiggles": "enabledIfIncludesResolve",
     "cmake.configureOnOpen": false
 }

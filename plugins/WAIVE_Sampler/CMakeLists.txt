@@ -39,6 +39,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/CheckboxGroup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/CheckboxList.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Box.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Link.cpp
@@ -57,6 +58,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEImage.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/RadioButtons.cpp
       ${CMAKE_SOURCE_DIR}/common/src/ValueIndicator.cpp
 )
 

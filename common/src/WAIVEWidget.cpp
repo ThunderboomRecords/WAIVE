@@ -79,4 +79,24 @@ float WAIVEWidget::getFontSize(bool ignore_sf) const
     return font_size * scale_factor;
 }
 
+float WAIVEWidget::getTop() const
+{
+    return getAbsoluteY();
+}
+
+float WAIVEWidget::getBottom() const
+{
+    return getAbsoluteY() + getHeight();
+}
+
+float WAIVEWidget::getLeft() const
+{
+    return getAbsoluteX();
+}
+
+float WAIVEWidget::getRight() const
+{
+    return getAbsoluteX() + getWidth();
+}
+
 END_NAMESPACE_DISTRHO

@@ -40,6 +40,10 @@ public:
     // Properties
     void setFontSize(float size);
     float getFontSize(bool ignore_sf = false) const;
+    float getTop() const;
+    float getBottom() const;
+    float getLeft() const;
+    float getRight() const;
 
     // Color values
     Color background_color, foreground_color, highlight_color, accent_color;

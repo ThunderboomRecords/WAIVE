@@ -41,14 +41,14 @@ protected:
     bool onScroll(const ScrollEvent &ev) override;
     bool onKeyboard(const KeyboardEvent &ev) override;
 
-private:
-    Callback *callback;
-
     std::vector<std::string> items;
     int highlighted_item;
     int scroll_index;
-    int display_number;
 
+    Callback *callback;
+
+private:
+    int display_number;
     bool has_focus;
 
     DISTRHO_LEAK_DETECTOR(Menu);

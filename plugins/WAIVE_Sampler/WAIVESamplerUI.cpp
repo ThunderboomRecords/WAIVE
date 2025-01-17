@@ -33,6 +33,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceBrowserPanel->setFont("VG5000", VG5000, VG5000_len);
         sourceBrowserPanel->label = "1";
         sourceBrowserPanel->title = "Source";
+        sourceBrowserPanel->expandable = true;
 
         importSource = new Button(this);
         importSource->setLabel("Import");
@@ -41,6 +42,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         importSource->resizeToFit();
         importSource->onTop(sourceBrowserPanel, END, START, 14);
         importSource->setCallback(this);
+        sourceBrowserPanel->addChildWidget(importSource);
 
         sourceList = new SourceList(this);
         sourceList->setSize(539.f - 24.f - 24.f, 150.f);
@@ -56,25 +58,26 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceList->setFontSize(16.f);
         sourceList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         sourceList->setCallback(this);
+        sourceBrowserPanel->addChildWidget(sourceList);
 
-        openTagBrowserBtn = new Button(this);
-        openTagBrowserBtn->isToggle = true;
-        openTagBrowserBtn->setLabel("Filter");
-        openTagBrowserBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-        openTagBrowserBtn->setFontSize(14.f);
-        openTagBrowserBtn->resizeToFit();
+        openFilterPanelBtn = new Button(this);
+        openFilterPanelBtn->isToggle = true;
+        openFilterPanelBtn->setLabel("Filter");
+        openFilterPanelBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        openFilterPanelBtn->setFontSize(14.f);
+        openFilterPanelBtn->resizeToFit();
         float spacing = Layout::measureVertical(sourceList, Widget_Align::END, sourceBrowserPanel, Widget_Align::END);
-        spacing = (spacing - openTagBrowserBtn->getHeight()) / 2.f;
-        std::cout << "spacing: " << spacing << std::endl;
-        openTagBrowserBtn->below(sourceList, START, spacing);
-        openTagBrowserBtn->setCallback(this);
+        spacing = (spacing - openFilterPanelBtn->getHeight()) / 2.f;
+        openFilterPanelBtn->below(sourceList, START, spacing);
+        openFilterPanelBtn->setCallback(this);
+        sourceBrowserPanel->addChildWidget(openFilterPanelBtn);
 
-        searchBox = new Panel(this);
-        searchBox->setSize(260 * fScaleFactor, openTagBrowserBtn->getHeight(), true);
-        searchBox->setFontSize(14.f);
+        searchBox = new Box(this);
+        searchBox->setSize(260 * fScaleFactor, openFilterPanelBtn->getHeight(), true);
         searchBox->radius = searchBox->getHeight() / 2;
         searchBox->background_color = WaiveColors::grey2;
-        searchBox->rightOf(openTagBrowserBtn);
+        searchBox->rightOf(openFilterPanelBtn);
+        sourceBrowserPanel->addChildWidget(searchBox);
 
         sourceSearch = new TextInput(this);
         sourceSearch->placeholder = "Search...";
@@ -85,31 +88,33 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceSearch->setSize(searchBox->getWidth() - padding * 4.f - sourceSearch->getFontSize(), sourceSearch->getFontSize(), true);
         sourceSearch->onTop(searchBox, START, CENTER, padding * 2.f);
         sourceSearch->setCallback(this);
+        sourceBrowserPanel->addChildWidget(sourceSearch);
 
         searchIcon = new Icon(this);
         searchIcon->setImageData(search, search_len, 85, 85, IMAGE_GENERATE_MIPMAPS);
         searchIcon->setSize(sourceSearch->getFontSize() - 4.f, sourceSearch->getFontSize() - 4.f, true);
         searchIcon->onTop(searchBox, END, CENTER, searchBox->radius);
+        sourceBrowserPanel->addChildWidget(searchIcon);
 
-        archiveList = new DropDown(this);
+        archiveList = new RadioButtons(this);
         archiveList->setFontSize(18.0f);
-        archiveList->setSize(240, archiveList->getFontSize(), true);
-        archiveList->rightOf(searchBox, CENTER, 14);
+        archiveList->radioSize = 4.f * fScaleFactor;
         archiveList->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-        archiveList->menu->setFontSize(16.0f);
-        archiveList->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         archiveList->addItem("All");
         archiveList->setItem(0, false);
-        archiveList->setDisplayNumber(6);
+        archiveList->calculateWidth();
+        archiveList->calculateHeight();
         archiveList->setCallback(this);
 
         databaseLoading = new Spinner(this);
         databaseLoading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
-        databaseLoading->rightOf(archiveList, CENTER, padding * 2.f);
+        databaseLoading->rightOf(searchBox, CENTER, padding * 2.f);
+        sourceBrowserPanel->addChildWidget(databaseLoading);
 
         databaseProgress = new Label(this, "");
         databaseProgress->rightOf(databaseLoading, START);
         databaseProgress->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+        sourceBrowserPanel->addChildWidget(databaseProgress);
 
         previewPlaybackBtn = new Button(this);
         previewPlaybackBtn->setLabel("Stop");
@@ -126,11 +131,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         randomSourceBtn->resizeToFit();
         randomSourceBtn->below(sourceList, Widget_Align::END, spacing);
         randomSourceBtn->setCallback(this);
-
-        sourceBrowserPanel->addChildWidget(sourceList);
-        sourceBrowserPanel->addChildWidget(openTagBrowserBtn);
-        sourceBrowserPanel->addChildWidget(searchBox);
-        sourceBrowserPanel->addChildWidget(sourceSearch);
+        sourceBrowserPanel->addChildWidget(randomSourceBtn);
     }
 
     // 2 ----- Sample Editor Panel
@@ -148,23 +149,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleWaveformDisplay->background_color = sampleEditorPanel->background_color;
         sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
         sampleEditorPanel->addChildWidget(sampleWaveformDisplay);
-
-        // sourceWaveformDisplay = new Waveform(this);
-        // sourceWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 4.f * padding, sampleEditorPanel->getHeight() * 0.4f, true);
-        // sourceWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, sampleEditorPanel->getFontSize() * 2.f);
-        // sourceWaveformDisplay->selectable = true;
-        // sourceWaveformDisplay->setCallback(this);
-        // sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
-        // sourceWaveformDisplay->setWaveformFeatures(&plugin->fSourceFeatures);
-        // sourceWaveformDisplay->background_color = WaiveColors::dark;
-        // sampleEditorPanel->addChildWidget(sourceWaveformDisplay);
-
-        // sourcePreviewBtn = new Button(this);
-        // sourcePreviewBtn->setLabel("▶");
-        // sourcePreviewBtn->drawBackground = false;
-        // sourcePreviewBtn->resizeToFit();
-        // sourcePreviewBtn->onTop(sampleWaveformDisplay, END, START, padding);
-        // sourcePreviewBtn->setCallback(this);
 
         sourceLoading = new Spinner(this);
         sourceLoading->setSize(16, 16);
@@ -187,6 +171,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         makeKick = new Button(this);
         makeKick->setLabel("Kick");
+        makeKick->isToggle = true;
         makeKick->setFontSize(16.f);
         makeKick->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         makeKick->setSize(100.f, 32.f);
@@ -194,6 +179,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         makeSnare = new Button(this);
         makeSnare->setLabel("Snare");
+        makeSnare->isToggle = true;
         makeSnare->setFontSize(16.f);
         makeSnare->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         makeSnare->setSize(100.f, 32.f);
@@ -201,6 +187,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         makeHihat = new Button(this);
         makeHihat->setLabel("Hi-Hat");
+        makeHihat->isToggle = true;
         makeHihat->setFontSize(16.f);
         makeHihat->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         makeHihat->setSize(100.f, 32.f);
@@ -208,6 +195,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         makeClap = new Button(this);
         makeClap->setLabel("Clap");
+        makeClap->isToggle = true;
         makeClap->setFontSize(16.f);
         makeClap->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         makeClap->setSize(100.f, 32.f);
@@ -272,7 +260,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         editorKnobs->addWidget(ampDecay);
         editorKnobs->addWidget(ampSustain);
         editorKnobs->addWidget(ampRelease);
-        // editorKnobs->addWidget(sustainLength);
         editorKnobs->addWidget(filterCutoff);
         editorKnobs->addWidget(filterResonance);
         editorKnobs->addWidget(filterType);
@@ -294,15 +281,28 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         saveSampleBtn->resizeToFit();
         saveSampleBtn->setCallback(this);
         saveSampleBtn->setEnabled(false);
-        saveSampleBtn->onTop(sampleEditorPanel, Widget_Align::CENTER, Widget_Align::END, padding, 24.f);
+        // saveSampleBtn->onTop(sampleEditorPanel, Widget_Align::CENTER, Widget_Align::END, padding, 24.f);
 
         playSampleBtn = new Button(this);
         playSampleBtn->setLabel(" ▶");
-        playSampleBtn->background_color = WaiveColors::text;
+        playSampleBtn->background_color = WaiveColors::light2;
         playSampleBtn->text_color = WaiveColors::dark;
         playSampleBtn->resizeToFit();
-        playSampleBtn->leftOf(saveSampleBtn, CENTER, 10.f);
+        // playSampleBtn->leftOf(saveSampleBtn, CENTER, 10.f);
         playSampleBtn->setCallback(this);
+
+        HBox sampleBtns(this);
+        sampleBtns.addWidget(playSampleBtn);
+        sampleBtns.addWidget(saveSampleBtn);
+        sampleBtns.justify_content = HBox::Justify_Content::center;
+        sampleBtns.padding = 2.f * padding;
+        sampleBtns.resizeToFit();
+        sampleBtns.setWidth(sampleEditorPanel->getWidth() - 4.f * padding);
+        sampleBtns.onTop(sampleEditorPanel, Widget_Align::CENTER, Widget_Align::END, padding, 24.f);
+        sampleBtns.positionWidgets();
+
+        // TODO: add this button somewhere?
+        newSampleBtn = new Button(this);
     }
 
     // 3 ----- Sample Viewer Panel
@@ -322,7 +322,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         // sampleName->align = Align::ALIGN_CENTER;
         // sampleName->foreground_color = WaiveColors::light1;
 
-        newSampleBtn = new Button(this);
         // newSampleBtn->setLabel("New sample");
         // newSampleBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         // newSampleBtn->resizeToFit();
@@ -347,6 +346,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         samplePlayerPanel->setFont("VG5000", VG5000, VG5000_len);
         samplePlayerPanel->label = "3";
         samplePlayerPanel->title = "Player";
+        samplePlayerPanel->expandable = true;
+        samplePlayerPanel->expand_right = false;
+        samplePlayerPanel->expand_h = width - padding - padding;
+        std::cout << "samplePlayerPanel->expand_h = " << samplePlayerPanel->expand_h << std::endl;
+        samplePlayerPanel->expand_v = samplePlayerPanel->getHeight();
 
         openMapBtn = new Button(this);
         openMapBtn->setLabel("Sample Map");
@@ -354,12 +358,14 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         openMapBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         openMapBtn->resizeToFit();
         openMapBtn->setCallback(this);
+        samplePlayerPanel->addChildWidget(openMapBtn);
 
         browseFilesBtn = new Button(this);
         browseFilesBtn->setLabel("View Folder");
         browseFilesBtn->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         browseFilesBtn->resizeToFit();
         browseFilesBtn->setCallback(this);
+        samplePlayerPanel->addChildWidget(browseFilesBtn);
 
         HBox alignPlayerButtons(this);
         alignPlayerButtons.addWidget(openMapBtn);
@@ -374,8 +380,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleSlotsContainer = new VBox(this);
         sampleSlotsContainer->justify_content = VBox::Justify_Content::space_evenly;
         sampleSlotsContainer->setWidth(samplePlayerPanel->getWidth() - 4.f * padding);
-        sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, samplePlayerPanel->getFontSize() * 2.f);
-        sampleSlotsContainer->setHeight(Layout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - padding);
+        sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, 52.f);
+        sampleSlotsContainer->setHeight(Layout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - 10.f);
         samplePlayerPanel->addChildWidget(sampleSlotsContainer);
 
         for (int i = 0; i < NUM_SLOTS; i++)
@@ -400,41 +406,63 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
             sampleSlots[i]->repositionWidgets();
     }
 
-    // 4 ----- Sample Map
+    // 4 ----- Filter Map
     {
-        sampleBrowserRoot = new Popup(
-            this,
-            sourceBrowserPanel->getAbsoluteX(),
-            sourceBrowserPanel->getAbsoluteY(),
-            sourceBrowserPanel->getWidth(),
-            Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END),
-            true);
-        sampleBrowserRoot->title = "Browse samples";
-        sampleBrowserRoot->setFont("VG5000", VG5000, VG5000_len);
-        sampleBrowserRoot->close();
-        sampleBrowserRoot->setCallback(this);
+        archiveListHeading = new Label(sourceBrowserPanel, "Archive Collection");
+        archiveListHeading->setFontSize(14.f);
+        archiveListHeading->setFont("VG5000", VG5000, VG5000_len);
+        archiveListHeading->resizeToFit();
+        archiveListHeading->setAbsolutePos(sourceList->getLeft(), sampleEditorPanel->getTop());
 
-        sampleBrowser = new SampleBrowser(sampleBrowserRoot, &plugin->sd);
-        sampleBrowser->setCallback(this);
-        sampleBrowserRoot->addChildWidget(sampleBrowser);
+        browseTagsHeading = new Label(sourceBrowserPanel, "Browse Tags");
+        browseTagsHeading->setFontSize(14.f);
+        browseTagsHeading->setFont("VG5000", VG5000, VG5000_len);
+        browseTagsHeading->resizeToFit();
+        browseTagsHeading->rightOf(archiveListHeading, CENTER, 52.f);
+
+        sourceBrowserPanel->expand_v = sampleEditorPanel->getBottom() - sourceBrowserPanel->getTop();
+        sourceBrowserPanel->expand_h = sourceBrowserPanel->getWidth();
+        sourceBrowserPanel->expand();
+
+        sourceBrowserPanel->hiddenWidgets.addChildWidget(archiveListHeading);
+        sourceBrowserPanel->hiddenWidgets.addChildWidget(browseTagsHeading);
+
+        archiveList->below(archiveListHeading, START);
+        sourceBrowserPanel->hiddenWidgets.addChildWidget(archiveList);
+
+        tagBrowser = new TagBrowser(sourceBrowserPanel, &plugin->sd);
+        tagBrowser->setSize(
+            sourceList->getRight() - browseTagsHeading->getLeft(),
+            sourceBrowserPanel->getBottom() - archiveList->getTop() - 24.f * fScaleFactor,
+            true);
+        tagBrowser->onTop(sourceBrowserPanel, Widget_Align::END, Widget_Align::END, 24.f * fScaleFactor);
+        tagBrowser->repositionWidgets();
+        sourceBrowserPanel->hiddenWidgets.addChildWidget(tagBrowser);
+
+        sourceBrowserPanel->collapse();
     }
 
-    // 5 ----- Filter Map
+    // 5 ----- Sample Map
     {
-        tagRoot = new Popup(
-            this,
-            sampleEditorPanel->getAbsoluteX(),
-            sampleEditorPanel->getAbsoluteY(),
-            sampleEditorPanel->getWidth(),
-            sampleEditorPanel->getHeight(),
-            true);
-        tagRoot->title = "Browse tags";
-        tagRoot->setFont("VG5000", VG5000, VG5000_len);
-        tagRoot->close();
-        tagRoot->setCallback(this);
+        // sampleBrowserRoot = new Popup(
+        //     this,
+        //     sourceBrowserPanel->getAbsoluteX(),
+        //     sourceBrowserPanel->getAbsoluteY(),
+        //     sourceBrowserPanel->getWidth(),
+        //     Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END),
+        //     true);
+        // sampleBrowserRoot->title = "Browse samples";
+        // sampleBrowserRoot->setFont("VG5000", VG5000, VG5000_len);
+        // sampleBrowserRoot->close();
+        // sampleBrowserRoot->setCallback(this);
 
-        tagBrowser = new TagBrowser(tagRoot, &plugin->sd);
-        tagRoot->addChildWidget(tagBrowser);
+        sampleBrowser = new SampleBrowser(samplePlayerPanel, &plugin->sd);
+        sampleBrowser->setSize(sourceList->getWidth(), tagBrowser->getBottom() - sourceList->getTop());
+        sampleBrowser->setAbsolutePos(sourceList->getLeft(), sourceList->getTop());
+        sampleBrowser->repositionWidgets();
+        sampleBrowser->setCallback(this);
+        samplePlayerPanel->hiddenWidgets.addChildWidget(sampleBrowser);
+        samplePlayerPanel->hiddenWidgets.hide();
     }
 
     setGeometryConstraints(width, height, false, false);
@@ -606,6 +634,10 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->newSample();
     else if (button == makeKick)
     {
+        makeKick->setToggled(true);
+        makeSnare->setToggled(false);
+        makeClap->setToggled(false);
+        makeHihat->setToggled(false);
         // 0. Check if a source is loaded
         if (!plugin->fSourceLoaded)
             return;
@@ -614,12 +646,11 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         int nCandidates = plugin->fSourceFeatures.size();
         if (nCandidates == 0)
             return; // or pick a random spot?
-        else
-        {
-            int i = random.next() % nCandidates;
-            int startIndex = plugin->fSourceFeatures[i].start;
-            plugin->selectWaveform(&plugin->fSourceWaveform, startIndex);
-        }
+
+        sampleWaveformDisplay->text_color = WaiveColors::accent2;
+        int i = random.next() % nCandidates;
+        int startIndex = plugin->fSourceFeatures[i].start;
+        plugin->selectWaveform(&plugin->fSourceWaveform, startIndex);
 
         // 2. Load preset parameter values
         plugin->loadPreset(Presets::KickPreset);
@@ -629,6 +660,10 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
     else if (button == makeSnare)
     {
+        makeKick->setToggled(false);
+        makeSnare->setToggled(true);
+        makeClap->setToggled(false);
+        makeHihat->setToggled(false);
         // 0. Check if a source is loaded
         if (!plugin->fSourceLoaded)
             return;
@@ -644,6 +679,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         if (starts.size() == 0)
             return;
+
+        sampleWaveformDisplay->text_color = WaiveColors::accent1;
 
         int i = random.next() % starts.size();
         plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
@@ -657,6 +694,10 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
     else if (button == makeHihat)
     {
+        makeKick->setToggled(false);
+        makeSnare->setToggled(false);
+        makeClap->setToggled(false);
+        makeHihat->setToggled(true);
         // 0. Check if a source is loaded
         if (!plugin->fSourceLoaded)
             return;
@@ -672,6 +713,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         if (starts.size() == 0)
             return;
+
+        sampleWaveformDisplay->text_color = WaiveColors::accent3;
 
         int i = random.next() % starts.size();
         plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
@@ -684,6 +727,11 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
     else if (button == makeClap)
     {
+        makeKick->setToggled(false);
+        makeSnare->setToggled(false);
+        makeClap->setToggled(true);
+        makeHihat->setToggled(false);
+
         // 0. Check if a source is loaded
         if (!plugin->fSourceLoaded)
             return;
@@ -699,6 +747,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         if (starts.size() == 0)
             return;
+
+        sampleWaveformDisplay->text_color = WaiveColors::accent4;
 
         int i = random.next() % starts.size();
         plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
@@ -714,16 +764,16 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     else if (button == openMapBtn)
     {
         if (button->getToggled())
-            sampleBrowserRoot->open();
+            samplePlayerPanel->expand();
         else
-            sampleBrowserRoot->close();
+            samplePlayerPanel->collapse();
     }
-    else if (button == openTagBrowserBtn)
+    else if (button == openFilterPanelBtn)
     {
         if (button->getToggled())
-            tagRoot->open();
+            sourceBrowserPanel->expand();
         else
-            tagRoot->close();
+            sourceBrowserPanel->collapse();
     }
     else if (button == randomSourceBtn)
         sourceList->selectRandom();
@@ -861,7 +911,11 @@ void WAIVESamplerUI::dropdownSelection(DropDown *widget, int item)
     {
         setParameterValue(widget->getId(), item);
     }
-    else if (widget == archiveList)
+}
+
+void WAIVESamplerUI::onMenuItemSelection(Menu *menu, int item, const std::string &value)
+{
+    if (menu == archiveList)
     {
         if (item)
         {
@@ -888,22 +942,6 @@ void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
     sourceList->selected = -1;
     return;
 };
-
-void WAIVESamplerUI::popupOpened(Popup *popup)
-{
-    if (popup == sampleBrowserRoot)
-        openMapBtn->setToggled(true);
-    else if (popup == tagRoot)
-        openTagBrowserBtn->setToggled(true);
-}
-
-void WAIVESamplerUI::popupClosed(Popup *popup)
-{
-    if (popup == sampleBrowserRoot)
-        openMapBtn->setToggled(false);
-    else if (popup == tagRoot)
-        openTagBrowserBtn->setToggled(false);
-}
 
 void WAIVESamplerUI::sourceDownload(int index)
 {
@@ -935,6 +973,22 @@ void WAIVESamplerUI::onNanoDisplay()
     rect(0.0f, 0.0f, width, height);
     fill();
     closePath();
+
+    float middle = sampleEditorPanel->getBottom() + 0.5f * (height - sampleEditorPanel->getBottom());
+    beginPath();
+    fillColor(WaiveColors::grey2);
+    textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_CENTER);
+    fontFaceId(fontTitle);
+    fontSize(18.f);
+    text(width / 2.f, middle, "waive sampler", nullptr);
+    closePath();
+
+    beginPath();
+    textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_RIGHT);
+    fontFaceId(fontMain);
+    fontSize(12.f);
+    text(width - 10.f, middle, fmt::format("v{:d}.{:d}.{:d}", V_MAJ, V_MIN, V_PAT).c_str(), nullptr);
+    closePath();
 }
 
 void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
@@ -944,9 +998,6 @@ void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
 
 void WAIVESamplerUI::updateWidgets()
 {
-    // sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
-    // sourceWaveformDisplay->setWaveformLength(plugin->fSourceLength);
-    // sourceWaveformDisplay->waveformNew();
     bool sourceAvailable = plugin->fSourceLength > 0;
     saveSampleBtn->setEnabled(sourceAvailable);
     sourceLoading->setLoading(false);
@@ -958,10 +1009,10 @@ void WAIVESamplerUI::updateWidgets()
     {
         sampleWaveformDisplay->setWaveformLength(plugin->fCurrentSample->sampleLength);
         sampleWaveformDisplay->waveformUpdated();
-        if (plugin->fCurrentSample->saved)
-            saveSampleBtn->setLabel("Update");
-        else
-            saveSampleBtn->setLabel("Save");
+        // if (plugin->fCurrentSample->saved)
+        //     saveSampleBtn->setLabel("Update");
+        // else
+        //     saveSampleBtn->setLabel("Save");
         playSampleBtn->setEnabled(true);
     }
 }
@@ -1219,10 +1270,10 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_ANALYSED:
         for (size_t i = 0; i < plugin->sd.archives.size(); i++)
-        {
             archiveList->addItem(plugin->sd.archives.at(i).c_str());
-        }
-        archiveList->setDisplayNumber(plugin->sd.archives.size() + 1);
+
+        archiveList->calculateHeight();
+        archiveList->calculateWidth();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
