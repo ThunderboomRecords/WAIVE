@@ -8,6 +8,7 @@ namespace WaiveColors
     static const Color dark(16, 18, 20);
     static const Color grey1(37, 37, 39);
     static const Color grey2(54, 54, 59);
+    static const Color grey3(63, 63, 73);
     static const Color light1(113, 113, 113);
     static const Color light2(233, 237, 247);
     static const Color accent1(71, 214, 104);

@@ -4,9 +4,9 @@ dpf_add_plugin(
   WAIVE_Midi
   TARGETS 
       jack
-      vst3
+    #   vst3
       vst2
-      clap
+    #   clap
       au
   FILES_DSP
       WAIVEMidi.cpp
@@ -26,8 +26,10 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Box.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Icon.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Knob.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Menu.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Label.cpp
@@ -35,9 +37,10 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/Playhead.cpp
       ${CMAKE_SOURCE_DIR}/common/src/DropDown.cpp
       ${CMAKE_SOURCE_DIR}/common/src/XYSlider.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/WAIVEImage.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
 )
 
 find_library(FOUNDATION Foundation)

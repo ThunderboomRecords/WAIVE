@@ -46,7 +46,6 @@ void Button::onNanoDisplay()
 {
     const uint width = getWidth();
     const uint height = getHeight();
-    const float margin = 1.0f;
 
     if (renderDebug)
     {
@@ -65,7 +64,7 @@ void Button::onNanoDisplay()
             fillColor(accent_color);
         else
             fillColor(fHasFocus ? highlight_color : background_color);
-        roundedRect(margin, margin, width - 2 * margin, height - 2 * margin, height * 0.5f);
+        roundedRect(0, 0, width, height, height * 0.5f);
         fill();
         closePath();
     }
@@ -86,7 +85,7 @@ void Button::onNanoDisplay()
     {
         beginPath();
         fillColor(0.f, 0.f, 0.f, 0.5f);
-        roundedRect(margin, margin, width - 2 * margin, height - 2 * margin, height * 0.5f);
+        roundedRect(0, 0, width, height, height * 0.5f);
         fill();
         closePath();
     }

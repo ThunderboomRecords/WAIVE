@@ -18,7 +18,8 @@ Knob::Knob(Widget *parent) noexcept
       enabled(true),
       radius(25.0f),
       integer(false),
-      vertical(true)
+      vertical(true),
+      showValue(true)
 {
     gauge_width = 2.f * scale_factor;
 }
@@ -172,7 +173,7 @@ void Knob::onNanoDisplay()
     float y2 = -sin(-angle) * (radius - gauge_width) + center_y;
 
     beginPath();
-    strokeColor(accent_color);
+    strokeColor(text_color);
     strokeWidth(gauge_width);
     moveTo(center_x, center_y);
     lineTo(x2, y2);
@@ -180,7 +181,9 @@ void Knob::onNanoDisplay()
     closePath();
 
     drawLabel();
-    drawValue();
+
+    if (showValue)
+        drawValue();
 }
 
 void Knob::drawIndicator()

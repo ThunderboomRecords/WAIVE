@@ -32,6 +32,7 @@ public:
     float gauge_width;
     std::string format;
     bool vertical;
+    bool showValue;
 
     bool enabled;
     bool integer;

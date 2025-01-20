@@ -44,6 +44,14 @@ public:
     float getBottom() const;
     float getLeft() const;
     float getRight() const;
+    float getCenterX() const;
+    float getCenterY() const;
+    void setLeft(float left);
+    void setRight(float right);
+    void setTop(float top);
+    void setBottom(float bottom);
+    void setCenterX(float centerX);
+    void setCenterY(float centerY);
 
     // Color values
     Color background_color, foreground_color, highlight_color, accent_color;

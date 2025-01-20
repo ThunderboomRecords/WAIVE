@@ -99,4 +99,44 @@ float WAIVEWidget::getRight() const
     return getAbsoluteX() + getWidth();
 }
 
+float WAIVEWidget::getCenterX() const
+{
+    return getAbsoluteX() + 0.5f * getWidth();
+}
+
+float WAIVEWidget::getCenterY() const
+{
+    return getAbsoluteY() + 0.5f * getHeight();
+}
+
+void WAIVEWidget::setLeft(float left)
+{
+    setAbsoluteX(left);
+}
+
+void WAIVEWidget::setRight(float right)
+{
+    setAbsoluteX(right - getWidth());
+}
+
+void WAIVEWidget::setTop(float top)
+{
+    setAbsoluteY(top);
+}
+
+void WAIVEWidget::setBottom(float bottom)
+{
+    setAbsoluteY(bottom - getHeight());
+}
+
+void WAIVEWidget::setCenterX(float centerX)
+{
+    setAbsoluteX(centerX - (getWidth() * 0.5f));
+}
+
+void WAIVEWidget::setCenterY(float centerY)
+{
+    setAbsoluteY(centerY - (getHeight() * 0.5f));
+}
+
 END_NAMESPACE_DISTRHO

@@ -43,15 +43,15 @@ static uint8_t midiMap[9] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 const int DRUM_CHANNEL = 0;
 
 static char *midiNoteLabels[9] = {
-    (char *)"kick",
-    (char *)"snare",
-    (char *)"mid tom",
-    (char *)"high tom",
-    (char *)"percussion",
-    (char *)"hihat closed",
-    (char *)"hihat open",
-    (char *)"ride",
-    (char *)"crash"};
+    (char *)"Kick",
+    (char *)"Snare",
+    (char *)"Mid tom",
+    (char *)"High tom",
+    (char *)"Percussion",
+    (char *)"Hihat closed",
+    (char *)"Hihat open",
+    (char *)"Ride",
+    (char *)"Crash"};
 
 /**
  * Midi Export functionality

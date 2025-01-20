@@ -369,14 +369,20 @@ void WAIVEMidi::allNotesOff(uint32_t frame)
 }
 
 void WAIVEMidi::run(
-    const float **,              // incoming audio
-    float **,                    // outgoing audio
+    const float **inputs,        // incoming audio
+    float **outputs,             // outgoing audio
     uint32_t numFrames,          // size of block to process
     const MidiEvent *midiEvents, // MIDI pointer
     uint32_t midiEventCount      // Number of MIDI events in block
 )
 {
     const TimePosition &timePos(getTimePosition());
+
+    // TODO: investigate why the plugin needs audio in/out?
+    // for now pass audio through
+    for (size_t i = 0; i < numFrames; ++i)
+        for (size_t j = 0; j < 2; ++j)
+            outputs[j][i] = inputs[j][i];
 
     for (uint32_t i = 0; i < midiEventCount; ++i)
     {

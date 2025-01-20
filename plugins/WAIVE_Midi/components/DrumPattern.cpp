@@ -27,14 +27,15 @@ void DrumPattern::onNanoDisplay()
     closePath();
 
     beginPath();
-    fillColor(WaiveColors::light1);
+    fillColor(WaiveColors::grey3);
     rect(4 * gridWidth, 0, 4 * gridWidth, height);
     rect(12 * gridWidth, 0, 4 * gridWidth, height);
     fill();
     closePath();
 
     beginPath();
-    strokeColor(WaiveColors::light2);
+    strokeColor(WaiveColors::grey1);
+    strokeWidth(2.f);
     for (int i = 1; i < 16; i++)
     {
         moveTo(i * gridWidth, 0);
@@ -83,16 +84,16 @@ void DrumPattern::onNanoDisplay()
 
                     int velocity = (*noteStart).velocity;
 
-                    float hue = (8 - row) / 10.0f;
-                    Color base = Color::fromHSL(hue, 0.8f, 0.1f);
-                    Color top = Color::fromHSL(hue, 0.8f, 0.8f);
+                    Color base = Color::fromHSL(240.f / 360.f, 0.55f, 0.20f);
+                    Color top = Color::fromHSL(240.f / 360.f, 0.55f, 0.58f);
                     base.interpolate(top, velocity / 127.0f);
 
                     beginPath();
-                    strokeColor(40, 40, 40);
                     fillColor(base);
                     rect(x, y, w, h);
                     fill();
+                    strokeWidth(1.f);
+                    strokeColor(113, 113, 224);
                     stroke();
                     closePath();
 
@@ -102,42 +103,42 @@ void DrumPattern::onNanoDisplay()
         }
     }
 
-    // round off corners
-    float r = 8.0f;
-    fillColor(WaiveColors::grey1);
-    strokeColor(255, 0, 0);
+    // // round off corners
+    // float r = 8.0f;
+    // fillColor(WaiveColors::grey1);
+    // strokeColor(255, 0, 0);
 
-    // top left
-    beginPath();
-    moveTo(-1, -1);
-    lineTo(-1, r);
-    arcTo(-1, -1, r, -1, r);
-    closePath();
-    fill();
+    // // top left
+    // beginPath();
+    // moveTo(-1, -1);
+    // lineTo(-1, r);
+    // arcTo(-1, -1, r, -1, r);
+    // closePath();
+    // fill();
 
-    // top right
-    beginPath();
-    moveTo(width + 1, -1);
-    lineTo(width + 1, r);
-    arcTo(width + 1, -1, width - r, -1, r);
-    closePath();
-    fill();
+    // // top right
+    // beginPath();
+    // moveTo(width + 1, -1);
+    // lineTo(width + 1, r);
+    // arcTo(width + 1, -1, width - r, -1, r);
+    // closePath();
+    // fill();
 
-    // bottom left
-    beginPath();
-    moveTo(-1, height + 1);
-    lineTo(-1, height - r);
-    arcTo(-1, height + 1, r, height + 1, r);
-    closePath();
-    fill();
+    // // bottom left
+    // beginPath();
+    // moveTo(-1, height + 1);
+    // lineTo(-1, height - r);
+    // arcTo(-1, height + 1, r, height + 1, r);
+    // closePath();
+    // fill();
 
-    // bottom right
-    beginPath();
-    moveTo(width + 1, height + 1);
-    lineTo(width + 1, height - r);
-    arcTo(width + 1, height + 1, width - r, height + 1, r);
-    closePath();
-    fill();
+    // // bottom right
+    // beginPath();
+    // moveTo(width + 1, height + 1);
+    // lineTo(width + 1, height - r);
+    // arcTo(width + 1, height + 1, width - r, height + 1, r);
+    // closePath();
+    // fill();
 }
 
 END_NAMESPACE_DISTRHO

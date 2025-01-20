@@ -5,8 +5,10 @@
 #include "NanoVG.hpp"
 #include "Window.hpp"
 
+#include "Box.hpp"
 #include "VBox.hpp"
 #include "Knob.hpp"
+#include "Icon.hpp"
 #include "Label.hpp"
 #include "Panel.hpp"
 #include "DropDown.hpp"
@@ -19,6 +21,7 @@
 #include "tinyfiledialogs.h"
 
 #include "fonts.h"
+#include "dropdown_icon.h"
 #include "WAIVEColors.hpp"
 #include "latent_distributions.h"
 
@@ -26,8 +29,8 @@
 
 START_NAMESPACE_DISTRHO
 
-const unsigned int UI_W = 920;
-const unsigned int UI_H = 460;
+const unsigned int UI_W = 803;
+const unsigned int UI_H = 579;
 
 class WAIVEMidiUI : public UI,
                     public GrooveGraph::Callback,
@@ -56,21 +59,22 @@ private:
 
     WAIVEMidi *plugin;
 
-    Panel *edit_panel, *result_panel;
-    ScoreGrid *score_grid;
-    GrooveGraph *groove_graph;
-    DrumPattern *drum_pattern;
-    Label *score_label, *groove_label, *threshold_label;
-    std::vector<std::shared_ptr<Label>> drum_names;
-    Button *new_score, *var_score, *new_groove, *var_groove, *quantize, *export_btn;
-    Knob *threshold;
-    DropDown *score_genre, *groove_genre;
-    std::vector<std::shared_ptr<DropDown>> midi_notes;
-    std::vector<std::shared_ptr<Knob>> thresholds;
+    Panel *mainPanel;
+    DrumPattern *drumPattern;
+    GrooveGraph *grooveGraph;
+    Label *scoreLabel, *grooveLabel, *complexityLabel, *midiLabel;
+    std::vector<std::shared_ptr<Label>> drumNames;
+    Button *new_score, *var_score, *new_groove, *var_groove, *quantizeBtn, *exportBtn;
+    Knob *complexity;
+    Box *scoreGenreBox, *grooveGenreBox;
+    DropDown *scoreGenreDD, *grooveGenreDD;
+    Icon *scoreDDIcon, *grooveDDIcon;
+    std::vector<std::shared_ptr<DropDown>> midiNotesEdit;
+    std::vector<std::shared_ptr<Knob>> complexities;
 
     Playhead *drum_playhead;
 
-    FontId logo_font;
+    FontId fontTitle, fontMain;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVEMidiUI);
 };
