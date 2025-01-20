@@ -281,14 +281,12 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         saveSampleBtn->resizeToFit();
         saveSampleBtn->setCallback(this);
         saveSampleBtn->setEnabled(false);
-        // saveSampleBtn->onTop(sampleEditorPanel, Widget_Align::CENTER, Widget_Align::END, padding, 24.f);
 
         playSampleBtn = new Button(this);
         playSampleBtn->setLabel(" ▶");
         playSampleBtn->background_color = WaiveColors::light2;
         playSampleBtn->text_color = WaiveColors::dark;
         playSampleBtn->resizeToFit();
-        // playSampleBtn->leftOf(saveSampleBtn, CENTER, 10.f);
         playSampleBtn->setCallback(this);
 
         HBox sampleBtns(this);

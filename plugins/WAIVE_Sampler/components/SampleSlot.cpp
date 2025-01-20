@@ -25,15 +25,13 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     clearBtn->toFront();
     clearBtn->hide();
 
-    midiSelect = new DropDown(parent);
-    for (int i = 0; i < 128; i++)
-        midiSelect->addItem(fmt::format("{:d}", i).c_str());
-    midiSelect->setDisplayNumber(6);
-    midiSelect->alignment = Align::ALIGN_CENTER;
+    midiSelect = new TextInput(parent);
+    midiSelect->align = Align::ALIGN_CENTER;
+    midiSelect->textType = TextInput::TextType::INTEGER;
     midiSelect->setFontSize(12.0f);
-    midiSelect->menu->setFontSize(12.0f);
-    midiSelect->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
-    midiSelect->menu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    midiSelect->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
+    midiSelect->foreground_color = WaiveColors::light1;
+    midiSelect->accent_color = WaiveColors::text;
     midiSelect->setSize(35, 20);
     midiSelect->setCallback(this);
 
@@ -42,7 +40,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     contextMenu->setCallback(this);
     contextMenu->setDisplayNumber(1);
     contextMenu->setSize(100, 30);
-    contextMenu->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    contextMenu->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
     contextMenu->calculateHeight();
     contextMenu->toFront();
     contextMenu->hide();
@@ -174,15 +172,55 @@ void SampleSlot::buttonClicked(Button *button)
     }
 }
 
-void SampleSlot::dropdownSelection(DropDown *widget, int item)
+// void SampleSlot::dropdownSelection(DropDown *widget, int item)
+// {
+//     if (samplePlayer != nullptr)
+//         samplePlayer->midi = item;
+// }
+
+void SampleSlot::textEntered(TextInput *textInput, std::string text)
 {
+    if (text.length() == 0)
+    {
+        textInput->undo();
+        return;
+    }
+
+    errno = 0;
+    char *endptr;
+    long val = std::strtol(text.c_str(), &endptr, 10);
+
+    if (endptr == text.c_str())
+        return;
+    else if (*endptr != '\0')
+        return;
+
+    bool clamped = false;
+    if (val <= 0)
+    {
+        val = 1;
+        clamped = true;
+    }
+    else if (val > 128)
+    {
+        val = 128;
+        clamped = true;
+    }
+
+    if (clamped)
+        textInput->setText(fmt::format("{:d}", val).c_str(), false);
+
     if (samplePlayer != nullptr)
-        samplePlayer->midi = item;
+        samplePlayer->midi = val - 1;
+
+    // plugin->setMidiNote(textInput->getId(), (uint8_t)val);
 }
+
+void SampleSlot::textInputChanged(TextInput *textInput, std::string text) {}
 
 void SampleSlot::setMidiNumber(int midi, bool sendCallback)
 {
-    midiSelect->setItem(midi, sendCallback);
+    midiSelect->setText(fmt::format("{:d}", midi).c_str(), sendCallback);
 }
 
 void SampleSlot::setCallback(Callback *cb)

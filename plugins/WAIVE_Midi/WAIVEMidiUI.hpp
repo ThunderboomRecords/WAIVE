@@ -11,6 +11,7 @@
 #include "Icon.hpp"
 #include "Label.hpp"
 #include "Panel.hpp"
+#include "TextInput.hpp"
 #include "DropDown.hpp"
 #include "Playhead.hpp"
 #include "ScoreGrid.hpp"
@@ -36,7 +37,8 @@ class WAIVEMidiUI : public UI,
                     public GrooveGraph::Callback,
                     public Button::Callback,
                     public Knob::Callback,
-                    public DropDown::Callback
+                    public DropDown::Callback,
+                    public TextInput::Callback
 {
 public:
     WAIVEMidiUI();
@@ -52,6 +54,8 @@ protected:
     void knobDragFinished(Knob *knob, float value) override;
     void knobValueChanged(Knob *knob, float value) override;
     void dropdownSelection(DropDown *widget, int item) override;
+    void textEntered(TextInput *textInput, std::string text) override;
+    void textInputChanged(TextInput *textInput, std::string text) override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
 private:
@@ -69,7 +73,7 @@ private:
     Box *scoreGenreBox, *grooveGenreBox;
     DropDown *scoreGenreDD, *grooveGenreDD;
     Icon *scoreDDIcon, *grooveDDIcon;
-    std::vector<std::shared_ptr<DropDown>> midiNotesEdit;
+    std::vector<std::shared_ptr<TextInput>> midiNotesEdit;
     std::vector<std::shared_ptr<Knob>> complexities;
 
     Playhead *drum_playhead;

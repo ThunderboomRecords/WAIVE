@@ -1,6 +1,8 @@
 #ifndef TEXT_INPUT_HPP_INCLUDED
 #define TEXT_INPUT_HPP_INCLUDED
 
+#include <cerrno>
+
 #include "WAIVEWidget.hpp"
 #include <iostream>
 
@@ -12,9 +14,16 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void textEntered(TextInput *textInput, std::string text) = 0;
         virtual void textInputChanged(TextInput *textInput, std::string text) = 0;
+    };
+
+    enum TextType
+    {
+        STRING,
+        INTEGER,
+        FLOAT,
     };
 
     explicit TextInput(Widget *widget) noexcept;
@@ -26,12 +35,17 @@ public:
     std::string placeholder;
     Align align;
 
+    TextType textType;
+
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
     bool onCharacterInput(const CharacterInputEvent &) override;
     bool onKeyboard(const KeyboardEvent &) override;
+
+    bool isInteger(const char *candidate);
+    bool isFloat(const char *candidate);
 
 private:
     Callback *callback;

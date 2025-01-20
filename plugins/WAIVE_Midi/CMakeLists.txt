@@ -36,7 +36,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/Panel.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Playhead.cpp
       ${CMAKE_SOURCE_DIR}/common/src/DropDown.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/XYSlider.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/TextInput.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEImage.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp

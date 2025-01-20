@@ -6,8 +6,8 @@
 #include "WAIVESampler.hpp"
 #include "WidgetGroup.hpp"
 #include "Menu.hpp"
+#include "TextInput.hpp"
 #include "SimpleButton.hpp"
-#include "DropDown.hpp"
 
 using namespace fmt::v11;
 
@@ -17,7 +17,7 @@ class SampleSlot : public WidgetGroup,
                    public Menu::Callback,
                    public IdleCallback,
                    Button::Callback,
-                   DropDown::Callback
+                   TextInput::Callback
 {
 public:
     class Callback
@@ -45,7 +45,8 @@ protected:
 
     void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
     void buttonClicked(Button *button) override;
-    void dropdownSelection(DropDown *widget, int item) override;
+    void textEntered(TextInput *textInput, std::string text) override;
+    void textInputChanged(TextInput *textInput, std::string text) override;
 
 private:
     Callback *callback;
@@ -55,7 +56,7 @@ private:
 
     Menu *contextMenu;
     Button *triggerBtn, *clearBtn;
-    DropDown *midiSelect;
+    TextInput *midiSelect;
 
     float step;
 

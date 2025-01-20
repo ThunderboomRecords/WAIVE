@@ -12,6 +12,7 @@ TextInput::TextInput(Widget *parent) noexcept
       position(0),
       placeholder(""),
       align(Align::ALIGN_LEFT),
+      textType(TextType::STRING),
       callback(nullptr)
 {
 }
@@ -48,16 +49,17 @@ void TextInput::onNanoDisplay()
     fill();
     closePath();
 
+    beginPath();
     if (hasKeyFocus)
-    {
-        beginPath();
         strokeColor(accent_color);
-        strokeWidth(1);
-        rect(1, 1, width - 2, height - 2);
-        stroke();
-        closePath();
-    }
-    else if (textValue.size() == 0 && placeholder.length() > 0)
+    else
+        strokeColor(foreground_color);
+    strokeWidth(1.f);
+    rect(1, 1, width - 2, height - 2);
+    stroke();
+    closePath();
+
+    if (textValue.size() == 0 && placeholder.length() > 0)
     {
         beginPath();
         fillColor(foreground_color);
@@ -132,32 +134,56 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
         return false;
 
     std::cout << "TextInput::onCharacterInput: ev.keycode = " << ev.keycode << std::endl;
+    std::string candidate;
+    candidate.assign(textValue);
+    int newPosition = position;
 
     switch (ev.keycode)
     {
-    case 36:
-        break;
-    case 65:
+    // case 36:
+    //     break;
+    case kKeySpace:
         // space
-        textValue.insert(textValue.begin() + position, ev.string[0]);
-        position += 1;
+        candidate.insert(candidate.begin() + newPosition, ev.string[0]);
+        newPosition += 1;
         break;
-    case 22:
-        // backspace
-    case 23:
-        // tab
-    case 119:
-        // DEL
+    case kKeyBackspace:
+    case kKeyTab:
+    case kKeyDelete:
         break;
     default:
         // other characters
-        textValue.insert(textValue.begin() + position, ev.string[0]);
-        position += 1;
+        candidate.insert(candidate.begin() + newPosition, ev.string[0]);
+        newPosition += 1;
         break;
     }
 
+    // Validate text here...
+    bool valid = false;
+
+    switch (textType)
+    {
+    case TextType::INTEGER:
+        valid = isInteger(candidate.c_str());
+        break;
+    case TextType::FLOAT:
+        valid = isFloat(candidate.c_str());
+        break;
+    case TextType::STRING:
+        valid = true;
+        break;
+    default:
+        break;
+    }
+
+    if (!valid)
+        return true;
+
     if (callback != nullptr)
         callback->textInputChanged(this, textValue);
+
+    textValue.assign(candidate);
+    position = newPosition;
 
     repaint();
     return true;
@@ -200,6 +226,7 @@ bool TextInput::onKeyboard(const KeyboardEvent &ev)
     case kKeyDelete:
         if (position < textValue.size())
             textValue.erase(textValue.begin() + position, textValue.begin() + position + 1);
+
         break;
     case kKeyEnter:
         if (callback != nullptr && textValue.compare(lastTextValue) != 0)
@@ -230,7 +257,7 @@ bool TextInput::onMouse(const MouseEvent &ev)
             lastTextValue.assign(textValue);
             position = textValue.size();
             repaint();
-            return true;
+            return false;
         }
         else if (!inWidget && hasKeyFocus)
         {
@@ -248,6 +275,7 @@ bool TextInput::onMouse(const MouseEvent &ev)
 }
 
 bool TextInput::onMotion(const MotionEvent &ev)
+
 {
     if (!isVisible())
         return false;
@@ -257,16 +285,36 @@ bool TextInput::onMotion(const MotionEvent &ev)
     {
         getWindow().setCursor(kMouseCursorCaret);
         hover = true;
-        return true;
     }
     else if (hover && !over)
     {
         getWindow().setCursor(kMouseCursorArrow);
         hover = false;
-        return false;
     }
 
     return false;
+}
+
+bool TextInput::isInteger(const char *candidate)
+{
+    errno = 0;
+    char *endptr;
+    long val = std::strtol(candidate, &endptr, 10);
+
+    if (endptr == candidate)
+        return false;
+    else if (*endptr != '\0')
+        return false;
+    else
+        return errno == 0;
+}
+
+bool TextInput::isFloat(const char *candidate)
+{
+    errno = 0;
+    long val = std::strtof(candidate, NULL);
+
+    return errno == 0;
 }
 
 void TextInput::setCallback(Callback *cb)

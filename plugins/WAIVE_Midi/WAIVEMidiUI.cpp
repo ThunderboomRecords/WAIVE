@@ -215,17 +215,15 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     midiNotesEdit.reserve(9);
     for (int i = 8; i >= 0; i--)
     {
-        auto midiNote = std::make_shared<DropDown>(this);
-        for (int j = 0; j < 128; j++)
-            midiNote->addItem(std::to_string(j).c_str());
-        midiNote->setDisplayNumber(6);
-        midiNote->alignment = Align::ALIGN_RIGHT;
-        midiNote->setItem(midiMap[i], false);
+        auto midiNote = std::make_shared<TextInput>(this);
+        midiNote->align = Align::ALIGN_CENTER;
+        midiNote->textType = TextInput::TextType::INTEGER;
+        midiNote->setText(fmt::format("{:d}", plugin->midiNotes[i]).c_str(), false);
         midiNote->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
-        midiNote->menu->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
-        midiNote->menu->alignment = Align::ALIGN_RIGHT;
         midiNote->setFontSize(12.f);
         midiNote->setSize(35, 20);
+        midiNote->foreground_color = WaiveColors::light1;
+        midiNote->accent_color = Color(88, 88, 207);
         midiNote->setId(i);
         midiNote->setCallback(this);
         midiNote->rightOf(complexities[8 - i].get(), Widget_Align::CENTER, padding);
@@ -418,8 +416,45 @@ void WAIVEMidiUI::dropdownSelection(DropDown *widget, int item)
         setParameterValue(kScoreGenre, item);
     else if (widget == grooveGenreDD)
         setParameterValue(kGrooveGenre, item);
-    else
-        plugin->setMidiNote(widget->getId(), (uint8_t)item);
+}
+
+void WAIVEMidiUI::textEntered(TextInput *textInput, std::string text)
+{
+    if (text.length() == 0)
+    {
+        textInput->undo();
+        return;
+    }
+
+    errno = 0;
+    char *endptr;
+    long val = std::strtol(text.c_str(), &endptr, 10);
+
+    if (endptr == text.c_str())
+        return;
+    else if (*endptr != '\0')
+        return;
+
+    bool clamped = false;
+    if (val <= 0)
+    {
+        val = 1;
+        clamped = true;
+    }
+    else if (val > 128)
+    {
+        val = 128;
+        clamped = true;
+    }
+
+    if (clamped)
+        textInput->setText(fmt::format("{:d}", val).c_str(), false);
+
+    plugin->setMidiNote(textInput->getId(), (uint8_t)(val - 1));
+}
+
+void WAIVEMidiUI::textInputChanged(TextInput *textInput, std::string text)
+{
 }
 
 END_NAMESPACE_DISTRHO
