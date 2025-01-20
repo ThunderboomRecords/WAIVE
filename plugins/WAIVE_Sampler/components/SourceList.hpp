@@ -18,7 +18,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void sourceDownload(int index) = 0;
         virtual void sourcePreview(int index) = 0;
         virtual void sourceLoad(int index) = 0;
@@ -27,6 +27,7 @@ public:
     SourceList(Widget *widget);
     void setCallback(Callback *cb);
     void selectRandom();
+    void computeColumnWidths();
 
     std::vector<SourceInfo> *source_info;
     std::mutex *source_info_mtx;
@@ -48,7 +49,7 @@ private:
     void clampScrollPos();
     float scrollPos;
     float rowHeight;
-    float columnLabel, columnLicense;
+    float columnLabel, columnLicense, columnDownload;
     void drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight);
 
     WAIVEImage *download;
