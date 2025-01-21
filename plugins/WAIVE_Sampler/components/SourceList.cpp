@@ -284,7 +284,7 @@ bool SourceList::onMotion(const MotionEvent &ev)
 
         repaint();
 
-        return true;
+        return false;
     }
     else if (contains(ev.pos))
     {
@@ -313,14 +313,14 @@ bool SourceList::onMouse(const MouseEvent &ev)
         return false;
 
     if (source_info->empty())
-        return true;
+        return false;
 
     if (!scrolling && ev.press && contains(ev.pos))
     {
         if (ev.pos.getX() > getWidth() - scrollBarWidth - 8)
         {
             scrolling = true;
-            return true;
+            return false;
         }
         else if (ev.pos.getX() > columnLicense && ev.pos.getX() < columnDownload && source_info->at(highlighting).license.length())
         {
@@ -328,12 +328,12 @@ bool SourceList::onMouse(const MouseEvent &ev)
             {
                 std::cout << "License: " << source_info->at(highlighting).license << std::endl;
                 SystemOpenURL(source_info->at(highlighting).license);
-                return true;
+                return false;
             }
             catch (const std::out_of_range &e)
             {
                 std::cerr << e.what() << '\n';
-                return true;
+                return false;
             }
         }
         else if (ev.pos.getX() > columnLabel)
@@ -345,14 +345,14 @@ bool SourceList::onMouse(const MouseEvent &ev)
                     selected = highlighting;
                     if (callback != nullptr)
                         callback->sourceLoad(highlighting);
-                    return true;
+                    return false;
                 }
                 else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
                 {
                     selected = highlighting;
                     if (callback != nullptr)
                         callback->sourceDownload(highlighting);
-                    return true;
+                    return false;
                 }
             }
             catch (const std::out_of_range &e)
@@ -368,7 +368,7 @@ bool SourceList::onMouse(const MouseEvent &ev)
         {
             if (callback != nullptr)
                 callback->sourcePreview(highlighting);
-            return true;
+            return false;
         }
     }
     else if (scrolling && !ev.press)

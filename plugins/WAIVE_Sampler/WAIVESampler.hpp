@@ -60,7 +60,7 @@ class ImporterTask;
 class FeatureExtractorTask;
 class WaveformLoaderTask;
 
-int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags = 0);
+size_t loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags = 0);
 bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int sampleRate);
 
 class WAIVESampler : public Plugin
@@ -145,6 +145,7 @@ protected:
     void loadPreset(Preset preset);
     void selectWaveform(std::vector<float> *source, int start);
     void addCurrentSampleToLibrary();
+    void generateCurrentSampleName(const std::string base);
     void renderSample();
     void loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer);
     void clearSamplePlayer(SamplePlayer &sp);
@@ -153,6 +154,8 @@ protected:
     void getFeatures(std::vector<float> *wf, std::vector<float> *feature);
     void onTaskFinished(Poco::TaskFinishedNotification *pNf);
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
+
+    const char *pluginUpdateToString(PluginUpdate update) const;
 
     EnvGen ampEnvGen;
 

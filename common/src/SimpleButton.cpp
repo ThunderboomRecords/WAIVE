@@ -121,7 +121,7 @@ bool Button::onMotion(const MotionEvent &ev)
             getWindow().setCursor(kMouseCursorHand);
             repaint();
         }
-        return true;
+        return false;
     }
     else
     {

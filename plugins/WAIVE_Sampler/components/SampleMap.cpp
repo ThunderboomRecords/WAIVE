@@ -79,7 +79,7 @@ bool SampleMap::onMouse(const MouseEvent &ev)
                 menu->show();
             }
         }
-        return true;
+        return false;
     }
     else if (!ev.press && ev.button == MouseButton::kMouseButtonLeft && dragAction != NONE)
     {
@@ -102,7 +102,7 @@ bool SampleMap::onMouse(const MouseEvent &ev)
         return false;
     }
 
-    return true;
+    return false;
 };
 
 bool SampleMap::onMotion(const MotionEvent &ev)
@@ -152,7 +152,7 @@ bool SampleMap::onMotion(const MotionEvent &ev)
             repaint();
         }
 
-        return true;
+        return false;
     }
     else if (dragAction == CLICKING)
     {
@@ -186,7 +186,7 @@ bool SampleMap::onMotion(const MotionEvent &ev)
         centerPos.setY(newY);
 
         repaint();
-        return true;
+        return false;
     }
 
     return false;

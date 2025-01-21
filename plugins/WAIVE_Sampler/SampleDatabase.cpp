@@ -1494,14 +1494,4 @@ std::string makeTagString(const std::vector<Tag> &tags)
     std::cout << tagString << std::endl;
 
     return tagString;
-    // std::string tagString = "";
-    // for (int i = 0; i < tags.size(); i++)
-    // {
-    //     if (tagString.size() > 0)
-    //         tagString += "|";
-    //     tagString += tags[i].name;
-    // }
-
-    // std::cout << tagString << std::endl;
-    // return tagString;
 }

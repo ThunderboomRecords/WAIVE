@@ -73,7 +73,7 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
         contextMenu->toFront();
         contextMenu->show();
 
-        // return true;
+        return true;
     }
     else if (ev.button == kMouseButtonLeft)
     {
@@ -85,6 +85,9 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
                 callback->sampleSlotCleared(this, slotId);
         }
     }
+
+    // std::cout << "SampleSlot : samplePlayer != nullPointer = " << (samplePlayer != nullptr) << ", samplePlayer->active = " << (samplePlayer->active) << ", samplePlayer->sampleInfo != nullptr = " << (samplePlayer->sampleInfo != nullptr) << std::endl;
+    // std::cout << "  samplePlayer->sampleInfo->name = " << samplePlayer->sampleInfo->name << std::endl;
 
     return false;
 }
@@ -149,9 +152,9 @@ void SampleSlot::onNanoDisplay()
         float x = triggerBtn->getWidth() + 10;
         beginPath();
         fontSize(getFontSize());
+        fontFaceId(font);
         fillColor(text_color);
         textAlign(Align::ALIGN_MIDDLE);
-        fontFaceId(font);
         text(x, height / 2, info.c_str(), nullptr);
         closePath();
     }

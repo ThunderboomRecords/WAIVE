@@ -623,6 +623,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         // 3. Set sample name
         // sampleName->setText(plugin->sd.getNewSampleName("kick.wav").c_str(), true);
+        plugin->generateCurrentSampleName("kick");
     }
     else if (button == makeSnare)
     {
@@ -657,6 +658,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 3. Set sample name
         std::cout << plugin->fSourceTagString << std::endl;
         // sampleName->setText(plugin->sd.getNewSampleName("snare.wav").c_str(), true);
+        plugin->generateCurrentSampleName("snare");
     }
     else if (button == makeHihat)
     {
@@ -690,6 +692,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         // 3. Set sample name
         // sampleName->setText(plugin->sd.getNewSampleName("hihat.wav").c_str(), true);
+        plugin->generateCurrentSampleName("hihat");
     }
     else if (button == makeClap)
     {
@@ -723,7 +726,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->loadPreset(Presets::Clap);
 
         // 3. Set sample name
-        // sampleName->setText(plugin->sd.getNewSampleName("clap.wav").c_str(), true);
+        plugin->generateCurrentSampleName("clap");
     }
     else if (button == browseFilesBtn)
         SystemOpenDirectory(plugin->sd.getSampleFolder());
@@ -831,23 +834,23 @@ void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
     //     if (plugin->fCurrentSample != nullptr)
     //         plugin->sd.renameSample(plugin->fCurrentSample, text);
     // }
-    // else if (textInput == sourceSearch)
-    // {
-    //     std::string search = "";
-    //     search.reserve(text.size());
+    if (textInput == sourceSearch)
+    {
+        std::string search = "";
+        search.reserve(text.size());
 
-    //     for (int i = 0; i < text.size(); i++)
-    //     {
-    //         if (text[i] != '"')
-    //             search += text[i];
-    //     }
+        for (int i = 0; i < text.size(); i++)
+        {
+            if (text[i] != '"')
+                search += text[i];
+        }
 
-    //     if (text.compare(plugin->sd.filterConditions.searchString) != 0)
-    //     {
-    //         plugin->sd.filterConditions.searchString.assign(search);
-    //         plugin->sd.filterSources();
-    //     }
-    // }
+        if (text.compare(plugin->sd.filterConditions.searchString) != 0)
+        {
+            plugin->sd.filterConditions.searchString.assign(search);
+            plugin->sd.filterSources();
+        }
+    }
 }
 
 void WAIVESamplerUI::textInputChanged(TextInput *textInput, std::string text)
@@ -985,7 +988,7 @@ void WAIVESamplerUI::updateWidgets()
 
 void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg)
 {
-    std::cout << "WAIVESamplerUI::onPluginUpdated " << arg << std::endl;
+    std::cout << "WAIVESamplerUI::onPluginUpdated " << plugin->pluginUpdateToString(arg) << std::endl;
     bool sourceAvailable;
     switch (arg)
     {
@@ -1034,6 +1037,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
     case WAIVESampler::kSampleUpdated:
         if (plugin->fCurrentSample != nullptr)
         {
+            sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
             sampleWaveformDisplay->setWaveformLength(plugin->fCurrentSample->sampleLength);
             sampleWaveformDisplay->waveformUpdated();
             if (plugin->fCurrentSample->saved)

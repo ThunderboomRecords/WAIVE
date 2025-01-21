@@ -78,7 +78,6 @@ bool DropDown::onMouse(const MouseEvent &ev)
 
     if (ev.press && ev.button == kMouseButtonLeft && menu != nullptr && contains(ev.pos))
     {
-
         menu->positionTo(this);
         menu->toFront();
         menu->show();

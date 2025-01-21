@@ -908,8 +908,35 @@ void WAIVESampler::clearSamplePlayer(SamplePlayer &sp)
 
 void WAIVESampler::loadSlot(int slot, int id)
 {
+    if (slot >= samplePlayers.size())
+    {
+        std::cerr << "WAIVESampler::loadSlot slot " << slot << " is out of range " << samplePlayers.size() << std::endl;
+        return;
+    }
     std::shared_ptr<SampleInfo> info = sd.findSample(id);
     loadSamplePlayer(info, samplePlayers.at(slot), samplePlayerWaveforms.at(slot));
+}
+
+void WAIVESampler::generateCurrentSampleName(const std::string base)
+{
+    if (fCurrentSample != nullptr)
+    {
+        std::stringstream test(fSourceTagString);
+        std::string segment;
+        std::vector<std::string> seglist;
+
+        while (std::getline(test, segment, '|'))
+            seglist.push_back(segment);
+
+        std::string tags = "";
+        if (seglist.size() > 0)
+            tags += "_" + seglist[0];
+
+        if (seglist.size() > 1)
+            tags += "_" + seglist[1];
+
+        sd.renameSample(fCurrentSample, sd.getNewSampleName(base + tags + ".wav"));
+    }
 }
 
 void WAIVESampler::triggerPreview()
@@ -917,10 +944,10 @@ void WAIVESampler::triggerPreview()
     if (!fSampleLoaded)
         return;
 
-    if (samplePlayers[8].state == PlayState::STOPPED)
+    if (editorPreviewPlayer->state == PlayState::STOPPED)
     {
-        samplePlayers[8].state = PlayState::TRIGGERED;
-        samplePlayers[8].active = true;
+        editorPreviewPlayer->state = PlayState::TRIGGERED;
+        editorPreviewPlayer->active = true;
     }
 }
 
@@ -1051,20 +1078,47 @@ void WAIVESampler::onDatabaseChanged(const void *pSender, const SampleDatabase::
     }
 }
 
+const char *WAIVESampler::pluginUpdateToString(PluginUpdate update) const
+{
+    switch (update)
+    {
+    case kSourceLoading:
+        return "kSourceLoading";
+    case kSourceLoaded:
+        return "kSourceLoaded";
+    case kSourceUpdated:
+        return "kSourceUpdated";
+    case kSampleLoading:
+        return "kSampleLoading";
+    case kSampleLoaded:
+        return "kSampleLoaded";
+    case kSampleUpdated:
+        return "kSampleUpdated";
+    case kSampleCleared:
+        return "kSampleCleared";
+    case kSampleAdded:
+        return "kSampleAdded";
+    case kSlotLoaded:
+        return "kSlotLoaded";
+    case kParametersChanged:
+        return "kParametersChanged";
+    default:
+        break;
+    }
+
+    return "UNKNOWN";
+}
+
 Plugin *createPlugin()
 {
     return new WAIVESampler();
 }
 
-int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags)
+size_t loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags)
 {
-    // TODO: load on another thread!
-
-    // printf("WAIVESampler::loadWaveform %s\n", fp);
-
+    // Open the file
     SndfileHandle fileHandle(fp, 16, flags);
     int sampleLength = fileHandle.frames();
-
     if (sampleLength == 0)
     {
         std::cerr << "Error: Unable to open input file " << fp << std::endl;
@@ -1074,67 +1128,63 @@ int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int
     int sampleChannels = fileHandle.channels();
     int fileSampleRate = fileHandle.samplerate();
 
-    // std::cout << "sampleChannels: " << sampleChannels << " "
-    //           << " sampleLength: " << sampleLength
-    //           << " fileSampleRate: " << fileSampleRate
-    //           << " (sampleRate: " << sampleRate << ")\n";
-
-    std::vector<float> sample;
-    sample.resize(sampleLength * sampleChannels);
-    fileHandle.read(&sample.at(0), sampleLength * sampleChannels);
+    // Read the file into a temporary sample buffer
+    std::vector<float> sample(sampleLength * sampleChannels);
+    if (fileHandle.read(sample.data(), sampleLength * sampleChannels) != sampleLength * sampleChannels)
+    {
+        std::cerr << "Error: Failed to read audio data from file." << std::endl;
+        return 0;
+    }
 
     std::vector<float> sample_tmp;
 
-    // resample data
+    // Resample if necessary
     if (fileSampleRate != sampleRate)
     {
-        int new_size = (int)((double)sampleLength * sampleRate / fileSampleRate + 1);
-        sample_tmp.resize(static_cast<size_t>(new_size * sampleChannels));
+        size_t new_size = static_cast<size_t>(std::ceil(static_cast<double>(sampleLength) * sampleRate / fileSampleRate));
+        sample_tmp.resize(new_size * sampleChannels);
 
-        SRC_DATA src_data;
-        src_data.input_frames = sampleLength;
-        src_data.data_out = sample_tmp.data(); //&sample_tmp.at(0);
+        SRC_DATA src_data = {};
         src_data.data_in = sample.data();
+        src_data.input_frames = sampleLength;
+        src_data.data_out = sample_tmp.data();
         src_data.output_frames = new_size;
-        src_data.src_ratio = (float)sampleRate / fileSampleRate;
-
-        std::cout << "RESAMPLING WAVEFORM:\n";
-        std::cout << "  fileSampleRate: " << fileSampleRate << std::endl;
-        std::cout << "      sampleRate: " << sampleRate << std::endl;
-        std::cout << " sample_channels: " << sampleChannels << std::endl;
-        std::cout << "    input_frames: " << src_data.input_frames << std::endl;
-        std::cout << "   output_frames: " << src_data.output_frames << std::endl;
-        std::cout << "       src_ratio: " << src_data.src_ratio << std::endl;
+        src_data.src_ratio = static_cast<float>(sampleRate) / fileSampleRate;
 
         int result = src_simple(&src_data, SRC_SINC_BEST_QUALITY, sampleChannels);
         if (result != 0)
+        {
             std::cerr << "Failed to convert sample rate: " << src_strerror(result) << std::endl;
-        else
-            std::cout << "sample rate sucessfully converted\n";
+            return 0;
+        }
+
+        // Adjust the actual output length after resampling
+        sample_tmp.resize(static_cast<size_t>(src_data.output_frames_gen * sampleChannels));
     }
     else
     {
-        sample_tmp = sample;
+        sample_tmp = std::move(sample);
     }
 
-    if (buffer.size() < sampleLength)
-        buffer.resize(sampleLength + 1); // TODO: this sometimes reallocates the pointer!
+    // Resize the output buffer
+    size_t outputLength = sample_tmp.size() / sampleChannels;
+    buffer.resize(outputLength);
 
-    //  TODO: mix to Mono before sample rate conversion??
-    // printf("buffer.size() %d, sample_tmp.size() %d\n", buffer.size(), sample_tmp.size());
+    // Mix to mono if necessary
     if (sampleChannels > 1)
     {
-        for (int i = 0; i < sampleLength; i++)
-            buffer[i] = (sample_tmp[i * sampleChannels] + sample_tmp[i * sampleChannels + 1]) * 0.5f;
+        for (size_t i = 0; i < outputLength; ++i)
+        {
+            buffer[i] = 0.0f;
+            for (int c = 0; c < sampleChannels; ++c)
+                buffer[i] += sample_tmp[i * sampleChannels + c];
+            buffer[i] /= static_cast<float>(sampleChannels);
+        }
     }
     else
-    {
-        for (int i = 0; i < sampleLength; i++)
-            buffer[i] = sample_tmp[i];
-    }
+        std::copy(sample_tmp.begin(), sample_tmp.end(), buffer.begin());
 
-    // std::cout << "loadWaveform sampleLength: " << sampleLength << std::endl;
-    return sampleLength;
+    return outputLength;
 }
 
 bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int sampleRate)

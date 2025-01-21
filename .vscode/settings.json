@@ -166,7 +166,8 @@
         "__debug": "cpp",
         "__errc": "cpp",
         "__tuple": "cpp",
-        "__string": "cpp"
+        "__string": "cpp",
+        "print": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/clang++",
     "C_Cpp.errorSquiggles": "enabledIfIncludesResolve",

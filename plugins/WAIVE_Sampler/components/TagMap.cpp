@@ -69,7 +69,7 @@ bool TagMap::onMouse(const MouseEvent &ev)
             //     menu->show();
             // }
         }
-        return true;
+        return false;
     }
     else if (!ev.press && ev.button == MouseButton::kMouseButtonLeft && dragAction != NONE)
     {
@@ -77,7 +77,7 @@ bool TagMap::onMouse(const MouseEvent &ev)
         {
         case CLICKING:
             if (highlighted == nullptr)
-                return true;
+                return false;
 
             if (selected.count(highlighted->id))
                 selected.erase(highlighted->id);
@@ -102,7 +102,7 @@ bool TagMap::onMouse(const MouseEvent &ev)
         return false;
     }
 
-    return true;
+    return false;
 };
 
 bool TagMap::onMotion(const MotionEvent &ev)
@@ -144,14 +144,14 @@ bool TagMap::onMotion(const MotionEvent &ev)
             repaint();
         }
 
-        return true;
+        return false;
     }
     else if (dragAction == CLICKING)
     {
         dragAction = SCROLLING;
         dragStart = Point<double>(ev.pos);
         centerStart = Point<double>{centerPos.getX(), centerPos.getY()};
-        return true;
+        return false;
     }
     else if (dragAction == SCROLLING)
     {
@@ -178,7 +178,7 @@ bool TagMap::onMotion(const MotionEvent &ev)
         centerPos.setY(newY);
 
         repaint();
-        return true;
+        return false;
     }
 
     return false;

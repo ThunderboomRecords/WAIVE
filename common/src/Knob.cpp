@@ -120,7 +120,7 @@ bool Knob::onMotion(const MotionEvent &ev)
     float new_value = min + (max - min) * p;
 
     setValue(new_value, true);
-    return true;
+    return false;
 }
 
 bool Knob::onScroll(const ScrollEvent &ev)
