@@ -60,7 +60,6 @@ class ImporterTask;
 class FeatureExtractorTask;
 class WaveformLoaderTask;
 
-size_t loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags = 0);
 bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int sampleRate);
 
 class WAIVESampler : public Plugin
@@ -140,19 +139,20 @@ protected:
     void stopSourcePreview();
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);
-    void loadSource(const char *fp);
+    void loadSourceFile(const std::string, const std::string tagString = "");
     void loadSlot(int slot, int id);
     void loadPreset(Preset preset);
     void selectWaveform(std::vector<float> *source, int start);
     void addCurrentSampleToLibrary();
     void generateCurrentSampleName(const std::string base);
     void renderSample();
-    void loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer);
+    void loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info);
     void clearSamplePlayer(SamplePlayer &sp);
     void triggerPreview();
     std::pair<float, float> getEmbedding(std::vector<float> *wf);
     void getFeatures(std::vector<float> *wf, std::vector<float> *feature);
     void onTaskFinished(Poco::TaskFinishedNotification *pNf);
+    void onTaskFailed(Poco::TaskFailedNotification *pNf);
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
 
     const char *pluginUpdateToString(PluginUpdate update) const;
@@ -160,13 +160,11 @@ protected:
     EnvGen ampEnvGen;
 
 private:
-    Poco::TaskManager taskManager, converterManager;
+    Poco::TaskManager taskManager;
     ImporterTask *importerTask;
-    std::unique_ptr<WaveformLoaderTask> waveformLoaderTask;
     std::shared_ptr<std::vector<float>> tempBuffer;
     std::mutex tempBufferMutex;
     ThreadsafeQueue<std::string> import_queue;
-    std::string fSourcePath;
     Poco::BasicEvent<const PluginUpdate> pluginUpdate;
 
     HTTPClient httpClient;
@@ -188,14 +186,7 @@ private:
     OSCClient oscClient;
 
     std::shared_ptr<SampleInfo> fCurrentSample;
-
-    std::vector<float> fSourceWaveform;
-    bool fSourceLoaded, fSampleLoaded;
-    int fSourceLength;
-    std::string fSourceTagString;
-    std::mutex sourceFeaturesMtx;
-    std::vector<WaveformFeature> fSourceFeatures;
-    std::vector<WaveformMeasurements> fSourceMeasurements;
+    bool renderSampleLock;
 
     float fNormalisationRatio;
     Filter sampleFilter;

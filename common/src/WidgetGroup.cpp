@@ -96,6 +96,7 @@ void WidgetGroup::hide()
 
 void WidgetGroup::toFront()
 {
+    WAIVEWidget::toFront();
     for (int i = 0; i < children.size(); i++)
         children[i]->toFront();
 }

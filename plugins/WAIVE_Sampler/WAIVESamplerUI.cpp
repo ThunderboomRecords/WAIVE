@@ -110,7 +110,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         databaseLoading = new Spinner(this);
         databaseLoading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
-        databaseLoading->rightOf(searchBox, CENTER, padding * 2.f);
+        databaseLoading->rightOf(searchBox, CENTER, padding);
         sourceBrowserPanel->addChildWidget(databaseLoading);
 
         databaseProgress = new Label(this, "");
@@ -269,6 +269,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         editorKnobs->setWidth(presetButtons->getWidth());
         editorKnobs->justify_content = HBox::Justify_Content::space_between;
         editorKnobs->positionWidgets();
+        editorKnobs->addWidget(sustainLength);
 
         editorKnobs->setVisible(false);
 
@@ -481,6 +482,8 @@ WAIVESamplerUI::~WAIVESamplerUI()
 
     if (open_dialog.joinable())
         open_dialog.join();
+
+    std::cout << " - WAIVESamplerUI::~WAIVESamplerUI() DONE" << std::endl;
 }
 
 void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
@@ -604,19 +607,24 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         makeSnare->setToggled(false);
         makeClap->setToggled(false);
         makeHihat->setToggled(false);
+
+        if (plugin->fCurrentSample == nullptr)
+            return;
+        Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
+
         // 0. Check if a source is loaded
-        if (!plugin->fSourceLoaded)
+        if (!sourceInfo->sourceLoaded)
             return;
 
         // 1. Select random candidate area of source
-        int nCandidates = plugin->fSourceFeatures.size();
+        int nCandidates = sourceInfo->sourceFeatures.size();
         if (nCandidates == 0)
             return; // or pick a random spot?
 
         sampleWaveformDisplay->text_color = WaiveColors::accent2;
         int i = random.next() % nCandidates;
-        int startIndex = plugin->fSourceFeatures[i].start;
-        plugin->selectWaveform(&plugin->fSourceWaveform, startIndex);
+        int startIndex = sourceInfo->sourceFeatures[i].start;
+        plugin->selectWaveform(&sourceInfo->buffer, startIndex);
 
         // 2. Load preset parameter values
         plugin->loadPreset(Presets::KickPreset);
@@ -631,14 +639,20 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         makeSnare->setToggled(true);
         makeClap->setToggled(false);
         makeHihat->setToggled(false);
+
         // 0. Check if a source is loaded
-        if (!plugin->fSourceLoaded)
+        if (plugin->fCurrentSample == nullptr)
+            return;
+        Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
+
+        // 0. Check if a source is loaded
+        if (!sourceInfo->sourceLoaded)
             return;
 
         // 1. pick random start
         std::vector<long> starts;
 
-        for (auto &m : plugin->fSourceMeasurements)
+        for (auto &m : sourceInfo->sourceMeasurements)
         {
             if (m.rms > 0.1 && m.specFlat > 0.9f)
                 starts.push_back(m.frame);
@@ -650,13 +664,13 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         sampleWaveformDisplay->text_color = WaiveColors::accent1;
 
         int i = random.next() % starts.size();
-        plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
+        plugin->selectWaveform(&sourceInfo->buffer, starts[i]);
 
         // 2. Load preset parameter values
         plugin->loadPreset(Presets::SnarePreset);
 
         // 3. Set sample name
-        std::cout << plugin->fSourceTagString << std::endl;
+        // std::cout << plugin->fSourceTagString << std::endl;
         // sampleName->setText(plugin->sd.getNewSampleName("snare.wav").c_str(), true);
         plugin->generateCurrentSampleName("snare");
     }
@@ -666,14 +680,19 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         makeSnare->setToggled(false);
         makeClap->setToggled(false);
         makeHihat->setToggled(true);
+
+        if (plugin->fCurrentSample == nullptr)
+            return;
+        Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
+
         // 0. Check if a source is loaded
-        if (!plugin->fSourceLoaded)
+        if (!sourceInfo->sourceLoaded)
             return;
 
         // 1. pick random start
         std::vector<long> starts;
 
-        for (auto &m : plugin->fSourceMeasurements)
+        for (auto &m : sourceInfo->sourceMeasurements)
         {
             if (m.rms > 0.1 && m.specFlat > 0.9f)
                 starts.push_back(m.frame);
@@ -685,7 +704,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         sampleWaveformDisplay->text_color = WaiveColors::accent3;
 
         int i = random.next() % starts.size();
-        plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
+        plugin->selectWaveform(&sourceInfo->buffer, starts[i]);
 
         // 2. Load preset parameter values
         plugin->loadPreset(Presets::HiHat);
@@ -701,14 +720,18 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         makeClap->setToggled(true);
         makeHihat->setToggled(false);
 
+        if (plugin->fCurrentSample == nullptr)
+            return;
+        Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
+
         // 0. Check if a source is loaded
-        if (!plugin->fSourceLoaded)
+        if (!sourceInfo->sourceLoaded)
             return;
 
         // 1. pick random start
         std::vector<long> starts;
 
-        for (auto &m : plugin->fSourceMeasurements)
+        for (auto &m : sourceInfo->sourceMeasurements)
         {
             if (m.rms > 0.1 && m.specFlat > 0.9f)
                 starts.push_back(m.frame);
@@ -720,7 +743,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         sampleWaveformDisplay->text_color = WaiveColors::accent4;
 
         int i = random.next() % starts.size();
-        plugin->selectWaveform(&plugin->fSourceWaveform, starts[i]);
+        plugin->selectWaveform(&sourceInfo->buffer, starts[i]);
 
         // 2. Load preset parameter values
         plugin->loadPreset(Presets::Clap);
@@ -802,7 +825,7 @@ void WAIVESamplerUI::beginOpenFileBrowser(const std::string &state, bool multipl
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
 {
-    plugin->selectWaveform(&plugin->fSourceWaveform, (int)selectionStart);
+    // plugin->selectWaveform(&plugin->fSourceWaveform, (int)selectionStart);
 }
 
 void WAIVESamplerUI::mapSampleHovered(int id)
@@ -901,7 +924,6 @@ void WAIVESamplerUI::onMenuItemSelection(Menu *menu, int item, const std::string
 void WAIVESamplerUI::sampleSelected(SampleSlot *slot, int slotId)
 {
     plugin->loadSample(sampleSlots[slotId]->getSamplePlayer()->sampleInfo);
-    return;
 };
 
 void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
@@ -909,7 +931,6 @@ void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
     plugin->clearSamplePlayer(*sampleSlots[slotId]->getSamplePlayer());
     plugin->clear();
     sourceList->selected = -1;
-    return;
 };
 
 void WAIVESamplerUI::sourceDownload(int index)
@@ -921,10 +942,10 @@ void WAIVESamplerUI::sourceLoad(int index)
 {
     if (index < 0)
         return;
+
     std::string fp = plugin->sd.getFullSourcePath(plugin->sd.sourcesList.at(index));
-    plugin->fSourceTagString = makeTagString(plugin->sd.sourcesList.at(index).tags);
-    plugin->loadSource(fp.c_str());
-    sourceLoading->setLoading(true);
+    std::string tagString = makeTagString(plugin->sd.sourcesList.at(index).tags);
+    plugin->loadSourceFile(fp, tagString);
 }
 
 void WAIVESamplerUI::sourcePreview(int index)
@@ -967,7 +988,7 @@ void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
 
 void WAIVESamplerUI::updateWidgets()
 {
-    bool sourceAvailable = plugin->fSourceLength > 0;
+    bool sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.length > 0);
     saveSampleBtn->setEnabled(sourceAvailable);
     sourceLoading->setLoading(false);
     presetButtons->setVisible(sourceAvailable);
@@ -999,7 +1020,9 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         // sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
         // sourceWaveformDisplay->setWaveformLength(plugin->fSourceLength);
         // sourceWaveformDisplay->waveformNew();
-        sourceAvailable = plugin->fSourceLength > 0;
+        sourceAvailable = false;
+        sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.length > 0);
+        // std::cout << "sourceAvailable: " << sourceAvailable << " [(plugin->fCurrentSample != nullptr) = " << (plugin->fCurrentSample != nullptr) << ", (plugin->fCurrentSample->sourceInfo.length > 0) = " << (plugin->fCurrentSample->sourceInfo.length > 0) << "]" << std::endl;
         saveSampleBtn->setEnabled(sourceAvailable);
         sourceLoading->setLoading(false);
         presetButtons->setVisible(sourceAvailable);
@@ -1022,6 +1045,10 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             sampleWaveformDisplay->setWaveformLength(0);
             sampleWaveformDisplay->waveformNew();
             playSampleBtn->setEnabled(false);
+            sourceLoading->setLoading(false);
+            presetButtons->setVisible(false);
+            editorKnobs->setVisible(false);
+            instructions->setVisible(true);
         }
         else
         {
@@ -1032,6 +1059,9 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
                 saveSampleBtn->setLabel("Save");
             sampleWaveformDisplay->waveformNew();
             playSampleBtn->setEnabled(true);
+            presetButtons->setVisible(true);
+            editorKnobs->setVisible(true);
+            instructions->setVisible(false);
         }
         break;
     case WAIVESampler::kSampleUpdated:
@@ -1048,6 +1078,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         }
         else
         {
+            std::cout << "plugin->fCurrentSample == nullptr" << std::endl;
             sampleWaveformDisplay->setWaveformLength(0);
             sampleWaveformDisplay->waveformNew();
             playSampleBtn->setEnabled(false);
@@ -1086,6 +1117,15 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             sampleSlots[i]->repaint();
         }
         break;
+    case WAIVESampler::kSampleCleared:
+        sampleWaveformDisplay->setWaveform(nullptr);
+        sampleWaveformDisplay->setWaveformLength(0);
+        sampleWaveformDisplay->waveformNew();
+        saveSampleBtn->setEnabled(false);
+        sourceLoading->setLoading(false);
+        presetButtons->setVisible(false);
+        editorKnobs->setVisible(false);
+        instructions->setVisible(true);
     default:
         std::cout << "Unknown update: " << arg << std::endl;
         break;
@@ -1104,9 +1144,8 @@ void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
     {
         sampleBrowser->loading->setLoading(true);
     }
-    else if (taskName == "WaveformLoaderTask")
+    else if (taskName == "loadSourceBuffer")
     {
-        std::cout << "sourceLoading: " << sourceLoading << std::endl;
         sourceLoading->setLoading(true);
         progress->setLabel("Importing...");
         progress->resizeToFit();
@@ -1187,15 +1226,19 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
     if (taskName == "ImporterTask")
         sampleBrowser->loading->setLoading(false);
-    else if (taskName == "WaveformLoaderTask")
+    else if (taskName == "loadSourceBuffer")
     {
         sourceLoading->setLoading(false);
         progress->setVisible(false);
+        sourceLoading->repaint();
+        progress->repaint();
     }
     else if (taskName == "FeatureExtractorTask")
     {
         sourceLoading->setLoading(false);
         progress->setVisible(false);
+        sourceLoading->repaint();
+        progress->repaint();
     }
     else if (taskName == "ParseSourceList")
     {

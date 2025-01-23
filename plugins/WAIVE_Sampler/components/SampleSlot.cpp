@@ -77,12 +77,13 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
     }
     else if (ev.button == kMouseButtonLeft)
     {
-        if (callback != nullptr && samplePlayer != nullptr)
+        if (callback != nullptr)
         {
-            if (samplePlayer->sampleInfo != nullptr)
-                callback->sampleSelected(this, slotId);
-            else
-                callback->sampleSlotCleared(this, slotId);
+            // if (samplePlayer->sampleInfo != nullptr)
+            callback->sampleSelected(this, slotId);
+            // else
+            //     callback->sampleUnselected(this);
+            // callback->sampleSlotCleared(this, slotId);
         }
     }
 
@@ -110,6 +111,7 @@ void SampleSlot::onMenuItemSelection(Menu *menu, int item, const std::string &va
         {
             if (callback != nullptr)
                 callback->sampleSlotCleared(this, slotId);
+            clearBtn->hide();
         }
     }
 }

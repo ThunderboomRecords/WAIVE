@@ -34,7 +34,11 @@ void Panel::onNanoDisplay()
         fontFaceId(font);
         fontSize(getFontSize());
         textAlign(ALIGN_TOP | ALIGN_LEFT);
-        text(padding_h, padding_v, (label + "  " + title).c_str(), nullptr);
+        text(
+            padding_h + (expand_h - size_w) * expanded * !expand_right,
+            padding_v + (expand_v - size_h) * expanded * !expand_down,
+            (label + "  " + title).c_str(),
+            nullptr);
         closePath();
     }
 }
@@ -60,14 +64,11 @@ void Panel::expand()
     if (!expandable)
         return;
 
-    std::cout << "Panel::expand()" << std::endl;
-    std::cout << "setSize: " << expand_h << ", " << expand_v << std::endl;
-
     expanded = true;
+    WAIVEWidget::setSize(expand_h, expand_v);
 
     WAIVEWidget::toFront();
-    toFront();
-    WAIVEWidget::setSize(expand_h, expand_v);
+    WidgetGroup::toFront();
 
     if (!expand_right)
         setAbsoluteX(getAbsoluteX() - (expand_h - size_w));

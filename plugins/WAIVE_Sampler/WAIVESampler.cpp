@@ -7,19 +7,15 @@ uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                sampleRate(getSampleRate()),
-                               fSampleLoaded(false),
                                fNormalisationRatio(1.0f),
-                               fSourceLoaded(false),
                                fCurrentSample(nullptr),
                                ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
                                oscClient("localhost", 8000),
                                taskManager("plugin manager", 1, 8, 60, 0),
-                               converterManager("converter manager", 1, 1, 60, 0),
                                httpClient(&taskManager),
                                sd(&httpClient),
                                fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow),
-                               importerTask(new ImporterTask(this, &import_queue)),
-                               waveformLoaderTask(nullptr)
+                               importerTask(new ImporterTask(this, &import_queue))
 {
     if (isDummyInstance())
     {
@@ -31,7 +27,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
 
     // Register notifications
     taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
-    converterManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
+    taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFailedNotification>(*this, &WAIVESampler::onTaskFailed));
     sd.databaseUpdate += Poco::delegate(this, &WAIVESampler::onDatabaseChanged);
     sd.taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
 
@@ -102,10 +98,10 @@ WAIVESampler::~WAIVESampler()
 {
     std::cout << "closing WAIVESampler..." << std::endl;
 
-    converterManager.cancelAll();
-    converterManager.joinAll();
     taskManager.cancelAll();
     taskManager.joinAll();
+
+    std::cout << " - WAIVESampler::~WAIVESampler() DONE";
 }
 
 void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
@@ -306,53 +302,42 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
     case kSampleVolume:
         if (fCurrentSample != nullptr)
             fCurrentSample->volume = value;
-        renderSample();
         break;
     case kSamplePitch:
         if (fCurrentSample != nullptr)
             fCurrentSample->pitch = value;
-        renderSample();
         break;
     case kPercussiveBoost:
         if (fCurrentSample != nullptr)
             fCurrentSample->percussiveBoost = value;
-        renderSample();
         break;
     case kAmpAttack:
         ampEnvGen.setAttack(value);
-        renderSample();
         break;
     case kAmpDecay:
         ampEnvGen.setDecay(value);
-        renderSample();
         break;
     case kAmpSustain:
         ampEnvGen.setSustain(value);
-        renderSample();
         break;
     case kAmpRelease:
         ampEnvGen.setRelease(value);
-        renderSample();
         break;
     case kSustainLength:
         if (fCurrentSample != nullptr)
             fCurrentSample->sustainLength = value;
-        renderSample();
         break;
     case kFilterCutoff:
         if (fCurrentSample != nullptr)
             fCurrentSample->filterCutoff = value;
-        renderSample();
         break;
     case kFilterResonance:
         if (fCurrentSample != nullptr)
             fCurrentSample->filterResonance = value;
-        renderSample();
         break;
     case kFilterType:
         if (fCurrentSample != nullptr)
             fCurrentSample->filterType = (Filter::FilterType)value;
-        renderSample();
         break;
     case kSlot1MidiNumber:
     case kSlot2MidiNumber:
@@ -379,6 +364,8 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
         std::cerr << "Unknown parameter index: " << index << "  " << value << std::endl;
         break;
     }
+
+    renderSample();
 }
 
 void WAIVESampler::setState(const char *key, const char *value)
@@ -401,7 +388,7 @@ void WAIVESampler::setState(const char *key, const char *value)
             }
             count++;
         }
-        fSourceTagString = "";
+        // fSourceTagString = "";
     }
     else if (strcmp(key, "importSample") == 0)
     {
@@ -539,9 +526,6 @@ void WAIVESampler::clear()
 {
     std::cout << "WAIVESampler::clear" << std::endl;
     stopSourcePreview();
-    fSourceLoaded = false;
-    fSourceLength = 0;
-    fSourcePath = "";
     fCurrentSample = nullptr;
 
     pluginUpdate.notify(this, PluginUpdate::kSourceUpdated);
@@ -549,20 +533,22 @@ void WAIVESampler::clear()
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
-void WAIVESampler::loadSource(const char *fp)
+void WAIVESampler::loadSourceFile(const std::string fp, const std::string tagString)
 {
-    // std::cout << "WAIVESampler::loadSource" << std::endl;
+    // std::cout << "WAIVESampler::loadSourceFile" << std::endl;
     stopSourcePreview();
-    fSourceLoaded = false;
-    fSourcePath = std::string(fp);
-    converterManager.cancelAll();
-    converterManager.joinAll();
+
+    if (fCurrentSample == nullptr)
+        newSample();
+
+    fCurrentSample->sourceInfo.fp = std::string(fp);
+    fCurrentSample->sourceInfo.sourceLoaded = false;
+    fCurrentSample->sourceInfo.tagString = tagString;
+
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
 
-    auto waveformLoad = std::make_unique<WaveformLoaderTask>(tempBuffer, &tempBufferMutex, std::string(fp), sampleRate);
-    std::cout << "WaveformLoaderTask created" << std::endl;
-    taskManager.start(waveformLoad.get());
-    waveformLoad.release();
+    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourceBuffer", tempBuffer, &tempBufferMutex, std::string(fp), sampleRate);
+    taskManager.start(task);
 }
 
 void WAIVESampler::newSample()
@@ -580,6 +566,7 @@ void WAIVESampler::newSample()
     }
     else
     {
+        renderSampleLock = true;
         setParameterValue(kSampleVolume, 1.0f);
         setParameterValue(kSamplePitch, 1.0f);
         setParameterValue(kAmpAttack, 0.0f);
@@ -591,6 +578,7 @@ void WAIVESampler::newSample()
         setParameterValue(kFilterCutoff, 0.999f);
         setParameterValue(kFilterResonance, 0.0f);
         setParameterValue(kFilterType, 0.0);
+        renderSampleLock = false;
 
         std::shared_ptr<SampleInfo> s(new SampleInfo(-1, sd.getNewSampleName("new_sample.wav"), "", true));
         s->adsr = ADSR_Params(ampEnvGen.getADSR());
@@ -604,7 +592,9 @@ void WAIVESampler::newSample()
 
 void WAIVESampler::addCurrentSampleToLibrary()
 {
-    if (fCurrentSample == nullptr || !fSampleLoaded)
+    std::cout << "WAIVESampler::addCurrentSampleToLibrary()" << std::endl;
+
+    if (fCurrentSample == nullptr)
         return;
 
     auto embedding = getEmbedding(editorPreviewWaveform);
@@ -625,7 +615,7 @@ void WAIVESampler::addCurrentSampleToLibrary()
         {
             if (!samplePlayers[i].active)
             {
-                loadSamplePlayer(fCurrentSample, samplePlayers[i], samplePlayerWaveforms[i]);
+                loadSamplePlayer(i, fCurrentSample);
                 break;
             }
         }
@@ -637,7 +627,7 @@ void WAIVESampler::addCurrentSampleToLibrary()
 void WAIVESampler::loadSamplePreview(int id)
 {
     if (mapPreviewPlayer->sampleInfo == nullptr || mapPreviewPlayer->sampleInfo->getId() != id)
-        loadSlot(9, id);
+        loadSlot(NUM_SLOTS + 1, id);
 
     if (id >= 0 && mapPreviewPlayer->state == PlayState::STOPPED)
         mapPreviewPlayer->state = PlayState::TRIGGERED;
@@ -645,40 +635,28 @@ void WAIVESampler::loadSamplePreview(int id)
 
 void WAIVESampler::loadSourcePreview(const std::string &fp)
 {
-    stopSourcePreview();
-    std::lock_guard<std::mutex> lock(samplePlayerMtx);
-
-    int size = loadWaveform(fp.c_str(), *sourcePreviewWaveform, sampleRate);
-    if (size == 0)
-    {
-        std::cout << fp << " not avaliable to load...\n";
-        return;
-    }
-    sourcePreviewPlayer->waveform = sourcePreviewWaveform;
-    sourcePreviewPlayer->startAt = 0;
-    sourcePreviewPlayer->length = size;
-    sourcePreviewPlayer->active = true;
-    sourcePreviewPlayer->state = PlayState::TRIGGERED;
+    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourcePreview", tempBuffer, &tempBufferMutex, fp, sampleRate);
+    taskManager.start(task);
 }
 
 void WAIVESampler::playSourcePreview()
 {
-    if (!fSourceLoaded || fSourceWaveform.size() == 0)
-        return;
+    // if (!fSourceLoaded || fSourceWaveform.size() == 0)
+    //     return;
 
-    std::lock_guard<std::mutex> lock(samplePlayerMtx);
-    if (sourcePreviewPlayer->state == PlayState::PLAYING)
-    {
-        sourcePreviewPlayer->state = PlayState::STOPPED;
-    }
-    else
-    {
-        sourcePreviewPlayer->startAt = fCurrentSample->sourceStart;
-        sourcePreviewPlayer->length = fSourceLength;
-        sourcePreviewPlayer->waveform = &fSourceWaveform;
-        sourcePreviewPlayer->active = true;
-        sourcePreviewPlayer->state = PlayState::TRIGGERED;
-    }
+    // std::lock_guard<std::mutex> lock(samplePlayerMtx);
+    // if (sourcePreviewPlayer->state == PlayState::PLAYING)
+    // {
+    //     sourcePreviewPlayer->state = PlayState::STOPPED;
+    // }
+    // else
+    // {
+    //     sourcePreviewPlayer->startAt = fCurrentSample->sourceStart;
+    //     sourcePreviewPlayer->length = fSourceLength;
+    //     sourcePreviewPlayer->waveform = &fSourceWaveform;
+    //     sourcePreviewPlayer->active = true;
+    //     sourcePreviewPlayer->state = PlayState::TRIGGERED;
+    // }
 }
 
 void WAIVESampler::stopSourcePreview()
@@ -705,15 +683,9 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
         return;
     }
 
-    bool newSource = true;
-    if (fCurrentSample != nullptr && fCurrentSample->source.compare(s->source) == 0)
-        newSource = false;
-
     fCurrentSample = s;
-    fSampleLoaded = false;
 
-    if (newSource)
-        loadSource(fCurrentSample->source.c_str());
+    renderSampleLock = true;
     setParameterValue(kSampleVolume, fCurrentSample->volume);
     setParameterValue(kSamplePitch, fCurrentSample->pitch);
     setParameterValue(kAmpAttack, fCurrentSample->adsr.attack);
@@ -725,20 +697,24 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     setParameterValue(kFilterCutoff, fCurrentSample->filterCutoff);
     setParameterValue(kFilterResonance, fCurrentSample->filterResonance);
     setParameterValue(kFilterType, fCurrentSample->filterType);
-    selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
+    renderSampleLock = false;
 
-    fCurrentSample->sampleLength = loadWaveform(sd.getSamplePath(fCurrentSample).c_str(), *editorPreviewWaveform, sampleRate);
+    if (fCurrentSample->sourceInfo.length == 0)
+        loadSourceFile(fCurrentSample->source);
+    else
+    {
+        fCurrentSample->sourceInfo.sourceLoaded = true;
+        selectWaveform(&fCurrentSample->sourceInfo.buffer, fCurrentSample->sourceStart);
+        pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
+        pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
 
-    fSampleLoaded = true;
-    pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
-
-    renderSample();
-
-    pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
+        renderSample();
+    }
 }
 
 void WAIVESampler::loadPreset(Preset preset)
 {
+    renderSampleLock = true;
     setParameterValue(kSampleVolume, preset.volume);
     setParameterValue(kSamplePitch, preset.pitch);
     setParameterValue(kAmpAttack, preset.adsr.attack);
@@ -750,8 +726,9 @@ void WAIVESampler::loadPreset(Preset preset)
     setParameterValue(kFilterCutoff, preset.filterCutoff);
     setParameterValue(kFilterResonance, preset.filterResonance);
     setParameterValue(kFilterType, preset.filterType);
+    renderSampleLock = false;
 
-    fSampleLoaded = true;
+    // fSampleLoaded = true;
     pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
 
     renderSample();
@@ -760,18 +737,18 @@ void WAIVESampler::loadPreset(Preset preset)
 
 void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
 {
-    if (!fSourceLoaded)
-        return;
+    // if (!fSourceLoaded)
+    //     return;
 
     if (start >= source->size())
         start = 0;
 
-    fSampleLoaded = false;
+    // fSampleLoaded = false;
     if (fCurrentSample == nullptr)
         newSample();
 
     fCurrentSample->sourceStart = start;
-    fSampleLoaded = true;
+    // fSampleLoaded = true;
 
     renderSample();
     triggerPreview();
@@ -781,17 +758,18 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
 void WAIVESampler::renderSample()
 {
     // LOG_LOCATION
-    if (!fSampleLoaded || fCurrentSample == nullptr || !fSourceLoaded)
+    if (fCurrentSample == nullptr || !fCurrentSample->sourceInfo.sourceLoaded || renderSampleLock)
         return;
 
     std::lock_guard<std::mutex> lock(samplePlayerMtx);
 
+    Source *sourceInfo = &fCurrentSample->sourceInfo;
     fCurrentSample->sampleLength = ampEnvGen.getLength(fCurrentSample->sustainLength);
-    fCurrentSample->sampleLength = std::min(fCurrentSample->sampleLength, fSourceLength - fCurrentSample->sourceStart);
+    fCurrentSample->sampleLength = std::min(fCurrentSample->sampleLength, sourceInfo->length - fCurrentSample->sourceStart);
 
     auto minmax = std::minmax_element(
-        &fSourceWaveform[fCurrentSample->sourceStart],
-        &fSourceWaveform[fCurrentSample->sourceStart + fCurrentSample->sampleLength]);
+        &sourceInfo->buffer[fCurrentSample->sourceStart],
+        &sourceInfo->buffer[fCurrentSample->sourceStart + fCurrentSample->sampleLength]);
     float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
     if (std::abs(normaliseRatio) <= 0.0001f)
         normaliseRatio = 1.0f;
@@ -824,7 +802,7 @@ void WAIVESampler::renderSample()
     for (int i = 0; i < fCurrentSample->sampleLength; i++)
     {
         index = (int)indexF;
-        if (fCurrentSample->sourceStart + index >= fSourceLength)
+        if (fCurrentSample->sourceStart + index >= sourceInfo->length)
         {
             fCurrentSample->sampleLength = i;
             editorPreviewPlayer->length = i;
@@ -836,7 +814,7 @@ void WAIVESampler::renderSample()
         else
             delta = fCurrentSample->pitch;
 
-        y = fSourceWaveform[fCurrentSample->sourceStart + index];
+        y = sourceInfo->buffer[fCurrentSample->sourceStart + index];
         y = sampleFilter.process(y);
 
         editorPreviewWaveform->at(i) = std::clamp(y * fCurrentSample->volume * amp / normaliseRatio, -1.0f, 1.0f);
@@ -861,38 +839,28 @@ void WAIVESampler::renderSample()
     editorPreviewPlayer->ptr = 0;
     editorPreviewPlayer->active = true;
 
-    fSampleLoaded = true;
+    // fSampleLoaded = true;
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
-void WAIVESampler::loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer)
+void WAIVESampler::loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info)
 {
     LOG_LOCATION
+    SamplePlayer *sp = &samplePlayers[spIndex];
+
     if (info == nullptr)
     {
-        sp.active = false;
+        sp->active = false;
         return;
     }
 
-    std::lock_guard<std::mutex> lock(samplePlayerMtx);
+    sp->state = PlayState::STOPPED;
+    sp->ptr = 0;
+    sp->active = false;
+    sp->sampleInfo = info;
 
-    sp.state = PlayState::STOPPED;
-    sp.ptr = 0;
-    int length = loadWaveform(sd.getFullSamplePath(info).c_str(), buffer, sampleRate);
-
-    if (length == 0)
-    {
-        sp.active = false;
-        std::cerr << "WAIVESampler::loadSamplePlayer: Sample waveform length 0" << std::endl;
-        return;
-    }
-
-    sp.length = length;
-    sp.active = true;
-    sp.sampleInfo = info;
-    sp.sampleInfo->tagString.assign(info->tagString); // no idea why we must do this only for tagString...
-
-    pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
+    WaveformLoaderTask *task = new WaveformLoaderTask(fmt::format("loadSamplePlayer:{:d}", spIndex), tempBuffer, &tempBufferMutex, sd.getFullSamplePath(info), sampleRate);
+    taskManager.start(task);
 }
 
 void WAIVESampler::clearSamplePlayer(SamplePlayer &sp)
@@ -914,35 +882,35 @@ void WAIVESampler::loadSlot(int slot, int id)
         return;
     }
     std::shared_ptr<SampleInfo> info = sd.findSample(id);
-    loadSamplePlayer(info, samplePlayers.at(slot), samplePlayerWaveforms.at(slot));
+    loadSamplePlayer(slot, info);
 }
 
 void WAIVESampler::generateCurrentSampleName(const std::string base)
 {
-    if (fCurrentSample != nullptr)
-    {
-        std::stringstream test(fSourceTagString);
-        std::string segment;
-        std::vector<std::string> seglist;
+    if (fCurrentSample == nullptr)
+        return;
 
-        while (std::getline(test, segment, '|'))
-            seglist.push_back(segment);
+    std::stringstream test(fCurrentSample->sourceInfo.tagString);
+    std::string segment;
+    std::vector<std::string> seglist;
 
-        std::string tags = "";
-        if (seglist.size() > 0)
-            tags += "_" + seglist[0];
+    while (std::getline(test, segment, '|'))
+        seglist.push_back(segment);
 
-        if (seglist.size() > 1)
-            tags += "_" + seglist[1];
+    std::string tags = "";
+    if (seglist.size() > 0)
+        tags += "_" + seglist[0];
 
-        sd.renameSample(fCurrentSample, sd.getNewSampleName(base + tags + ".wav"));
-    }
+    if (seglist.size() > 1)
+        tags += "_" + seglist[1];
+
+    sd.renameSample(fCurrentSample, sd.getNewSampleName(base + tags + ".wav"));
 }
 
 void WAIVESampler::triggerPreview()
 {
-    if (!fSampleLoaded)
-        return;
+    // if (!fSampleLoaded)
+    //     return;
 
     if (editorPreviewPlayer->state == PlayState::STOPPED)
     {
@@ -1022,47 +990,114 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
     const std::string taskName = pTask->name();
 
-    if (taskName == "WaveformLoaderTask")
+    if (taskName == "loadSourceBuffer")
     {
         if (pTask->isCancelled())
         {
             fCurrentSample->source = "";
-            fSourcePath = "";
-            fSourceLength = 0;
+            fCurrentSample->sourceInfo.length = 0;
             pNf->release();
             return;
         }
 
         std::lock_guard<std::mutex> lock(tempBufferMutex);
 
-        fSourceLength = tempBuffer->size();
-        fSourceWaveform.resize(fSourceLength);
+        size_t sourceLength = tempBuffer->size();
+        fCurrentSample->sourceInfo.buffer.resize(sourceLength);
+        fCurrentSample->sourceInfo.length = sourceLength;
 
-        std::copy(tempBuffer->begin(), tempBuffer->begin() + fSourceLength, fSourceWaveform.begin());
+        std::copy(tempBuffer->begin(), tempBuffer->begin() + sourceLength, fCurrentSample->sourceInfo.buffer.begin());
 
         if (!fCurrentSample)
             newSample();
 
-        if (fSourceLength > 0)
+        if (sourceLength > 0)
         {
-            fSourceLoaded = true;
-            fCurrentSample->source = fSourcePath;
-            fCurrentSample->tagString = fSourceTagString;
-            selectWaveform(&fSourceWaveform, fCurrentSample->sourceStart);
+            fCurrentSample->sourceInfo.sourceLoaded = true;
+            fCurrentSample->tagString = fCurrentSample->sourceInfo.tagString;
+            selectWaveform(&fCurrentSample->sourceInfo.buffer, fCurrentSample->sourceStart);
 
-            taskManager.start(new FeatureExtractorTask(this));
             pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
+            taskManager.start(new FeatureExtractorTask(&fCurrentSample->sourceInfo, getSampleRate()));
+            renderSample();
         }
         else
         {
             std::cerr << "Source failed to load" << std::endl;
             fCurrentSample->source = "";
             fCurrentSample->tagString = "";
-            fSourcePath = "";
+            fCurrentSample->sourceInfo.length = 0;
         }
+    }
+    else if (taskName == "loadSourcePreview")
+    {
+        stopSourcePreview();
+        std::lock_guard<std::mutex> spLock(samplePlayerMtx);
+        std::lock_guard<std::mutex> tbLock(tempBufferMutex);
+
+        size_t size = tempBuffer->size();
+        if (size == 0)
+        {
+            std::cout << "loadSourcePreview: Not able to load\n";
+            pNf->release();
+            return;
+        }
+        sourcePreviewWaveform->resize(size);
+        std::copy(tempBuffer->begin(), tempBuffer->begin() + size, sourcePreviewWaveform->begin());
+
+        sourcePreviewPlayer->waveform = sourcePreviewWaveform;
+        sourcePreviewPlayer->startAt = 0;
+        sourcePreviewPlayer->length = size;
+        sourcePreviewPlayer->active = true;
+        sourcePreviewPlayer->state = PlayState::TRIGGERED;
+    }
+    else if (taskName.find("loadSamplePlayer") != std::string::npos)
+    {
+        // int
+        int spIndex = 0; // = std::stoi(taskName.);
+        size_t colonPos = taskName.find(':');
+        if (colonPos != std::string::npos)
+            spIndex = std::stoi(taskName.substr(colonPos + 1));
+        else
+            throw std::runtime_error("loadSamplePlayer task name in wrong format: " + taskName);
+
+        SamplePlayer *sp = &samplePlayers[spIndex];
+
+        std::lock_guard<std::mutex> spLock(samplePlayerMtx);
+        std::lock_guard<std::mutex> tbLock(tempBufferMutex);
+
+        size_t size = tempBuffer->size();
+
+        if (size == 0)
+        {
+            sp->active = false;
+            std::cerr << "WAIVESampler::loadSamplePlayer: Sample waveform length 0" << std::endl;
+        }
+        else
+        {
+            sp->length = size;
+            sp->waveform->resize(size);
+            std::copy(tempBuffer->begin(), tempBuffer->begin() + size, sp->waveform->begin());
+            sp->active = true;
+        }
+        // sp.sampleInfo->tagString.assign(info->tagString); // no idea why we must do this only for tagString...
+
+        pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
     }
 
     pNf->release();
+}
+
+void WAIVESampler::onTaskFailed(Poco::TaskFailedNotification *pNf)
+{
+    Poco::Task *pTask = pNf->task();
+    if (pTask == nullptr)
+    {
+        std::cerr << "Error: Task is null" << std::endl;
+        return;
+    }
+    std::cout << "WAIVESampler::onTaskFailed: " << pTask->name() << std::endl;
+    std::cout << "  Reason: " << pNf->reason().message() << std::endl;
 }
 
 void WAIVESampler::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
@@ -1114,81 +1149,9 @@ Plugin *createPlugin()
     return new WAIVESampler();
 }
 
-size_t loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags)
-{
-    // Open the file
-    SndfileHandle fileHandle(fp, 16, flags);
-    int sampleLength = fileHandle.frames();
-    if (sampleLength == 0)
-    {
-        std::cerr << "Error: Unable to open input file " << fp << std::endl;
-        return 0;
-    }
-
-    int sampleChannels = fileHandle.channels();
-    int fileSampleRate = fileHandle.samplerate();
-
-    // Read the file into a temporary sample buffer
-    std::vector<float> sample(sampleLength * sampleChannels);
-    if (fileHandle.read(sample.data(), sampleLength * sampleChannels) != sampleLength * sampleChannels)
-    {
-        std::cerr << "Error: Failed to read audio data from file." << std::endl;
-        return 0;
-    }
-
-    std::vector<float> sample_tmp;
-
-    // Resample if necessary
-    if (fileSampleRate != sampleRate)
-    {
-        size_t new_size = static_cast<size_t>(std::ceil(static_cast<double>(sampleLength) * sampleRate / fileSampleRate));
-        sample_tmp.resize(new_size * sampleChannels);
-
-        SRC_DATA src_data = {};
-        src_data.data_in = sample.data();
-        src_data.input_frames = sampleLength;
-        src_data.data_out = sample_tmp.data();
-        src_data.output_frames = new_size;
-        src_data.src_ratio = static_cast<float>(sampleRate) / fileSampleRate;
-
-        int result = src_simple(&src_data, SRC_SINC_BEST_QUALITY, sampleChannels);
-        if (result != 0)
-        {
-            std::cerr << "Failed to convert sample rate: " << src_strerror(result) << std::endl;
-            return 0;
-        }
-
-        // Adjust the actual output length after resampling
-        sample_tmp.resize(static_cast<size_t>(src_data.output_frames_gen * sampleChannels));
-    }
-    else
-    {
-        sample_tmp = std::move(sample);
-    }
-
-    // Resize the output buffer
-    size_t outputLength = sample_tmp.size() / sampleChannels;
-    buffer.resize(outputLength);
-
-    // Mix to mono if necessary
-    if (sampleChannels > 1)
-    {
-        for (size_t i = 0; i < outputLength; ++i)
-        {
-            buffer[i] = 0.0f;
-            for (int c = 0; c < sampleChannels; ++c)
-                buffer[i] += sample_tmp[i * sampleChannels + c];
-            buffer[i] /= static_cast<float>(sampleChannels);
-        }
-    }
-    else
-        std::copy(sample_tmp.begin(), sample_tmp.end(), buffer.begin());
-
-    return outputLength;
-}
-
 bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int sampleRate)
 {
+    // TODO: make into task
     std::cout << "WAIVESampler::saveWaveform to " << fp << std::endl;
 
     SndfileHandle file = SndfileHandle(

@@ -8,7 +8,11 @@
 #include "DistrhoPlugin.hpp"
 #include "ThreadsafeQueue.hpp"
 
+#include "Source.hpp"
+
 START_NAMESPACE_DISTRHO
+
+size_t loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags = 0);
 
 class ImporterTask : public Poco::Task
 {
@@ -26,20 +30,26 @@ private:
 class FeatureExtractorTask : public Poco::Task
 {
 public:
-    FeatureExtractorTask(WAIVESampler *ws);
+    FeatureExtractorTask(Source *source, int sampleRate);
     void runTask() override;
 
 private:
-    WAIVESampler *_ws;
+    Source *source;
+    int sampleRate;
 };
 
 class WaveformLoaderTask : public Poco::Task
 {
 public:
-    WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex *_mutex, const std::string &_fp, int sampleRate);
+    WaveformLoaderTask(
+        const std::string &_name,
+        std::shared_ptr<std::vector<float>> _buffer,
+        std::mutex *_mutex,
+        const std::string &_fp,
+        int sampleRate);
     ~WaveformLoaderTask();
     void runTask() override;
-    std::string fp;
+    std::string fp, name;
 
 private:
     std::shared_ptr<std::vector<float>> buffer;

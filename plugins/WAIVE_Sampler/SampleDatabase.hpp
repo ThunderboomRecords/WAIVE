@@ -9,6 +9,7 @@
 #include <functional>
 #include <mutex>
 
+#include "Source.hpp"
 #include "Filters.hpp"
 #include "Envelopes.hpp"
 #include "WAIVESamplerParams.h"
@@ -25,7 +26,7 @@
 #include "Poco/Data/Session.h"
 #include "Poco/Data/RecordSet.h"
 #include "Poco/Data/Transaction.h"
-#include <Poco/Data/SQLite/Utility.h>
+#include "Poco/Data/SQLite/Utility.h"
 #include "Poco/Data/SQLite/Connector.h"
 
 #include <sndfile.hh>
@@ -65,6 +66,7 @@ public:
     bool waive;
     std::vector<Tag> tags;
     std::string source;
+    Source sourceInfo;
     std::string tagString;
     float volume;
     float pitch;
@@ -75,7 +77,7 @@ public:
     ADSR_Params adsr;
     float sustainLength;
     long sourceStart;
-    long sampleLength;
+    size_t sampleLength;
 
     bool saved;
 
