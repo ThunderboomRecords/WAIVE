@@ -65,7 +65,6 @@ public:
     float embedY;
     bool waive;
     std::vector<Tag> tags;
-    std::string source;
     Source sourceInfo;
     std::string tagString;
     float volume;
@@ -76,8 +75,9 @@ public:
     Filter::FilterType filterType;
     ADSR_Params adsr;
     float sustainLength;
-    long sourceStart;
+    size_t sourceStart;
     size_t sampleLength;
+    std::string preset;
 
     bool saved;
 

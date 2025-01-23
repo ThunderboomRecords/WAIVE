@@ -25,7 +25,7 @@ bool Icon::onMotion(const MotionEvent &ev)
     hovered = contains(ev.pos);
     repaint();
 
-    return hovered;
+    return false;
 }
 
 bool Icon::onMouse(const MouseEvent &ev) { return false; }

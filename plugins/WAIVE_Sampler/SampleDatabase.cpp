@@ -20,7 +20,6 @@ SampleInfo::SampleInfo(
     std::string name,
     std::string path,
     bool waive) : id(id),
-                  source(""),
                   embedX(0.0f),
                   embedY(0.0f),
                   volume(1.0f),
@@ -77,11 +76,12 @@ void SampleInfo::print() const
 
     printf("================\n");
     printf("SampleInfo: %d (waive: %d)\n", id, waive);
-    printf(" - source: %s\n - sourceStart: %ld\n - sampleLength: %ld\n", source.c_str(), sourceStart, sampleLength);
+    printf(" - source: %s\n - sourceStart: %ld\n - sampleLength: %ld\n", sourceInfo.fp.c_str(), sourceStart, sampleLength);
     printf(" - embedding: %.3f %.3f\n", embedX, embedY);
     printf(" - Parameters:\n   volume: %.3f  percussiveBoost: %.3f  pitch: %.3f\n", volume, percussiveBoost, pitch);
     printf(" - ADSR:\n    A: %.3fms  D: %.3fms  S:  %.3f (length %.1fms) R: %.3fms\n", adsr.attack, adsr.decay, adsr.sustain, sustainLength, adsr.release);
     printf(" - Filter:\n    filterType: %s  cuffoff: %.3f  resonance: %.3f\n", f_type.c_str(), filterCutoff, filterResonance);
+    printf(" - Preset: %s\n", preset.c_str());
     printf("================\n");
 }
 
@@ -92,7 +92,7 @@ json SampleInfo::toJson() const
     data["name"] = name;
     data["path"] = path;
     data["waive"] = waive;
-    data["source"] = source;
+    data["source"] = sourceInfo.fp;
     data["sourceStart"] = sourceStart;
     data["sampleLength"] = sampleLength;
     data["embedding"] = {{"x", embedX}, {"y", embedY}};
@@ -118,6 +118,7 @@ json SampleInfo::toJson() const
         data["tags"].push_back(t.name);
     data["tagString"] = tagString;
     data["saved"] = saved;
+    data["preset"] = preset;
 
     return data;
 }
@@ -276,7 +277,7 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
             s->tags.push_back({el});
         s->tagString.assign(data["tagString"]);
         s->sampleLength = data["sampleLength"];
-        s->source = data["source"];
+        s->sourceInfo.fp = data["source"];
         s->sourceStart = data["sourceStart"];
         s->volume = data["parameters"]["volume"];
         s->pitch = data["parameters"]["pitch"];
@@ -294,6 +295,7 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
         s->filterType = data["filter"]["filterType"];
 
         s->saved = data["saved"];
+        s->preset = data["preset"];
 
         return s;
     }
@@ -324,7 +326,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
         insert << "INSERT INTO Samples(name, path, source, parameters) VALUES(?, ?, ?, ?)",
             Poco::Data::Keywords::use(sample->name),
             Poco::Data::Keywords::use(sample->path),
-            Poco::Data::Keywords::use(sample->source),
+            Poco::Data::Keywords::use(sample->sourceInfo.fp),
             Poco::Data::Keywords::use(parameters);
         insert.execute();
     }
@@ -470,7 +472,7 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
         update << "UPDATE Samples SET name = ?, path = ?, source = ?, parameters = ? WHERE id = ?",
             Poco::Data::Keywords::use(sample->name),
             Poco::Data::Keywords::use(sample->path),
-            Poco::Data::Keywords::use(sample->source),
+            Poco::Data::Keywords::use(sample->sourceInfo.fp),
             Poco::Data::Keywords::use(parameters),
             Poco::Data::Keywords::use(id);
         n = update.execute();
@@ -709,10 +711,11 @@ std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<
     s->tagString = sample->tagString;
     for (auto &t : sample->tags)
         s->tags.push_back(t);
-    s->source = sample->source;
+    s->sourceInfo.fp = sample->sourceInfo.fp;
     s->sourceStart = sample->sourceStart;
     s->embedX = sample->embedX;
     s->embedY = sample->embedY;
+    s->preset = sample->preset;
 
     return s;
 }

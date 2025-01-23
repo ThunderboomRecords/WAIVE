@@ -57,18 +57,7 @@ bool TagMap::onMouse(const MouseEvent &ev)
     {
         if (ev.button == MouseButton::kMouseButtonLeft)
             dragAction = CLICKING;
-        else if (ev.button == MouseButton::kMouseButtonRight)
-        {
-            // if (highlightSample >= 0)
-            // {
-            //     contextMenuSample = highlightSample;
-            //     menu->setAbsolutePos(
-            //         ev.pos.getX() + getAbsoluteX() - 2,
-            //         ev.pos.getY() + getAbsoluteY() - 2);
-            //     menu->toFront();
-            //     menu->show();
-            // }
-        }
+
         return false;
     }
     else if (!ev.press && ev.button == MouseButton::kMouseButtonLeft && dragAction != NONE)
@@ -96,10 +85,6 @@ bool TagMap::onMouse(const MouseEvent &ev)
         }
 
         dragAction = NONE;
-    }
-    else
-    {
-        return false;
     }
 
     return false;

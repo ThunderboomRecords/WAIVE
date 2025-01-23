@@ -86,9 +86,6 @@ void Panel::collapse()
     if (!expandable)
         return;
 
-    std::cout << "Panel::collapse()" << std::endl;
-    std::cout << "setSize: " << size_w << ", " << size_h << std::endl;
-
     expanded = false;
 
     WAIVEWidget::setSize(size_w, size_h);

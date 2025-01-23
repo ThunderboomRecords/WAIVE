@@ -1017,17 +1017,14 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         break;
     case WAIVESampler::kSourceLoaded:
     case WAIVESampler::kSourceUpdated:
-        // sourceWaveformDisplay->setWaveform(&plugin->fSourceWaveform);
-        // sourceWaveformDisplay->setWaveformLength(plugin->fSourceLength);
-        // sourceWaveformDisplay->waveformNew();
         sourceAvailable = false;
         sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.length > 0);
-        // std::cout << "sourceAvailable: " << sourceAvailable << " [(plugin->fCurrentSample != nullptr) = " << (plugin->fCurrentSample != nullptr) << ", (plugin->fCurrentSample->sourceInfo.length > 0) = " << (plugin->fCurrentSample->sourceInfo.length > 0) << "]" << std::endl;
         saveSampleBtn->setEnabled(sourceAvailable);
         sourceLoading->setLoading(false);
         presetButtons->setVisible(sourceAvailable);
         editorKnobs->setVisible(sourceAvailable);
         instructions->setVisible(!sourceAvailable);
+        updatePresetButtons();
         break;
     case WAIVESampler::kSampleLoading:
         break;
@@ -1041,6 +1038,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
 
         if (plugin->fCurrentSample == nullptr)
         {
+            updatePresetButtons();
             sampleWaveformDisplay->setWaveform(nullptr);
             sampleWaveformDisplay->setWaveformLength(0);
             sampleWaveformDisplay->waveformNew();
@@ -1052,6 +1050,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         }
         else
         {
+            updatePresetButtons();
             sampleWaveformDisplay->setWaveformLength(plugin->fCurrentSample->sampleLength);
             if (plugin->fCurrentSample->saved)
                 saveSampleBtn->setLabel("Update");
@@ -1130,6 +1129,8 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         std::cout << "Unknown update: " << arg << std::endl;
         break;
     }
+
+    repaint();
 }
 
 void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)
@@ -1369,6 +1370,43 @@ Knob *WAIVESamplerUI::createWAIVEKnob(
     knob->resizeToFit();
 
     return knob;
+}
+
+void WAIVESamplerUI::updatePresetButtons()
+{
+    makeKick->setToggled(false);
+    makeSnare->setToggled(false);
+    makeClap->setToggled(false);
+    makeHihat->setToggled(false);
+
+    if (plugin->fCurrentSample == nullptr)
+    {
+        sampleWaveformDisplay->text_color = WaiveColors::text;
+        return;
+    }
+
+    if (plugin->fCurrentSample->preset == "Kick")
+    {
+        makeKick->setToggled(true);
+        sampleWaveformDisplay->text_color = WaiveColors::accent2;
+    }
+    else if (plugin->fCurrentSample->preset == "Snare")
+    {
+        makeSnare->setToggled(true);
+        sampleWaveformDisplay->text_color = WaiveColors::accent1;
+    }
+    else if (plugin->fCurrentSample->preset == "Clap")
+    {
+        makeClap->setToggled(true);
+        sampleWaveformDisplay->text_color = WaiveColors::accent4;
+    }
+    else if (plugin->fCurrentSample->preset == "HiHat")
+    {
+        makeHihat->setToggled(true);
+        sampleWaveformDisplay->text_color = WaiveColors::accent3;
+    }
+    else
+        sampleWaveformDisplay->text_color = WaiveColors::text;
 }
 
 END_NAMESPACE_DISTRHO

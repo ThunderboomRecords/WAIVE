@@ -125,10 +125,9 @@ void ImporterTask::import(const std::string &fp)
     info->filterResonance = 0;
     info->pitch = 1.0f;
     info->volume = 1.0f;
-    info->source = fp;
+    info->sourceInfo.fp = fp;
     info->sourceStart = 0;
     info->saved = true;
-    // info->tags.push_back({"imported"});
 
     // TODO: render loaded sample...
     auto embedding = _ws->getEmbedding(&sampleCopy);
@@ -248,6 +247,7 @@ WaveformLoaderTask::~WaveformLoaderTask() {}
 void WaveformLoaderTask::runTask()
 {
     std::cout << "WaveformLoaderTask::runTask()" << std::endl;
+    std::cout << " fp: " << fp << std::endl;
 
     SndfileHandle fileHandle(fp, SFM_READ);
     if (fileHandle.error())

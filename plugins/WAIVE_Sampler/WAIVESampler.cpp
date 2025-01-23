@@ -101,7 +101,7 @@ WAIVESampler::~WAIVESampler()
     taskManager.cancelAll();
     taskManager.joinAll();
 
-    std::cout << " - WAIVESampler::~WAIVESampler() DONE";
+    std::cout << " - WAIVESampler::~WAIVESampler() DONE" << std::endl;
 }
 
 void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
@@ -678,6 +678,7 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     {
         fCurrentSample = nullptr;
         pluginUpdate.notify(this, PluginUpdate::kSampleCleared);
+        pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
         pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
 
         return;
@@ -700,7 +701,7 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     renderSampleLock = false;
 
     if (fCurrentSample->sourceInfo.length == 0)
-        loadSourceFile(fCurrentSample->source);
+        loadSourceFile(fCurrentSample->sourceInfo.fp);
     else
     {
         fCurrentSample->sourceInfo.sourceLoaded = true;
@@ -714,6 +715,9 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
 
 void WAIVESampler::loadPreset(Preset preset)
 {
+    if (fCurrentSample == nullptr)
+        return;
+
     renderSampleLock = true;
     setParameterValue(kSampleVolume, preset.volume);
     setParameterValue(kSamplePitch, preset.pitch);
@@ -726,9 +730,9 @@ void WAIVESampler::loadPreset(Preset preset)
     setParameterValue(kFilterCutoff, preset.filterCutoff);
     setParameterValue(kFilterResonance, preset.filterResonance);
     setParameterValue(kFilterType, preset.filterType);
+    fCurrentSample->preset.assign(preset.presetName);
     renderSampleLock = false;
 
-    // fSampleLoaded = true;
     pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
 
     renderSample();
@@ -791,17 +795,17 @@ void WAIVESampler::renderSample()
     // delta (pitch) envelope
     float deltaStart = fCurrentSample->pitch + fCurrentSample->percussiveBoost * 3.0f;
     float delta = deltaStart;
-    int deltaEnvLength = sampleRate / 20;
+    int deltaEnvLength = std::floor(sampleRate / 20.f);
     if (d_isZero(fCurrentSample->percussiveBoost))
         deltaEnvLength = -1;
 
     float y = 0.0f;
-    int index = 0;
+    size_t index = 0;
     float indexF = 0.0f;
 
-    for (int i = 0; i < fCurrentSample->sampleLength; i++)
+    for (size_t i = 0; i < fCurrentSample->sampleLength; i++)
     {
-        index = (int)indexF;
+        index = std::round(indexF);
         if (fCurrentSample->sourceStart + index >= sourceInfo->length)
         {
             fCurrentSample->sampleLength = i;
@@ -845,7 +849,6 @@ void WAIVESampler::renderSample()
 
 void WAIVESampler::loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info)
 {
-    LOG_LOCATION
     SamplePlayer *sp = &samplePlayers[spIndex];
 
     if (info == nullptr)
@@ -994,7 +997,7 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     {
         if (pTask->isCancelled())
         {
-            fCurrentSample->source = "";
+            fCurrentSample->sourceInfo.fp = "";
             fCurrentSample->sourceInfo.length = 0;
             pNf->release();
             return;
@@ -1024,7 +1027,7 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         else
         {
             std::cerr << "Source failed to load" << std::endl;
-            fCurrentSample->source = "";
+            fCurrentSample->sourceInfo.fp = "";
             fCurrentSample->tagString = "";
             fCurrentSample->sourceInfo.length = 0;
         }

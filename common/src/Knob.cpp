@@ -91,6 +91,8 @@ bool Knob::onMouse(const MouseEvent &ev)
         if (callback != nullptr)
             callback->knobDragStarted(this);
         repaint();
+
+        return true;
     }
     else if (!ev.press && dragging_)
     {
@@ -98,10 +100,8 @@ bool Knob::onMouse(const MouseEvent &ev)
         if (callback != nullptr)
             callback->knobDragFinished(this, value_);
     }
-    else
-        return false;
 
-    return true;
+    return false;
 }
 
 bool Knob::onMotion(const MotionEvent &ev)

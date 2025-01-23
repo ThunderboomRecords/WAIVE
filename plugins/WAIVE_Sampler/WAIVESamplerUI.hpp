@@ -118,6 +118,7 @@ protected:
 
 private:
     void beginOpenFileBrowser(const std::string &state, bool multiple);
+    void updatePresetButtons();
 
     Knob *createWAIVEKnob(
         Parameters param,

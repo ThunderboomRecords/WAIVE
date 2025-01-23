@@ -84,6 +84,7 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
             // else
             //     callback->sampleUnselected(this);
             // callback->sampleSlotCleared(this, slotId);
+            return true;
         }
     }
 
