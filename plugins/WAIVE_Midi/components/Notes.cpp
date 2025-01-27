@@ -1,5 +1,11 @@
 #include "Notes.hpp"
 
+void printNoteDetails(const std::shared_ptr<Note> &n)
+{
+    std::cout << "Note " << (n->noteOn ? "ON " : "OFF") << "  Instrument " << n->instrument << ", midiNote " << (int)n->midiNote << ", velocity " << (int)n->velocity << ", channel " << (int)n->channel << ", other " << (n->other == nullptr ? "NULL" : "note") << std::endl;
+    // std::cout << fmt::format("") << std::endl;
+}
+
 bool compareGrooveEvents(GrooveEvent g0, GrooveEvent g1)
 {
     if (g0.position < g1.position)
@@ -10,19 +16,19 @@ bool compareGrooveEvents(GrooveEvent g0, GrooveEvent g1)
     return g0.velocity > g1.velocity;
 }
 
-bool compareNotes(Note n0, Note n1)
+bool compareNotes(std::shared_ptr<Note> n0, std::shared_ptr<Note> n1)
 {
-    if (n0.tick < n1.tick)
+    if (n0->tick + n0->offset < n1->tick + n1->offset)
         return true;
-    else if (n0.tick > n1.tick)
+    else if (n0->tick + n0->offset > n1->tick + n1->offset)
         return false;
 
-    if (!n0.noteOn && n1.noteOn)
+    if (!n0->noteOn && n1->noteOn)
         return true;
-    else if (n0.noteOn && !n1.noteOn)
+    else if (n0->noteOn && !n1->noteOn)
         return false;
 
-    return n0.midiNote < n1.midiNote;
+    return n0->midiNote < n1->midiNote;
 }
 
 void writeBigEndian4(std::ofstream &out, uint32_t value)
@@ -74,12 +80,12 @@ void writeVariableLength(std::ofstream &out, uint32_t value)
     out.put(buffer[0]); // Last byte, MSB not set
 }
 
-bool exportMidiFile(const std::vector<Note> &events, const std::string &filename)
+bool exportMidiFile(const std::vector<std::shared_ptr<Note>> &events, const std::string &filename)
 {
     // Sort events by time to ensure correct ordering
     auto sortedEvents = events;
-    std::sort(sortedEvents.begin(), sortedEvents.end(), [](const Note &a, const Note &b)
-              { return a.tick < b.tick; });
+    std::sort(sortedEvents.begin(), sortedEvents.end(), [](const std::shared_ptr<Note> &a, const std::shared_ptr<Note> &b)
+              { return a->tick < b->tick; });
 
     // Open file for binary writing
     std::ofstream outFile(filename, std::ios::binary);
@@ -109,15 +115,15 @@ bool exportMidiFile(const std::vector<Note> &events, const std::string &filename
     for (const auto &event : sortedEvents)
     {
         // Write delta time
-        uint32_t deltaTime = event.tick - previousTime;
+        uint32_t deltaTime = event->tick - previousTime;
         writeVariableLength(outFile, deltaTime);
-        previousTime = event.tick;
+        previousTime = event->tick;
 
         // Write MIDI event
-        uint8_t statusByte = (event.noteOn ? 0x90 : 0x80) | (event.channel & 0x0F);
+        uint8_t statusByte = (event->noteOn ? 0x90 : 0x80) | (event->channel & 0x0F);
         outFile.put(statusByte);
-        outFile.put(event.midiNote);
-        outFile.put(event.velocity);
+        outFile.put(event->midiNote);
+        outFile.put(event->velocity);
 
         // std::cout << " Event " << std::hex << count << ":" << std::endl;
         // std::cout << " - Delta:     " << std::hex << deltaTime << std::dec << " (" << deltaTime << ")" << std::endl;

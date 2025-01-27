@@ -34,6 +34,7 @@ const unsigned int UI_W = 803;
 const unsigned int UI_H = 579;
 
 class WAIVEMidiUI : public UI,
+                    public DrumPattern::Callback,
                     public GrooveGraph::Callback,
                     public Button::Callback,
                     public Knob::Callback,
@@ -56,6 +57,9 @@ protected:
     void dropdownSelection(DropDown *widget, int item) override;
     void textEntered(TextInput *textInput, std::string text) override;
     void textInputChanged(TextInput *textInput, std::string text) override;
+    void onDrumPatternClicked(DrumPattern *widget, int instrument, int sixteenth) override;
+    void onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Note> note, float deltaY) override;
+    void onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<Note> note, uint32_t tick) override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
 private:
@@ -68,7 +72,7 @@ private:
     GrooveGraph *grooveGraph;
     Label *scoreLabel, *grooveLabel, *complexityLabel, *midiLabel;
     std::vector<std::shared_ptr<Label>> drumNames;
-    Button *new_score, *var_score, *new_groove, *var_groove, *quantizeBtn, *exportBtn;
+    Button *newScoreBtn, *varScoreBtn, *newGrooveBtn, *varGrooveBtn, *quantizeBtn, *exportBtn;
     Knob *complexity;
     Box *scoreGenreBox, *grooveGenreBox;
     DropDown *scoreGenreDD, *grooveGenreDD;
@@ -76,7 +80,7 @@ private:
     std::vector<std::shared_ptr<TextInput>> midiNotesEdit;
     std::vector<std::shared_ptr<Knob>> complexities;
 
-    Playhead *drum_playhead;
+    Playhead *drumPlayhead;
 
     FontId fontTitle, fontMain;
 

@@ -8,6 +8,7 @@
 #include <random>
 #include <chrono>
 #include <mutex>
+#include <algorithm>
 
 #include <fmt/core.h>
 
@@ -107,9 +108,13 @@ protected:
     void generateFullPattern();
 
     void setMidiNote(int instrument, uint8_t midi);
+    void addNote(int instrument, int sixteenth, uint8_t velocity);
+
     void computeNotes();
 
 private:
+    void createNoteOn(const std::vector<std::shared_ptr<Trigger>> &triggers, std::vector<std::shared_ptr<Note>> &notesNew, bool user = false);
+
     float fThreshold;
 
     double sampleRate;
@@ -166,14 +171,15 @@ private:
 
     const int max_events[9] = {3, 7, 3, 3, 3, 4, 3, 2, 2};
     int s_map[9];
-    int ticks_per_beat;
+    uint32_t ticks_per_beat, ticks_per_16th;
 
     int score_genre, groove_genre;
     bool quantize;
 
     std::mutex noteMtx;
-    std::vector<Note> notes;
-    std::vector<Note>::iterator notesPointer;
+    std::vector<std::shared_ptr<Trigger>> triggerGenerated, triggerUser;
+    std::vector<std::shared_ptr<Note>> notesOut;
+    std::vector<std::shared_ptr<Note>>::iterator notesPointer;
     std::set<uint8_t> triggered;
     std::vector<uint8_t> midiNotes;
 

@@ -57,32 +57,33 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     scoreDDIcon->setSize(9, 5);
     scoreDDIcon->onTop(scoreGenreBox, END, CENTER, scoreGenreBox->radius);
 
-    new_score = new Button(this);
-    new_score->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-    new_score->setLabel("New");
-    new_score->resizeToFit();
-    new_score->setCallback(this);
-    new_score->rightOf(scoreGenreBox, Widget_Align::CENTER, padding);
+    newScoreBtn = new Button(this);
+    newScoreBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+    newScoreBtn->setLabel("New");
+    newScoreBtn->resizeToFit();
+    newScoreBtn->setCallback(this);
+    newScoreBtn->rightOf(scoreGenreBox, Widget_Align::CENTER, padding);
 
-    var_score = new Button(this);
-    var_score->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-    var_score->setLabel("Variation");
-    var_score->resizeToFit();
-    var_score->setCallback(this);
-    var_score->rightOf(new_score, Widget_Align::CENTER, padding);
+    varScoreBtn = new Button(this);
+    varScoreBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+    varScoreBtn->setLabel("Variation");
+    varScoreBtn->resizeToFit();
+    varScoreBtn->setCallback(this);
+    varScoreBtn->rightOf(newScoreBtn, Widget_Align::CENTER, padding);
 
     drumPattern = new DrumPattern(this);
     drumPattern->setSize(560, 260);
-    drumPattern->notes = &plugin->notes;
+    drumPattern->notes = &plugin->notesOut;
     drumPattern->noteMtx = &plugin->noteMtx;
     drumPattern->below(scoreLabel, Widget_Align::START, padding * 2.f);
+    drumPattern->setCallback(this);
 
-    drum_playhead = new Playhead(this);
-    drum_playhead->setAbsolutePos(drumPattern->getAbsolutePos());
-    drum_playhead->setSize(drumPattern->getSize(), true);
-    drum_playhead->progress = &plugin->progress;
-    drum_playhead->accent_color = WaiveColors::light2;
-    addIdleCallback(drum_playhead);
+    drumPlayhead = new Playhead(this);
+    drumPlayhead->setAbsolutePos(drumPattern->getAbsolutePos());
+    drumPlayhead->setSize(drumPattern->getSize(), true);
+    drumPlayhead->progress = &plugin->progress;
+    drumPlayhead->accent_color = WaiveColors::light2;
+    addIdleCallback(drumPlayhead);
 
     VBox labels(this);
     labels.setHeight(drumPattern->getHeight());
@@ -143,19 +144,19 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     grooveDDIcon->setSize(9, 5);
     grooveDDIcon->onTop(grooveGenreBox, END, CENTER, grooveGenreBox->radius);
 
-    new_groove = new Button(this);
-    new_groove->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-    new_groove->setLabel("New");
-    new_groove->resizeToFit();
-    new_groove->setCallback(this);
-    new_groove->rightOf(grooveGenreBox, Widget_Align::CENTER, padding);
+    newGrooveBtn = new Button(this);
+    newGrooveBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+    newGrooveBtn->setLabel("New");
+    newGrooveBtn->resizeToFit();
+    newGrooveBtn->setCallback(this);
+    newGrooveBtn->rightOf(grooveGenreBox, Widget_Align::CENTER, padding);
 
-    var_groove = new Button(this);
-    var_groove->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-    var_groove->setLabel("Variation");
-    var_groove->resizeToFit();
-    var_groove->setCallback(this);
-    var_groove->rightOf(new_groove, Widget_Align::CENTER, padding);
+    varGrooveBtn = new Button(this);
+    varGrooveBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+    varGrooveBtn->setLabel("Variation");
+    varGrooveBtn->resizeToFit();
+    varGrooveBtn->setCallback(this);
+    varGrooveBtn->rightOf(newGrooveBtn, Widget_Align::CENTER, padding);
 
     grooveGraph = new GrooveGraph(this);
     grooveGraph->setSize(drumPattern->getWidth(), 86.f * fScaleFactor);
@@ -203,7 +204,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     complexity->setValue(plugin->getParameterValue(kThreshold));
     complexity->resizeToFit();
     complexity->setCenterX(complexities[0].get()->getCenterX());
-    complexity->setCenterY(var_score->getCenterY());
+    complexity->setCenterY(varScoreBtn->getCenterY());
 
     complexityLabel = new Label(this, "Complexity");
     complexityLabel->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
@@ -244,7 +245,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     quantizeBtn->setLabel("Quantize");
     quantizeBtn->resizeToFit();
     quantizeBtn->setRight(drumPattern->getRight());
-    quantizeBtn->setCenterY(var_groove->getCenterY());
+    quantizeBtn->setCenterY(varGrooveBtn->getCenterY());
     quantizeBtn->isToggle = true;
     quantizeBtn->setToggled(false);
     quantizeBtn->setCallback(this);
@@ -339,22 +340,22 @@ void WAIVEMidiUI::uiScaleFactorChanged(const double scaleFactor)
 
 void WAIVEMidiUI::buttonClicked(Button *button)
 {
-    if (button == new_score)
+    if (button == newScoreBtn)
     {
         plugin->generateScore();
         plugin->generateFullPattern();
     }
-    else if (button == new_groove)
+    else if (button == newGrooveBtn)
     {
         plugin->generateGroove();
         plugin->generateFullPattern();
     }
-    else if (button == var_score)
+    else if (button == varScoreBtn)
     {
         plugin->variationScore();
         plugin->generateFullPattern();
     }
-    else if (button == var_groove)
+    else if (button == varGrooveBtn)
     {
         plugin->variationGroove();
         plugin->generateFullPattern();
@@ -362,7 +363,7 @@ void WAIVEMidiUI::buttonClicked(Button *button)
     else if (button == quantizeBtn)
     {
         plugin->quantize = button->getToggled();
-        plugin->generateFullPattern();
+        plugin->computeNotes();
     }
     else if (button == exportBtn)
     {
@@ -455,6 +456,29 @@ void WAIVEMidiUI::textEntered(TextInput *textInput, std::string text)
 
 void WAIVEMidiUI::textInputChanged(TextInput *textInput, std::string text)
 {
+}
+
+void WAIVEMidiUI::onDrumPatternClicked(DrumPattern *widget, int instrument, int sixteenth)
+{
+    std::cout << "WAIVEMidiUI::onDrumPatternClicked instrument " << instrument << " sixteenth " << sixteenth << std::endl;
+    plugin->addNote(instrument, sixteenth, 100);
+}
+
+void WAIVEMidiUI::onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Note> note, float deltaY)
+{
+    uint8_t vel = note->trigger->velocity;
+    vel += (deltaY < 0 ? std::floor(deltaY) : std::ceil(deltaY));
+    vel = std::clamp(vel, (uint8_t)1, (uint8_t)127);
+    note->trigger->velocity = vel;
+
+    std::cout << (int)(note->trigger->velocity) << std::endl;
+    plugin->computeNotes();
+}
+
+void WAIVEMidiUI::onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<Note> note, uint32_t newTick)
+{
+    note->trigger->tick = newTick;
+    plugin->computeNotes();
 }
 
 END_NAMESPACE_DISTRHO

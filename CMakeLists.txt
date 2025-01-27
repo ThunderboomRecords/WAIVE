@@ -31,7 +31,7 @@ include_directories(
     ${CMAKE_BINARY_DIR}/generated/
 )
 
-add_subdirectory(dpf)
+add_subdirectory(DPF)
 
 add_subdirectory(plugins/WAIVE_Sampler)
 add_subdirectory(plugins/WAIVE_Midi)

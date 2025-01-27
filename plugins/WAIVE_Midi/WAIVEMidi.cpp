@@ -14,6 +14,7 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 {
 
     sampleRate = getSampleRate();
+    ticks_per_16th = ticks_per_beat / 4;
 
     s_map[0] = 0;
     for (int i = 1; i < 9; i++)
@@ -135,8 +136,10 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
         fThresholds[i] = fThreshold;
     }
 
-    notes.reserve(16 * 9 * 3);
-    notesPointer = notes.begin();
+    triggerGenerated.reserve(16 * 9 * 3);
+    triggerUser.reserve(16 * 9 * 3);
+    notesOut.reserve(16 * 9 * 3 * 3);
+    notesPointer = notesOut.begin();
 
     generateScore();
     generateGroove();
@@ -263,13 +266,10 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
     {
     case kThreshold:
         fThreshold = value;
-
         hold_update = true;
         for (int i = 0; i < 9; i++)
             setParameterValue(kThreshold1 + i, value);
-        // fThresholds[i] = fThreshold;
         hold_update = false;
-
         generateFullPattern();
         break;
     case kGrooveNew:
@@ -331,7 +331,7 @@ void WAIVEMidi::setState(const char *key, const char *value)
     if (std::strcmp(key, "score") == 0)
         encodeScore();
     else if (std::strcmp(key, "export") == 0)
-        exportMidiFile(notes, value);
+        exportMidiFile(notesOut, value);
 }
 
 String WAIVEMidi::getState(const char *key) const
@@ -394,7 +394,7 @@ void WAIVEMidi::run(
 
     if (wasPlaying && !timePos.playing)
     {
-        notesPointer = notes.begin();
+        notesPointer = notesOut.begin();
         loopTick = 0.0;
         progress = 0.0f;
         allNotesOff(0);
@@ -403,9 +403,7 @@ void WAIVEMidi::run(
     wasPlaying = timePos.playing;
 
     if (!timePos.bbt.valid || !timePos.playing)
-    {
         return;
-    }
 
     float tick = timePos.bbt.tick;
     float beat = timePos.bbt.beat - 1.0f;
@@ -420,6 +418,7 @@ void WAIVEMidi::run(
     if (ticks_per_beat != tpb)
     {
         ticks_per_beat = tpb;
+        ticks_per_16th = tpb / 4;
         computeNotes();
     }
 
@@ -431,13 +430,13 @@ void WAIVEMidi::run(
     for (uint32_t i = 0; i < numFrames; i++)
     {
         me.frame = i;
-        while (notesPointer < notes.end() && (double)(*notesPointer).tick <= loopTick)
+        while (notesPointer < notesOut.end() && (double)(*notesPointer)->tick <= loopTick)
         {
-            me.data[1] = (*notesPointer).midiNote;
+            me.data[1] = (*notesPointer)->midiNote;
 
-            if ((*notesPointer).noteOn)
+            if ((*notesPointer)->noteOn)
             {
-                if (triggered.count((*notesPointer).midiNote))
+                if (triggered.count((*notesPointer)->midiNote))
                 {
                     // note still on, send noteOff first
                     me.data[0] = 0x80;
@@ -446,14 +445,14 @@ void WAIVEMidi::run(
                 }
 
                 me.data[0] = 0x90;
-                me.data[2] = (*notesPointer).velocity;
-                triggered.insert((*notesPointer).midiNote);
+                me.data[2] = (*notesPointer)->velocity;
+                triggered.insert((*notesPointer)->midiNote);
             }
             else
             {
                 me.data[0] = 0x80;
                 me.data[2] = 0;
-                triggered.erase((*notesPointer).midiNote);
+                triggered.erase((*notesPointer)->midiNote);
             }
 
             writeMidiEvent(me);
@@ -464,7 +463,7 @@ void WAIVEMidi::run(
         if (loopTick >= ticksPerLoop)
         {
             loopTick = 0.0;
-            notesPointer = notes.begin();
+            notesPointer = notesOut.begin();
             allNotesOff(i);
         }
     }
@@ -682,35 +681,9 @@ void WAIVEMidi::generateFullPattern()
         }
     }
 
-    computeNotes();
-}
-
-void WAIVEMidi::setMidiNote(int instrument, uint8_t midi)
-{
-    midiNotes[instrument] = midi;
-    computeNotes();
-}
-
-void WAIVEMidi::computeNotes()
-{
-    std::lock_guard<std::mutex> lk(noteMtx);
-
-    uint32_t tp16th = ticks_per_beat / 4;
-
-    int nextTick = -1;
-    if (notesPointer != notes.end())
-        nextTick = (*notesPointer).tick;
-
-    notes.clear();
-
-    // Dim 0: Instrument
-    // Dim 1: notes
-    std::vector<std::vector<Note>> newNotes;
-    newNotes.resize(9);
-
+    triggerGenerated.clear();
     for (int j = 0; j < 9; j++)
     {
-        // first collect all the noteOn events:
         for (int i = 0; i < 16; i++)
         {
             for (int k = 0; k < max_events[j]; k++)
@@ -726,88 +699,144 @@ void WAIVEMidi::computeNotes()
                 uint8_t velocity = (uint8_t)(vel * 127.0f);
 
                 float offset = fDrumPattern[i][index][2];
-                if (quantize)
-                    offset = offset < .5f ? 0.f : 1.f;
 
-                uint32_t tickOn = (uint32_t)(((float)i + offset) * tp16th);
-                tickOn = std::max(tickOn, static_cast<uint32_t>(0));
+                uint32_t tickOn = (uint32_t)std::floor(((float)i + offset) * ticks_per_16th);
+                // tickOn = std::max(tickOn, static_cast<uint32_t>(0));
 
-                Note noteOn = {
+                Trigger t = {
                     tickOn,
                     velocity,
-                    midiNotes[j],
-                    DRUM_CHANNEL,
-                    true,
                     j,
                 };
 
-                newNotes[j].push_back(noteOn);
+                triggerGenerated.push_back(std::make_shared<Trigger>(t));
             }
-        }
-
-        if (newNotes[j].size() == 0)
-            continue;
-
-        // make sure noteOns are in temporal order
-        std::sort(newNotes[j].begin(), newNotes[j].end(), compareNotes);
-
-        // add all the noteOff events
-        int nNotes = newNotes[j].size();
-        for (int i = 0; i < nNotes - 1; i++)
-        {
-            uint32_t thisOnTick = newNotes[j][i].tick;
-            uint32_t nextOnTick = newNotes[j][i + 1].tick;
-            uint32_t noteOffTick = std::min(thisOnTick + tp16th, nextOnTick);
-
-            Note noteOff = {
-                noteOffTick,
-                0,
-                newNotes[j][i].midiNote,
-                DRUM_CHANNEL,
-                false,
-                j,
-            };
-            newNotes[j].push_back(noteOff);
-        }
-
-        // add final noteOff
-        uint32_t noteOffTick = std::min(newNotes[j][nNotes - 1].tick + tp16th, tp16th * 16 * 4 - 1);
-        Note noteOff = {
-            noteOffTick,
-            0,
-            newNotes[j][nNotes - 1].midiNote,
-            DRUM_CHANNEL,
-            false,
-            j,
-        };
-        newNotes[j].push_back(noteOff);
-
-        // then reorder again
-        std::sort(newNotes[j].begin(), newNotes[j].end(), compareNotes);
-
-        int prevOnTick = -1;
-        for (int i = 0; i < newNotes[j].size(); i++)
-        {
-            Note n = newNotes[j][i];
-
-            // avoid instantaneous notes
-            if (n.noteOn)
-            {
-                if (n.tick == prevOnTick)
-                    continue;
-                prevOnTick = n.tick;
-            }
-
-            notes.push_back(n);
         }
     }
 
-    std::sort(notes.begin(), notes.end(), compareNotes);
+    computeNotes();
+}
 
-    // advance pointer to reach time when computeNotes was called
-    notesPointer = notes.begin();
-    while (notesPointer != notes.end() && (*notesPointer).tick <= nextTick)
+void WAIVEMidi::setMidiNote(int instrument, uint8_t midi)
+{
+    midiNotes[instrument] = midi;
+    computeNotes();
+}
+
+void WAIVEMidi::addNote(int instrument, int sixteenth, uint8_t velocity)
+{
+    std::cout << "WAIVEMidi::addNote instrument " << instrument << " sixteenth " << sixteenth << " velocity " << (int)velocity << std::endl;
+    if (instrument < 0 || instrument > 9 || sixteenth < 0)
+        return;
+
+    Trigger t = {sixteenth * ticks_per_16th, velocity, instrument};
+    triggerUser.push_back(std::make_shared<Trigger>(t));
+
+    computeNotes();
+
+    std::cout << "WAIVEMidi::addNote Done" << std::endl;
+}
+
+void WAIVEMidi::createNoteOn(const std::vector<std::shared_ptr<Trigger>> &triggers, std::vector<std::shared_ptr<Note>> &notesNew, bool user)
+{
+    for (auto &trigger : triggers)
+    {
+        if (trigger->instrument < 0)
+            continue;
+
+        uint32_t onTick = trigger->tick;
+        if (quantize)
+            onTick = static_cast<uint32_t>(std::round(static_cast<float>(onTick) / static_cast<float>(ticks_per_16th)) * ticks_per_16th);
+
+        // Create noteOn
+        Note noteOn = {
+            onTick,
+            trigger->velocity,
+            midiNotes[trigger->instrument],
+            DRUM_CHANNEL,
+            true,
+            trigger->instrument,
+            user,
+            0,
+            nullptr};
+
+        noteOn.trigger = trigger;
+
+        notesNew.push_back(std::make_shared<Note>(noteOn));
+    }
+}
+
+void WAIVEMidi::computeNotes()
+{
+    std::cout << "WAIVEMidi::computeNotes()" << std::endl;
+    std::lock_guard<std::mutex> lk(noteMtx);
+
+    // get tick of notesPointer
+    uint32_t nextNoteTick = 0;
+    if (notesPointer != notesOut.end())
+        nextNoteTick = (*notesPointer)->tick;
+
+    notesOut.clear();
+    std::vector<std::shared_ptr<Note>> notesNew;
+
+    createNoteOn(triggerGenerated, notesNew);
+    createNoteOn(triggerUser, notesNew, true);
+
+    std::sort(notesNew.begin(), notesNew.end(), compareNotes);
+    std::reverse(notesNew.begin(), notesNew.end());
+
+    // Clean up overlapping notes
+    int lastNoteOn[9];
+    std::fill_n(&lastNoteOn[0], 9, -1);
+
+    for (auto noteOn : notesNew)
+    {
+        // Note noteOn = *it;
+        int instrument = noteOn->instrument;
+        if (instrument < 0)
+            continue;
+
+        uint32_t noteOffTick;
+
+        if (lastNoteOn[instrument] == -1)
+            noteOffTick = noteOn->tick + ticks_per_16th;
+        else
+            noteOffTick = std::min(static_cast<uint32_t>(lastNoteOn[instrument]), noteOn->tick + ticks_per_16th);
+
+        noteOffTick = std::min(noteOffTick, ticks_per_beat * 4);
+
+        Note noteOff = {
+            noteOffTick,
+            0,
+            noteOn->midiNote,
+            noteOn->channel,
+            false,
+            noteOn->instrument,
+            noteOn->user,
+            noteOn->offset,
+            nullptr};
+
+        noteOn->other = std::make_shared<Note>(noteOff);
+
+        notesOut.push_back(std::make_shared<Note>(noteOff));
+
+        lastNoteOn[instrument] = noteOn->tick;
+        notesOut.push_back(noteOn);
+    }
+
+    std::reverse(notesOut.begin(), notesOut.end());
+    std::sort(notesOut.begin(), notesOut.end(), compareNotes);
+
+    // reset notePointer to last position
+    notesPointer = notesOut.begin();
+    uint32_t t = 0;
+    while (t < nextNoteTick && notesPointer < notesOut.end())
+    {
         notesPointer++;
+        t = (*notesPointer)->tick;
+    }
+
+    std::cout << "computeNotes Done" << std::endl;
 }
 
 void WAIVEMidi::sampleRateChanged(double newSampleRate)

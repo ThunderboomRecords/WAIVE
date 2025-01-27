@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <iomanip>
 
+// #include <fmt/core.h>
+
 struct GrooveEvent
 {
     float position;
@@ -22,6 +24,14 @@ struct GrooveEvent
 */
 bool compareGrooveEvents(GrooveEvent g0, GrooveEvent g1);
 
+struct Trigger
+{
+    uint32_t tick;
+    uint8_t velocity;
+    int instrument;
+    bool user;
+};
+
 struct Note
 {
     uint32_t tick;
@@ -30,13 +40,19 @@ struct Note
     uint8_t channel;
     bool noteOn;
     int instrument = -1;
+    bool user = false;
+    int32_t offset;
+    std::shared_ptr<Note> other;
+    std::shared_ptr<Trigger> trigger;
 };
 
 /**
    For sorting Note structs by time, noteOn/Off, then by
    midiNote number
 */
-bool compareNotes(Note n0, Note n1);
+bool compareNotes(std::shared_ptr<Note> n0, std::shared_ptr<Note> n1);
+
+void printNoteDetails(const std::shared_ptr<Note> &n);
 
 static uint8_t midiMap[9] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 
@@ -61,6 +77,6 @@ void writeBigEndian4(std::ofstream &out, uint32_t value);
 void writeBigEndian2(std::ofstream &out, uint16_t value);
 void writeVariableLength(std::ofstream &out, uint32_t value);
 
-bool exportMidiFile(const std::vector<Note> &events, const std::string &filename);
+bool exportMidiFile(const std::vector<std::shared_ptr<Note>> &events, const std::string &filename);
 
 #endif
