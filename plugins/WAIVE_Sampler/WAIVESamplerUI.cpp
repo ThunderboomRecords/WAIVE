@@ -42,6 +42,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         importSource->resizeToFit();
         importSource->onTop(sourceBrowserPanel, END, START, 14);
         importSource->setCallback(this);
+        importSource->description = "Import source audio file.";
         sourceBrowserPanel->addChildWidget(importSource);
 
         sourceList = new SourceList(this);
@@ -59,6 +60,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceList->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         sourceList->computeColumnWidths();
         sourceList->setCallback(this);
+        sourceList->description = "Select sound source.";
         sourceBrowserPanel->addChildWidget(sourceList);
 
         openFilterPanelBtn = new Button(this);
@@ -71,6 +73,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         spacing = (spacing - openFilterPanelBtn->getHeight()) / 2.f;
         openFilterPanelBtn->below(sourceList, START, spacing);
         openFilterPanelBtn->setCallback(this);
+        openFilterPanelBtn->description = "Show/Hide additional filter options for searching sources.";
         sourceBrowserPanel->addChildWidget(openFilterPanelBtn);
 
         searchBox = new Box(this);
@@ -90,6 +93,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceSearch->setSize(searchBox->getWidth() - padding * 4.f - sourceSearch->getFontSize(), sourceSearch->getFontSize(), true);
         sourceSearch->onTop(searchBox, START, CENTER, padding * 2.f);
         sourceSearch->setCallback(this);
+        sourceSearch->description = "Search archives by keywords.";
         sourceBrowserPanel->addChildWidget(sourceSearch);
 
         searchIcon = new Icon(this);
@@ -133,6 +137,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         randomSourceBtn->resizeToFit();
         randomSourceBtn->below(sourceList, Widget_Align::END, spacing);
         randomSourceBtn->setCallback(this);
+        randomSourceBtn->description = "Randomly select a source file.";
         sourceBrowserPanel->addChildWidget(randomSourceBtn);
     }
 
@@ -177,6 +182,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         makeKick->setFontSize(16.f);
         makeKick->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         makeKick->setSize(100.f, 32.f);
+        makeKick->description = "Find a Kick sound.";
         makeKick->setCallback(this);
 
         makeSnare = new Button(this);
@@ -185,6 +191,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         makeSnare->setFontSize(16.f);
         makeSnare->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         makeSnare->setSize(100.f, 32.f);
+        makeSnare->description = "Find a Snare sound.";
         makeSnare->setCallback(this);
 
         makeHihat = new Button(this);
@@ -193,6 +200,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         makeHihat->setFontSize(16.f);
         makeHihat->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         makeHihat->setSize(100.f, 32.f);
+        makeHihat->description = "Find a Hi-Hat sound.";
         makeHihat->setCallback(this);
 
         makeClap = new Button(this);
@@ -201,6 +209,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         makeClap->setFontSize(16.f);
         makeClap->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         makeClap->setSize(100.f, 32.f);
+        makeClap->description = "Find a Clap sound.";
         makeClap->setCallback(this);
 
         presetButtons = new HBox(this);
@@ -219,25 +228,35 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         presetButtons->setVisible(false);
 
         sustainLength = createWAIVEKnob(kSustainLength, "Length", 0.0f, 5000.0f, 200.f);
+        sustainLength->description = "Set sustain length of sample.";
         sustainLength->format = "{:.0f}ms";
         sustainLength->vertical = false;
         sustainLength->resizeToFit();
         sustainLength->onTop(sampleEditorPanel, Widget_Align::END, Widget_Align::START, 24.f, 16.f);
 
         pitch = createWAIVEKnob(kSamplePitch, "Pitch", 0.25f, 4.f, 1.0f);
+        pitch->description = "Set sample playback speed.";
         volume = createWAIVEKnob(kSampleVolume, "Volume", 0.0f, 2.0f, 1.0f);
+        volume->description = "Set volume of sample.";
         percussionBoost = createWAIVEKnob(kPercussiveBoost, "Hit", 0.0f, 2.0f, 0.5f);
+        percussionBoost->description = "Set amount of percussive hit.";
 
         ampAttack = createWAIVEKnob(kAmpAttack, "Attack", 0.0f, 500.0f, 10.0f);
         ampAttack->format = "{:.0f}ms";
+        ampAttack->description = "Set attack time.";
         ampDecay = createWAIVEKnob(kAmpDecay, "Decay", 0.0f, 500.0f, 50.0f);
         ampDecay->format = "{:.0f}ms";
+        ampDecay->description = "Set decay time.";
         ampSustain = createWAIVEKnob(kAmpSustain, "Sustain", 0.0f, 1.0f, 0.7f);
+        ampSustain->description = "Set sustain level.";
         ampRelease = createWAIVEKnob(kAmpRelease, "Release", 0.0f, 500.0f, 100.0f);
         ampRelease->format = "{:.0f}ms";
+        ampRelease->description = "Set release time.";
 
         filterCutoff = createWAIVEKnob(kFilterCutoff, "Cutoff", 0.0, 0.999, 0.999);
+        filterCutoff->description = "Set filter cutoff point.";
         filterResonance = createWAIVEKnob(kFilterResonance, "Res.", 0.0, 1.0, 0.0);
+        filterResonance->description = "Set filter resonance.";
 
         filterType = new DropDown(this);
         filterType->setFontSize(16.0f);
@@ -251,6 +270,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         filterType->setDisplayNumber(3);
         filterType->resizeToFit();
         filterType->setItem(0, false);
+        filterType->description = "Set filter type.";
         filterType->setCallback(this);
 
         editorKnobs = new HBox(this);
@@ -284,12 +304,14 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         saveSampleBtn->resizeToFit();
         saveSampleBtn->setCallback(this);
         saveSampleBtn->setEnabled(false);
+        saveSampleBtn->description = "Save sample and add to Sample Player.";
 
         playSampleBtn = new Button(this);
         playSampleBtn->setLabel(" ▶");
         playSampleBtn->background_color = WaiveColors::light2;
         playSampleBtn->text_color = WaiveColors::dark;
         playSampleBtn->resizeToFit();
+        playSampleBtn->description = "Preview sample.";
         playSampleBtn->setCallback(this);
 
         HBox sampleBtns(this);
@@ -325,6 +347,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         openMapBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         openMapBtn->resizeToFit();
         openMapBtn->setCallback(this);
+        openMapBtn->description = "Show/Hide Sample Map.";
         samplePlayerPanel->addChildWidget(openMapBtn);
 
         browseFilesBtn = new Button(this);
@@ -332,6 +355,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         browseFilesBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         browseFilesBtn->resizeToFit();
         browseFilesBtn->setCallback(this);
+        browseFilesBtn->description = "Open samples folder in your system's file explorer.";
         samplePlayerPanel->addChildWidget(browseFilesBtn);
 
         HBox alignPlayerButtons(this);
@@ -431,6 +455,15 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         samplePlayerPanel->hiddenWidgets.addChildWidget(sampleBrowser);
         samplePlayerPanel->hiddenWidgets.hide();
     }
+
+    toolTip = new Label(this, "Tooltip");
+    toolTip->setFontSize(18.f);
+    toolTip->text_color = WaiveColors::light2;
+    toolTip->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+    toolTip->resizeToFit();
+    toolTip->setWidth((col1Width + col2Width) * fScaleFactor);
+    toolTip->setLeft(sampleEditorPanel->getLeft());
+    toolTip->setTop(sampleEditorPanel->getBottom() + 10.f);
 
     setGeometryConstraints(width, height, false, false);
 
@@ -582,6 +615,22 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 {
     setParameterValue(knob->getId(), value);
     // valueIndicator->setValue(knob->getValue());
+}
+
+bool WAIVESamplerUI::onMotion(const MotionEvent &ev)
+{
+    std::list<DGL::SubWidget *> children = getChildren();
+    for (const auto widget : children)
+    {
+        bool hovering = widget->getAbsoluteArea().contains(ev.pos);
+        if (hovering)
+        {
+            if (auto waiveWidget = dynamic_cast<WAIVEWidget *>(widget))
+                toolTip->setLabel(waiveWidget->description);
+        }
+    }
+
+    return false;
 }
 
 void WAIVESamplerUI::buttonClicked(Button *button)
@@ -965,11 +1014,12 @@ void WAIVESamplerUI::onNanoDisplay()
     closePath();
 
     float middle = sampleEditorPanel->getBottom() + 0.5f * (height - sampleEditorPanel->getBottom());
+
     beginPath();
-    fillColor(WaiveColors::grey2);
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_CENTER);
-    fontFaceId(fontTitle);
+    fillColor(WaiveColors::grey2);
     fontSize(18.f * fScaleFactor);
+    fontFaceId(fontTitle);
     text(width / 2.f, middle, "waive sampler", nullptr);
     closePath();
 

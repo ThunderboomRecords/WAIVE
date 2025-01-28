@@ -21,6 +21,7 @@ SampleBrowser::SampleBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
     importSampleBtn->onTop(sampleMap, Widget_Align::END, Widget_Align::START);
     importSampleBtn->background_color = WaiveColors::grey1;
     importSampleBtn->setCallback(sampleMap);
+    importSampleBtn->description = "Import sample and add to Sample Map.";
     addChildWidget(importSampleBtn);
 
     loading = new Spinner(widget);
@@ -39,6 +40,7 @@ SampleBrowser::SampleBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
     previewToggle->accent_color = WaiveColors::light2;
     previewToggle->onTop(sampleMap, Widget_Align::START, Widget_Align::START);
     previewToggle->setCallback(this);
+    previewToggle->description = "Enable/Disable sample preview on hover.";
     addChildWidget(previewToggle);
 
     sd->databaseUpdate += Poco::delegate(this, &SampleBrowser::onDatabaseChanged);

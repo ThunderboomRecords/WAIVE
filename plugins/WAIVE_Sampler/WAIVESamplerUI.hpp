@@ -94,6 +94,9 @@ protected:
     void onNanoDisplay() override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
+    // Interaction callbacks
+    bool onMotion(const MotionEvent &ev) override;
+
     // Widget Callbacks
     void buttonClicked(Button *button) override;
     void waveformSelection(Waveform *waveform, uint selectionStart) override;
@@ -180,6 +183,8 @@ private:
     Button *openMapBtn, *browseFilesBtn;
 
     SampleBrowser *sampleBrowser;
+
+    Label *toolTip;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 };

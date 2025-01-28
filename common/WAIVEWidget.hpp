@@ -16,6 +16,12 @@ START_NAMESPACE_DISTRHO
 class WAIVEWidget : public NanoSubWidget
 {
 public:
+    class Callback
+    {
+        virtual ~Callback() {};
+        virtual void onShowToolTip(WAIVEWidget *widget) = 0;
+    };
+
     explicit WAIVEWidget(Widget *widget, int flags = CREATE_ANTIALIAS) noexcept;
 
     void below(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, float padding = 10.f);
@@ -58,6 +64,7 @@ public:
     Color text_color;
     FontId font;
 
+    std::string description;
     bool renderDebug;
 
 protected:
