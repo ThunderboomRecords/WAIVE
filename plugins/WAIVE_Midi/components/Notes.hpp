@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <iomanip>
+#include <memory>
 
 // #include <fmt/core.h>
 
