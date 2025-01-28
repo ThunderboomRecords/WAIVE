@@ -65,7 +65,7 @@ void Panel::expand()
         return;
 
     expanded = true;
-    WAIVEWidget::setSize(expand_h, expand_v);
+    WAIVEWidget::setSize(expand_h, expand_v, true);
 
     WAIVEWidget::toFront();
     WidgetGroup::toFront();
@@ -88,7 +88,7 @@ void Panel::collapse()
 
     expanded = false;
 
-    WAIVEWidget::setSize(size_w, size_h);
+    WAIVEWidget::setSize(size_w, size_h, true);
 
     if (!expand_right)
         setAbsoluteX(getAbsoluteX() + (expand_h - size_w));

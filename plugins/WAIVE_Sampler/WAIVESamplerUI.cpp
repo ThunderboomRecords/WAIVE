@@ -309,7 +309,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     // 3 ----- Sample Player Panel
     {
         samplePlayerPanel = new Panel(this);
-        samplePlayerPanel->setSize(col2Width, Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END), true);
+        samplePlayerPanel->setSize(col2Width * fScaleFactor, Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END), true);
         samplePlayerPanel->setAbsolutePos(width - padding - col2Width, padding);
         samplePlayerPanel->setFont("VG5000", VG5000, VG5000_len);
         samplePlayerPanel->label = "3";
@@ -969,14 +969,14 @@ void WAIVESamplerUI::onNanoDisplay()
     fillColor(WaiveColors::grey2);
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_CENTER);
     fontFaceId(fontTitle);
-    fontSize(18.f);
+    fontSize(18.f * fScaleFactor);
     text(width / 2.f, middle, "waive sampler", nullptr);
     closePath();
 
     beginPath();
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_RIGHT);
     fontFaceId(fontMain);
-    fontSize(12.f);
+    fontSize(12.f * fScaleFactor);
     text(width - 10.f, middle, fmt::format("v{:d}.{:d}.{:d}", V_MAJ, V_MIN, V_PAT).c_str(), nullptr);
     closePath();
 }
