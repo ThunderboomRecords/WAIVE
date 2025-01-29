@@ -85,7 +85,7 @@ bool DrumPattern::onMotion(const MotionEvent &ev)
             // selectedNote->offset = std::floor(1920.0f * 4.f * difference.getX() / getWidth());
             newTick = selectedNote->tick + std::floor(1920.0f * 4.f * difference.getX() / getWidth());
             newTick = std::clamp(newTick, static_cast<uint32_t>(0), static_cast<uint32_t>(1920 * 4));
-            std::cout << "newTick: " << newTick << std::endl;
+            // std::cout << "newTick: " << newTick << std::endl;
         }
 
         return true;

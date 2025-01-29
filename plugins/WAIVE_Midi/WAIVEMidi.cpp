@@ -725,7 +725,7 @@ void WAIVEMidi::setMidiNote(int instrument, uint8_t midi)
 
 void WAIVEMidi::addNote(int instrument, int sixteenth, uint8_t velocity)
 {
-    std::cout << "WAIVEMidi::addNote instrument " << instrument << " sixteenth " << sixteenth << " velocity " << (int)velocity << std::endl;
+    // std::cout << "WAIVEMidi::addNote instrument " << instrument << " sixteenth " << sixteenth << " velocity " << (int)velocity << std::endl;
     if (instrument < 0 || instrument > 9 || sixteenth < 0)
         return;
 
@@ -733,8 +733,6 @@ void WAIVEMidi::addNote(int instrument, int sixteenth, uint8_t velocity)
     triggerUser.push_back(std::make_shared<Trigger>(t));
 
     computeNotes();
-
-    std::cout << "WAIVEMidi::addNote Done" << std::endl;
 }
 
 void WAIVEMidi::createNoteOn(const std::vector<std::shared_ptr<Trigger>> &triggers, std::vector<std::shared_ptr<Note>> &notesNew, bool user)
@@ -768,7 +766,6 @@ void WAIVEMidi::createNoteOn(const std::vector<std::shared_ptr<Trigger>> &trigge
 
 void WAIVEMidi::computeNotes()
 {
-    std::cout << "WAIVEMidi::computeNotes()" << std::endl;
     std::lock_guard<std::mutex> lk(noteMtx);
 
     // get tick of notesPointer
@@ -835,8 +832,6 @@ void WAIVEMidi::computeNotes()
         notesPointer++;
         t = (*notesPointer)->tick;
     }
-
-    std::cout << "computeNotes Done" << std::endl;
 }
 
 void WAIVEMidi::sampleRateChanged(double newSampleRate)

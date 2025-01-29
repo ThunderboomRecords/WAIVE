@@ -29,6 +29,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
 
     scoreGenreBox = new Box(this);
     scoreGenreBox->background_color = WaiveColors::grey2;
+    scoreGenreBox->description = "Select genre for main drum pattern.";
 
     scoreGenreDD = new DropDown(this);
     scoreGenreDD->setSize(80, scoreGenreDD->getFontSize(), true);
@@ -63,6 +64,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     newScoreBtn->resizeToFit();
     newScoreBtn->setCallback(this);
     newScoreBtn->rightOf(scoreGenreBox, Widget_Align::CENTER, padding);
+    newScoreBtn->description = "Generate a new pattern.";
 
     varScoreBtn = new Button(this);
     varScoreBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
@@ -70,6 +72,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     varScoreBtn->resizeToFit();
     varScoreBtn->setCallback(this);
     varScoreBtn->rightOf(newScoreBtn, Widget_Align::CENTER, padding);
+    varScoreBtn->description = "Generate small variation in pattern.";
 
     drumPattern = new DrumPattern(this);
     drumPattern->setSize(560, 260);
@@ -77,6 +80,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     drumPattern->noteMtx = &plugin->noteMtx;
     drumPattern->below(scoreLabel, Widget_Align::START, padding * 2.f);
     drumPattern->setCallback(this);
+    drumPattern->description = "Click to add new hit. Drag hit to adjust timing. Hover and scroll to adjust velocity.";
 
     drumPlayhead = new Playhead(this);
     drumPlayhead->setAbsolutePos(drumPattern->getAbsolutePos());
@@ -115,6 +119,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
 
     grooveGenreBox = new Box(this);
     grooveGenreBox->background_color = WaiveColors::grey2;
+    grooveGenreBox->description = "Select genre for groove pattern.";
 
     grooveGenreDD = new DropDown(this);
     grooveGenreDD->setSize(80, grooveGenreDD->getFontSize(), true);
@@ -150,6 +155,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     newGrooveBtn->resizeToFit();
     newGrooveBtn->setCallback(this);
     newGrooveBtn->rightOf(grooveGenreBox, Widget_Align::CENTER, padding);
+    newGrooveBtn->description = "Generate new groove pattern.";
 
     varGrooveBtn = new Button(this);
     varGrooveBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
@@ -157,12 +163,14 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     varGrooveBtn->resizeToFit();
     varGrooveBtn->setCallback(this);
     varGrooveBtn->rightOf(newGrooveBtn, Widget_Align::CENTER, padding);
+    varGrooveBtn->description = "Generate variation of current groove.";
 
     grooveGraph = new GrooveGraph(this);
     grooveGraph->setSize(drumPattern->getWidth(), 86.f * fScaleFactor);
     grooveGraph->fGroove = &plugin->fGroove;
     grooveGraph->callback = this;
     grooveGraph->below(grooveLabel, Widget_Align::START, padding * 2);
+    grooveGraph->description = "Scroll on groove event to adjust velocity.";
 
     // 3 Drum channel controls
     VBox complexitiesContainer(this);
@@ -183,6 +191,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
         t->setValue(plugin->getParameterValue(kThreshold1 + i));
         t->setCallback(this);
         t->resizeToFit();
+        t->description = "Adjust complexity of drum track.";
 
         complexities.push_back(std::move(t));
         complexitiesContainer.addWidget(complexities.back().get());
@@ -199,12 +208,14 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     complexity->min = 0.0f;
     complexity->max = 1.0f;
     complexity->setRadius(12.f);
+    complexity->foreground_color = WaiveColors::light1;
     complexity->gauge_width = 1.f * fScaleFactor;
     complexity->showValue = false;
     complexity->setValue(plugin->getParameterValue(kThreshold));
     complexity->resizeToFit();
     complexity->setCenterX(complexities[0].get()->getCenterX());
     complexity->setCenterY(varScoreBtn->getCenterY());
+    complexity->description = "Adjust all drum pattern complexity levels.";
 
     complexityLabel = new Label(this, "Complexity");
     complexityLabel->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
@@ -228,6 +239,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
         midiNote->setId(i);
         midiNote->setCallback(this);
         midiNote->rightOf(complexities[8 - i].get(), Widget_Align::CENTER, padding);
+        midiNote->description = "Set MIDI note.";
 
         midiNotesEdit.push_back(std::move(midiNote));
     }
@@ -249,6 +261,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     quantizeBtn->isToggle = true;
     quantizeBtn->setToggled(false);
     quantizeBtn->setCallback(this);
+    quantizeBtn->description = "Quantise all hits to 16th note grid.";
 
     exportBtn = new Button(this);
     exportBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
@@ -256,6 +269,16 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     exportBtn->resizeToFit();
     exportBtn->below(grooveGraph, Widget_Align::CENTER, padding);
     exportBtn->setCallback(this);
+    exportBtn->description = "Export pattern to MIDI file.";
+
+    toolTip = new Label(this, "Tooltip");
+    toolTip->setFontSize(18.f);
+    toolTip->text_color = WaiveColors::light2;
+    toolTip->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+    toolTip->resizeToFit();
+    toolTip->setWidth(mainPanel->getWidth());
+    toolTip->setLeft(mainPanel->getLeft());
+    toolTip->setTop(mainPanel->getBottom() + 10.f);
 
     setGeometryConstraints(width, height, false, false);
 
@@ -303,6 +326,32 @@ void WAIVEMidiUI::stateChanged(const char *key, const char *value)
     printf("WAIVEMidiUI::stateChanged()\n");
 
     repaint();
+}
+
+std::string getDescription(std::string text, DGL::SubWidget *widget, const DGL::Widget::MotionEvent &ev)
+{
+    if (auto waiveWidget = dynamic_cast<WAIVEWidget *>(widget))
+    {
+        if (waiveWidget->isVisible() && waiveWidget->getAbsoluteArea().contains(ev.pos) && waiveWidget->description.length() > 0)
+            text = waiveWidget->description;
+    }
+
+    std::list<DGL::SubWidget *> subWidgets = widget->getChildren();
+    for (const auto subWidget : subWidgets)
+        text = getDescription(text, subWidget, ev);
+
+    return text;
+};
+
+bool WAIVEMidiUI::onMotion(const MotionEvent &ev)
+{
+    std::list<DGL::SubWidget *> children = getChildren();
+    std::string text = "";
+    for (const auto widget : children)
+        text = getDescription(text, widget, ev);
+    toolTip->setLabel(text);
+
+    return UI::onMotion(ev);
 }
 
 void WAIVEMidiUI::onNanoDisplay()
@@ -411,7 +460,7 @@ void WAIVEMidiUI::knobValueChanged(Knob *knob, float value)
 
 void WAIVEMidiUI::dropdownSelection(DropDown *widget, int item)
 {
-    std::cout << widget->getId() << " set to " << item << std::endl;
+    // std::cout << widget->getId() << " set to " << item << std::endl;
 
     if (widget == scoreGenreDD)
         setParameterValue(kScoreGenre, item);
@@ -471,7 +520,6 @@ void WAIVEMidiUI::onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Not
     vel = std::clamp(vel, (uint8_t)1, (uint8_t)127);
     note->trigger->velocity = vel;
 
-    std::cout << (int)(note->trigger->velocity) << std::endl;
     plugin->computeNotes();
 }
 

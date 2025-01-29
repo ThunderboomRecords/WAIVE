@@ -48,6 +48,7 @@ public:
 protected:
     void parameterChanged(uint32_t index, float value) override;
     void stateChanged(const char *key, const char *value) override;
+    bool onMotion(const MotionEvent &ev) override;
     void onNanoDisplay() override;
     void buttonClicked(Button *button) override;
     void grooveClicked(GrooveGraph *graph) override;
@@ -83,6 +84,7 @@ private:
     Playhead *drumPlayhead;
 
     FontId fontTitle, fontMain;
+    Label *toolTip;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVEMidiUI);
 };

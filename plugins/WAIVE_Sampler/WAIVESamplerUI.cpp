@@ -456,7 +456,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         samplePlayerPanel->hiddenWidgets.hide();
     }
 
-    toolTip = new Label(this, "Tooltip");
+    toolTip = new Label(this);
     toolTip->setFontSize(18.f);
     toolTip->text_color = WaiveColors::light2;
     toolTip->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
@@ -617,20 +617,30 @@ void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
     // valueIndicator->setValue(knob->getValue());
 }
 
+std::string getDescription(std::string text, DGL::SubWidget *widget, const DGL::Widget::MotionEvent &ev)
+{
+    if (auto waiveWidget = dynamic_cast<WAIVEWidget *>(widget))
+    {
+        if (waiveWidget->isVisible() && waiveWidget->getAbsoluteArea().contains(ev.pos) && waiveWidget->description.length() > 0)
+            text = waiveWidget->description;
+    }
+
+    std::list<DGL::SubWidget *> subWidgets = widget->getChildren();
+    for (const auto subWidget : subWidgets)
+        text = getDescription(text, subWidget, ev);
+
+    return text;
+};
+
 bool WAIVESamplerUI::onMotion(const MotionEvent &ev)
 {
     std::list<DGL::SubWidget *> children = getChildren();
+    std::string text = "";
     for (const auto widget : children)
-    {
-        bool hovering = widget->getAbsoluteArea().contains(ev.pos);
-        if (hovering)
-        {
-            if (auto waiveWidget = dynamic_cast<WAIVEWidget *>(widget))
-                toolTip->setLabel(waiveWidget->description);
-        }
-    }
+        text = getDescription(text, widget, ev);
+    toolTip->setLabel(text);
 
-    return false;
+    return UI::onMotion(ev);
 }
 
 void WAIVESamplerUI::buttonClicked(Button *button)

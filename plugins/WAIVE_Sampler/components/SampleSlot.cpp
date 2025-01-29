@@ -24,6 +24,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     clearBtn->drawBackground = false;
     clearBtn->toFront();
     clearBtn->hide();
+    clearBtn->description = "Remove sample.";
 
     midiSelect = new TextInput(parent);
     midiSelect->align = Align::ALIGN_CENTER;
@@ -34,6 +35,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     midiSelect->accent_color = WaiveColors::text;
     midiSelect->setSize(35, 20);
     midiSelect->setCallback(this);
+    midiSelect->description = "Set MIDI note.";
 
     contextMenu = new Menu(parent);
     contextMenu->addItem("Clear");
