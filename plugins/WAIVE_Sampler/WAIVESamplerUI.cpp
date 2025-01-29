@@ -576,7 +576,7 @@ void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
     case kSlot17MidiNumber:
     case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
-        sampleSlots[slot]->setMidiNumber(value, false);
+        sampleSlots[slot]->setMidiNumber(value + 1, false);
         break;
     default:
         break;

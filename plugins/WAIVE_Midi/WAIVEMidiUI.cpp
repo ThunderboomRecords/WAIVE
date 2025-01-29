@@ -230,7 +230,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
         auto midiNote = std::make_shared<TextInput>(this);
         midiNote->align = Align::ALIGN_CENTER;
         midiNote->textType = TextInput::TextType::INTEGER;
-        midiNote->setText(fmt::format("{:d}", plugin->midiNotes[i]).c_str(), false);
+        midiNote->setText(fmt::format("{:d}", plugin->midiNotes[i] + 1).c_str(), false);
         midiNote->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
         midiNote->setFontSize(12.f);
         midiNote->setSize(35, 20);

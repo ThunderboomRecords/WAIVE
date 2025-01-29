@@ -41,14 +41,6 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
 
         mFullDecoder = std::make_unique<Ort::Session>(mEnv, (void *)full_groove_model_onnx_start, full_groove_model_onnx_size, sessionOptions);
 
-        assert(mScoreEncoder);
-        assert(mScoreDecoder);
-
-        assert(mGrooveEncoder);
-        assert(mGrooveDecoder);
-
-        assert(mFullDecoder);
-
         // SCORE Model
         mScoreEncoderInputShape = GetInputShapes(mScoreEncoder);
         mScoreDecoderInputShape = GetInputShapes(mScoreDecoder);

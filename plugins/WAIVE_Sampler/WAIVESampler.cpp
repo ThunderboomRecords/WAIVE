@@ -3,7 +3,7 @@
 
 START_NAMESPACE_DISTRHO
 
-uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
+// uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
                                sampleRate(getSampleRate()),
@@ -47,7 +47,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
     sourcePreviewWaveform = &samplePlayerWaveforms[NUM_SLOTS + 2];
 
     for (int i = 0; i < NUM_SLOTS; i++)
-        samplePlayers[i].midi = defaultMidiMap[i % 9];
+        samplePlayers[i].midi = midiMap[i % 9];
 
     // Load models
     // std::cout << "Loading TSNE model...\n";
@@ -59,8 +59,6 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
         sessionOptions.SetInterOpNumThreads(1);
 
         mTSNE = std::make_unique<Ort::Session>(mEnv, (void *)tsne_model_onnx_start, tsne_model_onnx_size, sessionOptions);
-
-        assert(mTSNE);
 
         mTSNEInputShape = GetInputShapes(mTSNE);
         mTSNEOutputShape = GetOutputShapes(mTSNE);
@@ -211,7 +209,7 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.symbol = fmt::format("Sample{:d}Midi", slot + 1).c_str();
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 127.0f;
-        parameter.ranges.def = (float)defaultMidiMap[slot % 9];
+        parameter.ranges.def = (float)midiMap[slot % 9];
         parameter.hints |= kParameterIsInteger;
         break;
     default:

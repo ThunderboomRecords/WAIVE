@@ -60,6 +60,8 @@ class ImporterTask;
 class FeatureExtractorTask;
 class WaveformLoaderTask;
 
+static uint8_t midiMap[9] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
+
 bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int sampleRate);
 
 class WAIVESampler : public Plugin
