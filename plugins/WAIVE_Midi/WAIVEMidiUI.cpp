@@ -275,7 +275,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     toolTip->setFontSize(18.f);
     toolTip->text_color = WaiveColors::light2;
     toolTip->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-    toolTip->resizeToFit();
+    toolTip->setHeight(toolTip->getFontSize());
     toolTip->setWidth(mainPanel->getWidth());
     toolTip->setLeft(mainPanel->getLeft());
     toolTip->setTop(mainPanel->getBottom() + 10.f);

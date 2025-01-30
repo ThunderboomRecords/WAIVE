@@ -512,6 +512,11 @@ void WAIVESampler::run(
             {
                 sp->ptr = sp->startAt;
                 sp->state = PlayState::STOPPED;
+                if (sp == sourcePreviewPlayer)
+                {
+                    std::cout << "sp == sourcePreviewPlayer" << std::endl;
+                    pluginUpdate.notify(this, PluginUpdate::kSourcePreviewStop);
+                }
             }
         }
 
@@ -523,7 +528,6 @@ void WAIVESampler::run(
 void WAIVESampler::clear()
 {
     std::cout << "WAIVESampler::clear" << std::endl;
-    stopSourcePreview();
     fCurrentSample = nullptr;
 
     pluginUpdate.notify(this, PluginUpdate::kSourceUpdated);
@@ -534,7 +538,6 @@ void WAIVESampler::clear()
 void WAIVESampler::loadSourceFile(const std::string fp, const std::string tagString)
 {
     // std::cout << "WAIVESampler::loadSourceFile" << std::endl;
-    stopSourcePreview();
 
     if (fCurrentSample == nullptr)
         newSample();
@@ -659,10 +662,13 @@ void WAIVESampler::playSourcePreview()
 
 void WAIVESampler::stopSourcePreview()
 {
+    std::cout << "WAIVESampler::stopSourcePreview()" << std::endl;
     std::lock_guard<std::mutex> lock(samplePlayerMtx);
     sourcePreviewPlayer->state = PlayState::STOPPED;
     sourcePreviewPlayer->active = false;
     sourcePreviewPlayer->ptr = 0;
+
+    pluginUpdate.notify(this, PluginUpdate::kSourcePreviewStop);
 }
 
 void WAIVESampler::loadSample(int id)
@@ -1032,7 +1038,6 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     }
     else if (taskName == "loadSourcePreview")
     {
-        stopSourcePreview();
         std::lock_guard<std::mutex> spLock(samplePlayerMtx);
         std::lock_guard<std::mutex> tbLock(tempBufferMutex);
 
@@ -1048,9 +1053,12 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
         sourcePreviewPlayer->waveform = sourcePreviewWaveform;
         sourcePreviewPlayer->startAt = 0;
+        sourcePreviewPlayer->ptr = 0;
         sourcePreviewPlayer->length = size;
         sourcePreviewPlayer->active = true;
         sourcePreviewPlayer->state = PlayState::TRIGGERED;
+
+        pluginUpdate.notify(this, PluginUpdate::kSourcePreviewPlay);
     }
     else if (taskName.find("loadSamplePlayer") != std::string::npos)
     {
@@ -1124,6 +1132,10 @@ const char *WAIVESampler::pluginUpdateToString(PluginUpdate update) const
         return "kSourceLoaded";
     case kSourceUpdated:
         return "kSourceUpdated";
+    case kSourcePreviewPlay:
+        return "kSourcePreviewPlay";
+    case kSourcePreviewStop:
+        return "kSourcePreviewStop";
     case kSampleLoading:
         return "kSampleLoading";
     case kSampleLoaded:

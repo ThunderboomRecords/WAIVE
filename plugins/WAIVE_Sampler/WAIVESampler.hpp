@@ -72,6 +72,8 @@ public:
         kSourceLoading = 0,
         kSourceLoaded,
         kSourceUpdated,
+        kSourcePreviewPlay,
+        kSourcePreviewStop,
         kSampleLoading,
         kSampleLoaded,
         kSampleUpdated,

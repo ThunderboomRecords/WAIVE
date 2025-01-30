@@ -116,7 +116,7 @@ protected:
 
     // Source List Callbacks
     void sourceDownload(int index) override;
-    void sourcePreview(int index) override;
+    void sourcePreview(int index, bool start) override;
     void sourceLoad(int index) override;
 
 private:

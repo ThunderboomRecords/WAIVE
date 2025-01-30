@@ -13,7 +13,8 @@ SourceList::SourceList(Widget *widget)
       info("No results found"),
       callback(nullptr),
       highlighting(-1),
-      selected(-1)
+      selected(-1),
+      previewPlaying(-1)
 {
     download = new WAIVEImage(this, download_icon, download_icon_len, 131, 119, IMAGE_GENERATE_MIPMAPS);
 
@@ -116,7 +117,7 @@ void SourceList::onNanoDisplay()
 
         try
         {
-            drawSourceInfo((source_info->at(i)), x, y, getWidth(), rowHeight, (highlighting == i) || (selected == i));
+            drawSourceInfo((source_info->at(i)), x, y, getWidth(), rowHeight, (highlighting == i) || (selected == i), (previewPlaying == i));
         }
         catch (const std::out_of_range &e)
         {
@@ -152,7 +153,7 @@ void SourceList::onNanoDisplay()
     source_info_mtx->unlock();
 }
 
-void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight)
+void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight, bool playing)
 {
     translate(x, y);
 
@@ -192,17 +193,32 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
     fill();
     closePath();
 
-    // play button
-    beginPath();
-    if (highlight)
-        fillColor(text_color);
+    if (!playing)
+    {
+        // Play button
+        beginPath();
+        if (highlight)
+            fillColor(text_color);
+        else
+            fillColor(highlight_color);
+        moveTo(15 * scale_factor, 12 * scale_factor);
+        lineTo(15 * scale_factor, height - 12 * scale_factor);
+        lineTo(22 * scale_factor, height / 2);
+        fill();
+        closePath();
+    }
     else
-        fillColor(highlight_color);
-    moveTo(15 * scale_factor, 12 * scale_factor);
-    lineTo(15 * scale_factor, height - 12 * scale_factor);
-    lineTo(22 * scale_factor, height / 2);
-    fill();
-    closePath();
+    {
+        // Stop button
+        beginPath();
+        if (highlight)
+            fillColor(text_color);
+        else
+            fillColor(highlight_color);
+        rect(15 * scale_factor, 12 * scale_factor, 7 * scale_factor, 7 * scale_factor);
+        fill();
+        closePath();
+    }
 
     if (!highlight)
     {
@@ -345,14 +361,14 @@ bool SourceList::onMouse(const MouseEvent &ev)
                     selected = highlighting;
                     if (callback != nullptr)
                         callback->sourceLoad(highlighting);
-                    return false;
+                    return true;
                 }
                 else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
                 {
                     selected = highlighting;
                     if (callback != nullptr)
                         callback->sourceDownload(highlighting);
-                    return false;
+                    return true;
                 }
             }
             catch (const std::out_of_range &e)
@@ -366,9 +382,23 @@ bool SourceList::onMouse(const MouseEvent &ev)
         }
         else if (ev.pos.getX() <= columnLabel)
         {
-            if (callback != nullptr)
-                callback->sourcePreview(highlighting);
-            return false;
+            if (previewPlaying == highlighting)
+            {
+                // stop preview
+                if (callback != nullptr)
+                    callback->sourcePreview(highlighting, false);
+                previewPlaying = -1;
+            }
+            else
+            {
+                // Play preview
+                if (callback != nullptr)
+                    callback->sourcePreview(highlighting, true);
+                previewPlaying = highlighting;
+            }
+
+            repaint();
+            return true;
         }
     }
     else if (scrolling && !ev.press)
@@ -400,6 +430,8 @@ void SourceList::selectRandom()
             callback->sourceDownload(highlighting);
     }
 }
+
+void SourceList::idleCallback() {}
 
 void SourceList::setCallback(Callback *cb)
 {

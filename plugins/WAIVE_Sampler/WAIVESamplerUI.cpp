@@ -45,6 +45,17 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         importSource->description = "Import source audio file.";
         sourceBrowserPanel->addChildWidget(importSource);
 
+        previewPlaybackBtn = new Button(this);
+        previewPlaybackBtn->setLabel("Stop");
+        previewPlaybackBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        previewPlaybackBtn->setFontSize(14.f);
+        previewPlaybackBtn->resizeToFit();
+        previewPlaybackBtn->leftOf(importSource, END, padding * 2.f);
+        previewPlaybackBtn->setCallback(this);
+        previewPlaybackBtn->description = "Stop source preview.";
+        previewPlaybackBtn->setVisible(false);
+        sourceBrowserPanel->addChildWidget(previewPlaybackBtn);
+
         sourceList = new SourceList(this);
         sourceList->setSize(539.f - 24.f - 24.f, 150.f);
         sourceList->onTop(sourceBrowserPanel, CENTER, START, 52.f);
@@ -121,14 +132,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         databaseProgress->rightOf(databaseLoading, START);
         databaseProgress->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         sourceBrowserPanel->addChildWidget(databaseProgress);
-
-        previewPlaybackBtn = new Button(this);
-        previewPlaybackBtn->setLabel("Stop");
-        previewPlaybackBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-        previewPlaybackBtn->resizeToFit();
-        previewPlaybackBtn->onTop(sourceBrowserPanel, END, END, padding * 2.f);
-        previewPlaybackBtn->setCallback(this);
-        previewPlaybackBtn->setVisible(false);
 
         randomSourceBtn = new Button(this);
         randomSourceBtn->setLabel("Random");
@@ -460,7 +463,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     toolTip->setFontSize(18.f);
     toolTip->text_color = WaiveColors::light2;
     toolTip->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-    toolTip->resizeToFit();
+    toolTip->setHeight(toolTip->getFontSize());
     toolTip->setWidth((col1Width + col2Width) * fScaleFactor);
     toolTip->setLeft(sampleEditorPanel->getLeft());
     toolTip->setTop(sampleEditorPanel->getBottom() + 10.f);
@@ -652,12 +655,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     else if (button == playSampleBtn)
         plugin->triggerPreview();
     else if (button == previewPlaybackBtn)
-    {
         plugin->stopSourcePreview();
-        previewPlaybackBtn->setVisible(false);
-    }
-    // else if (button == sourcePreviewBtn)
-    //     plugin->playSourcePreview();
     else if (button == newSampleBtn)
         plugin->newSample();
     else if (button == makeKick)
@@ -1007,9 +1005,12 @@ void WAIVESamplerUI::sourceLoad(int index)
     plugin->loadSourceFile(fp, tagString);
 }
 
-void WAIVESamplerUI::sourcePreview(int index)
+void WAIVESamplerUI::sourcePreview(int index, bool start)
 {
-    plugin->sd.playTempSourceFile(index);
+    if (start)
+        plugin->sd.playTempSourceFile(index);
+    else
+        plugin->stopSourcePreview();
 }
 
 void WAIVESamplerUI::onNanoDisplay()
@@ -1073,10 +1074,10 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
     bool sourceAvailable;
     switch (arg)
     {
-    case WAIVESampler::kSourceLoading:
+    case WAIVESampler::PluginUpdate::kSourceLoading:
         break;
-    case WAIVESampler::kSourceLoaded:
-    case WAIVESampler::kSourceUpdated:
+    case WAIVESampler::PluginUpdate::kSourceLoaded:
+    case WAIVESampler::PluginUpdate::kSourceUpdated:
         sourceAvailable = false;
         sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.length > 0);
         saveSampleBtn->setEnabled(sourceAvailable);
@@ -1086,9 +1087,16 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         instructions->setVisible(!sourceAvailable);
         updatePresetButtons();
         break;
-    case WAIVESampler::kSampleLoading:
+    case WAIVESampler::PluginUpdate::kSourcePreviewPlay:
+        previewPlaybackBtn->show();
         break;
-    case WAIVESampler::kSampleLoaded:
+    case WAIVESampler::PluginUpdate::kSourcePreviewStop:
+        previewPlaybackBtn->hide();
+        sourceList->previewPlaying = -1;
+        break;
+    case WAIVESampler::PluginUpdate::kSampleLoading:
+        break;
+    case WAIVESampler::PluginUpdate::kSampleLoaded:
         sourceList->repaint();
         for (int i = 0; i < sampleSlots.size(); i++)
         {
@@ -1123,7 +1131,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             instructions->setVisible(false);
         }
         break;
-    case WAIVESampler::kSampleUpdated:
+    case WAIVESampler::PluginUpdate::kSampleUpdated:
         if (plugin->fCurrentSample != nullptr)
         {
             sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
@@ -1143,9 +1151,9 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             playSampleBtn->setEnabled(false);
         }
         break;
-    case WAIVESampler::kSampleAdded:
+    case WAIVESampler::PluginUpdate::kSampleAdded:
         break;
-    case WAIVESampler::kParametersChanged:
+    case WAIVESampler::PluginUpdate::kParametersChanged:
         if (plugin->fCurrentSample != nullptr)
         {
             pitch->setValue(plugin->fCurrentSample->pitch, false);
@@ -1169,14 +1177,14 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         }
 
         break;
-    case WAIVESampler::kSlotLoaded:
+    case WAIVESampler::PluginUpdate::kSlotLoaded:
         for (int i = 0; i < sampleSlots.size(); i++)
         {
             sampleSlots[i]->currentSample = plugin->fCurrentSample;
             sampleSlots[i]->repaint();
         }
         break;
-    case WAIVESampler::kSampleCleared:
+    case WAIVESampler::PluginUpdate::kSampleCleared:
         sampleWaveformDisplay->setWaveform(nullptr);
         sampleWaveformDisplay->setWaveformLength(0);
         sampleWaveformDisplay->waveformNew();
@@ -1389,8 +1397,8 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
         databaseProgress->setLabel("Error downloading.");
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
-        previewPlaybackBtn->setVisible(true);
-        break;
+        // previewPlaybackBtn->setVisible(true);
+        // break;
     case SampleDatabase::DatabaseUpdate::SAMPLE_ADDED:
     case SampleDatabase::DatabaseUpdate::SAMPLE_DELETED:
     case SampleDatabase::DatabaseUpdate::SAMPLE_UPDATED:
