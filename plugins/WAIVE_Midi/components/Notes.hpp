@@ -30,7 +30,8 @@ struct Trigger
     uint32_t tick;
     uint8_t velocity;
     int instrument;
-    bool user;
+    bool user = false;
+    bool active = true;
 };
 
 struct Note
@@ -42,9 +43,10 @@ struct Note
     bool noteOn;
     int instrument = -1;
     bool user = false;
-    int32_t offset;
-    std::shared_ptr<Note> other;
-    std::shared_ptr<Trigger> trigger;
+    int32_t offset = 0;
+    std::shared_ptr<Note> other = nullptr;
+    std::shared_ptr<Trigger> trigger = nullptr;
+    bool active = true;
 };
 
 /**

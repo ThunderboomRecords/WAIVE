@@ -38,6 +38,16 @@ bool DrumPattern::onMouse(const MouseEvent &ev)
 
                 hoveredNote = findHoveredNote(ev.pos);
             }
+            else
+            {
+                hoveredNote->trigger->active = !hoveredNote->trigger->active;
+                hoveredNote->active = hoveredNote->trigger->active;
+                if (hoveredNote->other)
+                    hoveredNote->other->active = hoveredNote->trigger->active;
+
+                if (hoveredNote->user && callback != nullptr)
+                    callback->onNoteDeleted(this, hoveredNote);
+            }
         }
         else if (dragState == DragState::DRAGGING)
         {
@@ -231,15 +241,21 @@ void DrumPattern::onNanoDisplay()
         float h = gridHeight;
         float w = beatWidth * (endTick - startTick) / tpb;
 
-        int velocity = noteOn->velocity;
+        uint8_t velocity = noteOn->velocity;
 
         Color base, borderColor, top;
         float hue = noteOn->user ? 280.f : 240.f;
 
         base = Color::fromHSL(hue / 360.f, 0.55f, 0.20f);
         top = Color::fromHSL(hue / 360.f, 0.55f, 0.58f);
-        base.interpolate(top, velocity / 127.0f);
+        base.interpolate(top, static_cast<float>(velocity) / 127.0f);
         borderColor = Color::fromHSL(hue / 360.f, 0.64f, 0.66f);
+
+        if (!noteOn->active)
+        {
+            base.alpha = 0.3f;
+            borderColor.alpha = 0.5f;
+        }
 
         beginPath();
         fillColor(base);

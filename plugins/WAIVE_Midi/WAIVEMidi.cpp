@@ -309,7 +309,7 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
     case kThreshold9:
         fThresholds[index - kThreshold1] = value;
         if (!hold_update)
-            generateFullPattern();
+            generateTriggers();
         break;
     default:
         break;
@@ -424,6 +424,9 @@ void WAIVEMidi::run(
         me.frame = i;
         while (notesPointer < notesOut.end() && (double)(*notesPointer)->tick <= loopTick)
         {
+            if (!(*notesPointer)->active)
+                continue;
+
             me.data[1] = (*notesPointer)->midiNote;
 
             if ((*notesPointer)->noteOn)
@@ -442,6 +445,7 @@ void WAIVEMidi::run(
             }
             else
             {
+                // check if note is on
                 me.data[0] = 0x80;
                 me.data[2] = 0;
                 triggered.erase((*notesPointer)->midiNote);
@@ -673,7 +677,6 @@ void WAIVEMidi::generateFullPattern()
         }
     }
 
-    triggerGenerated.clear();
     for (int j = 0; j < 9; j++)
     {
         for (int i = 0; i < 16; i++)
@@ -681,9 +684,6 @@ void WAIVEMidi::generateFullPattern()
             for (int k = 0; k < max_events[j]; k++)
             {
                 int index = s_map[j] + k;
-
-                if (fDrumPattern[i][index][0] < (1.f - fThresholds[j]))
-                    break;
 
                 float vel = fDrumPattern[i][index][1];
                 vel = 0.5f * (vel + 1.0f);
@@ -701,7 +701,29 @@ void WAIVEMidi::generateFullPattern()
                     j,
                 };
 
-                triggerGenerated.push_back(std::make_shared<Trigger>(t));
+                fDrumPatternTriggers[i][index] = std::make_shared<Trigger>(t);
+            }
+        }
+    }
+
+    generateTriggers();
+}
+
+void WAIVEMidi::generateTriggers()
+{
+    triggerGenerated.clear();
+    for (int j = 0; j < 9; j++)
+    {
+        for (int i = 0; i < 16; i++)
+        {
+            for (int k = 0; k < max_events[j]; k++)
+            {
+                int index = s_map[j] + k;
+
+                if (fDrumPattern[i][index][0] < (1.f - fThresholds[j]))
+                    break;
+
+                triggerGenerated.push_back(fDrumPatternTriggers[i][index]);
             }
         }
     }
@@ -725,6 +747,28 @@ void WAIVEMidi::addNote(int instrument, int sixteenth, uint8_t velocity)
     triggerUser.push_back(std::make_shared<Trigger>(t));
 
     computeNotes();
+}
+
+void WAIVEMidi::deleteNote(std::shared_ptr<Note> note)
+{
+    std::cout << "WAIVEMidi::deleteNote" << std::endl;
+
+    std::shared_ptr<Trigger> trigger = note->trigger;
+    if (trigger == nullptr)
+    {
+        std::cout << "Note is null" << std::endl;
+        return;
+    }
+
+    std::vector<std::shared_ptr<Trigger>>::iterator position = std::find(triggerUser.begin(), triggerUser.end(), trigger);
+    if (position != triggerUser.end())
+    {
+        std::cout << "Deleted note->trigger, rebuilding notes" << std::endl;
+        triggerUser.erase(position);
+        computeNotes();
+    }
+    else
+        std::cout << "note->trigger not found in triggerUser" << std::endl;
 }
 
 void WAIVEMidi::createNoteOn(const std::vector<std::shared_ptr<Trigger>> &triggers, std::vector<std::shared_ptr<Note>> &notesNew, bool user)
@@ -751,6 +795,7 @@ void WAIVEMidi::createNoteOn(const std::vector<std::shared_ptr<Trigger>> &trigge
             nullptr};
 
         noteOn.trigger = trigger;
+        noteOn.active = trigger->active;
 
         notesNew.push_back(std::make_shared<Note>(noteOn));
     }
@@ -806,6 +851,7 @@ void WAIVEMidi::computeNotes()
             nullptr};
 
         noteOn->other = std::make_shared<Note>(noteOff);
+        noteOff.active = noteOn->active;
 
         notesOut.push_back(std::make_shared<Note>(noteOff));
 

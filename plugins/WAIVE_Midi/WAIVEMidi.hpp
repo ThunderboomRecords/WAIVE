@@ -106,9 +106,11 @@ protected:
     void variationScore();
     void computeScore();
     void generateFullPattern();
+    void generateTriggers();
 
     void setMidiNote(int instrument, uint8_t midi);
     void addNote(int instrument, int sixteenth, uint8_t velocity);
+    void deleteNote(std::shared_ptr<Note> note);
 
     void computeNotes();
 
@@ -168,6 +170,7 @@ private:
     float fDrumPattern[16][30][3];
     float fThresholds[9];
     bool hold_update;
+    std::shared_ptr<Trigger> fDrumPatternTriggers[16][30];
 
     const int max_events[9] = {3, 7, 3, 3, 3, 4, 3, 2, 2};
     int s_map[9];

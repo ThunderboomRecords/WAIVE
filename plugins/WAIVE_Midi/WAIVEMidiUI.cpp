@@ -80,7 +80,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     drumPattern->noteMtx = &plugin->noteMtx;
     drumPattern->below(scoreLabel, Widget_Align::START, padding * 2.f);
     drumPattern->setCallback(this);
-    drumPattern->description = "Click to add new hit. Drag hit to adjust timing. Hover and scroll to adjust velocity.";
+    drumPattern->description = "Click grid to add new hit. Drag hit to adjust timing. Scroll to adjust velocity. Click hit to delete/disable.";
 
     drumPlayhead = new Playhead(this);
     drumPlayhead->setAbsolutePos(drumPattern->getAbsolutePos());
@@ -509,7 +509,7 @@ void WAIVEMidiUI::textInputChanged(TextInput *textInput, std::string text)
 
 void WAIVEMidiUI::onDrumPatternClicked(DrumPattern *widget, int instrument, int sixteenth)
 {
-    std::cout << "WAIVEMidiUI::onDrumPatternClicked instrument " << instrument << " sixteenth " << sixteenth << std::endl;
+    // std::cout << "WAIVEMidiUI::onDrumPatternClicked instrument " << instrument << " sixteenth " << sixteenth << std::endl;
     plugin->addNote(instrument, sixteenth, 100);
 }
 
@@ -527,6 +527,11 @@ void WAIVEMidiUI::onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<No
 {
     note->trigger->tick = newTick;
     plugin->computeNotes();
+}
+
+void WAIVEMidiUI::onNoteDeleted(DrumPattern *widget, std::shared_ptr<Note> note)
+{
+    plugin->deleteNote(note);
 }
 
 END_NAMESPACE_DISTRHO
