@@ -4,8 +4,8 @@ dpf_add_plugin(
   WAIVE_Midi
   TARGETS 
       jack
-    #   vst3
-      vst2
+      vst3
+      # vst2
     #   clap
       au
   FILES_DSP

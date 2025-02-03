@@ -3,7 +3,38 @@
 void printNoteDetails(const std::shared_ptr<Note> &n)
 {
     std::cout << "Note " << (n->noteOn ? "ON " : "OFF") << "  Instrument " << n->instrument << ", midiNote " << (int)n->midiNote << ", velocity " << (int)n->velocity << ", channel " << (int)n->channel << ", other " << (n->other == nullptr ? "NULL" : "note") << std::endl;
-    // std::cout << fmt::format("") << std::endl;
+}
+
+std::string Trigger::serialize() const
+{
+    std::ostringstream oss;
+    oss << tick << "," << static_cast<int>(velocity) << "," << instrument << "," << (user ? "1" : "0") << "," << (active ? "1" : "0");
+    return oss.str();
+}
+
+Trigger Trigger::deserialize(const std::string &data)
+{
+    std::istringstream iss(data);
+    Trigger t;
+    std::string tickStr, velocityStr, instrumentStr, userStr, activeStr;
+
+    if (std::getline(iss, tickStr, ',') &&
+        std::getline(iss, velocityStr, ',') &&
+        std::getline(iss, instrumentStr, ',') &&
+        std::getline(iss, userStr, ',') &&
+        std::getline(iss, activeStr, ','))
+    {
+        t.tick = std::stoi(tickStr);
+        t.velocity = std::stoi(velocityStr);
+        t.instrument = std::stoi(instrumentStr);
+        t.user = (userStr == "1");
+        t.active = (activeStr == "1");
+        return t;
+    }
+    t.active = false;
+    std::cout << "Trigger::deserialize  Invalid serialization format: " << data << std::endl;
+    return t;
+    // throw std::runtime_error("Invalid serialization format");
 }
 
 bool compareGrooveEvents(GrooveEvent g0, GrooveEvent g1)

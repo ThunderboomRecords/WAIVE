@@ -4,14 +4,13 @@
 #include <stdint.h>
 #include <map>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <vector>
 #include <algorithm>
 #include <cstdint>
 #include <iomanip>
 #include <memory>
-
-// #include <fmt/core.h>
 
 struct GrooveEvent
 {
@@ -32,6 +31,9 @@ struct Trigger
     int instrument;
     bool user = false;
     bool active = true;
+
+    std::string serialize() const;
+    static Trigger deserialize(const std::string &data);
 };
 
 struct Note

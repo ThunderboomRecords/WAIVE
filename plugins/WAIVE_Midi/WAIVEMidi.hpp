@@ -86,7 +86,7 @@ protected:
     void initParameter(uint32_t index, Parameter &parameter) override;
     void setState(const char *key, const char *value) override;
     String getState(const char *key) const override;
-    void initState(unsigned int, String &, String &) override;
+    void initState(uint32_t index, State &state) override;
 
     // --- Internal data ----------
     float getParameterValue(uint32_t index) const override;

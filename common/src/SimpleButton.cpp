@@ -9,7 +9,8 @@ Button::Button(Widget *parent)
       callback(nullptr),
       fEnabled(true),
       drawBackground(true),
-      isToggle(false)
+      isToggle(false),
+      fToggleValue(false)
 {
     background_color = WaiveColors::grey2;
     accent_color = WaiveColors::light2;
@@ -121,7 +122,7 @@ bool Button::onMotion(const MotionEvent &ev)
             getWindow().setCursor(kMouseCursorHand);
             repaint();
         }
-        return true;
+        return false;
     }
     else
     {

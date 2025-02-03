@@ -314,6 +314,17 @@ void WAIVEMidiUI::parameterChanged(uint32_t index, float value)
     case kThreshold9:
         complexities[index - kThreshold1]->setValue(value);
         break;
+    case kMidi1:
+    case kMidi2:
+    case kMidi3:
+    case kMidi4:
+    case kMidi5:
+    case kMidi6:
+    case kMidi7:
+    case kMidi8:
+    case kMidi9:
+        midiNotesEdit[8 - (index - kMidi1)]->setText(fmt::format("{:d}", static_cast<uint8_t>(value)).c_str(), false);
+        break;
     default:
         break;
     }
@@ -323,7 +334,7 @@ void WAIVEMidiUI::parameterChanged(uint32_t index, float value)
 
 void WAIVEMidiUI::stateChanged(const char *key, const char *value)
 {
-    printf("WAIVEMidiUI::stateChanged()\n");
+    // printf("WAIVEMidiUI::stateChanged()\n");
 
     repaint();
 }
@@ -500,7 +511,8 @@ void WAIVEMidiUI::textEntered(TextInput *textInput, std::string text)
     if (clamped)
         textInput->setText(fmt::format("{:d}", val).c_str(), false);
 
-    plugin->setMidiNote(textInput->getId(), (uint8_t)(val - 1));
+    // plugin->setMidiNote(textInput->getId(), (uint8_t)(val - 1));
+    setParameterValue(kMidi1 + textInput->getId(), static_cast<float>(val - 1));
 }
 
 void WAIVEMidiUI::textInputChanged(TextInput *textInput, std::string text)

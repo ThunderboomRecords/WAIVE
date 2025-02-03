@@ -2,7 +2,7 @@
 
 START_NAMESPACE_DISTRHO
 
-WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, 0),
+WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, kStateCount),
                          fThreshold(0.4f),
                          ticks_per_beat(1920),
                          loopTick(0.0),
@@ -152,6 +152,14 @@ void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.def = 0.4f;
         parameter.hints = kParameterIsAutomatable;
         break;
+    case kGrooveNew:
+        parameter.name = "New Groove";
+        parameter.symbol = "new_groove";
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 1.0f;
+        parameter.ranges.def = 0.0f;
+        parameter.hints = kParameterIsTrigger | kParameterIsAutomatable;
+        break;
     case kGrooveVar:
         parameter.name = "Variation Groove";
         parameter.symbol = "variation_groove";
@@ -209,6 +217,23 @@ void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.def = 0.4f;
         parameter.hints = kParameterIsAutomatable;
         break;
+    case kMidi1:
+    case kMidi2:
+    case kMidi3:
+    case kMidi4:
+    case kMidi5:
+    case kMidi6:
+    case kMidi7:
+    case kMidi8:
+    case kMidi9:
+        instrument = index - kMidi1;
+        parameter.name = fmt::format("Midi Note {:d}", instrument + 1).c_str();
+        parameter.symbol = fmt::format("midi{:d}", instrument + 1).c_str();
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 127.f;
+        parameter.ranges.def = static_cast<float>(midiMap[instrument]);
+        parameter.hints = kParameterIsAutomatable | kParameterIsInteger;
+        break;
     default:
         break;
     }
@@ -245,6 +270,17 @@ float WAIVEMidi::getParameterValue(uint32_t index) const
     case kThreshold9:
         val = fThresholds[index - kThreshold1];
         break;
+    case kMidi1:
+    case kMidi2:
+    case kMidi3:
+    case kMidi4:
+    case kMidi5:
+    case kMidi6:
+    case kMidi7:
+    case kMidi8:
+    case kMidi9:
+        val = midiNotes[index - kMidi1];
+        break;
     default:
         break;
     }
@@ -254,6 +290,7 @@ float WAIVEMidi::getParameterValue(uint32_t index) const
 
 void WAIVEMidi::setParameterValue(uint32_t index, float value)
 {
+    std::cout << "WAIVEMidi::setParameterValue " << parameterIndexToString(index) << ": " << value << std::endl;
     switch (index)
     {
     case kThreshold:
@@ -262,7 +299,7 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
         for (int i = 0; i < 9; i++)
             setParameterValue(kThreshold1 + i, value);
         hold_update = false;
-        generateFullPattern();
+        generateTriggers();
         break;
     case kGrooveNew:
         if (value != 1.f)
@@ -290,13 +327,17 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
         break;
     case kScoreGenre:
         score_genre = (int)value;
-        generateScore();
-        generateFullPattern();
+        // Disabling regenerate Score and Groove to allow saved state to persist
+        // TODO: fix this (state is restored before parameters, so setting the genres
+        // overrides loaded state...)
+
+        // generateScore();
+        // generateFullPattern();
         break;
     case kGrooveGenre:
         groove_genre = (int)value;
-        generateGroove();
-        generateFullPattern();
+        // generateGroove();
+        // generateFullPattern();
         break;
     case kThreshold1:
     case kThreshold2:
@@ -311,33 +352,228 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
         if (!hold_update)
             generateTriggers();
         break;
+    case kMidi1:
+    case kMidi2:
+    case kMidi3:
+    case kMidi4:
+    case kMidi5:
+    case kMidi6:
+    case kMidi7:
+    case kMidi8:
+    case kMidi9:
+        setMidiNote(index - kMidi1, static_cast<uint8_t>(value) + 1);
+        break;
     default:
         break;
     }
 }
 
-void WAIVEMidi::setState(const char *key, const char *value)
+void WAIVEMidi::initState(uint32_t index, State &state)
 {
-    printf("WAIVEMidi::setState\n");
-    printf("  %s: %s\n", key, value);
-    if (std::strcmp(key, "score") == 0)
-        encodeScore();
-    else if (std::strcmp(key, "export") == 0)
-        exportMidiFile(notesOut, value);
+    // std::cout << "WAIVEMidi::initState " << index << std::endl;
+    switch (index)
+    {
+    case kStateScoreZ:
+        state.key = "score-z";
+        state.defaultValue = "";
+        break;
+    case kStateGrooveZ:
+        state.key = "groove-z";
+        state.defaultValue = "";
+        break;
+    case kStateDrumPattern:
+        state.key = "drum-pattern";
+        state.defaultValue = "";
+        break;
+    case kStateUserTriggers:
+        state.key = "user-triggers";
+        state.defaultValue = "";
+        break;
+    case kStateGeneratedTriggers:
+        state.key = "generated-triggers";
+        state.defaultValue = "";
+        break;
+    default:
+        break;
+    }
 }
 
 String WAIVEMidi::getState(const char *key) const
 {
-    String retString = String("undefined state");
+    std::cout << "WAIVEMidi::getState " << key << std::endl;
+
+    String retString("unrecognised state");
+
+    if (std::strcmp(key, "score-z") == 0)
+    {
+        std::ostringstream oss;
+        for (size_t i = 0; i < mScoreZ.size(); i++)
+        {
+            if (i != 0)
+                oss << ",";
+            oss << mScoreZ[i];
+        }
+
+        retString = String(oss.str().c_str());
+    }
+    else if (std::strcmp(key, "groove-z") == 0)
+    {
+        std::ostringstream oss;
+        for (size_t i = 0; i < mGrooveZ.size(); i++)
+        {
+            if (i != 0)
+                oss << ",";
+            oss << mGrooveZ[i];
+        }
+
+        retString = String(oss.str().c_str());
+    }
+    else if (std::strcmp(key, "drum-pattern") == 0)
+    {
+        fDrumPattern;
+        std::ostringstream oss;
+        for (int i = 0; i < 16; i++)
+        {
+            for (int j = 0; j < 30; j++)
+            {
+                for (int k = 0; k < 3; k++)
+                {
+                    oss << i << ";" << j << ";" << k << ";" << fDrumPattern[i][j][k] << "\n";
+                }
+            }
+        }
+
+        retString = String(oss.str().c_str());
+    }
+    else if (std::strcmp(key, "user-triggers") == 0)
+    {
+        std::ostringstream oss;
+        for (const auto &trigger : triggerUser)
+            oss << trigger->serialize() << "\n";
+
+        retString = String(oss.str().c_str());
+    }
+    else if (std::strcmp(key, "generated-triggers") == 0)
+    {
+        std::ostringstream oss;
+
+        for (int i = 0; i < 16; i++)
+        {
+            for (int j = 0; j < 30; j++)
+            {
+                if (fDrumPatternTriggers[i][j] == nullptr)
+                    continue;
+                oss << i << ";" << j << ";" << fDrumPatternTriggers[i][j]->serialize() << "\n";
+            }
+        }
+
+        retString = String(oss.str().c_str());
+    }
+
+    // std::cout << retString << std::endl;
+
     return retString;
 }
 
-void WAIVEMidi::initState(unsigned int index, String &stateKey, String &defaultStateValue)
+void WAIVEMidi::setState(const char *key, const char *value)
 {
-    switch (index)
+    std::cout << "WAIVEMidi::setState " << key << std::endl;
+
+    if (std::strcmp(key, "score") == 0)
     {
-    default:
-        break;
+        // encodeScore();
+    }
+    else if (std::strcmp(key, "export") == 0)
+    {
+        exportMidiFile(notesOut, value);
+    }
+    else if (std::strcmp(key, "score-z") == 0)
+    {
+        if (std::strlen(value) == 0)
+            return;
+
+        mScoreZ.clear();
+        std::istringstream iss(value);
+        std::string line;
+        while (std::getline(iss, line, ','))
+            mScoreZ.push_back(std::stof(line));
+
+        // std::cout << "Length of mScoreZ: " << mScoreZ.size() << std::endl;
+        computeScore();
+    }
+    else if (std::strcmp(key, "groove-z") == 0)
+    {
+        if (std::strlen(value) == 0)
+            return;
+
+        mGrooveZ.clear();
+        std::istringstream iss(value);
+        std::string line;
+        while (std::getline(iss, line, ','))
+            mGrooveZ.push_back(std::stof(line));
+
+        // std::cout << "Length of mGrooveZ: " << mGrooveZ.size() << std::endl;
+        computeGroove();
+    }
+    else if (std::strcmp(key, "drum-pattern") == 0)
+    {
+        if (std::strlen(value) == 0)
+            return;
+
+        std::istringstream iss(value);
+        std::string line;
+        while (std::getline(iss, line))
+        {
+            std::istringstream issLine(line);
+            std::string iS, jS, kS, tS;
+            std::getline(issLine, iS, ';');
+            std::getline(issLine, jS, ';');
+            std::getline(issLine, kS, ';');
+            std::getline(issLine, tS, ';');
+
+            size_t i = std::stoi(iS);
+            size_t j = std::stoi(jS);
+            size_t k = std::stoi(kS);
+
+            fDrumPattern[i][j][k] = std::stof(tS);
+        }
+    }
+    else if (std::strcmp(key, "user-triggers") == 0)
+    {
+        if (std::strlen(value) == 0)
+            return;
+
+        triggerUser.clear();
+        std::istringstream iss(value);
+        std::string line;
+        while (std::getline(iss, line))
+            triggerUser.push_back(std::make_shared<Trigger>(Trigger::deserialize(line)));
+
+        computeNotes();
+    }
+    else if (std::strcmp(key, "generated-triggers") == 0)
+    {
+        if (std::strlen(value) == 0)
+            return;
+
+        triggerGenerated.clear();
+
+        std::istringstream iss(value);
+        std::string line;
+        while (std::getline(iss, line))
+        {
+            std::istringstream issLine(line);
+            std::string iS, jS, tS;
+            std::getline(issLine, iS, ';');
+            std::getline(issLine, jS, ';');
+            std::getline(issLine, tS, ';');
+
+            size_t i = std::stoi(iS);
+            size_t j = std::stoi(jS);
+
+            fDrumPatternTriggers[i][j] = std::make_shared<Trigger>(Trigger::deserialize(tS));
+        }
+        generateTriggers();
     }
 }
 
@@ -646,6 +882,8 @@ void WAIVEMidi::computeGroove()
 
 void WAIVEMidi::generateFullPattern()
 {
+    std::cout << "WAIVEMidi::generateFullPattern()" << std::endl;
+
     mFullZ.clear();
     for (const float z : mScoreZ)
         mFullZ.push_back(z);
@@ -691,9 +929,9 @@ void WAIVEMidi::generateFullPattern()
                 uint8_t velocity = (uint8_t)(vel * 127.0f);
 
                 float offset = fDrumPattern[i][index][2];
+                float tickOnF = std::floor(std::max(0.f, ((float)i + offset) * ticks_per_16th));
 
-                uint32_t tickOn = (uint32_t)std::floor(((float)i + offset) * ticks_per_16th);
-                // tickOn = std::max(tickOn, static_cast<uint32_t>(0));
+                uint32_t tickOn = static_cast<uint32_t>(tickOnF);
 
                 Trigger t = {
                     tickOn,
@@ -711,10 +949,11 @@ void WAIVEMidi::generateFullPattern()
 
 void WAIVEMidi::generateTriggers()
 {
+    std::cout << "WAIVEMidi::generateTriggers()" << std::endl;
     triggerGenerated.clear();
-    for (int j = 0; j < 9; j++)
+    for (int i = 0; i < 16; i++)
     {
-        for (int i = 0; i < 16; i++)
+        for (int j = 0; j < 9; j++)
         {
             for (int k = 0; k < max_events[j]; k++)
             {
@@ -803,6 +1042,8 @@ void WAIVEMidi::createNoteOn(const std::vector<std::shared_ptr<Trigger>> &trigge
 
 void WAIVEMidi::computeNotes()
 {
+    std::cout << "WAIVEMidi::computeNotes()" << std::endl;
+
     std::lock_guard<std::mutex> lk(noteMtx);
 
     // get tick of notesPointer

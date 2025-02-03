@@ -57,6 +57,7 @@
     "C_Cpp_Runner.useLinkTimeOptimization": false,
     "C_Cpp_Runner.msvcSecureNoWarnings": false,
     "files.associations": {
+        "*.ejs": "html",
         "chrono": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
@@ -167,7 +168,9 @@
         "__errc": "cpp",
         "__tuple": "cpp",
         "__string": "cpp",
-        "print": "cpp"
+        "print": "cpp",
+        "coroutine": "cpp",
+        "expected": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/clang++",
     "C_Cpp.errorSquiggles": "enabledIfIncludesResolve",

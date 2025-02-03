@@ -6,8 +6,8 @@ dpf_add_plugin(
   TARGETS 
       jack
       vst3
-      vst2
-      clap
+      # vst2
+      # clap
       au
   FILES_DSP
       WAIVESampler.cpp
