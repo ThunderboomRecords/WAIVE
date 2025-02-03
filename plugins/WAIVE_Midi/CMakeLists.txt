@@ -5,8 +5,8 @@ dpf_add_plugin(
   TARGETS 
       jack
       vst3
-      # vst2
-    #   clap
+      vst2
+      clap
       au
   FILES_DSP
       WAIVEMidi.cpp
@@ -23,7 +23,6 @@ dpf_add_plugin(
       ./components/ScoreGrid.cpp
       ./components/GrooveGraph.cpp
       ./components/DrumPattern.cpp
-      ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Box.cpp
@@ -46,11 +45,13 @@ dpf_add_plugin(
 find_library(FOUNDATION Foundation)
 find_library(COREFOUNDATION CoreFoundation)
 find_package(fmt CONFIG REQUIRED)
+find_package(tinyfiledialogs CONFIG REQUIRED)
 
 target_link_libraries(
     WAIVE_Midi 
     PUBLIC 
     fmt::fmt
+    tinyfiledialogs::tinyfiledialogs
     ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
     ${CoreFoundation}
     ${Foundation}

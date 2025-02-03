@@ -1,6 +1,8 @@
 {
   "dependencies": [
     "fmt",
+    "kissfft",
+    "libsamplerate",
     {
       "name": "libsndfile",
       "features": [
@@ -8,6 +10,7 @@
         "mpeg"
       ]
     },
+    "nlohmann-json",
     {
       "name": "poco",
       "features": [
@@ -16,6 +19,6 @@
         "sqlite3"
       ]
     },
-    "libsamplerate"
+    "tinyfiledialogs"
   ]
 }
