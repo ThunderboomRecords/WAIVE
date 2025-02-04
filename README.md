@@ -9,7 +9,7 @@
 
 <p align="center">
     <img 
-        src="assets/WAIVE_Midi_preview.png" 
+        src="assets/WAIVE_Sequencer.png" 
         width="500"
         alt="WAIVE-Midi screenshot"
     >
@@ -17,7 +17,7 @@
 
 <p align="center">
     <img 
-        src="assets/WAIVE_Sampler_preview.png" 
+        src="assets/WAIVE_Sampler.png" 
         width="500"
         alt="WAIVE-Sampler screenshot"
     >
@@ -33,26 +33,16 @@ Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX 
 Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding stability improvements and Windows release.
 
 ### Download and Install
-Currently, there is no installer provided, so you must install the plugins manually: 
 
 > If you are reinstalled the plugin from an older, develpment version, you may need to delete the old database file as described in the [Troubleshooting](#waive-sampler-not-loading-sources-list) section.
 
-1. Download and extract the latest archive from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform (currently only available for macOS Apple Silicon and Linux). You can find the download links under the **Assets** heading.
-2. Choose which plugin format you prefer and place the corresponding bundle (e.g. `WAIVE_Sampler.vst3`) in your plugins path of your DAW:
-    - Common (system-wide) plugin paths:
-      
-        |          |  VST2                                 |  VST3                                |  CLAP                                 | AudioUnit |
-        |----------|---------------------------------------|--------------------------------------|---------------------------------------|-----------|
-        | macOS    | `Library/Audio/Plug-Ins/VST`          | `Library/Audio/Plug-Ins/VST3`        | `Library/Audio/Plug-Ins/CLAP`         | `Library/Audio/Plug-Ins/Components` |
-        | Linux    | `/usr/lib/vst`                        | `/usr/lib/vst3`                      | `/usr/lib/clap`                       | -- |
-        | Windows  | `C:\Program Files\Common Files\VST2`  | `C:\Program Files\Common Files\VST3` | `C:\Program Files\Common Files\CLAP`  | -- |
-     - To access these folders in macOS, open Finder, press `Shift+Command+G`, and enter the path you wish to access. 
+1. Download the installer from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform (e.g. new Apple computers should use `macOS_arm64`, whereas older Macs with Intel chips should use `macOS_x64`). You can find the download links under the **Assets** heading. *More platforms coming soon!*
+2. Open the installer and follow the steps.
 3. In your DAW, rescan plugins if it does not do so automatically.
 
 #### Ableton Live Notes
 - If you installed the plug-ins in the above directories, then make sure that "Use VST3 System Plug-in Folders" is On (same for VST2) in Settings > Plug-ins before rescanning.
 - To use WAIVE-Midi, add this plugin to an empty MIDI track. Then, on a separate MIDI track add your instrument (e.g. WAIVE-Sampler) then set MIDI From to the name of the first track and make sure to set it to use Post-FX.
-- The VST3 and AudioUnit version of WAIVE-Midi currently are not loading in Live, so use the VST2 version.
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
