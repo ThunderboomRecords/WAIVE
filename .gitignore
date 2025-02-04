@@ -1,3 +1,9 @@
+notarization_secrets.env
+release/
+*.zip
+*.dmg
+*.pkg
+
 .DS_Store
 
 *.a

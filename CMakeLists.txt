@@ -26,6 +26,16 @@ project(
 )
 
 configure_file(version_config.h.in ${CMAKE_BINARY_DIR}/generated/version_config.h)
+configure_file(version_template.txt ${CMAKE_BINARY_DIR}/version.txt)
+
+set(BUILD_OS ${CMAKE_SYSTEM_NAME})
+set(BUILD_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+if(BUILD_OS STREQUAL "Darwin")
+    set(BUILD_OS "macOS")
+endif()
+message(STATUS "Detected OS: ${BUILD_OS}")
+message(STATUS "Detected Architecture: ${BUILD_ARCH}")
+file(WRITE "${CMAKE_BINARY_DIR}/build_info.txt" "OS=${BUILD_OS}\nARCH=${BUILD_ARCH}\n")
 
 include_directories(
     ${CMAKE_BINARY_DIR}/generated/
