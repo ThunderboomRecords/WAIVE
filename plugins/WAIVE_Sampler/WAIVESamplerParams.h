@@ -55,4 +55,10 @@ enum Parameters
     kParameterCount
 };
 
+enum WAIVESamplerStates
+{
+    kStateSampleSlots,
+    kStateCount
+};
+
 #endif

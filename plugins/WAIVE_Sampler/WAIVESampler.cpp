@@ -5,7 +5,7 @@ START_NAMESPACE_DISTRHO
 
 // uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
 
-WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, 0),
+WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
                                sampleRate(getSampleRate()),
                                fNormalisationRatio(1.0f),
                                fCurrentSample(nullptr),
@@ -368,6 +368,7 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
 
 void WAIVESampler::setState(const char *key, const char *value)
 {
+    std::cout << "WAIVESampler::setState" << std::endl;
     if (strcmp(key, "importSource") == 0)
     {
         std::stringstream filelist(value);
@@ -380,13 +381,8 @@ void WAIVESampler::setState(const char *key, const char *value)
             std::cout << " - " << filename << std::endl;
             sd.addSourceToLibrary(std::string(filename));
 
-            if (count == 0)
-            {
-                // Todo: load first sample?
-            }
             count++;
         }
-        // fSourceTagString = "";
     }
     else if (strcmp(key, "importSample") == 0)
     {
@@ -406,18 +402,58 @@ void WAIVESampler::setState(const char *key, const char *value)
             taskManager.start(importerTask);
         }
     }
+    else if (strcmp(key, "sample-slots") == 0)
+    {
+        // clear all slots first?
+
+        std::istringstream iss(value);
+        std::string line;
+        while (std::getline(iss, line))
+        {
+            std::istringstream issLine(line);
+            std::string iS, idS;
+            std::getline(issLine, iS, ':');
+            std::getline(issLine, idS, ':');
+
+            size_t i = std::stoi(iS);
+            int id = std::stoi(idS);
+
+            loadSlot(i, id);
+        }
+    }
 }
 
 String WAIVESampler::getState(const char *key) const
 {
+    std::cout << "WAIVESampler::getState " << key << std::endl;
     String retString = String("undefined state");
+
+    if (std::strcmp(key, "sample-slots") == 0)
+    {
+        std::ostringstream oss;
+        for (size_t i = 0; i < NUM_SLOTS; i++)
+        {
+            if (samplePlayers[i].sampleInfo == nullptr)
+                continue;
+
+            oss << i << ":" << samplePlayers[i].sampleInfo->getId() << "\n";
+        }
+
+        retString = String(oss.str().c_str());
+    }
+
+    std::cout << "retString: " << retString << std::endl;
     return retString;
 }
 
-void WAIVESampler::initState(unsigned int index, String &stateKey, String &defaultStateValue)
+void WAIVESampler::initState(uint32_t index, State &state)
 {
     switch (index)
     {
+    case kStateSampleSlots:
+        state.key = "sample-slots";
+        state.defaultValue = "";
+        break;
     default:
         break;
     }

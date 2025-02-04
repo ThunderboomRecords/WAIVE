@@ -852,7 +852,7 @@ void SampleDatabase::downloadTagsList()
         {
             // std::cout << "/sources not avaliable" << std::endl;
             // wait 1 second before reporting connection error...
-            sleep(1);
+            Poco::Thread::sleep(1);
             databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR);
         });
 }
@@ -1017,13 +1017,13 @@ void SampleDatabase::downloadSourceFile(int i)
             out << response;
             out.close();
 
-            sleep(1);
+            Poco::Thread::sleep(1);
             si->downloaded = DownloadState::DOWNLOADED;
             this->latestDownloadedIndex = i;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED); },
         [this, endpoint, si]()
         {
-            sleep(1);
+            Poco::Thread::sleep(1);
             si->downloaded = DownloadState::NOT_DOWNLOADED;
             std::cout << WAIVE_SERVER << endpoint.toString(Poco::Path::Style::PATH_URI) << " not avaliable" << std::endl;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
@@ -1083,7 +1083,7 @@ void SampleDatabase::playTempSourceFile(int i)
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_PREVIEW_READY); },
         [this, endpoint, si]()
         {
-            sleep(1);
+            Poco::Thread::sleep(1);
             std::cout << WAIVE_SERVER << endpoint.toString(Poco::Path::Style::PATH_URI) << " not avaliable" << std::endl;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
         });
