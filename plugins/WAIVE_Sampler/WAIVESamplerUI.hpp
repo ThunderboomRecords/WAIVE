@@ -16,6 +16,7 @@
 #include "WidgetGroup.hpp"
 #include "SampleBrowser.hpp"
 #include "SampleBrowserRoot.hpp"
+#include "Box.hpp"
 #include "HBox.hpp"
 #include "VBox.hpp"
 #include "Link.hpp"
@@ -23,12 +24,13 @@
 #include "Icon.hpp"
 #include "Knob.hpp"
 #include "Knob3D.hpp"
+#include "Panel.hpp"
 #include "Label.hpp"
-#include "Popup.hpp"
 #include "Image.hpp"
 #include "TagBrowser.hpp"
 #include "Spinner.hpp"
 #include "DropDown.hpp"
+#include "RadioButtons.hpp"
 #include "Waveform.hpp"
 #include "TextInput.hpp"
 #include "SampleMap.hpp"
@@ -55,8 +57,8 @@
 
 START_NAMESPACE_DISTRHO
 
-const unsigned int UI_W = 1000;
-const unsigned int UI_H = 582;
+const unsigned int UI_W = 862;
+const unsigned int UI_H = 662;
 
 class WAIVESamplerUI;
 
@@ -66,10 +68,10 @@ class WAIVESamplerUI : public UI,
                        public Knob::Callback,
                        public SampleMap::Callback,
                        public TextInput::Callback,
+                       public Menu::Callback,
                        public DropDown::Callback,
                        public SampleSlot::Callback,
-                       public SourceList::Callback,
-                       public Popup::Callback
+                       public SourceList::Callback
 {
 public:
     WAIVESamplerUI();
@@ -92,6 +94,9 @@ protected:
     void onNanoDisplay() override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
+    // Interaction callbacks
+    bool onMotion(const MotionEvent &ev) override;
+
     // Widget Callbacks
     void buttonClicked(Button *button) override;
     void waveformSelection(Waveform *waveform, uint selectionStart) override;
@@ -105,18 +110,18 @@ protected:
     void textEntered(TextInput *textInput, std::string text) override;
     void textInputChanged(TextInput *textInput, std::string text) override;
     void dropdownSelection(DropDown *widget, int item) override;
+    void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
     void sampleSelected(SampleSlot *slot, int slotId) override;
     void sampleSlotCleared(SampleSlot *slot, int slotId) override;
-    void popupOpened(Popup *popup) override;
-    void popupClosed(Popup *popup) override;
 
     // Source List Callbacks
     void sourceDownload(int index) override;
-    void sourcePreview(int index) override;
+    void sourcePreview(int index, bool start) override;
     void sourceLoad(int index) override;
 
 private:
     void beginOpenFileBrowser(const std::string &state, bool multiple);
+    void updatePresetButtons();
 
     Knob *createWAIVEKnob(
         Parameters param,
@@ -148,20 +153,18 @@ private:
     // 1. Source Browser Components
     SourceList *sourceList;
     Spinner *databaseLoading;
-    Button *openTagBrowserBtn, *previewPlaybackBtn, *importSource, *randomSourceBtn;
-    Panel *searchBox;
+    Button *openFilterPanelBtn, *previewPlaybackBtn, *importSource, *randomSourceBtn;
+    Box *searchBox;
     TextInput *sourceSearch;
-    DropDown *archiveList;
+    RadioButtons *archiveList;
     Icon *searchIcon;
-    Label *databaseProgress;
+    Label *databaseProgress, *archiveListHeading, *browseTagsHeading;
 
-    Popup *tagRoot;
     TagBrowser *tagBrowser;
 
     // 2. Sample Editor Components
-    Waveform *sourceWaveformDisplay;
     HBox *presetButtons, *editorKnobs;
-    Button *makeKick, *makeSnare, *makeHihat, *makeClap, *sourcePreviewBtn;
+    Button *makeKick, *makeSnare, *makeHihat, *makeClap;
     Label *presetLabel, *knobsLabel;
     Knob *pitch, *volume, *percussionBoost;
     Knob *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;
@@ -170,22 +173,18 @@ private:
     Spinner *sourceLoading;
     Label *instructions, *progress;
 
-    // 3. Sample Panel Components
     Waveform *sampleWaveformDisplay;
-    TextInput *sampleName;
+    // TextInput *sampleName;
     Button *saveSampleBtn, *playSampleBtn, *newSampleBtn;
 
-    // 4. Sample Pack Components
+    // 3. Sample Player Components
     VBox *sampleSlotsContainer;
     std::vector<SampleSlot *> sampleSlots;
     Button *openMapBtn, *browseFilesBtn;
 
-    // SampleBrowserRoot *sampleBrowserRoot;
     SampleBrowser *sampleBrowser;
-    Popup *sampleBrowserRoot;
 
-    // OTHER
-    ValueIndicator *valueIndicator;
+    Label *toolTip;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 };

@@ -1,13 +1,13 @@
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+# set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
 dpf_add_plugin(
   WAIVE_Sampler
   TARGETS 
       jack
       vst3
-      vst2
-      clap
+      # vst2
+      # clap
       au
   FILES_DSP
       WAIVESampler.cpp
@@ -21,7 +21,6 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/WAIVEUtils.hpp
       ${CMAKE_SOURCE_DIR}/common/src/model_utils.cpp
       ${CMAKE_SOURCE_DIR}/external/Gist/src/Gist.cpp
-      ${CMAKE_SOURCE_DIR}/external/Gist/libs/kiss_fft130/kiss_fft.c
       ./models/tsne.c
   FILES_UI
       WAIVESamplerUI.cpp
@@ -31,7 +30,6 @@ dpf_add_plugin(
       ./components/SourceList.cpp
       ./components/SampleMap.cpp
       ./components/SampleBrowser.cpp
-      ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs/tinyfiledialogs.c
       ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
       ${CMAKE_SOURCE_DIR}/common/icons/download_icon.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
@@ -39,6 +37,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/CheckboxGroup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/CheckboxList.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/Box.cpp
       ${CMAKE_SOURCE_DIR}/common/src/HBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/VBox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Link.cpp
@@ -57,6 +56,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEImage.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/RadioButtons.cpp
       ${CMAKE_SOURCE_DIR}/common/src/ValueIndicator.cpp
 )
 
@@ -71,7 +71,6 @@ endif()
 
 include_directories(
     ${CMAKE_BINARY_DIR}/generated/
-    ${CMAKE_SOURCE_DIR}/external/Gist/libs/kiss_fft130
 )
 
 set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
@@ -96,6 +95,9 @@ link_directories(
 find_package(SampleRate CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(kissfft CONFIG REQUIRED)
+find_package(tinyfiledialogs CONFIG REQUIRED)
 find_package(Poco CONFIG REQUIRED Foundation Crypto NetSSL Net Data DataSQLite)
 
 target_include_directories(
@@ -107,10 +109,8 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/common/fonts
     ${CMAKE_SOURCE_DIR}/common/icons
-    ${CMAKE_SOURCE_DIR}/external/json/single_include
     ${CMAKE_SOURCE_DIR}/external/Gist/src
     ${CMAKE_SOURCE_DIR}/external/kd-tree
-    ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs
     ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
 )
 
@@ -121,6 +121,9 @@ target_link_libraries(
     ${Foundation}
     SndFile::sndfile
     fmt::fmt
+    tinyfiledialogs::tinyfiledialogs
+    nlohmann_json::nlohmann_json
+    kissfft::kissfft-float
     Poco::Foundation
     Poco::Data
     Poco::DataSQLite

@@ -9,9 +9,11 @@ Button::Button(Widget *parent)
       callback(nullptr),
       fEnabled(true),
       drawBackground(true),
-      isToggle(false)
+      isToggle(false),
+      fToggleValue(false)
 {
     background_color = WaiveColors::grey2;
+    accent_color = WaiveColors::light2;
 }
 
 void Button::setLabel(const std::string &label_)
@@ -31,7 +33,6 @@ void Button::resizeToFit()
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
-    // setHeight(bounds.getHeight() * 2.f);
     setHeight(getFontSize() * 2.f);
     setWidth(bounds.getWidth() + getHeight());
 }
@@ -46,7 +47,6 @@ void Button::onNanoDisplay()
 {
     const uint width = getWidth();
     const uint height = getHeight();
-    const float margin = 1.0f;
 
     if (renderDebug)
     {
@@ -65,7 +65,7 @@ void Button::onNanoDisplay()
             fillColor(accent_color);
         else
             fillColor(fHasFocus ? highlight_color : background_color);
-        roundedRect(margin, margin, width - 2 * margin, height - 2 * margin, height * 0.5f);
+        roundedRect(0, 0, width, height, height * 0.5f);
         fill();
         closePath();
     }
@@ -74,7 +74,10 @@ void Button::onNanoDisplay()
     beginPath();
     fontSize(getFontSize());
     fontFaceId(font);
-    fillColor(text_color);
+    if (isToggle && fToggleValue)
+        fillColor(WaiveColors::dark);
+    else
+        fillColor(text_color);
     textAlign(ALIGN_CENTER | ALIGN_MIDDLE);
     text(width / 2, height / 2, label.c_str(), nullptr);
     closePath();
@@ -83,7 +86,7 @@ void Button::onNanoDisplay()
     {
         beginPath();
         fillColor(0.f, 0.f, 0.f, 0.5f);
-        roundedRect(margin, margin, width - 2 * margin, height - 2 * margin, height * 0.5f);
+        roundedRect(0, 0, width, height, height * 0.5f);
         fill();
         closePath();
     }
@@ -91,7 +94,6 @@ void Button::onNanoDisplay()
 
 bool Button::onMouse(const MouseEvent &ev)
 {
-    // std::cout << "Button::onMouse " << label << ": " << fEnabled << " " << (callback != nullptr) << " " << ev.press << " " << (ev.button == kMouseButtonLeft) << " " << contains(ev.pos) << std::endl;
     if (
         fEnabled &&
         callback != nullptr &&
@@ -120,7 +122,7 @@ bool Button::onMotion(const MotionEvent &ev)
             getWindow().setCursor(kMouseCursorHand);
             repaint();
         }
-        return true;
+        return false;
     }
     else
     {

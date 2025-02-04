@@ -10,7 +10,7 @@ Label::Label(Widget *parent, std::string text) noexcept
 {
 }
 
-void Label::setLabel(std::string text)
+void Label::setLabel(const std::string text)
 {
     label = text;
     repaint();

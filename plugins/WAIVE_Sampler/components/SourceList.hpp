@@ -12,24 +12,27 @@
 
 START_NAMESPACE_DISTRHO
 
-class SourceList : public WAIVEWidget
+class SourceList : public WAIVEWidget,
+                   public IdleCallback
 {
 public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void sourceDownload(int index) = 0;
-        virtual void sourcePreview(int index) = 0;
+        virtual void sourcePreview(int index, bool start) = 0;
         virtual void sourceLoad(int index) = 0;
     };
 
     SourceList(Widget *widget);
     void setCallback(Callback *cb);
     void selectRandom();
+    void computeColumnWidths();
 
     std::vector<SourceInfo> *source_info;
     std::mutex *source_info_mtx;
+    int previewPlaying;
 
     int scrollBarWidth;
     std::string info;
@@ -42,14 +45,15 @@ protected:
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
     bool onScroll(const ScrollEvent &) override;
+    void idleCallback() override;
 
 private:
     Callback *callback;
     void clampScrollPos();
     float scrollPos;
     float rowHeight;
-    float columnLabel, columnLicense;
-    void drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight);
+    float columnLabel, columnLicense, columnDownload;
+    void drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight, bool playing);
 
     WAIVEImage *download;
 

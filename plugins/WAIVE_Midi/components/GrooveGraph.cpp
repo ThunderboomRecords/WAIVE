@@ -103,14 +103,14 @@ void GrooveGraph::onNanoDisplay()
     fill();
 
     beginPath();
-    fillColor(WaiveColors::light1);
+    fillColor(WaiveColors::grey3);
     rect(4 * gridWidth, 0, 4 * gridWidth, height);
     rect(12 * gridWidth, 0, 4 * gridWidth, height);
     fill();
     closePath();
 
     beginPath();
-    strokeColor(WaiveColors::light2);
+    strokeColor(WaiveColors::grey1);
     for (int i = 1; i < 16; i++)
     {
         moveTo(i * gridWidth, 0);
@@ -128,7 +128,7 @@ void GrooveGraph::onNanoDisplay()
 
         float x = position * width;
         beginPath();
-        strokeColor(Color(1.0f, 1.0f, 1.0f, velocity));
+        strokeColor(Color(88, 88, 207, velocity));
         strokeWidth(3.0f);
         moveTo(x, (height - velocity * height) / 2.0f);
         lineTo(x, (height + velocity * height) / 2.0f);
@@ -136,42 +136,42 @@ void GrooveGraph::onNanoDisplay()
         stroke();
     }
 
-    // round off corners
-    float r = 8.0f;
-    fillColor(WaiveColors::grey1);
-    strokeColor(255, 0, 0);
+    // // round off corners
+    // float r = 8.0f;
+    // fillColor(WaiveColors::grey1);
+    // strokeColor(255, 0, 0);
 
-    // top left
-    beginPath();
-    moveTo(-1, -1);
-    lineTo(-1, r);
-    arcTo(-1, -1, r, -1, r);
-    closePath();
-    fill();
+    // // top left
+    // beginPath();
+    // moveTo(-1, -1);
+    // lineTo(-1, r);
+    // arcTo(-1, -1, r, -1, r);
+    // closePath();
+    // fill();
 
-    // top right
-    beginPath();
-    moveTo(width + 1, -1);
-    lineTo(width + 1, r);
-    arcTo(width + 1, -1, width - r, -1, r);
-    closePath();
-    fill();
+    // // top right
+    // beginPath();
+    // moveTo(width + 1, -1);
+    // lineTo(width + 1, r);
+    // arcTo(width + 1, -1, width - r, -1, r);
+    // closePath();
+    // fill();
 
-    // bottom left
-    beginPath();
-    moveTo(-1, height + 1);
-    lineTo(-1, height - r);
-    arcTo(-1, height + 1, r, height + 1, r);
-    closePath();
-    fill();
+    // // bottom left
+    // beginPath();
+    // moveTo(-1, height + 1);
+    // lineTo(-1, height - r);
+    // arcTo(-1, height + 1, r, height + 1, r);
+    // closePath();
+    // fill();
 
-    // bottom right
-    beginPath();
-    moveTo(width + 1, height + 1);
-    lineTo(width + 1, height - r);
-    arcTo(width + 1, height + 1, width - r, height + 1, r);
-    closePath();
-    fill();
+    // // bottom right
+    // beginPath();
+    // moveTo(width + 1, height + 1);
+    // lineTo(width + 1, height - r);
+    // arcTo(width + 1, height + 1, width - r, height + 1, r);
+    // closePath();
+    // fill();
 }
 
 END_NAMESPACE_DISTRHO

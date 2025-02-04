@@ -14,6 +14,7 @@ struct Preset
     Filter::FilterType filterType;
     ADSR_Params adsr;
     float sustainLength;
+    std::string presetName;
 };
 
 enum PresetName
@@ -36,7 +37,8 @@ namespace Presets
          20.f,
          0.2f,
          50.f},
-        50.f};
+        50.f,
+        "Kick"};
 
     static Preset SnarePreset = {
         1.0f,
@@ -49,7 +51,8 @@ namespace Presets
          60.f,
          0.6f,
          100.f},
-        50.f};
+        50.f,
+        "Snare"};
 
     static Preset HiHat = {
         1.0f,
@@ -62,7 +65,8 @@ namespace Presets
          50.f,
          0.6f,
          120.f},
-        50.f};
+        50.f,
+        "HiHat"};
 
     static Preset Clap = {
         1.0f,
@@ -75,7 +79,8 @@ namespace Presets
          50.f,
          0.6f,
          120.f},
-        50.f};
+        50.f,
+        "Clap"};
 } // namespace Presets
 
 #endif

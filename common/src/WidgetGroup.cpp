@@ -84,8 +84,19 @@ void WidgetGroup::setVisible(bool visible)
     }
 }
 
+void WidgetGroup::show()
+{
+    setVisible(true);
+}
+
+void WidgetGroup::hide()
+{
+    setVisible(false);
+}
+
 void WidgetGroup::toFront()
 {
+    WAIVEWidget::toFront();
     for (int i = 0; i < children.size(); i++)
         children[i]->toFront();
 }

@@ -4,15 +4,6 @@
 [submodule "external/kd-tree"]
 	path = external/kd-tree
 	url = https://github.com/gishi523/kd-tree.git
-[submodule "external/json"]
-	path = external/json
-	url = https://github.com/nlohmann/json.git
-[submodule "external/kissfft"]
-	path = external/kissfft
-	url = https://github.com/mborgerding/kissfft.git
-[submodule "external/libtinyfiledialogs"]
-	path = external/libtinyfiledialogs
-	url = https://github.com/native-toolkit/libtinyfiledialogs.git
 [submodule "DPF"]
 	path = DPF
 	url = https://github.com/DISTRHO/DPF.git

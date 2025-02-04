@@ -18,6 +18,9 @@ public:
     explicit TagBrowser(WAIVEWidget *parent, SampleDatabase *sd_);
 
     void setCallback(TagMap::Callback *cb);
+    void repositionWidgets();
+
+    TagMap *tagMap;
 
 protected:
     void onNanoDisplay() override;
@@ -27,7 +30,6 @@ protected:
 private:
     SampleDatabase *sd;
 
-    TagMap *tagMap;
     Button *selectAllBtn, *selectNoneBtn;
 
     DISTRHO_LEAK_DETECTOR(TagBrowser);

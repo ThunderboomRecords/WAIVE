@@ -60,7 +60,8 @@ class ImporterTask;
 class FeatureExtractorTask;
 class WaveformLoaderTask;
 
-int loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags = 0);
+static uint8_t midiMap[9] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
+
 bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int sampleRate);
 
 class WAIVESampler : public Plugin
@@ -71,6 +72,8 @@ public:
         kSourceLoading = 0,
         kSourceLoaded,
         kSourceUpdated,
+        kSourcePreviewPlay,
+        kSourcePreviewStop,
         kSampleLoading,
         kSampleLoaded,
         kSampleUpdated,
@@ -122,7 +125,7 @@ protected:
     void initParameter(uint32_t index, Parameter &parameter) override;
     void setState(const char *key, const char *value) override;
     String getState(const char *key) const override;
-    void initState(unsigned int, String &, String &) override;
+    void initState(uint32_t index, State &state) override;
 
     // --- Internal data ----------
     float getParameterValue(uint32_t index) const override;
@@ -140,30 +143,32 @@ protected:
     void stopSourcePreview();
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);
-    void loadSource(const char *fp);
+    void loadSourceFile(const std::string, const std::string tagString = "");
     void loadSlot(int slot, int id);
     void loadPreset(Preset preset);
     void selectWaveform(std::vector<float> *source, int start);
     void addCurrentSampleToLibrary();
+    void generateCurrentSampleName(const std::string base);
     void renderSample();
-    void loadSamplePlayer(std::shared_ptr<SampleInfo> info, SamplePlayer &sp, std::vector<float> &buffer);
+    void loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info);
     void clearSamplePlayer(SamplePlayer &sp);
     void triggerPreview();
     std::pair<float, float> getEmbedding(std::vector<float> *wf);
     void getFeatures(std::vector<float> *wf, std::vector<float> *feature);
     void onTaskFinished(Poco::TaskFinishedNotification *pNf);
+    void onTaskFailed(Poco::TaskFailedNotification *pNf);
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
+
+    const char *pluginUpdateToString(PluginUpdate update) const;
 
     EnvGen ampEnvGen;
 
 private:
-    Poco::TaskManager taskManager, converterManager;
+    Poco::TaskManager taskManager;
     ImporterTask *importerTask;
-    std::unique_ptr<WaveformLoaderTask> waveformLoaderTask;
     std::shared_ptr<std::vector<float>> tempBuffer;
     std::mutex tempBufferMutex;
     ThreadsafeQueue<std::string> import_queue;
-    std::string fSourcePath;
     Poco::BasicEvent<const PluginUpdate> pluginUpdate;
 
     HTTPClient httpClient;
@@ -185,14 +190,7 @@ private:
     OSCClient oscClient;
 
     std::shared_ptr<SampleInfo> fCurrentSample;
-
-    std::vector<float> fSourceWaveform;
-    bool fSourceLoaded, fSampleLoaded;
-    int fSourceLength;
-    std::string fSourceTagString;
-    std::mutex sourceFeaturesMtx;
-    std::vector<WaveformFeature> fSourceFeatures;
-    std::vector<WaveformMeasurements> fSourceMeasurements;
+    bool renderSampleLock;
 
     float fNormalisationRatio;
     Filter sampleFilter;

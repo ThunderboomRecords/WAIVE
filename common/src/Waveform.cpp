@@ -129,6 +129,14 @@ void Waveform::onNanoDisplay()
     fill();
     closePath();
 
+    beginPath();
+    strokeColor(text_color);
+    strokeWidth(1.f);
+    moveTo(0, half);
+    lineTo(width, half);
+    stroke();
+    closePath();
+
     if (!waveformCached || wf == nullptr || waveformLength == 0)
         return;
 
@@ -206,12 +214,12 @@ void Waveform::onNanoDisplay()
     // draw minimap if zoomed in
     if (visibleStart > 0 || visibleEnd < waveformLength)
     {
-        beginPath();
-        fillColor(Color(background_color, Color(255, 255, 255), 0.2f));
-        rect(0, height - 12.0f, width, 12.0f);
-        fill();
-        closePath();
-
+        // beginPath();
+        // fillColor(Color(background_color, Color(0, 0, 0), 0.2f));
+        // rect(0, height - 12.0f, width, 12.0f);
+        // fill();
+        // closePath();
+        float barHeight = 8.f;
         float x;
         if (selectable)
         {
@@ -219,18 +227,18 @@ void Waveform::onNanoDisplay()
             fillColor(cursor_color);
             x = (float)waveformSelectStart / waveformLength * width;
             // float w = (float)(waveformSelectEnd - waveformSelectStart) / waveformLength * width;
-            rect(x, height - 12.0f, 2, 12.0f);
+            rect(x, height - barHeight, 2.f, barHeight);
             fill();
             closePath();
         }
 
         beginPath();
         strokeWidth(1.0f);
-        strokeColor(text_color);
+        fillColor(highlight_color);
         x = (float)visibleStart / waveformLength * width;
         float w = (float)(visibleEnd - visibleStart) / waveformLength * width;
-        rect(x + 1.0f, height - 12.0f, w - 2.0f, 12.0f - 1.0f);
-        stroke();
+        roundedRect(x, height - barHeight, w, barHeight, barHeight * 0.5f);
+        fill();
         closePath();
     }
 }

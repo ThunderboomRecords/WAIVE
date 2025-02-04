@@ -17,9 +17,11 @@ Knob::Knob(Widget *parent) noexcept
       label(""),
       enabled(true),
       radius(25.0f),
-      integer(false)
+      integer(false),
+      vertical(true),
+      showValue(true)
 {
-    gauge_width = 8.f * scale_factor;
+    gauge_width = 2.f * scale_factor;
 }
 
 float Knob::getValue() const noexcept
@@ -52,7 +54,10 @@ void Knob::resizeToFit()
     Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
-    setSize(std::max(2 * radius, bounds.getWidth()), 2 * radius + bounds.getHeight() * 1.5, true);
+    if (vertical)
+        setSize(std::max(2 * radius, bounds.getWidth()), 2 * radius + bounds.getHeight() * 2.5, true);
+    else
+        setSize(2 * radius + bounds.getWidth() * 2.5, std::max(2 * radius, bounds.getHeight()), true);
 }
 
 void Knob::setValue(float val, bool sendCallback) noexcept
@@ -72,12 +77,11 @@ void Knob::setValue(float val, bool sendCallback) noexcept
 
 bool Knob::onMouse(const MouseEvent &ev)
 {
-    if (!isVisible() || ev.button != 1 || !enabled)
+    if (!isVisible() || ev.button != kMouseButtonLeft || !enabled)
         return false;
 
     if (ev.press && contains(ev.pos))
     {
-
         dragging_ = true;
         dragStart = ev.pos.getY();
         tmp_p = (value_ - min) / (max - min);
@@ -87,6 +91,8 @@ bool Knob::onMouse(const MouseEvent &ev)
         if (callback != nullptr)
             callback->knobDragStarted(this);
         repaint();
+
+        return true;
     }
     else if (!ev.press && dragging_)
     {
@@ -94,10 +100,8 @@ bool Knob::onMouse(const MouseEvent &ev)
         if (callback != nullptr)
             callback->knobDragFinished(this, value_);
     }
-    else
-        return false;
 
-    return true;
+    return false;
 }
 
 bool Knob::onMotion(const MotionEvent &ev)
@@ -116,7 +120,7 @@ bool Knob::onMotion(const MotionEvent &ev)
     float new_value = min + (max - min) * p;
 
     setValue(new_value, true);
-    return true;
+    return false;
 }
 
 bool Knob::onScroll(const ScrollEvent &ev)
@@ -156,32 +160,30 @@ void Knob::onNanoDisplay()
     const float center_y = height / 2.0f;
 
     float normValue = (getValue() - min) / (max - min);
-    if (normValue < 0.0f)
-        normValue = 0.0f;
-
-    drawIndicator();
+    normValue = std::clamp(normValue, 0.f, 1.f);
 
     beginPath();
-    circle(center_x, center_y, radius - gauge_width - 2.0f);
-    fillColor(foreground_color);
-    fill();
+    circle(center_x, center_y, radius - gauge_width);
+    strokeColor(foreground_color);
+    stroke();
     closePath();
 
     float angle = (0.75f + 1.5f * normValue) * M_PI;
-    float x1 = cos(-angle) * (0.6f * radius) + center_x;
-    float y1 = -sin(-angle) * (0.6f * radius) + center_y;
-    float x2 = cos(-angle) * radius + center_x;
-    float y2 = -sin(-angle) * radius + center_y;
+    float x2 = cos(-angle) * (radius - gauge_width) + center_x;
+    float y2 = -sin(-angle) * (radius - gauge_width) + center_y;
 
     beginPath();
-    strokeColor(accent_color);
+    strokeColor(text_color);
     strokeWidth(gauge_width);
-    moveTo(x1, y1);
+    moveTo(center_x, center_y);
     lineTo(x2, y2);
     stroke();
     closePath();
 
     drawLabel();
+
+    if (showValue)
+        drawValue();
 }
 
 void Knob::drawIndicator()
@@ -231,10 +233,38 @@ void Knob::drawLabel()
     beginPath();
     fillColor(text_color);
     fontFaceId(font);
-    textAlign(Align::ALIGN_CENTER | Align::ALIGN_BOTTOM);
     fontSize(getFontSize());
-    text(getWidth() / 2.0f, getHeight(), label.c_str(), nullptr);
+    if (vertical)
+    {
+        textAlign(Align::ALIGN_CENTER | Align::ALIGN_TOP);
+        text(getWidth() / 2.f, 0, label.c_str(), nullptr);
+    }
+    else
+    {
+        textAlign(Align::ALIGN_LEFT | Align::ALIGN_MIDDLE);
+        text(0, getHeight() / 2.f, label.c_str(), nullptr);
+    }
+    closePath();
+}
 
+void Knob::drawValue()
+{
+    std::string valueString = fmt::format(format, getValue());
+
+    beginPath();
+    fillColor(text_color);
+    fontFaceId(font);
+    fontSize(getFontSize());
+    if (vertical)
+    {
+        textAlign(Align::ALIGN_CENTER | Align::ALIGN_BOTTOM);
+        text(getWidth() / 2.f, getHeight(), valueString.c_str(), nullptr);
+    }
+    else
+    {
+        textAlign(Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE);
+        text(getWidth(), getHeight() / 2.f, valueString.c_str(), nullptr);
+    }
     closePath();
 }
 

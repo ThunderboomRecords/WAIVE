@@ -3,6 +3,79 @@
 
 START_NAMESPACE_DISTRHO
 
+size_t loadWaveform(const char *fp, std::vector<float> &buffer, int sampleRate, int flags)
+{
+    // Open the file
+    SndfileHandle fileHandle(fp, 16, flags);
+    int sampleLength = fileHandle.frames();
+    if (sampleLength == 0)
+    {
+        std::cerr << "Error: Unable to open input file " << fp << std::endl;
+        return 0;
+    }
+
+    int sampleChannels = fileHandle.channels();
+    int fileSampleRate = fileHandle.samplerate();
+
+    // Read the file into a temporary sample buffer
+    std::vector<float> sample(sampleLength * sampleChannels);
+    if (fileHandle.read(sample.data(), sampleLength * sampleChannels) != sampleLength * sampleChannels)
+    {
+        std::cerr << "Error: Failed to read audio data from file." << std::endl;
+        return 0;
+    }
+
+    std::vector<float> sample_tmp;
+
+    // Resample if necessary
+    if (fileSampleRate != sampleRate)
+    {
+        size_t new_size = static_cast<size_t>(std::ceil(static_cast<double>(sampleLength) * sampleRate / fileSampleRate));
+        sample_tmp.resize(new_size * sampleChannels);
+
+        SRC_DATA src_data = {};
+        src_data.data_in = sample.data();
+        src_data.input_frames = sampleLength;
+        src_data.data_out = sample_tmp.data();
+        src_data.output_frames = new_size;
+        src_data.src_ratio = static_cast<float>(sampleRate) / fileSampleRate;
+
+        int result = src_simple(&src_data, SRC_SINC_BEST_QUALITY, sampleChannels);
+        if (result != 0)
+        {
+            std::cerr << "Failed to convert sample rate: " << src_strerror(result) << std::endl;
+            return 0;
+        }
+
+        // Adjust the actual output length after resampling
+        sample_tmp.resize(static_cast<size_t>(src_data.output_frames_gen * sampleChannels));
+    }
+    else
+    {
+        sample_tmp = std::move(sample);
+    }
+
+    // Resize the output buffer
+    size_t outputLength = sample_tmp.size() / sampleChannels;
+    buffer.resize(outputLength);
+
+    // Mix to mono if necessary
+    if (sampleChannels > 1)
+    {
+        for (size_t i = 0; i < outputLength; ++i)
+        {
+            buffer[i] = 0.0f;
+            for (int c = 0; c < sampleChannels; ++c)
+                buffer[i] += sample_tmp[i * sampleChannels + c];
+            buffer[i] /= static_cast<float>(sampleChannels);
+        }
+    }
+    else
+        std::copy(sample_tmp.begin(), sample_tmp.end(), buffer.begin());
+
+    return outputLength;
+}
+
 ImporterTask::ImporterTask(WAIVESampler *ws, ThreadsafeQueue<std::string> *queue) : Poco::Task("ImporterTask"), _ws(ws), _queue(queue) {};
 
 void ImporterTask::runTask()
@@ -52,10 +125,9 @@ void ImporterTask::import(const std::string &fp)
     info->filterResonance = 0;
     info->pitch = 1.0f;
     info->volume = 1.0f;
-    info->source = fp;
+    info->sourceInfo.fp = fp;
     info->sourceStart = 0;
     info->saved = true;
-    // info->tags.push_back({"imported"});
 
     // TODO: render loaded sample...
     auto embedding = _ws->getEmbedding(&sampleCopy);
@@ -73,38 +145,41 @@ void ImporterTask::import(const std::string &fp)
     std::cout << " - import done\n";
 };
 
-FeatureExtractorTask::FeatureExtractorTask(WAIVESampler *ws) : Poco::Task("FeatureExtractorTask"), _ws(ws) {}
+FeatureExtractorTask::FeatureExtractorTask(Source *s, int sr)
+    : Poco::Task("FeatureExtractorTask"),
+      source(s),
+      sampleRate(sr) {}
 
 void FeatureExtractorTask::runTask()
 {
     std::cout << "FeatureExtractorTask::runTask()" << std::endl;
-    if (_ws->fSourceLength == 0)
+    if (source->length == 0)
         return;
 
     // TODO: check and load cached features
-    try
-    {
-        Poco::File cachedir(Poco::Path(Poco::Path::cacheHome()).append("WAIVE").append("SourceAnalysis"));
-        if (!cachedir.exists())
-        {
-            cachedir.createDirectories();
-        }
-    }
-    catch (const Poco::Exception &e)
-    {
-        std::cerr << "Error creating cache directories: " << e.displayText() << std::endl;
-        return;
-    }
+    // try
+    // {
+    //     Poco::File cachedir(Poco::Path(Poco::Path::cacheHome()).append("WAIVE").append("SourceAnalysis"));
+    //     if (!cachedir.exists())
+    //     {
+    //         cachedir.createDirectories();
+    //     }
+    // }
+    // catch (const Poco::Exception &e)
+    // {
+    //     std::cerr << "Error creating cache directories: " << e.displayText() << std::endl;
+    //     return;
+    // }
 
     int frameIndex = 0;
     long frame = 0;
-    long length = _ws->fSourceLength;
-    Gist<float> gist(128, (int)_ws->getSampleRate());
+    long length = source->length;
+    Gist<float> gist(128, sampleRate);
     const int frameSize = gist.getAudioFrameSize();
 
-    std::lock_guard<std::mutex> lock(_ws->sourceFeaturesMtx);
-    _ws->fSourceFeatures.clear();
-    _ws->fSourceMeasurements.clear();
+    std::lock_guard<std::mutex> lock(source->mtx);
+    source->sourceFeatures.clear();
+    source->sourceMeasurements.clear();
 
     float pStep = (float)gist.getAudioFrameSize() / length;
     float p = 0.0f;
@@ -114,7 +189,7 @@ void FeatureExtractorTask::runTask()
     while (frame < length - frameSize && !isCancelled())
     {
         WaveformMeasurements m;
-        gist.processAudioFrame(&_ws->fSourceWaveform.at(frame), frameSize);
+        gist.processAudioFrame(&source->buffer.at(frame), frameSize);
 
         m.frame = frame;
         m.rms = gist.rootMeanSquare();
@@ -134,15 +209,15 @@ void FeatureExtractorTask::runTask()
 
         if (onset > 100.f && frame > lastOnset + 4800)
         {
-            _ws->fSourceFeatures.push_back({FeatureType::Onset,
-                                            "onset",
-                                            onset,
-                                            frame,
-                                            frame,
-                                            frameIndex});
+            source->sourceFeatures.push_back({FeatureType::Onset,
+                                              "onset",
+                                              onset,
+                                              frame,
+                                              frame,
+                                              frameIndex});
             lastOnset = frame;
         }
-        _ws->fSourceMeasurements.push_back(m);
+        source->sourceMeasurements.push_back(m);
         p += pStep;
         setProgress(p);
 
@@ -155,19 +230,32 @@ void FeatureExtractorTask::runTask()
     setProgress(1.0f);
 }
 
-WaveformLoaderTask::WaveformLoaderTask(std::shared_ptr<std::vector<float>> _buffer, std::mutex *_mutex, const std::string &_fp, int _sampleRate)
-    : Poco::Task("WaveformLoaderTask"), buffer(_buffer), mutex(_mutex), fp(_fp), sampleRate(_sampleRate) {};
+WaveformLoaderTask::WaveformLoaderTask(
+    const std::string &name,
+    std::shared_ptr<std::vector<float>> _buffer,
+    std::mutex *_mutex,
+    const std::string &_fp,
+    int _sampleRate)
+    : Poco::Task(name),
+      buffer(_buffer),
+      mutex(_mutex),
+      fp(_fp),
+      sampleRate(_sampleRate) {};
 
 WaveformLoaderTask::~WaveformLoaderTask() {}
 
 void WaveformLoaderTask::runTask()
 {
-    // std::cout << "WaveformLoaderTask::runTask()" << std::endl;
+    std::cout << "WaveformLoaderTask::runTask()" << std::endl;
+    std::cout << " fp: " << fp << std::endl;
 
     SndfileHandle fileHandle(fp, SFM_READ);
     if (fileHandle.error())
     {
         std::cerr << "Error: Unable to open input file " << fp << "\n  error: " << sf_error_number(fileHandle.error()) << std::endl;
+        buffer->resize(0);
+
+        throw std::runtime_error("Unable to open file " + fp);
         return;
     }
 
@@ -176,8 +264,9 @@ void WaveformLoaderTask::runTask()
     if (sampleLength == 0)
     {
         std::cerr << "Error: Unable to open input file " << fp << "\n  error: " << sf_error_number(fileHandle.error()) << std::endl;
-
         buffer->resize(0);
+
+        throw std::runtime_error("Unable to open file " + fp);
         return;
     }
 
@@ -206,7 +295,7 @@ void WaveformLoaderTask::runTask()
         new_size = (size_t)(sampleLength * src_ratio + 1);
         sample_tmp.reserve(new_size * sampleChannels + sampleChannels);
 
-        SRC_DATA src_data;
+        SRC_DATA src_data = {};
         src_data.src_ratio = src_ratio;
 
         std::cout << "RESAMPLING WAVEFORM:\n";
@@ -227,6 +316,7 @@ void WaveformLoaderTask::runTask()
         if (!converter)
         {
             std::cerr << "Could not init samplerate converter, reason: " << sf_error_number(error) << std::endl;
+            throw std::runtime_error("Could not init samplerate converter, reason: " + std::string(sf_error_number(error)));
             return;
         }
 
@@ -250,6 +340,7 @@ void WaveformLoaderTask::runTask()
             if (error)
             {
                 std::cout << "Error during sample rate conversion: " << src_strerror(error) << std::endl;
+                throw std::runtime_error("Error during sample rate conversion: " + std::string(src_strerror(error)));
                 return;
             }
 

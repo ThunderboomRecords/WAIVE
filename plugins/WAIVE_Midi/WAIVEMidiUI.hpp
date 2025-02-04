@@ -5,10 +5,13 @@
 #include "NanoVG.hpp"
 #include "Window.hpp"
 
+#include "Box.hpp"
 #include "VBox.hpp"
 #include "Knob.hpp"
+#include "Icon.hpp"
 #include "Label.hpp"
 #include "Panel.hpp"
+#include "TextInput.hpp"
 #include "DropDown.hpp"
 #include "Playhead.hpp"
 #include "ScoreGrid.hpp"
@@ -19,6 +22,7 @@
 #include "tinyfiledialogs.h"
 
 #include "fonts.h"
+#include "dropdown_icon.h"
 #include "WAIVEColors.hpp"
 #include "latent_distributions.h"
 
@@ -26,14 +30,16 @@
 
 START_NAMESPACE_DISTRHO
 
-const unsigned int UI_W = 920;
-const unsigned int UI_H = 460;
+const unsigned int UI_W = 803;
+const unsigned int UI_H = 579;
 
 class WAIVEMidiUI : public UI,
+                    public DrumPattern::Callback,
                     public GrooveGraph::Callback,
                     public Button::Callback,
                     public Knob::Callback,
-                    public DropDown::Callback
+                    public DropDown::Callback,
+                    public TextInput::Callback
 {
 public:
     WAIVEMidiUI();
@@ -42,6 +48,7 @@ public:
 protected:
     void parameterChanged(uint32_t index, float value) override;
     void stateChanged(const char *key, const char *value) override;
+    bool onMotion(const MotionEvent &ev) override;
     void onNanoDisplay() override;
     void buttonClicked(Button *button) override;
     void grooveClicked(GrooveGraph *graph) override;
@@ -49,6 +56,12 @@ protected:
     void knobDragFinished(Knob *knob, float value) override;
     void knobValueChanged(Knob *knob, float value) override;
     void dropdownSelection(DropDown *widget, int item) override;
+    void textEntered(TextInput *textInput, std::string text) override;
+    void textInputChanged(TextInput *textInput, std::string text) override;
+    void onDrumPatternClicked(DrumPattern *widget, int instrument, int sixteenth) override;
+    void onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Note> note, float deltaY) override;
+    void onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<Note> note, uint32_t tick) override;
+    void onNoteDeleted(DrumPattern *widget, std::shared_ptr<Note> note) override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
 private:
@@ -56,21 +69,23 @@ private:
 
     WAIVEMidi *plugin;
 
-    Panel *edit_panel, *result_panel;
-    ScoreGrid *score_grid;
-    GrooveGraph *groove_graph;
-    DrumPattern *drum_pattern;
-    Label *score_label, *groove_label, *threshold_label;
-    std::vector<std::shared_ptr<Label>> drum_names;
-    Button *new_score, *var_score, *new_groove, *var_groove, *quantize, *export_btn;
-    Knob *threshold;
-    DropDown *score_genre, *groove_genre;
-    std::vector<std::shared_ptr<DropDown>> midi_notes;
-    std::vector<std::shared_ptr<Knob>> thresholds;
+    Panel *mainPanel;
+    DrumPattern *drumPattern;
+    GrooveGraph *grooveGraph;
+    Label *scoreLabel, *grooveLabel, *complexityLabel, *midiLabel;
+    std::vector<std::shared_ptr<Label>> drumNames;
+    Button *newScoreBtn, *varScoreBtn, *newGrooveBtn, *varGrooveBtn, *quantizeBtn, *exportBtn;
+    Knob *complexity;
+    Box *scoreGenreBox, *grooveGenreBox;
+    DropDown *scoreGenreDD, *grooveGenreDD;
+    Icon *scoreDDIcon, *grooveDDIcon;
+    std::vector<std::shared_ptr<TextInput>> midiNotesEdit;
+    std::vector<std::shared_ptr<Knob>> complexities;
 
-    Playhead *drum_playhead;
+    Playhead *drumPlayhead;
 
-    FontId logo_font;
+    FontId fontTitle, fontMain;
+    Label *toolTip;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVEMidiUI);
 };

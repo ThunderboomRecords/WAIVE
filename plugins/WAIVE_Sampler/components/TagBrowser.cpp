@@ -12,6 +12,7 @@ TagBrowser::TagBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
     tagMap->onTop(widget, Widget_Align::START, Widget_Align::START, 2.f, widget->getFontSize() * 2.f);
     tagMap->setFont("VG5000", VG5000, VG5000_len);
     tagMap->tagList = &sd->tagList;
+    tagMap->background_color = WaiveColors::grey2;
     tagMap->setCallback(this);
     addChildWidget(tagMap);
 
@@ -21,6 +22,7 @@ TagBrowser::TagBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
     selectNoneBtn->resizeToFit();
     selectNoneBtn->setCallback(this);
     selectNoneBtn->onTop(tagMap, Widget_Align::END, Widget_Align::START, 10);
+    selectNoneBtn->background_color = WaiveColors::grey1;
     addChildWidget(selectNoneBtn);
 
     selectAllBtn = new Button(widget);
@@ -29,19 +31,20 @@ TagBrowser::TagBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
     selectAllBtn->resizeToFit();
     selectAllBtn->setCallback(this);
     selectAllBtn->leftOf(selectNoneBtn, Widget_Align::START, 10);
+    selectAllBtn->background_color = WaiveColors::grey1;
     addChildWidget(selectAllBtn);
 }
 
 void TagBrowser::onNanoDisplay()
 {
-    // const float width = getWidth();
-    // const float height = getHeight();
-
-    // beginPath();
-    // fillColor(WaiveColors::grey1);
-    // rect(0, 0, width, height);
-    // fill();
-    // closePath();
+    if (renderDebug)
+    {
+        beginPath();
+        rect(0, 0, getWidth(), getHeight());
+        strokeColor(accent_color);
+        stroke();
+        closePath();
+    }
 }
 
 void TagBrowser::buttonClicked(Button *btn)
@@ -57,6 +60,15 @@ void TagBrowser::tagMapUpdated(TagMap *map)
     std::string tagSubset = map->getSelectedTagList();
     sd->filterConditions.tagIn.assign(tagSubset);
     sd->filterSources();
+}
+
+void TagBrowser::repositionWidgets()
+{
+    tagMap->setSize(getWidth(), getHeight(), true);
+    tagMap->onTop(this);
+
+    selectNoneBtn->onTop(tagMap, Widget_Align::END, Widget_Align::START, 10);
+    selectAllBtn->leftOf(selectNoneBtn, Widget_Align::START, 10);
 }
 
 void TagBrowser::setCallback(TagMap::Callback *cb)

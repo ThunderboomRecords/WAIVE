@@ -2,6 +2,7 @@
 #define KNOB_HPP_INCLUDED
 
 #include "WAIVEWidget.hpp"
+#include <fmt/core.h>
 
 START_NAMESPACE_DISTRHO
 
@@ -30,6 +31,8 @@ public:
     float min, max;
     float gauge_width;
     std::string format;
+    bool vertical;
+    bool showValue;
 
     bool enabled;
     bool integer;
@@ -43,6 +46,7 @@ protected:
     bool onScroll(const ScrollEvent &) override;
     void drawIndicator();
     void drawLabel();
+    void drawValue();
 
 private:
     Callback *callback;

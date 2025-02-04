@@ -13,15 +13,32 @@ SourceList::SourceList(Widget *widget)
       info("No results found"),
       callback(nullptr),
       highlighting(-1),
-      selected(-1)
+      selected(-1),
+      previewPlaying(-1)
 {
     download = new WAIVEImage(this, download_icon, download_icon_len, 131, 119, IMAGE_GENERATE_MIPMAPS);
 
-    scrollBarWidth = 8 * scale_factor;
-    columnLabel = 30 * scale_factor;
-    columnLicense = 30 * scale_factor + 2.f * scrollBarWidth;
+    scrollBarWidth = 3 * scale_factor;
+    columnLabel = 36 * scale_factor;
+    columnDownload = 30 * scale_factor + 2.f * (scrollBarWidth + 8);
+
+    background_color = WaiveColors::grey2;
 
     random.seed();
+}
+
+void SourceList::computeColumnWidths()
+{
+    const float width = getWidth();
+
+    fontFaceId(font);
+    fontSize(getFontSize() * 0.8f);
+    Rectangle<float> bounds;
+    textBounds(0, 0, "LICENSE", NULL, bounds);
+
+    columnLabel = 36 * scale_factor;
+    columnDownload = width - (scrollBarWidth * 2.f) - 8 - 11;
+    columnLicense = columnDownload - bounds.getWidth() - 4.f;
 }
 
 void SourceList::onNanoDisplay()
@@ -31,7 +48,7 @@ void SourceList::onNanoDisplay()
 
     beginPath();
     fillColor(background_color);
-    roundedRect(0, 0, width, height, scrollBarWidth / 2.f);
+    rect(0, 0, width, height);
     fill();
     closePath();
 
@@ -42,12 +59,22 @@ void SourceList::onNanoDisplay()
         rect(0, 0, width, height);
         stroke();
         closePath();
+
+        beginPath();
+        moveTo(columnLabel, 0);
+        lineTo(columnLabel, height);
+        moveTo(columnLicense, 0);
+        lineTo(columnLicense, height);
+        moveTo(columnDownload, 0);
+        lineTo(columnDownload, height);
+        stroke();
+        closePath();
     }
 
     if (source_info == nullptr || source_info_mtx == nullptr)
         return;
 
-    float rowWidth = width - 2.f * padding - scrollBarWidth;
+    // float rowWidth = width - 2.f * padding - scrollBarWidth;
     rowHeight = 2.f * getFontSize();
 
     int maxDisplay = height / (rowHeight + margin);
@@ -90,7 +117,7 @@ void SourceList::onNanoDisplay()
 
         try
         {
-            drawSourceInfo((source_info->at(i)), x, y, rowWidth, rowHeight, (highlighting == i) || (selected == i));
+            drawSourceInfo((source_info->at(i)), x, y, getWidth(), rowHeight, (highlighting == i) || (selected == i), (previewPlaying == i));
         }
         catch (const std::out_of_range &e)
         {
@@ -103,19 +130,21 @@ void SourceList::onNanoDisplay()
     {
         beginPath();
         fillColor(scrollGutter);
-        roundedRect(width - scrollBarWidth, 0, scrollBarWidth, height, scrollBarWidth / 2.f);
+        roundedRect(width - scrollBarWidth - 4, 4, scrollBarWidth, height - 8, scrollBarWidth / 2.f);
         fill();
         closePath();
 
-        float steps = height / n;
+        const float minThumbHeight = scrollBarWidth;
+        float steps = (height - 8 - minThumbHeight) / n;
+        float thumbHeight = std::max(steps * maxDisplay, minThumbHeight);
 
         beginPath();
         fillColor(scrollHandle);
         roundedRect(
-            width - scrollBarWidth,
-            (scrollPos / (rowHeight + margin)) * steps,
+            width - scrollBarWidth - 4,
+            (scrollPos / (rowHeight + margin)) * steps + 4,
             scrollBarWidth,
-            steps * maxDisplay,
+            thumbHeight,
             scrollBarWidth / 2.f);
         fill();
         closePath();
@@ -124,13 +153,14 @@ void SourceList::onNanoDisplay()
     source_info_mtx->unlock();
 }
 
-void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight)
+void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight, bool playing)
 {
     translate(x, y);
 
     if (info.description.length() == 0)
     {
         std::cout << "zero length description...\n";
+        resetTransform();
         return;
     }
 
@@ -143,8 +173,6 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
         closePath();
     }
 
-    // std::string infoString = info.description;
-
     beginPath();
     fillColor(text_color);
     fontSize(getFontSize());
@@ -156,14 +184,41 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
     // fade string
     Paint fade;
     if (highlight)
-        fade = linearGradient(width - columnLicense - 50 * scale_factor, 0, width - columnLicense - 2 * scrollBarWidth - 50 * scale_factor, 0, accent_color, Color(0, 0, 0, 0.f));
+        fade = linearGradient(columnLicense - 10, 0, columnLicense - 10 - 2 * scrollBarWidth, 0, accent_color, Color(0, 0, 0, 0.f));
     else
-        fade = linearGradient(width - scrollBarWidth, 0, width - 4.f * scrollBarWidth, 0, background_color, Color(0, 0, 0, 0.f));
+        fade = linearGradient(width - scrollBarWidth - 10, 0, width - scrollBarWidth - 10 - 2 * scrollBarWidth, 0, background_color, Color(0, 0, 0, 0.f));
     beginPath();
     fillPaint(fade);
     rect(0, 0, width, height);
     fill();
     closePath();
+
+    if (!playing)
+    {
+        // Play button
+        beginPath();
+        if (highlight)
+            fillColor(text_color);
+        else
+            fillColor(highlight_color);
+        moveTo(15 * scale_factor, 12 * scale_factor);
+        lineTo(15 * scale_factor, height - 12 * scale_factor);
+        lineTo(22 * scale_factor, height / 2);
+        fill();
+        closePath();
+    }
+    else
+    {
+        // Stop button
+        beginPath();
+        if (highlight)
+            fillColor(text_color);
+        else
+            fillColor(highlight_color);
+        rect(15 * scale_factor, 12 * scale_factor, 7 * scale_factor, 7 * scale_factor);
+        fill();
+        closePath();
+    }
 
     if (!highlight)
     {
@@ -171,48 +226,40 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
         return;
     }
 
-    // play button
-    beginPath();
-    fillColor(text_color);
-    moveTo(8 * scale_factor, 10 * scale_factor);
-    lineTo(8 * scale_factor, height - 10 * scale_factor);
-    lineTo(20 * scale_factor, height / 2);
-    fill();
-    closePath();
-
     if (info.license.length())
     {
         // license info button
         beginPath();
         fillColor(text_color);
         fontSize(getFontSize() * 0.8f);
-        textAlign(Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE);
-        text(width - columnLicense, height / 2.f, "License", nullptr);
+        textAlign(Align::ALIGN_LEFT | Align::ALIGN_MIDDLE);
+        text(columnLicense, height / 2.f, "LICENSE", nullptr);
         closePath();
     }
 
     if (info.downloaded == DownloadState::NOT_DOWNLOADED)
     {
-        download->align = Align::ALIGN_RIGHT | Align::ALIGN_MIDDLE;
-        download->drawAt(width - scrollBarWidth * 2.f, height / 2.f, getFontSize() * 0.8f);
+        download->align = Align::ALIGN_LEFT | Align::ALIGN_MIDDLE;
+        download->drawAt(columnDownload, height / 2.f, 9 * scale_factor, 11 * scale_factor);
     }
     else if (info.downloaded == DownloadState::DOWNLOADING)
     {
         beginPath();
         strokeColor(text_color);
-        strokeWidth(3.0f);
-        circle(width - 8.f - 2.f * scrollBarWidth, height / 2.f, 8.f * scale_factor);
+        strokeWidth(1.0f);
+        circle(columnDownload + 5.f * scale_factor, height / 2.f, 5.f * scale_factor);
         stroke();
         closePath();
     }
     else
     {
+        float gap = (height - 11.f * scale_factor) / 2.f + 2.f;
         beginPath();
         strokeColor(text_color);
-        strokeWidth(3.0f);
-        moveTo(width - scrollBarWidth * 2.f - 12.f * scale_factor, 10.f * scale_factor);
-        lineTo(width - scrollBarWidth * 2.f - 4.f * scale_factor, height / 2.f);
-        lineTo(width - scrollBarWidth * 2.f - 12.f * scale_factor, height - 10.f * scale_factor);
+        strokeWidth(1.0f);
+        moveTo(columnDownload + 1 * scale_factor, gap);
+        lineTo(columnDownload + 7 * scale_factor, height / 2.f);
+        lineTo(columnDownload + 1 * scale_factor, height - gap);
         stroke();
         closePath();
     }
@@ -253,7 +300,7 @@ bool SourceList::onMotion(const MotionEvent &ev)
 
         repaint();
 
-        return true;
+        return false;
     }
     else if (contains(ev.pos))
     {
@@ -282,27 +329,27 @@ bool SourceList::onMouse(const MouseEvent &ev)
         return false;
 
     if (source_info->empty())
-        return true;
+        return false;
 
     if (!scrolling && ev.press && contains(ev.pos))
     {
-        if (ev.pos.getX() > getWidth() - scrollBarWidth)
+        if (ev.pos.getX() > getWidth() - scrollBarWidth - 8)
         {
             scrolling = true;
-            return true;
+            return false;
         }
-        else if (ev.pos.getX() > getWidth() - columnLicense - 50 && source_info->at(highlighting).license.length())
+        else if (ev.pos.getX() > columnLicense && ev.pos.getX() < columnDownload && source_info->at(highlighting).license.length())
         {
             try
             {
                 std::cout << "License: " << source_info->at(highlighting).license << std::endl;
                 SystemOpenURL(source_info->at(highlighting).license);
-                return true;
+                return false;
             }
             catch (const std::out_of_range &e)
             {
                 std::cerr << e.what() << '\n';
-                return true;
+                return false;
             }
         }
         else if (ev.pos.getX() > columnLabel)
@@ -333,10 +380,24 @@ bool SourceList::onMouse(const MouseEvent &ev)
 
             return false;
         }
-        else
+        else if (ev.pos.getX() <= columnLabel)
         {
-            if (callback != nullptr)
-                callback->sourcePreview(highlighting);
+            if (previewPlaying == highlighting)
+            {
+                // stop preview
+                if (callback != nullptr)
+                    callback->sourcePreview(highlighting, false);
+                previewPlaying = -1;
+            }
+            else
+            {
+                // Play preview
+                if (callback != nullptr)
+                    callback->sourcePreview(highlighting, true);
+                previewPlaying = highlighting;
+            }
+
+            repaint();
             return true;
         }
     }
@@ -369,6 +430,8 @@ void SourceList::selectRandom()
             callback->sourceDownload(highlighting);
     }
 }
+
+void SourceList::idleCallback() {}
 
 void SourceList::setCallback(Callback *cb)
 {

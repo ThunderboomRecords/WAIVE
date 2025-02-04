@@ -57,19 +57,8 @@ bool TagMap::onMouse(const MouseEvent &ev)
     {
         if (ev.button == MouseButton::kMouseButtonLeft)
             dragAction = CLICKING;
-        else if (ev.button == MouseButton::kMouseButtonRight)
-        {
-            // if (highlightSample >= 0)
-            // {
-            //     contextMenuSample = highlightSample;
-            //     menu->setAbsolutePos(
-            //         ev.pos.getX() + getAbsoluteX() - 2,
-            //         ev.pos.getY() + getAbsoluteY() - 2);
-            //     menu->toFront();
-            //     menu->show();
-            // }
-        }
-        return true;
+
+        return false;
     }
     else if (!ev.press && ev.button == MouseButton::kMouseButtonLeft && dragAction != NONE)
     {
@@ -77,7 +66,7 @@ bool TagMap::onMouse(const MouseEvent &ev)
         {
         case CLICKING:
             if (highlighted == nullptr)
-                return true;
+                return false;
 
             if (selected.count(highlighted->id))
                 selected.erase(highlighted->id);
@@ -97,12 +86,8 @@ bool TagMap::onMouse(const MouseEvent &ev)
 
         dragAction = NONE;
     }
-    else
-    {
-        return false;
-    }
 
-    return true;
+    return false;
 };
 
 bool TagMap::onMotion(const MotionEvent &ev)
@@ -144,14 +129,14 @@ bool TagMap::onMotion(const MotionEvent &ev)
             repaint();
         }
 
-        return true;
+        return false;
     }
     else if (dragAction == CLICKING)
     {
         dragAction = SCROLLING;
         dragStart = Point<double>(ev.pos);
         centerStart = Point<double>{centerPos.getX(), centerPos.getY()};
-        return true;
+        return false;
     }
     else if (dragAction == SCROLLING)
     {
@@ -178,7 +163,7 @@ bool TagMap::onMotion(const MotionEvent &ev)
         centerPos.setY(newY);
 
         repaint();
-        return true;
+        return false;
     }
 
     return false;
@@ -234,7 +219,7 @@ void TagMap::onNanoDisplay()
         if (!contains(pMap))
             continue;
 
-        float r = 4.0f * scale_factor;
+        float r = 2.0f * scale_factor;
         if (highlighted == &element)
             r *= 2.0f;
 

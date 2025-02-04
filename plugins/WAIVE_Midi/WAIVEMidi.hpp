@@ -8,6 +8,7 @@
 #include <random>
 #include <chrono>
 #include <mutex>
+#include <algorithm>
 
 #include <fmt/core.h>
 
@@ -85,7 +86,7 @@ protected:
     void initParameter(uint32_t index, Parameter &parameter) override;
     void setState(const char *key, const char *value) override;
     String getState(const char *key) const override;
-    void initState(unsigned int, String &, String &) override;
+    void initState(uint32_t index, State &state) override;
 
     // --- Internal data ----------
     float getParameterValue(uint32_t index) const override;
@@ -105,11 +106,17 @@ protected:
     void variationScore();
     void computeScore();
     void generateFullPattern();
+    void generateTriggers();
 
     void setMidiNote(int instrument, uint8_t midi);
+    void addNote(int instrument, int sixteenth, uint8_t velocity);
+    void deleteNote(std::shared_ptr<Note> note);
+
     void computeNotes();
 
 private:
+    void createNoteOn(const std::vector<std::shared_ptr<Trigger>> &triggers, std::vector<std::shared_ptr<Note>> &notesNew, bool user = false);
+
     float fThreshold;
 
     double sampleRate;
@@ -163,17 +170,19 @@ private:
     float fDrumPattern[16][30][3];
     float fThresholds[9];
     bool hold_update;
+    std::shared_ptr<Trigger> fDrumPatternTriggers[16][30];
 
     const int max_events[9] = {3, 7, 3, 3, 3, 4, 3, 2, 2};
     int s_map[9];
-    int ticks_per_beat;
+    uint32_t ticks_per_beat, ticks_per_16th;
 
     int score_genre, groove_genre;
     bool quantize;
 
     std::mutex noteMtx;
-    std::vector<Note> notes;
-    std::vector<Note>::iterator notesPointer;
+    std::vector<std::shared_ptr<Trigger>> triggerGenerated, triggerUser;
+    std::vector<std::shared_ptr<Note>> notesOut;
+    std::vector<std::shared_ptr<Note>>::iterator notesPointer;
     std::set<uint8_t> triggered;
     std::vector<uint8_t> midiNotes;
 
