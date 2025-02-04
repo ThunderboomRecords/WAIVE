@@ -58,7 +58,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         sourceList = new SourceList(this);
         sourceList->setSize(539.f - 24.f - 24.f, 150.f);
-        sourceList->onTop(sourceBrowserPanel, CENTER, START, 52.f);
+        sourceList->onTop(sourceBrowserPanel, CENTER, START, 52.f * fScaleFactor);
         sourceList->source_info = &(plugin->sd.sourcesList);
         sourceList->source_info_mtx = &(plugin->sd.sourceListMutex);
         sourceList->scrollHandle = WaiveColors::light2;
