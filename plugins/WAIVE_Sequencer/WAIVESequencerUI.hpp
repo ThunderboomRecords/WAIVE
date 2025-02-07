@@ -1,5 +1,5 @@
-#ifndef WAIVE_MIDIUI_HPP
-#define WAIVE_MIDIUI_HPP
+#ifndef WAIVE_SEQUENCER_UI_HPP
+#define WAIVE_SEQUENCER_UI_HPP
 
 #include "DistrhoUI.hpp"
 #include "NanoVG.hpp"
@@ -26,24 +26,24 @@
 #include "WAIVEColors.hpp"
 #include "latent_distributions.h"
 
-#include "WAIVEMidi.hpp"
+#include "WAIVESequencer.hpp"
 
 START_NAMESPACE_DISTRHO
 
 const unsigned int UI_W = 803;
 const unsigned int UI_H = 579;
 
-class WAIVEMidiUI : public UI,
-                    public DrumPattern::Callback,
-                    public GrooveGraph::Callback,
-                    public Button::Callback,
-                    public Knob::Callback,
-                    public DropDown::Callback,
-                    public TextInput::Callback
+class WAIVESequencerUI : public UI,
+                         public DrumPattern::Callback,
+                         public GrooveGraph::Callback,
+                         public Button::Callback,
+                         public Knob::Callback,
+                         public DropDown::Callback,
+                         public TextInput::Callback
 {
 public:
-    WAIVEMidiUI();
-    ~WAIVEMidiUI();
+    WAIVESequencerUI();
+    ~WAIVESequencerUI();
 
 protected:
     void parameterChanged(uint32_t index, float value) override;
@@ -67,7 +67,7 @@ protected:
 private:
     double fScaleFactor;
 
-    WAIVEMidi *plugin;
+    WAIVESequencer *plugin;
 
     Panel *mainPanel;
     DrumPattern *drumPattern;
@@ -87,12 +87,12 @@ private:
     FontId fontTitle, fontMain;
     Label *toolTip;
 
-    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVEMidiUI);
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESequencerUI);
 };
 
 UI *createUI()
 {
-    return new WAIVEMidiUI();
+    return new WAIVESequencerUI();
 }
 
 END_NAMESPACE_DISTRHO

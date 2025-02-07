@@ -34,7 +34,7 @@ private:
 
     DISTRHO_LEAK_DETECTOR(GrooveGraph);
 
-    friend class WAIVEMidiUI;
+    friend class WAIVESequencerUI;
 };
 
 END_NAMESPACE_DISTRHO

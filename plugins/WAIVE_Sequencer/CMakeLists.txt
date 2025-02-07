@@ -1,7 +1,7 @@
 set(CMAKE_CXX_STANDARD 17)
 
 dpf_add_plugin(
-  WAIVE_Midi
+  WAIVE_Sequencer
   TARGETS 
       jack
       vst3
@@ -9,7 +9,7 @@ dpf_add_plugin(
     #   clap
       au
   FILES_DSP
-      WAIVEMidi.cpp
+      WAIVESequencer.cpp
       ./components/Notes.cpp
       ${CMAKE_SOURCE_DIR}/common/src/model_utils.cpp
       ./models/score_decoder.onnx.c
@@ -18,7 +18,7 @@ dpf_add_plugin(
       ./models/groove_encoder.onnx.c
       ./models/full_groove_model.onnx.c
   FILES_UI
-      WAIVEMidiUI.cpp
+      WAIVESequencerUI.cpp
       ./components/Notes.cpp
       ./components/ScoreGrid.cpp
       ./components/GrooveGraph.cpp
@@ -42,23 +42,28 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
 )
 
-find_library(FOUNDATION Foundation)
-find_library(COREFOUNDATION CoreFoundation)
+# Externals:
+if(APPLE)
+  find_library(FOUNDATION Foundation)
+  find_library(COREFOUNDATION CoreFoundation)
+elseif(WIN32)
+elseif(UNIX AND NOT APPLE)
+  target_compile_definitions(WAIVE_Sampler PUBLIC LINUX)
+endif()
+
+include_directories(
+    ${CMAKE_BINARY_DIR}/generated/
+)
+
+link_directories(
+  /usr/lib
+)
+
 find_package(fmt CONFIG REQUIRED)
 find_package(tinyfiledialogs CONFIG REQUIRED)
 
-target_link_libraries(
-    WAIVE_Midi 
-    PUBLIC 
-    fmt::fmt
-    tinyfiledialogs::tinyfiledialogs
-    ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
-    ${CoreFoundation}
-    ${Foundation}
-)
-
 target_include_directories(
-  WAIVE_Midi
+  WAIVE_Sequencer
   PUBLIC 
     .
     ./models
@@ -66,6 +71,17 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/common/fonts
     ${CMAKE_SOURCE_DIR}/common/icons
-    ${CMAKE_SOURCE_DIR}/external/libtinyfiledialogs
     ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
 )
+
+target_link_libraries(
+    WAIVE_Sequencer 
+    PUBLIC 
+    tinyfiledialogs::tinyfiledialogs
+    fmt::fmt
+    PRIVATE
+    ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
+    ${CoreFoundation}
+    ${Foundation}
+)
+

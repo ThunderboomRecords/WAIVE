@@ -1,16 +1,16 @@
-#include "WAIVEMidi.hpp"
+#include "WAIVESequencer.hpp"
 
 START_NAMESPACE_DISTRHO
 
-WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, kStateCount),
-                         fThreshold(0.4f),
-                         ticks_per_beat(1920),
-                         loopTick(0.0),
-                         progress(0.0f),
-                         score_genre(NUM_GROOVE_GENRES - 1),
-                         groove_genre(NUM_GROOVE_GENRES - 1),
-                         hold_update(false),
-                         quantize(false)
+WAIVESequencer::WAIVESequencer() : Plugin(kParameterCount, 0, kStateCount),
+                                   fThreshold(0.4f),
+                                   ticks_per_beat(1920),
+                                   loopTick(0.0),
+                                   progress(0.0f),
+                                   score_genre(NUM_GROOVE_GENRES - 1),
+                                   groove_genre(NUM_GROOVE_GENRES - 1),
+                                   hold_update(false),
+                                   quantize(false)
 {
 
     sampleRate = getSampleRate();
@@ -138,7 +138,7 @@ WAIVEMidi::WAIVEMidi() : Plugin(kParameterCount, 0, kStateCount),
     generateFullPattern();
 }
 
-void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
+void WAIVESequencer::initParameter(uint32_t index, Parameter &parameter)
 {
     int instrument = 0;
     char nameFmt[] = "Complexity %d";
@@ -239,7 +239,7 @@ void WAIVEMidi::initParameter(uint32_t index, Parameter &parameter)
     }
 }
 
-float WAIVEMidi::getParameterValue(uint32_t index) const
+float WAIVESequencer::getParameterValue(uint32_t index) const
 {
     float val = 0.0f;
     switch (index)
@@ -288,9 +288,9 @@ float WAIVEMidi::getParameterValue(uint32_t index) const
     return val;
 }
 
-void WAIVEMidi::setParameterValue(uint32_t index, float value)
+void WAIVESequencer::setParameterValue(uint32_t index, float value)
 {
-    std::cout << "WAIVEMidi::setParameterValue " << parameterIndexToString(index) << ": " << value << std::endl;
+    std::cout << "WAIVESequencer::setParameterValue " << parameterIndexToString(index) << ": " << value << std::endl;
     switch (index)
     {
     case kThreshold:
@@ -368,9 +368,9 @@ void WAIVEMidi::setParameterValue(uint32_t index, float value)
     }
 }
 
-void WAIVEMidi::initState(uint32_t index, State &state)
+void WAIVESequencer::initState(uint32_t index, State &state)
 {
-    // std::cout << "WAIVEMidi::initState " << index << std::endl;
+    // std::cout << "WAIVESequencer::initState " << index << std::endl;
     switch (index)
     {
     case kStateScoreZ:
@@ -398,9 +398,9 @@ void WAIVEMidi::initState(uint32_t index, State &state)
     }
 }
 
-String WAIVEMidi::getState(const char *key) const
+String WAIVESequencer::getState(const char *key) const
 {
-    std::cout << "WAIVEMidi::getState " << key << std::endl;
+    std::cout << "WAIVESequencer::getState " << key << std::endl;
 
     String retString("unrecognised state");
 
@@ -474,9 +474,9 @@ String WAIVEMidi::getState(const char *key) const
     return retString;
 }
 
-void WAIVEMidi::setState(const char *key, const char *value)
+void WAIVESequencer::setState(const char *key, const char *value)
 {
-    std::cout << "WAIVEMidi::setState " << key << std::endl;
+    std::cout << "WAIVESequencer::setState " << key << std::endl;
 
     if (std::strcmp(key, "score") == 0)
     {
@@ -576,7 +576,7 @@ void WAIVEMidi::setState(const char *key, const char *value)
     }
 }
 
-void WAIVEMidi::allNotesOff(uint32_t frame)
+void WAIVESequencer::allNotesOff(uint32_t frame)
 {
     std::set<uint8_t>::iterator it;
 
@@ -595,7 +595,7 @@ void WAIVEMidi::allNotesOff(uint32_t frame)
     triggered.clear();
 }
 
-void WAIVEMidi::run(
+void WAIVESequencer::run(
     const float **inputs,        // incoming audio
     float **outputs,             // outgoing audio
     uint32_t numFrames,          // size of block to process
@@ -703,7 +703,7 @@ void WAIVEMidi::run(
     }
 }
 
-void WAIVEMidi::encodeScore()
+void WAIVESequencer::encodeScore()
 {
     for (int i = 0; i < 16; i++)
     {
@@ -728,7 +728,7 @@ void WAIVEMidi::encodeScore()
     generateFullPattern();
 }
 
-void WAIVEMidi::generateScore()
+void WAIVESequencer::generateScore()
 {
     for (size_t i = 0; i < mScoreZ.size(); i++)
     {
@@ -741,7 +741,7 @@ void WAIVEMidi::generateScore()
     computeScore();
 }
 
-void WAIVEMidi::variationScore()
+void WAIVESequencer::variationScore()
 {
     for (size_t i = 0; i < mScoreZ.size(); i++)
     {
@@ -753,7 +753,7 @@ void WAIVEMidi::variationScore()
     computeScore();
 }
 
-void WAIVEMidi::computeScore()
+void WAIVESequencer::computeScore()
 {
     const char *inputNamesCstrs[] = {mScoreDecoderInputNames[0].c_str()};
     const char *outputNamesCstrs[] = {mScoreDecoderOutputNames[0].c_str()};
@@ -776,7 +776,7 @@ void WAIVEMidi::computeScore()
     }
 }
 
-void WAIVEMidi::encodeGroove()
+void WAIVESequencer::encodeGroove()
 {
     std::fill(mGrooveInput.begin(), mGrooveInput.end(), 0.0f);
     std::vector<GrooveEvent>::iterator grooveEvents = fGroove.begin();
@@ -818,7 +818,7 @@ void WAIVEMidi::encodeGroove()
     generateFullPattern();
 }
 
-void WAIVEMidi::generateGroove()
+void WAIVESequencer::generateGroove()
 {
     for (size_t i = 0; i < mGrooveZ.size(); i++)
     {
@@ -831,7 +831,7 @@ void WAIVEMidi::generateGroove()
     computeGroove();
 }
 
-void WAIVEMidi::variationGroove()
+void WAIVESequencer::variationGroove()
 {
     for (size_t i = 0; i < mGrooveZ.size(); i++)
     {
@@ -843,7 +843,7 @@ void WAIVEMidi::variationGroove()
     computeGroove();
 }
 
-void WAIVEMidi::computeGroove()
+void WAIVESequencer::computeGroove()
 {
     const char *inputNamesCstrs[] = {mGrooveDecoderInputNames[0].c_str()};
     const char *outputNamesCstrs[] = {mGrooveDecoderOutputNames[0].c_str()};
@@ -882,9 +882,9 @@ void WAIVEMidi::computeGroove()
     std::sort(fGroove.begin(), fGroove.end(), compareGrooveEvents);
 }
 
-void WAIVEMidi::generateFullPattern()
+void WAIVESequencer::generateFullPattern()
 {
-    std::cout << "WAIVEMidi::generateFullPattern()" << std::endl;
+    std::cout << "WAIVESequencer::generateFullPattern()" << std::endl;
 
     mFullZ.clear();
     for (const float z : mScoreZ)
@@ -949,9 +949,9 @@ void WAIVEMidi::generateFullPattern()
     generateTriggers();
 }
 
-void WAIVEMidi::generateTriggers()
+void WAIVESequencer::generateTriggers()
 {
-    std::cout << "WAIVEMidi::generateTriggers()" << std::endl;
+    std::cout << "WAIVESequencer::generateTriggers()" << std::endl;
     triggerGenerated.clear();
     for (int i = 0; i < 16; i++)
     {
@@ -972,15 +972,15 @@ void WAIVEMidi::generateTriggers()
     computeNotes();
 }
 
-void WAIVEMidi::setMidiNote(int instrument, uint8_t midi)
+void WAIVESequencer::setMidiNote(int instrument, uint8_t midi)
 {
     midiNotes[instrument] = midi;
     computeNotes();
 }
 
-void WAIVEMidi::addNote(int instrument, int sixteenth, uint8_t velocity)
+void WAIVESequencer::addNote(int instrument, int sixteenth, uint8_t velocity)
 {
-    // std::cout << "WAIVEMidi::addNote instrument " << instrument << " sixteenth " << sixteenth << " velocity " << (int)velocity << std::endl;
+    // std::cout << "WAIVESequencer::addNote instrument " << instrument << " sixteenth " << sixteenth << " velocity " << (int)velocity << std::endl;
     if (instrument < 0 || instrument > 9 || sixteenth < 0)
         return;
 
@@ -990,7 +990,7 @@ void WAIVEMidi::addNote(int instrument, int sixteenth, uint8_t velocity)
     computeNotes();
 }
 
-void WAIVEMidi::updateNote(std::shared_ptr<Note> note)
+void WAIVESequencer::updateNote(std::shared_ptr<Note> note)
 {
     if (note->user && !note->active)
         deleteNote(note);
@@ -998,9 +998,9 @@ void WAIVEMidi::updateNote(std::shared_ptr<Note> note)
         computeNotes();
 }
 
-void WAIVEMidi::deleteNote(std::shared_ptr<Note> note)
+void WAIVESequencer::deleteNote(std::shared_ptr<Note> note)
 {
-    std::cout << "WAIVEMidi::deleteNote" << std::endl;
+    std::cout << "WAIVESequencer::deleteNote" << std::endl;
 
     std::shared_ptr<Trigger> trigger = note->trigger;
     if (trigger == nullptr)
@@ -1020,7 +1020,7 @@ void WAIVEMidi::deleteNote(std::shared_ptr<Note> note)
         std::cout << "note->trigger not found in triggerUser" << std::endl;
 }
 
-void WAIVEMidi::createNoteOn(const std::vector<std::shared_ptr<Trigger>> &triggers, std::vector<std::shared_ptr<Note>> &notesNew, bool user)
+void WAIVESequencer::createNoteOn(const std::vector<std::shared_ptr<Trigger>> &triggers, std::vector<std::shared_ptr<Note>> &notesNew, bool user)
 {
     for (auto &trigger : triggers)
     {
@@ -1050,9 +1050,9 @@ void WAIVEMidi::createNoteOn(const std::vector<std::shared_ptr<Trigger>> &trigge
     }
 }
 
-void WAIVEMidi::computeNotes()
+void WAIVESequencer::computeNotes()
 {
-    std::cout << "WAIVEMidi::computeNotes()" << std::endl;
+    std::cout << "WAIVESequencer::computeNotes()" << std::endl;
 
     std::lock_guard<std::mutex> lk(noteMtx);
 
@@ -1123,7 +1123,7 @@ void WAIVEMidi::computeNotes()
     }
 }
 
-void WAIVEMidi::sampleRateChanged(double newSampleRate)
+void WAIVESequencer::sampleRateChanged(double newSampleRate)
 {
     std::cout << "sampleRateChanged: " << newSampleRate << std::endl;
     sampleRate = newSampleRate;
@@ -1131,7 +1131,7 @@ void WAIVEMidi::sampleRateChanged(double newSampleRate)
 
 Plugin *createPlugin()
 {
-    return new WAIVEMidi();
+    return new WAIVESequencer();
 }
 
 END_NAMESPACE_DISTRHO

@@ -11,7 +11,7 @@
     <img 
         src="assets/WAIVE_Sequencer.png" 
         width="500"
-        alt="WAIVE-Midi screenshot"
+        alt="WAIVE-Sequencer screenshot"
     >
 </p>
 
@@ -27,8 +27,8 @@ A plugin suite that combines music, sound and MIDI generation with European cult
 Aims to be an offline, modular version of [WAIVE-Studio](https://www.waive.studio/) that can be integrated into your DAW.
 Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX Runtime](https://github.com/microsoft/onnxruntime).
 
-- **WAIVE-Midi**: a rhythmic pattern generator
-- **WAIVE-Sampler**: a sample player, sample library and sample generator in one
+- **WAIVE-Sequencer**: a rhythmic pattern generator
+- **WAIVE-Sampler**: a sample player, sample library and sample generator all in one
 
 Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding stability improvements and Windows release.
 
@@ -42,7 +42,7 @@ Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https
 
 #### Ableton Live Notes
 - If you installed the plug-ins in the above directories, then make sure that "Use VST3 System Plug-in Folders" is On (same for VST2) in Settings > Plug-ins before rescanning.
-- To use WAIVE-Midi, add this plugin to an empty MIDI track. Then, on a separate MIDI track add your instrument (e.g. WAIVE-Sampler) then set MIDI From to the name of the first track and make sure to set it to use Post-FX.
+- To use WAIVE-Sequencer, add this plugin to an empty MIDI track. Then, on a separate MIDI track add your instrument (e.g. WAIVE-Sampler) then set MIDI From to the name of the first track and make sure to set it to use Post-FX.
 
 ### Build Instructions
 To build WAIVE-Plugins from source.
@@ -95,7 +95,7 @@ The plugins are found in ```build/bin``` folder. Move your prefered format binar
 ### About
 WAIVE-Plugins are built on top of several bespoke music and audio analysis models in order to create a unique and custom musical toolbox. These models will continue to be fine-tuned and updated on new data. 
 
-**WAIVE-Midi** utilises a flexible approach of modelling rhythmic data first outlined by Jon Gillick and collaborators. This works by encoding a percussion loop into it's *Score* and *Groove* components, then a model (a Variational AutoEncoder, *VAE*) is trained to combine them into a final output sequence. By adjusting the groove information, the same pattern (score) can be played in a different style. For the plugin, we also trained 2 smaller models (VAEs) that can encode the training data and can generate new Grooves and Scores in a variety of styles. 
+**WAIVE-Sequencer** utilises a flexible approach of modelling rhythmic data first outlined by Jon Gillick and collaborators. This works by encoding a percussion loop into it's *Score* and *Groove* components, then a model (a Variational AutoEncoder, *VAE*) is trained to combine them into a final output sequence. By adjusting the groove information, the same pattern (score) can be played in a different style. For the plugin, we also trained 2 smaller models (VAEs) that can encode the training data and can generate new Grooves and Scores in a variety of styles. 
 
 We use a combination of MIDI data and raw audio to collect rhythm information to train the models. In the case of raw audio, first the percussion instruments are isolated using [demucs](https://github.com/facebookresearch/demucs), then a method (Non-Negative Matrix Factorisation, demoed [here](https://www.audiolabs-erlangen.de/resources/MIR/2016-IEEE-TASLP-DrumSeparation/AmenBreak)) to further separate the individual percussion instruments is used to extract the score and groove information. 
 

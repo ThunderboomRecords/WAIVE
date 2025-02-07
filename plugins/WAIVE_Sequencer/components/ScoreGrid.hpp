@@ -4,7 +4,7 @@
 #include "DistrhoUI.hpp"
 #include "WAIVEWidget.hpp"
 
-#include "WAIVEMidi.hpp"
+#include "WAIVESequencer.hpp"
 
 START_NAMESPACE_DISTRHO
 
@@ -26,7 +26,7 @@ private:
 
     DISTRHO_LEAK_DETECTOR(ScoreGrid);
 
-    friend class WAIVEMidiUI;
+    friend class WAIVESequencerUI;
 };
 
 END_NAMESPACE_DISTRHO

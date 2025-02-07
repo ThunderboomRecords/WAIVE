@@ -53,7 +53,7 @@ private:
     DGL::Point<double> dragStart, hover;
     bool hovering, hoveringGrid;
 
-    friend class WAIVEMidiUI;
+    friend class WAIVESequencerUI;
     DISTRHO_LEAK_DETECTOR(DrumPattern);
 };
 

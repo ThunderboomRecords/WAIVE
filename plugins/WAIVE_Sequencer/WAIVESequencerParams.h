@@ -1,5 +1,7 @@
-#ifndef WAIVEPARAMS_H_INCLUDED
-#define WAIVEPARAMS_H_INCLUDED
+#ifndef WAIVE_SEQUENCER_PARAMS_H_INCLUDED
+#define WAIVE_SEQUENCER_PARAMS_H_INCLUDED
+
+#include <cstdint>
 
 enum Parameters
 {
@@ -31,7 +33,7 @@ enum Parameters
     kParameterCount
 };
 
-enum WAIVEMidiStates
+enum WAIVESequencerStates
 {
     kStateScoreZ,
     kStateGrooveZ,

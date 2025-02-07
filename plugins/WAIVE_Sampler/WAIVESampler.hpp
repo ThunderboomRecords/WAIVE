@@ -94,7 +94,7 @@ protected:
 
     const char *getDescription() const override
     {
-        return "WAIVE Sampler";
+        return "WAIVE Sample library, player and generator.";
     }
 
     const char *getMaker() const noexcept override

@@ -1,5 +1,5 @@
-#ifndef WAIVE_MIDI_HPP
-#define WAIVE_MIDI_HPP
+#ifndef WAIVE_SEQUENCER_HPP
+#define WAIVE_SEQUENCER_HPP
 
 #include <iostream>
 #include <vector>
@@ -14,7 +14,7 @@
 
 #include "DistrhoPluginInfo.h"
 #include "DistrhoPlugin.hpp"
-#include "WAIVEMidiParams.h"
+#include "WAIVESequencerParams.h"
 #include "Notes.hpp"
 
 #include "model_utils.hpp"
@@ -42,20 +42,20 @@ const int V_PAT = 0;
 
 START_NAMESPACE_DISTRHO
 
-class WAIVEMidi : public Plugin
+class WAIVESequencer : public Plugin
 {
 public:
-    WAIVEMidi();
+    WAIVESequencer();
 
 protected:
     const char *getLabel() const noexcept override
     {
-        return "WAIVE Midi";
+        return "WAIVE Sequencer";
     }
 
     const char *getDescription() const override
     {
-        return "WAIVE Midi Generator";
+        return "WAIVE Midi pattern generator.";
     }
 
     const char *getMaker() const noexcept override
@@ -80,7 +80,7 @@ protected:
 
     int64_t getUniqueId() const noexcept override
     {
-        return d_cconst('t', 'b', 'W', 'M');
+        return d_cconst('t', 'b', 'W', 'Q');
     }
 
     void initParameter(uint32_t index, Parameter &parameter) override;
@@ -190,7 +190,7 @@ private:
     float progress;
     double loopTick;
 
-    friend class WAIVEMidiUI;
+    friend class WAIVESequencerUI;
 };
 
 END_NAMESPACE_DISTRHO

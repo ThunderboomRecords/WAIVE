@@ -45,4 +45,4 @@ include_directories(
 add_subdirectory(DPF)
 
 add_subdirectory(plugins/WAIVE_Sampler)
-add_subdirectory(plugins/WAIVE_Midi)
+add_subdirectory(plugins/WAIVE_Sequencer)

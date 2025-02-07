@@ -4,8 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/common",
-                "${workspaceFolder}/plugins/WAIVE_Midi/models"
+                "${workspaceFolder}/common"
             ],
             "cStandard": "${default}",
             "cppStandard": "${default}",

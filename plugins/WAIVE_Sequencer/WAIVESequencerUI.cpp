@@ -1,11 +1,11 @@
-#include "WAIVEMidiUI.hpp"
+#include "WAIVESequencerUI.hpp"
 
 START_NAMESPACE_DISTRHO
 
-WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
-                             fScaleFactor(getScaleFactor())
+WAIVESequencerUI::WAIVESequencerUI() : UI(UI_W, UI_H),
+                                       fScaleFactor(getScaleFactor())
 {
-    plugin = static_cast<WAIVEMidi *>(getPluginInstancePointer());
+    plugin = static_cast<WAIVESequencer *>(getPluginInstancePointer());
 
     float width = UI_W * fScaleFactor;
     float height = UI_H * fScaleFactor;
@@ -271,7 +271,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     exportBtn->setCallback(this);
     exportBtn->description = "Export pattern to MIDI file.";
 
-    toolTip = new Label(this, "Tooltip");
+    toolTip = new Label(this, "");
     toolTip->setFontSize(18.f);
     toolTip->text_color = WaiveColors::light2;
     toolTip->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
@@ -286,9 +286,9 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
         setSize(width, height);
 }
 
-WAIVEMidiUI::~WAIVEMidiUI() {}
+WAIVESequencerUI::~WAIVESequencerUI() {}
 
-void WAIVEMidiUI::parameterChanged(uint32_t index, float value)
+void WAIVESequencerUI::parameterChanged(uint32_t index, float value)
 {
     switch (index)
     {
@@ -332,9 +332,9 @@ void WAIVEMidiUI::parameterChanged(uint32_t index, float value)
     repaint();
 }
 
-void WAIVEMidiUI::stateChanged(const char *key, const char *value)
+void WAIVESequencerUI::stateChanged(const char *key, const char *value)
 {
-    // printf("WAIVEMidiUI::stateChanged()\n");
+    // printf("WAIVESequencerUI::stateChanged()\n");
 
     repaint();
 }
@@ -354,7 +354,7 @@ std::string getDescription(std::string text, DGL::SubWidget *widget, const DGL::
     return text;
 };
 
-bool WAIVEMidiUI::onMotion(const MotionEvent &ev)
+bool WAIVESequencerUI::onMotion(const MotionEvent &ev)
 {
     std::list<DGL::SubWidget *> children = getChildren();
     std::string text = "";
@@ -365,7 +365,7 @@ bool WAIVEMidiUI::onMotion(const MotionEvent &ev)
     return UI::onMotion(ev);
 }
 
-void WAIVEMidiUI::onNanoDisplay()
+void WAIVESequencerUI::onNanoDisplay()
 {
     float width = getWidth();
     float height = getHeight();
@@ -393,12 +393,12 @@ void WAIVEMidiUI::onNanoDisplay()
     closePath();
 }
 
-void WAIVEMidiUI::uiScaleFactorChanged(const double scaleFactor)
+void WAIVESequencerUI::uiScaleFactorChanged(const double scaleFactor)
 {
     fScaleFactor = scaleFactor;
 }
 
-void WAIVEMidiUI::buttonClicked(Button *button)
+void WAIVESequencerUI::buttonClicked(Button *button)
 {
     if (button == newScoreBtn)
     {
@@ -450,17 +450,17 @@ void WAIVEMidiUI::buttonClicked(Button *button)
     }
 }
 
-void WAIVEMidiUI::grooveClicked(GrooveGraph *graph)
+void WAIVESequencerUI::grooveClicked(GrooveGraph *graph)
 {
     plugin->encodeGroove();
     repaint();
 }
 
-void WAIVEMidiUI::knobDragStarted(Knob *knob) {};
+void WAIVESequencerUI::knobDragStarted(Knob *knob) {};
 
-void WAIVEMidiUI::knobDragFinished(Knob *knob, float value) {};
+void WAIVESequencerUI::knobDragFinished(Knob *knob, float value) {};
 
-void WAIVEMidiUI::knobValueChanged(Knob *knob, float value)
+void WAIVESequencerUI::knobValueChanged(Knob *knob, float value)
 {
     setParameterValue(knob->getId(), value);
 
@@ -469,7 +469,7 @@ void WAIVEMidiUI::knobValueChanged(Knob *knob, float value)
             complexities[i].get()->setValue(value);
 };
 
-void WAIVEMidiUI::dropdownSelection(DropDown *widget, int item)
+void WAIVESequencerUI::dropdownSelection(DropDown *widget, int item)
 {
     // std::cout << widget->getId() << " set to " << item << std::endl;
 
@@ -479,7 +479,7 @@ void WAIVEMidiUI::dropdownSelection(DropDown *widget, int item)
         setParameterValue(kGrooveGenre, item);
 }
 
-void WAIVEMidiUI::textEntered(TextInput *textInput, std::string text)
+void WAIVESequencerUI::textEntered(TextInput *textInput, std::string text)
 {
     if (text.length() == 0)
     {
@@ -515,17 +515,17 @@ void WAIVEMidiUI::textEntered(TextInput *textInput, std::string text)
     setParameterValue(kMidi1 + textInput->getId(), static_cast<float>(val - 1));
 }
 
-void WAIVEMidiUI::textInputChanged(TextInput *textInput, std::string text)
+void WAIVESequencerUI::textInputChanged(TextInput *textInput, std::string text)
 {
 }
 
-void WAIVEMidiUI::onDrumPatternClicked(DrumPattern *widget, int instrument, int sixteenth)
+void WAIVESequencerUI::onDrumPatternClicked(DrumPattern *widget, int instrument, int sixteenth)
 {
-    // std::cout << "WAIVEMidiUI::onDrumPatternClicked instrument " << instrument << " sixteenth " << sixteenth << std::endl;
+    // std::cout << "WAIVESequencerUI::onDrumPatternClicked instrument " << instrument << " sixteenth " << sixteenth << std::endl;
     plugin->addNote(instrument, sixteenth, 100);
 }
 
-void WAIVEMidiUI::onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Note> note, float deltaY)
+void WAIVESequencerUI::onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Note> note, float deltaY)
 {
     uint8_t vel = note->trigger->velocity;
     vel += (deltaY < 0 ? std::floor(deltaY) : std::ceil(deltaY));
@@ -535,13 +535,13 @@ void WAIVEMidiUI::onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Not
     plugin->computeNotes();
 }
 
-void WAIVEMidiUI::onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<Note> note, uint32_t newTick)
+void WAIVESequencerUI::onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<Note> note, uint32_t newTick)
 {
     note->trigger->tick = newTick;
     plugin->computeNotes();
 }
 
-void WAIVEMidiUI::onNoteUpdated(DrumPattern *widget, std::shared_ptr<Note> note)
+void WAIVESequencerUI::onNoteUpdated(DrumPattern *widget, std::shared_ptr<Note> note)
 {
     plugin->updateNote(note);
 }

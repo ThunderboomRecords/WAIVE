@@ -1,5 +1,5 @@
-#ifndef WAIVESAMPLER_PARAMS_H_INCLUDED
-#define WAIVESAMPLER_PARAMS_H_INCLUDED
+#ifndef WAIVE_SAMPLER_PARAMS_H_INCLUDED
+#define WAIVE_SAMPLER_PARAMS_H_INCLUDED
 
 #ifndef LOG_LOCATION
 #define LOG_LOCATION std::cout << __func__ << "():  " << __FILE__ << ":" << __LINE__ << std::endl;
