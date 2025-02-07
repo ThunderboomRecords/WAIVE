@@ -61,7 +61,7 @@ protected:
     void onDrumPatternClicked(DrumPattern *widget, int instrument, int sixteenth) override;
     void onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Note> note, float deltaY) override;
     void onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<Note> note, uint32_t tick) override;
-    void onNoteDeleted(DrumPattern *widget, std::shared_ptr<Note> note) override;
+    void onNoteUpdated(DrumPattern *widget, std::shared_ptr<Note> note) override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 
 private:

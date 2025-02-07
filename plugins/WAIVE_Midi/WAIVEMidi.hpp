@@ -110,6 +110,7 @@ protected:
 
     void setMidiNote(int instrument, uint8_t midi);
     void addNote(int instrument, int sixteenth, uint8_t velocity);
+    void updateNote(std::shared_ptr<Note> note);
     void deleteNote(std::shared_ptr<Note> note);
 
     void computeNotes();

@@ -541,9 +541,9 @@ void WAIVEMidiUI::onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<No
     plugin->computeNotes();
 }
 
-void WAIVEMidiUI::onNoteDeleted(DrumPattern *widget, std::shared_ptr<Note> note)
+void WAIVEMidiUI::onNoteUpdated(DrumPattern *widget, std::shared_ptr<Note> note)
 {
-    plugin->deleteNote(note);
+    plugin->updateNote(note);
 }
 
 END_NAMESPACE_DISTRHO

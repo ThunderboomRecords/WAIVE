@@ -660,7 +660,10 @@ void WAIVEMidi::run(
         while (notesPointer < notesOut.end() && (double)(*notesPointer)->tick <= loopTick)
         {
             if (!(*notesPointer)->active)
+            {
+                notesPointer++;
                 continue;
+            }
 
             me.data[1] = (*notesPointer)->midiNote;
 
@@ -985,6 +988,14 @@ void WAIVEMidi::addNote(int instrument, int sixteenth, uint8_t velocity)
     triggerUser.push_back(std::make_shared<Trigger>(t));
 
     computeNotes();
+}
+
+void WAIVEMidi::updateNote(std::shared_ptr<Note> note)
+{
+    if (note->user && !note->active)
+        deleteNote(note);
+    else
+        computeNotes();
 }
 
 void WAIVEMidi::deleteNote(std::shared_ptr<Note> note)

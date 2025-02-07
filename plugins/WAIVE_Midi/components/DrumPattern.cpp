@@ -45,8 +45,8 @@ bool DrumPattern::onMouse(const MouseEvent &ev)
                 if (hoveredNote->other)
                     hoveredNote->other->active = hoveredNote->trigger->active;
 
-                if (hoveredNote->user && callback != nullptr)
-                    callback->onNoteDeleted(this, hoveredNote);
+                if (callback != nullptr)
+                    callback->onNoteUpdated(this, hoveredNote);
             }
         }
         else if (dragState == DragState::DRAGGING)
