@@ -39,7 +39,7 @@ else
 fi
 
 if [ -z "$RELEASE_DIR" ]; then
-    RELEASE_DIR="../release/v${APP_VERSION}"
+    RELEASE_DIR="../release/v${APP_VERSION}/${OS}_${ARCH}"
 fi
 
 mkdir -p "$RELEASE_DIR"
@@ -86,6 +86,8 @@ else
   echo "Error: Failed to submit for notarization." >&2 
   exit 1
 fi
+
+rm "${RELEASE_DIR}/${ZIP_FILE_UNSIGNED}"
 
 echo
 echo "Stapling files"

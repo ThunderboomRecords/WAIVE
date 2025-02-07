@@ -28,7 +28,7 @@ else
 fi
 
 if [ -z "$RELEASE_DIR" ]; then
-    RELEASE_DIR="../release/v${APP_VERSION}"
+    RELEASE_DIR="../release/v${APP_VERSION}/${OS}_${ARCH}"
 fi
 
 DEVELOPER_ID_APPLICATION="Developer ID Application: ${DEVELOPER_NAME} (${TEAM_ID})"
@@ -49,12 +49,13 @@ pkgbuild --root "${RELEASE_DIR}/payload" --identifier "${BUNDLE_ID}" --version "
 
 echo
 productsign --sign "$DEVELOPER_ID_INSTALLER" "${RELEASE_DIR}/${APP_NAME}_Unsigned.pkg" "${RELEASE_DIR}/${APP_NAME}.pkg"
+rm "${RELEASE_DIR}/${APP_NAME}_Unsigned.pkg"
 
 echo
-hdiutil create -volname "${APP_NAME} Installer" -srcfolder "${RELEASE_DIR}/${APP_NAME}.pkg" -format UDZO "${IMAGE_NAME}"
+hdiutil create -volname "${APP_NAME}_Installer" -srcfolder "${RELEASE_DIR}/${APP_NAME}.pkg" -format UDZO "${IMAGE_NAME}"
 
 echo
-codesign --sign "$DEVELOPER_ID_APPLICATION" --timestamp "${IMAGE_NAME}"
+codesign --sign "${DEVELOPER_ID_APPLICATION}" --timestamp "${IMAGE_NAME}"
 codesign --verify --verbose=2 "${IMAGE_NAME}"
 
 echo
