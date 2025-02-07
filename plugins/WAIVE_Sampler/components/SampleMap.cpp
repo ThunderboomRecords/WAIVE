@@ -20,10 +20,11 @@ SampleMap::SampleMap(Widget *widget) noexcept
       callback(nullptr)
 {
     menu = new Menu(widget);
-    for (int i = 1; i < 9; i++)
+    for (int i = 1; i < NUM_SLOTS; i++)
         menu->addItem(fmt::format("Add to slot {:d}", i));
+    menu->setFont("Poppins Medium", Poppins_Medium, Poppins_Medium_len);
+    menu->setFontSize(14.f);
     menu->calculateWidth();
-    menu->setFont("VG5000", VG5000, VG5000_len);
     menu->setDisplayNumber(8);
     menu->hide();
     menu->setCallback(this);
