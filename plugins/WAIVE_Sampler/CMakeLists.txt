@@ -1,6 +1,17 @@
 set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
+# Check for Debug mode
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "Debug build detected")
+
+    # Check if LOCAL_SERVER is explicitly enabled
+    if(DEFINED ENABLE_LOCAL_SERVER)
+        message(STATUS "Enabling LOCAL_SERVER macro")
+        add_compile_definitions(LOCAL_SERVER)
+    endif()
+endif()
+
 dpf_add_plugin(
   WAIVE_Sampler
   TARGETS 
@@ -92,10 +103,10 @@ link_directories(
   /usr/lib
 )
 
+find_package(nlohmann_json CONFIG REQUIRED)
 find_package(SampleRate CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
 find_package(kissfft CONFIG REQUIRED)
 find_package(tinyfiledialogs CONFIG REQUIRED)
 find_package(Poco CONFIG REQUIRED Foundation Crypto NetSSL Net Data DataSQLite)
@@ -117,13 +128,15 @@ target_include_directories(
 target_link_libraries(
     WAIVE_Sampler
     PUBLIC
+    kissfft::kissfft-float
+    nlohmann_json::nlohmann_json
+    tinyfiledialogs::tinyfiledialogs
+    PRIVATE
     ${CoreFoundation}
     ${Foundation}
     SndFile::sndfile
     fmt::fmt
-    tinyfiledialogs::tinyfiledialogs
-    nlohmann_json::nlohmann_json
-    kissfft::kissfft-float
+    Gist
     Poco::Foundation
     Poco::Data
     Poco::DataSQLite
@@ -131,8 +144,6 @@ target_link_libraries(
     Poco::Net
     Poco::Crypto
     SampleRate::samplerate
-    Gist
-    PRIVATE
     ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
 )
 

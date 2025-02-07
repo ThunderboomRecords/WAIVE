@@ -5,7 +5,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
                                    fScaleFactor(getScaleFactor()),
                                    fScale(1.0f),
                                    filebrowserOpen(false),
-                                   errorMessage(false)
+                                   errorMessage(false),
+                                   loadingTaskCount(0)
 {
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
@@ -1326,6 +1327,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     // std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
     switch (arg)
     {
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_CHECKING_UPDATE:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_START:
     case SampleDatabase::DatabaseUpdate::BUILDING_TAG_LIST:
@@ -1337,6 +1339,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOAD_FAILED:
+    case SampleDatabase::DatabaseUpdate::SOURCE_LIST_CHECKED_UPDATE:
         loadingTaskCount--;
         // databaseLoading->setLoading(false);
         break;
@@ -1367,7 +1370,10 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     if (loadingTaskCount > 0)
         databaseLoading->setLoading(true);
     else
+    {
+        loadingTaskCount = 0;
         databaseLoading->setLoading(false);
+    }
 
     switch (arg)
     {

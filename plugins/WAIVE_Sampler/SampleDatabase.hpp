@@ -8,6 +8,7 @@
 #include <fstream>
 #include <functional>
 #include <mutex>
+#include <chrono>
 
 #include "Source.hpp"
 #include "Filters.hpp"
@@ -22,7 +23,7 @@
 #include "Poco/BasicEvent.h"
 #include "Poco/TaskManager.h"
 #include "Poco/TemporaryFile.h"
-#include <Poco/StringTokenizer.h>
+#include "Poco/StringTokenizer.h"
 #include "Poco/Data/Session.h"
 #include "Poco/Data/RecordSet.h"
 #include "Poco/Data/Transaction.h"
@@ -35,7 +36,11 @@
 #include <fmt/core.h>
 #include "HTTPClient.hpp"
 
+#ifdef LOCAL_SERVER
+#define WAIVE_SERVER "http://localhost:3000"
+#else
 #define WAIVE_SERVER "https://arranlyon.com/waivesampler"
+#endif
 
 using json = nlohmann::json;
 

@@ -338,7 +338,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
 
     std::cout << "insert done" << std::endl;
 
-    int lastId;
+    unsigned long lastId;
     try
     {
         Poco::Data::Statement lastSampleId(*session);
@@ -422,6 +422,16 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
     std::string tags = "";
     std::string urlString = url.toString();
 
+    long long timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+                              std::chrono::system_clock::now().time_since_epoch())
+                              .count();
+
+    std::ostringstream idString;
+    idString << "2" << (timestamp % 100000) << "000";
+    unsigned long id = std::stoul(idString.str());
+
+    std::cout << "Generated id: " << id << std::endl;
+
     try
     {
         if (!session)
@@ -431,7 +441,8 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
         }
 
         Poco::Data::Statement insert(*session);
-        insert << "INSERT INTO Sources(description, tags, archive, filename, url) VALUES(?, ?, ?, ?, ?)",
+        insert << "INSERT INTO Sources(id, description, tags, archive, filename, url) VALUES(?, ?, ?, ?, ?, ?)",
+            Poco::Data::Keywords::use(id),
             Poco::Data::Keywords::use(description),
             Poco::Data::Keywords::use(tags),
             Poco::Data::Keywords::use(archive),
@@ -754,7 +765,7 @@ void SampleDatabase::checkLatestRemoteVersion()
 
     sourceDatabaseInitialised = !exists.empty();
 
-    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
+    // databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKING_UPDATE);
 
     httpClient->sendRequest(
@@ -768,12 +779,16 @@ void SampleDatabase::checkLatestRemoteVersion()
                 databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKED_UPDATE);
 
                 int latest_version = result["version"];
-                if(latest_version <= user_version)
+                std::cout << "latest_version: " << latest_version << ", user_version: " << user_version << std::endl;
+                if(latest_version == user_version)
+                {
+                    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
                     return;
+                }
                 
                 this->updateDatabaseVersion(latest_version);
 
-            } catch(json::parse_error &e) {
+            } catch(json::parse_error &e)  {
                 std::cerr << "JSON parsing error: " << e.what() << std::endl;
             	databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
             } catch(const std::exception &e){
@@ -786,6 +801,7 @@ void SampleDatabase::checkLatestRemoteVersion()
             if (!sourceDatabaseInitialised)
                 std::cout << "no Source info avaliable\n";
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
         });
 }
 
@@ -797,9 +813,6 @@ void SampleDatabase::updateDatabaseVersion(int new_version)
     {
         Poco::Data::Statement pragma(*session);
         pragma << "PRAGMA user_version = " << new_version;
-
-        std::cout << pragma.toString() << std::endl;
-
         pragma.execute();
     }
     catch (const Poco::Data::DataException &e)
@@ -818,6 +831,20 @@ void SampleDatabase::downloadSourcesList()
         "DownloadSourceList",
         WAIVE_SERVER, "/filelist", [this](const std::string &response)
         {
+            // Drop non-user entries first
+            try
+            {
+                *session << "DELETE FROM Sources WHERE archive != \"User\"", Poco::Data::Keywords::now;
+            }
+            catch (const Poco::DataException &e)
+            {
+                std::cerr << e.what() << std::endl;
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << std::endl;
+            }
+
             parseTSV(
                 "Sources",
                 {"id", "description", "tags", "folder", "filename", "archive", "url", "license"},
@@ -827,7 +854,7 @@ void SampleDatabase::downloadSourcesList()
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED); },
         [this]()
         {
-            // std::cout << "/sources not avaliable" << std::endl;
+            std::cout << WAIVE_SERVER << "/filelist not avaliable" << std::endl;
             // wait 1 second before reporting connection error...
             Poco::Thread::sleep(1000);
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
@@ -836,12 +863,25 @@ void SampleDatabase::downloadSourcesList()
 
 void SampleDatabase::downloadTagsList()
 {
-    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
+    // databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOADING);
 
     httpClient->sendRequest(
         "DownloadTagsList",
         WAIVE_SERVER, "/tags", [this](const std::string &response)
         {
+            try
+            {
+                *session << "DELETE FROM Tags", Poco::Data::Keywords::now;
+            }
+            catch (const Poco::DataException &e)
+            {
+                std::cerr << e.what() << '\n';
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << e.what() << std::endl;
+            }
+
             parseTSV(
                 "Tags",
                 {"id", "tag", "embedX", "embedY", "counts"},
@@ -863,18 +903,10 @@ void SampleDatabase::parseTSV(
     const std::vector<std::string> &column_type,
     const std::string &csvData)
 {
-    // std::cout << "SampleDatabase::parseTSV\n";
+    std::cout << "SampleDatabase::parseTSV" << std::endl;
 
     // 1. Create database
-    try
-    {
-        *session << "DROP TABLE IF EXISTS " << table,
-            Poco::Data::Keywords::now;
-    }
-    catch (const Poco::DataException &e)
-    {
-        std::cerr << e.what() << '\n';
-    }
+    printf("- 1 Create database %s\n", table.c_str());
 
     std::ostringstream createTableQuery;
     createTableQuery << "CREATE TABLE IF NOT EXISTS " << table << " (";
@@ -896,11 +928,24 @@ void SampleDatabase::parseTSV(
     }
 
     // 2. Tokenise CSV data
-    Poco::StringTokenizer tokenizer(csvData, "\n", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
+    printf("- 2. Tokenise CSV data\n");
+
+    Poco::StringTokenizer tokenizer(csvData, "\n");
+
+    if (tokenizer.count() == 0)
+    {
+        std::cout << "# Aborting, tokenizer count is 0 for " << std::endl;
+        std::cout << csvData << std::endl;
+        std::cout << "# End of CSV data." << std::endl;
+        return;
+    }
 
     // 3. Build INSERT statement
+
+    printf("- 3. Build INSERT STATEMENT\n");
+
     std::ostringstream insertQuery;
-    insertQuery << "INSERT INTO " << table << " (";
+    insertQuery << "REPLACE INTO " << table << " (";
     for (size_t i = 0; i < column_names.size(); ++i)
     {
         insertQuery << column_names[i];
@@ -917,6 +962,8 @@ void SampleDatabase::parseTSV(
     insertQuery << ")";
 
     // 4. Iterate line by line
+    printf("- 4. Iterate line by line\n");
+
     double progress = 0.0;
     double pStep = 1.0 / tokenizer.count();
 
@@ -925,10 +972,12 @@ void SampleDatabase::parseTSV(
     session->begin();
 
     size_t i;
-    for (i = 0; i < tokenizer.count(); ++i)
+    std::cout << "  tokenizer.count(): " << tokenizer.count() << std::endl;
+    std::cout << "  " << insertQuery.str() << std::endl;
+    for (i = 1; i < tokenizer.count(); ++i)
     {
         std::string line = tokenizer[i];
-        Poco::StringTokenizer lineTokenizer(line, "\t", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
+        Poco::StringTokenizer lineTokenizer(line, "\t");
 
         if (lineTokenizer.count() == column_names.size())
         {
@@ -952,6 +1001,11 @@ void SampleDatabase::parseTSV(
             {
                 std::cerr << "Error in parseTSV: " << e.what() << std::endl;
             }
+        }
+        else
+        {
+            std::cout << "Skipping row " << i << " (lineTokenizer.count() " << lineTokenizer.count() << " != column_names.size() " << column_names.size() << ")" << std::endl;
+            std::cout << "  " << line << std::endl;
         }
         progress += pStep;
     }

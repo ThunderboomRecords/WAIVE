@@ -1,4 +1,5 @@
 #include "HTTPClient.hpp"
+#include <memory>
 
 HTTPRequestTask::HTTPRequestTask(
     const std::string &name,
@@ -30,17 +31,28 @@ void HTTPRequestTask::runTask()
         if (path.empty())
             path = "/";
 
-        Poco::Net::HTTPSClientSession session(uri.getHost(), uri.getPort());
-        session.setTimeout(Poco::Timespan(10, 0));
+        std::unique_ptr<Poco::Net::HTTPClientSession> session;
 
-        std::cout << "HTTPRequestTask::runTask() Request for: " << session.getHost() << path << std::endl;
+        if (uri.getScheme() == "https")
+            session = std::make_unique<Poco::Net::HTTPSClientSession>(uri.getHost(), uri.getPort());
+        else if (uri.getScheme() == "http")
+            session = std::make_unique<Poco::Net::HTTPClientSession>(uri.getHost(), uri.getPort());
+        else
+        {
+            _failCallback();
+            return;
+        }
+
+        session->setTimeout(Poco::Timespan(10, 0));
 
         Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_GET, path);
-        session.sendRequest(request);
+
+        std::cout << "HTTPRequestTask::runTask() Request for: " << uri.getScheme() << "://" << uri.getHost() << ":" << uri.getPort() << request.getURI() << std::endl;
+        session->sendRequest(request);
 
         Poco::Net::HTTPResponse response;
 
-        std::istream &resStream = session.receiveResponse(response);
+        std::istream &resStream = session->receiveResponse(response);
         std::cout << "HTTPRequestTask::runTask() Response: " << response.getStatus() << std::endl;
 
         if (response.getStatus() != 200)
@@ -52,6 +64,8 @@ void HTTPRequestTask::runTask()
 
         std::stringstream responseString;
         Poco::StreamCopier::copyStream(resStream, responseString);
+
+        std::cout << "HTTPRequestTask::runTask() Response length: " << responseString.str().length() << std::endl;
 
         _callback(responseString.str());
     }
