@@ -430,7 +430,6 @@ String WAIVEMidi::getState(const char *key) const
     }
     else if (std::strcmp(key, "drum-pattern") == 0)
     {
-        fDrumPattern;
         std::ostringstream oss;
         for (int i = 0; i < 16; i++)
         {

@@ -45,18 +45,18 @@ void Panel::onNanoDisplay()
 
 void Panel::setSize(uint width, uint height, bool ignore_sf)
 {
-    size_w = width;
-    size_h = height;
-
     WAIVEWidget::setSize(width, height, ignore_sf);
+
+    size_w = getWidth();
+    size_h = getHeight();
 }
 
 void Panel::setSize(const Size<uint> &size, bool ignore_sf)
 {
+    WAIVEWidget::setSize(size, ignore_sf);
+
     size_w = size.getWidth();
     size_h = size.getHeight();
-
-    WAIVEWidget::setSize(size, ignore_sf);
 }
 
 void Panel::expand()

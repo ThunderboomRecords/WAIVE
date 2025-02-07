@@ -166,7 +166,7 @@ WAIVEMidiUI::WAIVEMidiUI() : UI(UI_W, UI_H),
     varGrooveBtn->description = "Generate variation of current groove.";
 
     grooveGraph = new GrooveGraph(this);
-    grooveGraph->setSize(drumPattern->getWidth(), 86.f * fScaleFactor);
+    grooveGraph->setSize(drumPattern->getWidth(), 86.f * fScaleFactor, true);
     grooveGraph->fGroove = &plugin->fGroove;
     grooveGraph->callback = this;
     grooveGraph->below(grooveLabel, Widget_Align::START, padding * 2);

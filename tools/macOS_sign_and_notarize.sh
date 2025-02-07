@@ -42,6 +42,8 @@ if [ -z "$RELEASE_DIR" ]; then
     RELEASE_DIR="../release/v${APP_VERSION}"
 fi
 
+mkdir -p "$RELEASE_DIR"
+
 echo "Signing folder: ${FOLDER_TO_SIGN}"
 echo " - APP_VERSION: ${APP_VERSION}"
 echo " - DEVELOPER_ID_APPLICATION: ${DEVELOPER_ID_APPLICATION}"
@@ -98,7 +100,6 @@ done
 ZIP_FILE_SIGNED="${ZIP_NAME}.zip"
 echo
 echo "Making release at ${RELEASE_DIR}/${ZIP_FILE_SIGNED}"
-mkdir -p "$RELEASE_DIR"
 zip -r -q "${RELEASE_DIR}/${ZIP_FILE_SIGNED}" "$FOLDER_TO_SIGN"
 
 echo

@@ -336,7 +336,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     {
         samplePlayerPanel = new Panel(this);
         samplePlayerPanel->setSize(col2Width * fScaleFactor, Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END), true);
-        samplePlayerPanel->setAbsolutePos(width - padding - col2Width, padding);
+        samplePlayerPanel->setAbsolutePos(width - padding - col2Width * fScaleFactor, padding);
         samplePlayerPanel->setFont("VG5000", VG5000, VG5000_len);
         samplePlayerPanel->label = "3";
         samplePlayerPanel->title = "Player";

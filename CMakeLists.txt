@@ -10,6 +10,7 @@ if(APPLE)
   message(STATUS "Building on Mac") 
   set(CMAKE_MAKE_PROGRAM /opt/homebrew/bin/ninja CACHE FILEPATH "Path to Ninja build system")
   # set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE INTERNAL "" FORCE)
+  # set(CMAKE_SYSTEM_PROCESSOR "x86" CACHE INTERNAL "" FORCE)
   # set(VCPKG_TARGET_TRIPLET "x64-osx")
 elseif(WIN32)
   message(STATUS "Building on Windows")
@@ -22,7 +23,7 @@ if(POLICY CMP0077)
 endif()
 
 project(
-    WAIVE_Plugins VERSION 1.5.0
+    WAIVE_Plugins VERSION 1.5.1
 )
 
 configure_file(version_config.h.in ${CMAKE_BINARY_DIR}/generated/version_config.h)
