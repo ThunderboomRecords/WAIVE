@@ -23,6 +23,7 @@ TagBrowser::TagBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
     selectNoneBtn->setCallback(this);
     selectNoneBtn->onTop(tagMap, Widget_Align::END, Widget_Align::START, 10);
     selectNoneBtn->background_color = WaiveColors::grey1;
+    selectNoneBtn->description = "Deselect all tags";
     addChildWidget(selectNoneBtn);
 
     selectAllBtn = new Button(widget);
@@ -32,6 +33,7 @@ TagBrowser::TagBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
     selectAllBtn->setCallback(this);
     selectAllBtn->leftOf(selectNoneBtn, Widget_Align::START, 10);
     selectAllBtn->background_color = WaiveColors::grey1;
+    selectAllBtn->description = "Select all tags";
     addChildWidget(selectAllBtn);
 }
 

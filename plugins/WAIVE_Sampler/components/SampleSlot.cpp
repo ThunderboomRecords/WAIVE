@@ -15,6 +15,7 @@ SampleSlot::SampleSlot(Widget *parent) noexcept
     triggerBtn->setLabel("▶");
     triggerBtn->setSize(20, 20);
     triggerBtn->drawBackground = false;
+    triggerBtn->description = "Trigger sample";
     triggerBtn->toFront();
 
     clearBtn = new Button(parent);
@@ -86,7 +87,7 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
             // else
             //     callback->sampleUnselected(this);
             // callback->sampleSlotCleared(this, slotId);
-            return true;
+            return false;
         }
     }
 

@@ -245,9 +245,6 @@ bool TextInput::onKeyboard(const KeyboardEvent &ev)
 
 bool TextInput::onMouse(const MouseEvent &ev)
 {
-    if (!isVisible())
-        return false;
-
     if (ev.press)
     {
         bool inWidget = contains(ev.pos);
@@ -257,7 +254,6 @@ bool TextInput::onMouse(const MouseEvent &ev)
             lastTextValue.assign(textValue);
             position = textValue.size();
             repaint();
-            return false;
         }
         else if (!inWidget && hasKeyFocus)
         {
@@ -266,8 +262,8 @@ bool TextInput::onMouse(const MouseEvent &ev)
             else if (textValue.size() == 0)
                 textValue.assign(lastTextValue);
             hasKeyFocus = false;
+            std::cout << "TextInput lost focus" << std::endl;
             repaint();
-            return false;
         }
     }
 

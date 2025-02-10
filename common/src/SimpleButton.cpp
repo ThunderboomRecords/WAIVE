@@ -94,6 +94,7 @@ void Button::onNanoDisplay()
 
 bool Button::onMouse(const MouseEvent &ev)
 {
+    // std::cout << "Button::onMouse " << description << std::endl;
     if (
         fEnabled &&
         callback != nullptr &&
@@ -106,6 +107,7 @@ bool Button::onMouse(const MouseEvent &ev)
 
         callback->buttonClicked(this);
         repaint();
+        return true;
     }
 
     return false;
