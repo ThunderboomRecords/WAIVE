@@ -106,7 +106,6 @@ bool Button::onMouse(const MouseEvent &ev)
 
         callback->buttonClicked(this);
         repaint();
-        return true;
     }
 
     return false;
