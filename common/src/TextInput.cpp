@@ -257,7 +257,7 @@ bool TextInput::onMouse(const MouseEvent &ev)
             lastTextValue.assign(textValue);
             position = textValue.size();
             repaint();
-            return true;
+            return false;
         }
         else if (!inWidget && hasKeyFocus)
         {
