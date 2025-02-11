@@ -8,6 +8,7 @@
 #include "Menu.hpp"
 #include "TextInput.hpp"
 #include "SimpleButton.hpp"
+#include "DragDrop.hpp"
 
 using namespace fmt::v11;
 
@@ -15,6 +16,7 @@ START_NAMESPACE_DISTRHO
 
 class SampleSlot : public WidgetGroup,
                    public Menu::Callback,
+                   public DragDropWidget,
                    public IdleCallback,
                    Button::Callback,
                    TextInput::Callback
@@ -27,7 +29,7 @@ public:
         virtual void sampleSelected(SampleSlot *slot, int slotId) = 0;
         virtual void sampleSlotCleared(SampleSlot *slot, int slotId) = 0;
     };
-    explicit SampleSlot(Widget *widget) noexcept;
+    explicit SampleSlot(Widget *widget, DragDropManager *manager) noexcept;
 
     void setCallback(Callback *cb);
     void idleCallback() override;

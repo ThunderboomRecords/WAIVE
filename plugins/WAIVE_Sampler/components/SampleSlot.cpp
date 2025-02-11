@@ -2,8 +2,9 @@
 
 START_NAMESPACE_DISTRHO
 
-SampleSlot::SampleSlot(Widget *parent) noexcept
+SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
     : WidgetGroup(parent),
+      DragDropWidget(manager),
       samplePlayer(nullptr),
       lastPlaying(PlayState::STOPPED),
       callback(nullptr),
@@ -65,7 +66,7 @@ SamplePlayer *SampleSlot::getSamplePlayer() const
 
 bool SampleSlot::onMouse(const MouseEvent &ev)
 {
-    if (!ev.press || !contains(ev.pos))
+    if (!contains(ev.pos))
         return false;
 
     if (ev.button == kMouseButtonRight)
@@ -80,14 +81,21 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
     }
     else if (ev.button == kMouseButtonLeft)
     {
-        if (callback != nullptr)
+        if (ev.press)
         {
-            // if (samplePlayer->sampleInfo != nullptr)
-            callback->sampleSelected(this, slotId);
-            // else
-            //     callback->sampleUnselected(this);
-            // callback->sampleSlotCleared(this, slotId);
-            return false;
+            if (callback != nullptr)
+            {
+                callback->sampleSelected(this, slotId);
+                return false;
+            }
+        }
+        else
+        {
+            std::cout << "SampleSlot::onMouse released" << std::endl;
+            if (dragDropManager->isDragging())
+            {
+                std::cout << "Accept drag event" << std::endl;
+            }
         }
     }
 

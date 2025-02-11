@@ -38,6 +38,7 @@
 #include "SourceList.hpp"
 #include "SimpleButton.hpp"
 #include "ValueIndicator.hpp"
+#include "DragDrop.hpp"
 
 #include "Layout.hpp"
 
@@ -96,6 +97,7 @@ protected:
 
     // Interaction callbacks
     bool onMotion(const MotionEvent &ev) override;
+    bool onMouse(const MouseEvent &ev) override;
 
     // Widget Callbacks
     void buttonClicked(Button *button) override;
@@ -175,7 +177,7 @@ private:
 
     Waveform *sampleWaveformDisplay;
     // TextInput *sampleName;
-    Button *saveSampleBtn, *playSampleBtn, *newSampleBtn;
+    Button *saveSampleBtn, *playSampleBtn; //, *newSampleBtn;
 
     // 3. Sample Player Components
     VBox *sampleSlotsContainer;
@@ -185,6 +187,7 @@ private:
     SampleBrowser *sampleBrowser;
 
     Label *toolTip;
+    DragDropManager *dragDropManager;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 };

@@ -26,6 +26,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     float col1Width = 539.f;
     float col2Width = 298.f;
 
+    dragDropManager = new DragDropManager();
+
     // 1 ----- Source Browser Panel
     {
         sourceBrowserPanel = new Panel(this);
@@ -126,7 +128,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         databaseLoading = new Spinner(this);
         databaseLoading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
-        databaseLoading->rightOf(searchBox, CENTER, padding);
+        databaseLoading->onTop(sourceList, START, END, 5.f);
         sourceBrowserPanel->addChildWidget(databaseLoading);
 
         databaseProgress = new Label(this, "");
@@ -329,7 +331,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleBtns.positionWidgets();
 
         // TODO: add this button somewhere?
-        newSampleBtn = new Button(this);
+        // newSampleBtn = new Button(this);
     }
 
     // 3 ----- Sample Player Panel
@@ -381,7 +383,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         for (int i = 0; i < NUM_SLOTS; i++)
         {
-            SampleSlot *slot = new SampleSlot(this);
+            SampleSlot *slot = new SampleSlot(this, dragDropManager);
             slot->setSamplePlayer(&plugin->samplePlayers[i]);
             slot->setCallback(this);
             slot->slotId = i;
@@ -439,18 +441,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     // 5 ----- Sample Map
     {
-        // sampleBrowserRoot = new Popup(
-        //     this,
-        //     sourceBrowserPanel->getAbsoluteX(),
-        //     sourceBrowserPanel->getAbsoluteY(),
-        //     sourceBrowserPanel->getWidth(),
-        //     Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END),
-        //     true);
-        // sampleBrowserRoot->title = "Browse samples";
-        // sampleBrowserRoot->setFont("VG5000", VG5000, VG5000_len);
-        // sampleBrowserRoot->close();
-        // sampleBrowserRoot->setCallback(this);
-
         sampleBrowser = new SampleBrowser(samplePlayerPanel, &plugin->sd);
         sampleBrowser->setSize(sourceList->getWidth(), tagBrowser->getBottom() - sourceList->getTop());
         sampleBrowser->setAbsolutePos(sourceList->getLeft(), sourceList->getTop());
@@ -647,6 +637,14 @@ bool WAIVESamplerUI::onMotion(const MotionEvent &ev)
     return UI::onMotion(ev);
 }
 
+bool WAIVESamplerUI::onMouse(const MouseEvent &ev)
+{
+    if (!ev.press)
+        std::cout << "WAIVESamplerUI::onMouse released" << std::endl;
+
+    return UI::onMouse(ev);
+}
+
 void WAIVESamplerUI::buttonClicked(Button *button)
 {
     if (button == importSource)
@@ -657,8 +655,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->triggerPreview();
     else if (button == previewPlaybackBtn)
         plugin->stopSourcePreview();
-    else if (button == newSampleBtn)
-        plugin->newSample();
+    // else if (button == newSampleBtn)
+    //     plugin->newSample();
     else if (button == makeKick)
     {
         makeKick->setToggled(true);
@@ -1400,7 +1398,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
         errorMessage = true;
-        databaseProgress->setLabel("Error downloading.");
+        databaseProgress->setLabel("Error downloading data.");
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
         // previewPlaybackBtn->setVisible(true);
