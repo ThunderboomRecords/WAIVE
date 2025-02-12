@@ -7,12 +7,14 @@
 #include "WAIVEWidget.hpp"
 
 #include "Menu.hpp"
+#include "DragDrop.hpp"
 #include "SimpleButton.hpp"
 #include "SampleDatabase.hpp"
 
 START_NAMESPACE_DISTRHO
 
 class SampleMap : public WAIVEWidget,
+                  public DragDropWidget,
                   public Menu::Callback,
                   public Button::Callback
 {
@@ -27,7 +29,7 @@ public:
         virtual void mapSampleImport() = 0;
     };
 
-    explicit SampleMap(Widget *widget) noexcept;
+    explicit SampleMap(Widget *widget, DragDropManager *manager) noexcept;
     void setCallback(Callback *cb);
 
     std::vector<std::shared_ptr<SampleInfo>> *allSamples;
@@ -45,15 +47,10 @@ protected:
     void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
     void buttonClicked(Button *btn) override;
 
-private:
-    enum DragAction
-    {
-        NONE = 0,
-        CLICKING,
-        SELECTING,
-        SCROLLING,
-    };
+    void dataAccepted(DragDropWidget *destination) override;
+    void dataRejected(DragDropWidget *destination) override;
 
+private:
     Color get2DColor(float x, float y);
     Callback *callback;
 

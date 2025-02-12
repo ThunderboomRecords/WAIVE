@@ -26,7 +26,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     float col1Width = 539.f;
     float col2Width = 298.f;
 
-    dragDropManager = new DragDropManager();
+    dragDropManager = new DragDropManager(&getWindow());
+    std::cout << "WAIVESamplerUI::WAIVESamplerUI() dragDropManager->isDragging() " << dragDropManager->isDragging() << std::endl;
 
     // 1 ----- Source Browser Panel
     {
@@ -385,6 +386,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         {
             SampleSlot *slot = new SampleSlot(this, dragDropManager);
             slot->setSamplePlayer(&plugin->samplePlayers[i]);
+            slot->accent_color = WaiveColors::light2;
             slot->setCallback(this);
             slot->slotId = i;
             slot->setSize(sampleSlotsContainer->getWidth(), sampleSlotsContainer->getHeight() / NUM_SLOTS - 4, true);
@@ -441,7 +443,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     // 5 ----- Sample Map
     {
-        sampleBrowser = new SampleBrowser(samplePlayerPanel, &plugin->sd);
+        sampleBrowser = new SampleBrowser(samplePlayerPanel, &plugin->sd, dragDropManager);
         sampleBrowser->setSize(sourceList->getWidth(), tagBrowser->getBottom() - sourceList->getTop());
         sampleBrowser->setAbsolutePos(sourceList->getLeft(), sourceList->getTop());
         sampleBrowser->repositionWidgets();
@@ -586,29 +588,16 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
     repaint();
 }
 
-void WAIVESamplerUI::knobDragStarted(Knob *knob)
-{
-    // valueIndicator->setAbsoluteX(knob->getAbsoluteX());
-    // valueIndicator->setWidth(knob->getWidth());
-    // valueIndicator->setAbsoluteY(knob->getAbsoluteY() + knob->getHeight());
-    // valueIndicator->setFormatString(knob->getFormat());
-    // valueIndicator->setValue(knob->getValue());
-    // valueIndicator->toFront();
-    // valueIndicator->show();
-}
+void WAIVESamplerUI::knobDragStarted(Knob *knob) {}
 
 void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 {
-    // valueIndicator->hide();
-    // repaint();
-
     plugin->triggerPreview();
 }
 
 void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 {
     setParameterValue(knob->getId(), value);
-    // valueIndicator->setValue(knob->getValue());
 }
 
 std::string getDescription(std::string text, DGL::SubWidget *widget, const DGL::Widget::MotionEvent &ev)
@@ -634,15 +623,22 @@ bool WAIVESamplerUI::onMotion(const MotionEvent &ev)
         text = getDescription(text, widget, ev);
     toolTip->setLabel(text);
 
+    if (dragDropManager->isDragging())
+        getWindow().setCursor(kMouseCursorHand);
+
     return UI::onMotion(ev);
 }
 
 bool WAIVESamplerUI::onMouse(const MouseEvent &ev)
 {
-    if (!ev.press)
-        std::cout << "WAIVESamplerUI::onMouse released" << std::endl;
+    bool result = UI::onMouse(ev);
 
-    return UI::onMouse(ev);
+    if (!ev.press)
+    {
+        dragDropManager->clearEvent();
+    }
+
+    return result;
 }
 
 void WAIVESamplerUI::buttonClicked(Button *button)
@@ -988,6 +984,11 @@ void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
     plugin->clear();
     sourceList->selected = -1;
 };
+
+void WAIVESamplerUI::sampleSlotLoadSample(SampleSlot *slot, int slotId, int sampleId)
+{
+    plugin->loadSlot(slotId, sampleId);
+}
 
 void WAIVESamplerUI::sourceDownload(int index)
 {

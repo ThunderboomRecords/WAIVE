@@ -115,6 +115,7 @@ protected:
     void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
     void sampleSelected(SampleSlot *slot, int slotId) override;
     void sampleSlotCleared(SampleSlot *slot, int slotId) override;
+    void sampleSlotLoadSample(SampleSlot *slot, int slotId, int sampleId) override;
 
     // Source List Callbacks
     void sourceDownload(int index) override;

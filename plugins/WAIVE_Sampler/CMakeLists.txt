@@ -60,6 +60,7 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/Popup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Panel.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Spinner.cpp
+      ${CMAKE_SOURCE_DIR}/common/src/DragDrop.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Checkbox.cpp
       ${CMAKE_SOURCE_DIR}/common/src/Waveform.cpp
       ${CMAKE_SOURCE_DIR}/common/src/DropDown.cpp
@@ -68,7 +69,6 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
       ${CMAKE_SOURCE_DIR}/common/src/RadioButtons.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/ValueIndicator.cpp
 )
 
 # Externals:

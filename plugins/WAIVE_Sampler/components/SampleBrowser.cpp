@@ -1,18 +1,18 @@
 #include "SampleBrowser.hpp"
 
-SampleBrowser::SampleBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
+SampleBrowser::SampleBrowser(WAIVEWidget *widget, SampleDatabase *sd_, DragDropManager *manager)
     : WidgetGroup(widget),
       sd(sd_)
 {
     float width = widget->getWidth();
     float height = widget->getHeight();
 
-    sampleMap = new SampleMap(widget);
+    sampleMap = new SampleMap(widget, manager);
     sampleMap->setSize(width - 4.0f, height - widget->getFontSize() * 2.f - 4.f, true);
     sampleMap->onTop(widget, Widget_Align::START, Widget_Align::START, 2.f, widget->getFontSize() * 2.f);
     sampleMap->background_color = WaiveColors::grey2;
     sampleMap->allSamples = &sd->fAllSamples;
-    sampleMap->description = "Hover over sample to preview. Right click to add sample to Sample Player.";
+    sampleMap->description = "Hover over sample to preview. Drag sample to Player on the right, or right click sample to choose Player slot.";
     addChildWidget(sampleMap);
 
     importSampleBtn = new Button(widget);

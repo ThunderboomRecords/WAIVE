@@ -9,19 +9,22 @@
 
 START_NAMESPACE_DISTRHO
 
+class DragDropManager;
+class DragDropWidget;
 struct DragDropEvent
 {
-    std::shared_ptr<WAIVEWidget> source;
+    DragDropWidget *source;
     std::string payload;
 };
-
-class DragDropManager;
 
 class DragDropWidget
 {
 public:
     explicit DragDropWidget(DragDropManager *manager);
     ~DragDropWidget() {};
+
+    virtual void dataAccepted(DragDropWidget *destination) = 0;
+    virtual void dataRejected(DragDropWidget *destination) = 0;
 
 protected:
     DragDropManager *dragDropManager;
@@ -33,18 +36,21 @@ private:
 class DragDropManager
 {
 public:
-    explicit DragDropManager();
+    explicit DragDropManager(DGL::Window *window);
     void addWidget(DragDropWidget *widget);
 
-    void dragDropStart(DragDropEvent &ev);
+    void dragDropStart(DragDropWidget *widget, const std::string &data);
     void dragDropEnd(DragDropEvent &ev);
     bool isDragging();
     void clearEvent();
     DragDropEvent getEvent();
 
 private:
-    std::vector<std::shared_ptr<DragDropWidget>> widgets;
-    std::unique_ptr<DragDropEvent> event;
+    // std::vector<std::shared_ptr<DragDropWidget>> widgets;
+    bool hasEvent;
+    std::shared_ptr<DragDropEvent> event;
+
+    DGL::Window *window;
 };
 
 END_NAMESPACE_DISTRHO

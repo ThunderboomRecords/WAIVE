@@ -13,6 +13,14 @@
 
 START_NAMESPACE_DISTRHO
 
+enum DragAction
+{
+    NONE = 0,
+    CLICKING,
+    SELECTING,
+    SCROLLING,
+};
+
 class WAIVEWidget : public NanoSubWidget
 {
 public:

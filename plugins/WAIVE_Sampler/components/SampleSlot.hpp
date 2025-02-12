@@ -28,6 +28,7 @@ public:
         virtual ~Callback() {};
         virtual void sampleSelected(SampleSlot *slot, int slotId) = 0;
         virtual void sampleSlotCleared(SampleSlot *slot, int slotId) = 0;
+        virtual void sampleSlotLoadSample(SampleSlot *slot, int slotId, int sampleId) = 0;
     };
     explicit SampleSlot(Widget *widget, DragDropManager *manager) noexcept;
 
@@ -50,6 +51,9 @@ protected:
     void textEntered(TextInput *textInput, std::string text) override;
     void textInputChanged(TextInput *textInput, std::string text) override;
 
+    void dataAccepted(DragDropWidget *destination) override;
+    void dataRejected(DragDropWidget *destination) override;
+
 private:
     Callback *callback;
 
@@ -61,6 +65,8 @@ private:
     TextInput *midiSelect;
 
     float step;
+    DragAction dragAction;
+    bool acceptingDrop;
 
     DISTRHO_LEAK_DETECTOR(SampleSlot);
 };

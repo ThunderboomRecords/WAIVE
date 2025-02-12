@@ -9,7 +9,8 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
       lastPlaying(PlayState::STOPPED),
       callback(nullptr),
       step(0.f),
-      currentSample(nullptr)
+      currentSample(nullptr),
+      acceptingDrop(false)
 {
     triggerBtn = new Button(parent);
     triggerBtn->setCallback(this);
@@ -64,12 +65,20 @@ SamplePlayer *SampleSlot::getSamplePlayer() const
     return samplePlayer;
 }
 
+void SampleSlot::dataAccepted(DragDropWidget *destination)
+{
+    if (callback != nullptr)
+        callback->sampleSlotCleared(this, slotId);
+    clearBtn->hide();
+}
+
+void SampleSlot::dataRejected(DragDropWidget *destination) {}
+
 bool SampleSlot::onMouse(const MouseEvent &ev)
 {
-    if (!contains(ev.pos))
-        return false;
+    bool hovering = contains(ev.pos);
 
-    if (ev.button == kMouseButtonRight)
+    if (ev.button == kMouseButtonRight && hovering)
     {
         contextMenu->setAbsolutePos(
             ev.pos.getX() + getAbsoluteX() - 2,
@@ -83,19 +92,41 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
     {
         if (ev.press)
         {
-            if (callback != nullptr)
-            {
-                callback->sampleSelected(this, slotId);
-                return false;
-            }
+            if (hovering)
+                dragAction = DragAction::CLICKING;
         }
         else
         {
-            std::cout << "SampleSlot::onMouse released" << std::endl;
-            if (dragDropManager->isDragging())
+            if (hovering)
             {
-                std::cout << "Accept drag event" << std::endl;
+                std::cout << "SampleSlot::onMouse released" << std::endl;
+
+                if (dragAction == DragAction::CLICKING && callback != nullptr)
+                    callback->sampleSelected(this, slotId);
+
+                if (dragDropManager->isDragging())
+                {
+                    std::cout << "Accept drag event " << dragDropManager->getEvent().payload << std::endl;
+
+                    DragDropWidget *source = dragDropManager->getEvent().source;
+
+                    if (callback != nullptr && source != this)
+                    {
+                        int id = std::stoi(dragDropManager->getEvent().payload);
+                        callback->sampleSlotLoadSample(this, slotId, id);
+                        source->dataAccepted(this);
+                    }
+                    else
+                    {
+                        source->dataRejected(this);
+                    }
+
+                    dragDropManager->clearEvent();
+                    acceptingDrop = false;
+                }
             }
+
+            dragAction = NONE;
         }
     }
 
@@ -107,10 +138,36 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
 
 bool SampleSlot::onMotion(const MotionEvent &ev)
 {
-    if (samplePlayer->sampleInfo != nullptr && contains(ev.pos) && !clearBtn->isVisible())
-        clearBtn->setVisible(true);
-    else if (clearBtn->isVisible() && (samplePlayer->sampleInfo == nullptr || !contains(ev.pos)))
-        clearBtn->setVisible(false);
+    bool hovering = contains(ev.pos);
+
+    if (hovering)
+    {
+        if (dragDropManager->isDragging())
+        {
+            acceptingDrop = true;
+        }
+        else if (samplePlayer->sampleInfo != nullptr && !clearBtn->isVisible())
+            clearBtn->setVisible(true);
+        else
+            acceptingDrop = false;
+
+        if (dragAction == DragAction::CLICKING)
+        {
+            dragAction = DragAction::SCROLLING;
+            if (samplePlayer != nullptr && samplePlayer->sampleInfo != nullptr)
+            {
+                std::cout << "Started dragging sample info" << std::endl;
+                dragDropManager->dragDropStart(this, fmt::format("{:d}", samplePlayer->sampleInfo->getId()));
+            }
+        }
+    }
+    else
+    {
+        acceptingDrop = false;
+
+        if (clearBtn->isVisible())
+            clearBtn->setVisible(false);
+    }
 
     return false;
 }
@@ -138,6 +195,16 @@ void SampleSlot::onNanoDisplay()
         beginPath();
         rect(0, 0, width, height);
         strokeColor(accent_color);
+        stroke();
+        closePath();
+    }
+
+    if (acceptingDrop)
+    {
+        beginPath();
+        rect(1, 1, width - 2, height - 2);
+        strokeColor(accent_color);
+        strokeWidth(2);
         stroke();
         closePath();
     }
