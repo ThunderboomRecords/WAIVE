@@ -58,6 +58,7 @@ enum Parameters
 enum WAIVESamplerStates
 {
     kStateSampleSlots,
+    kStateOSC,
     kStateCount
 };
 

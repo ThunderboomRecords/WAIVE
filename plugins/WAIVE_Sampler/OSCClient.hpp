@@ -13,7 +13,11 @@ public:
     using OSCArgument = std::variant<std::string, int>;
 
     OSCClient(const std::string &host, int port);
+    bool setAddress(const std::string &host, int port);
     void sendMessage(const std::string &address, const std::vector<OSCArgument> &args);
+
+    std::string getHost() const;
+    int getPort() const;
 
 private:
     std::string formatOSCMessage(const std::string &address, const std::vector<OSCArgument> &args);

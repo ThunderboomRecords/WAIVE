@@ -69,7 +69,7 @@ void TextInput::onNanoDisplay()
         if (align == Align::ALIGN_CENTER)
             text(width / 2, height / 2, placeholder.c_str(), nullptr);
         else if (align == Align::ALIGN_LEFT)
-            text(2, height / 2, placeholder.c_str(), nullptr);
+            text(8, height / 2, placeholder.c_str(), nullptr);
         else
             text(width - 2, height / 2, placeholder.c_str(), nullptr);
 
@@ -88,7 +88,7 @@ void TextInput::onNanoDisplay()
         if (align == Align::ALIGN_CENTER)
             textBounds(width / 2, height / 2, textValue.c_str(), nullptr, bounds);
         else if (align == Align::ALIGN_LEFT)
-            textBounds(2, height / 2, textValue.c_str(), nullptr, bounds);
+            textBounds(8, height / 2, textValue.c_str(), nullptr, bounds);
         else
             textBounds(width - 2, height / 2, textValue.c_str(), nullptr, bounds);
 

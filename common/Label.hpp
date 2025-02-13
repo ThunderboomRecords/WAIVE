@@ -15,12 +15,13 @@ public:
         virtual void labelClicked(Label *label) = 0;
     };
 
-    explicit Label(Widget *widget, std::string text = "") noexcept;
+    explicit Label(Widget *widget, const std::string &text = "") noexcept;
     void setCallback(Callback *cb);
 
     void setLabel(const std::string);
     void setFont(const char *name, const uchar *data, uint size);
     void resizeToFit();
+    void calculateHeight();
 
     FontId font;
     Align text_align;

@@ -183,7 +183,10 @@ private:
     // 3. Sample Player Components
     VBox *sampleSlotsContainer;
     std::vector<SampleSlot *> sampleSlots;
-    Button *openMapBtn, *browseFilesBtn;
+    Button *openMapBtn, *browseFilesBtn, *oscControlsBtn, *oscEnableBtn;
+    Panel *oscControlsPanel;
+    TextInput *oscHostInput, *oscPortInput;
+    Label *oscControlsDescription;
 
     SampleBrowser *sampleBrowser;
 
