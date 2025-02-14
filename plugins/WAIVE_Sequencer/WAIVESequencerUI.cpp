@@ -33,7 +33,7 @@ WAIVESequencerUI::WAIVESequencerUI() : UI(UI_W, UI_H),
 
     scoreGenreDD = new DropDown(this);
     scoreGenreDD->setSize(80, scoreGenreDD->getFontSize(), true);
-    for (int i = 0; i < 22; i++)
+    for (int i = 0; i < NUM_SCORE_GENRES; i++)
         scoreGenreDD->addItem(score_genres[i]);
     scoreGenreDD->setDisplayNumber(8);
     scoreGenreDD->resizeToFit();
@@ -41,7 +41,7 @@ WAIVESequencerUI::WAIVESequencerUI() : UI(UI_W, UI_H),
     scoreGenreDD->setFontSize(16.0f);
     scoreGenreDD->highlight_color = WaiveColors::grey2;
     scoreGenreDD->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-    scoreGenreDD->menu->setFontSize(14.0f);
+    scoreGenreDD->menu->setFontSize(16.0f);
     scoreGenreDD->menu->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
     scoreGenreDD->menu->background_color = WaiveColors::grey2;
     scoreGenreDD->setCallback(this);
@@ -123,7 +123,7 @@ WAIVESequencerUI::WAIVESequencerUI() : UI(UI_W, UI_H),
 
     grooveGenreDD = new DropDown(this);
     grooveGenreDD->setSize(80, grooveGenreDD->getFontSize(), true);
-    for (int i = 0; i < 22; i++)
+    for (int i = 0; i < NUM_GROOVE_GENRES; i++)
         grooveGenreDD->addItem(groove_genres[i]);
     grooveGenreDD->setDisplayNumber(8);
     grooveGenreDD->resizeToFit();
@@ -131,7 +131,7 @@ WAIVESequencerUI::WAIVESequencerUI() : UI(UI_W, UI_H),
     grooveGenreDD->setFontSize(16.0f);
     grooveGenreDD->highlight_color = WaiveColors::grey2;
     grooveGenreDD->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-    grooveGenreDD->menu->setFontSize(14.0f);
+    grooveGenreDD->menu->setFontSize(16.0f);
     grooveGenreDD->menu->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
     grooveGenreDD->menu->background_color = WaiveColors::grey2;
     grooveGenreDD->setCallback(this);
