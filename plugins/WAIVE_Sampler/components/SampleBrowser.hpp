@@ -5,6 +5,7 @@
 
 #include "Label.hpp"
 #include "Spinner.hpp"
+#include "DragDrop.hpp"
 #include "SampleMap.hpp"
 #include "SimpleButton.hpp"
 
@@ -15,7 +16,7 @@ class SampleBrowser
       public Button::Callback
 {
 public:
-    explicit SampleBrowser(WAIVEWidget *parent, SampleDatabase *sd_);
+    explicit SampleBrowser(WAIVEWidget *parent, SampleDatabase *sd_, DragDropManager *manager);
 
     void setCallback(SampleMap::Callback *cb);
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);

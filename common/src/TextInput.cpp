@@ -69,7 +69,7 @@ void TextInput::onNanoDisplay()
         if (align == Align::ALIGN_CENTER)
             text(width / 2, height / 2, placeholder.c_str(), nullptr);
         else if (align == Align::ALIGN_LEFT)
-            text(2, height / 2, placeholder.c_str(), nullptr);
+            text(8, height / 2, placeholder.c_str(), nullptr);
         else
             text(width - 2, height / 2, placeholder.c_str(), nullptr);
 
@@ -88,7 +88,7 @@ void TextInput::onNanoDisplay()
         if (align == Align::ALIGN_CENTER)
             textBounds(width / 2, height / 2, textValue.c_str(), nullptr, bounds);
         else if (align == Align::ALIGN_LEFT)
-            textBounds(2, height / 2, textValue.c_str(), nullptr, bounds);
+            textBounds(8, height / 2, textValue.c_str(), nullptr, bounds);
         else
             textBounds(width - 2, height / 2, textValue.c_str(), nullptr, bounds);
 
@@ -245,9 +245,6 @@ bool TextInput::onKeyboard(const KeyboardEvent &ev)
 
 bool TextInput::onMouse(const MouseEvent &ev)
 {
-    if (!isVisible())
-        return false;
-
     if (ev.press)
     {
         bool inWidget = contains(ev.pos);
@@ -257,7 +254,6 @@ bool TextInput::onMouse(const MouseEvent &ev)
             lastTextValue.assign(textValue);
             position = textValue.size();
             repaint();
-            return true;
         }
         else if (!inWidget && hasKeyFocus)
         {
@@ -266,8 +262,8 @@ bool TextInput::onMouse(const MouseEvent &ev)
             else if (textValue.size() == 0)
                 textValue.assign(lastTextValue);
             hasKeyFocus = false;
+            std::cout << "TextInput lost focus" << std::endl;
             repaint();
-            return false;
         }
     }
 

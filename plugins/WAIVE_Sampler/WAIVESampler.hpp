@@ -159,6 +159,10 @@ protected:
     void onTaskFailed(Poco::TaskFailedNotification *pNf);
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
 
+    bool setOSCAddress(const std::string &host, int port);
+    void setSendOSC(bool send);
+    bool getSendOSC() const;
+
     const char *pluginUpdateToString(PluginUpdate update) const;
 
     EnvGen ampEnvGen;
@@ -188,6 +192,9 @@ private:
 
     SampleDatabase sd;
     OSCClient oscClient;
+    std::string oscHost;
+    uint oscPort;
+    bool sendOSC;
 
     std::shared_ptr<SampleInfo> fCurrentSample;
     bool renderSampleLock;

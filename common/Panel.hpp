@@ -22,12 +22,15 @@ public:
 
     void setSize(uint width, uint height, bool ignore_sf = false);
     void setSize(const Size<uint> &size, bool ignore_sf = false);
+    void getTitlAbsoluteBounds(Rectangle<float> &bounds);
     void expand();
     void collapse();
     void toggle();
 
 protected:
     void onNanoDisplay() override;
+    bool onMouse(const MouseEvent &ev) override;
+    bool onMotion(const MotionEvent &ev) override;
 
     DISTRHO_LEAK_DETECTOR(Panel);
 };

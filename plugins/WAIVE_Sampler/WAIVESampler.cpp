@@ -10,6 +10,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
                                fNormalisationRatio(1.0f),
                                fCurrentSample(nullptr),
                                ampEnvGen(getSampleRate(), ENV_TYPE::ADSR, {10, 50, 0.7, 100}),
+                               sendOSC(false),
                                oscClient("localhost", 8000),
                                taskManager("plugin manager", 1, 8, 60, 0),
                                httpClient(&taskManager),
@@ -20,7 +21,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
     if (isDummyInstance())
     {
         std::cout << "** dummy instance" << std::endl;
-        // return;
+        return;
     }
 
     printf(" VERSION: %d.%d.%d\n", V_MAJ, V_MIN, V_PAT);
@@ -87,7 +88,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
     tempBuffer = std::make_shared<std::vector<float>>();
 
     // OSC Test
-    oscClient.sendMessage("/WAIVE_Sampler/Started", {"WAIVESampler started"});
+    oscHost = oscClient.getHost();
+    oscPort = oscClient.getPort();
 
     // sd.checkLatestRemoteVersion();
 }
@@ -421,6 +423,28 @@ void WAIVESampler::setState(const char *key, const char *value)
             loadSlot(i, id);
         }
     }
+    else if (strcmp(key, "osc-address") == 0)
+    {
+        std::cout << value << std::endl;
+        std::istringstream iss(value);
+        std::string onS, hostS, pS;
+        std::getline(iss, onS, ';');
+        std::getline(iss, hostS, ';');
+        std::getline(iss, pS, ';');
+
+        oscHost = hostS;
+        oscPort = std::stoi(pS);
+        sendOSC = static_cast<bool>(std::stoi(onS));
+
+        std::cout << "osc-address: " << oscHost << " " << oscPort << " " << sendOSC << std::endl;
+
+        bool err = setOSCAddress(oscHost, oscPort);
+
+        if (err)
+            sendOSC = false;
+
+        setSendOSC(sendOSC);
+    }
 }
 
 String WAIVESampler::getState(const char *key) const
@@ -441,6 +465,10 @@ String WAIVESampler::getState(const char *key) const
 
         retString = String(oss.str().c_str());
     }
+    else if (std::strcmp(key, "osc-address") == 0)
+    {
+        retString = String(fmt::format("{:d};{};{:d}", sendOSC, oscHost, oscPort).c_str());
+    }
 
     std::cout << "retString: " << retString << std::endl;
     return retString;
@@ -453,6 +481,10 @@ void WAIVESampler::initState(uint32_t index, State &state)
     case kStateSampleSlots:
         state.key = "sample-slots";
         state.defaultValue = "";
+        break;
+    case kStateOSC:
+        state.key = "osc-address";
+        state.defaultValue = "1;localhost;8000";
         break;
     default:
         break;
@@ -506,8 +538,6 @@ void WAIVESampler::run(
                     {
                         samplePlayers[j].state = PlayState::TRIGGERED;
                         samplePlayers[j].velocity = (float)velocity / 128;
-
-                        oscClient.sendMessage("/WAIVE_Sampler/Sample", {samplePlayers[j].sampleInfo->name, samplePlayers[j].sampleInfo->tagString, samplePlayers[j].midi});
                     }
                 }
             }
@@ -538,6 +568,9 @@ void WAIVESampler::run(
                         sp->ptr = sp->startAt;
                     else
                         sp->ptr = 0;
+
+                    if (sendOSC && sp->midi > 0)
+                        oscClient.sendMessage("/WAIVE_Sampler/Sample", {sp->sampleInfo->name, sp->sampleInfo->tagString, sp->midi});
                 }
             }
 
@@ -550,7 +583,6 @@ void WAIVESampler::run(
                 sp->state = PlayState::STOPPED;
                 if (sp == sourcePreviewPlayer)
                 {
-                    std::cout << "sp == sourcePreviewPlayer" << std::endl;
                     pluginUpdate.notify(this, PluginUpdate::kSourcePreviewStop);
                 }
             }
@@ -1156,6 +1188,26 @@ void WAIVESampler::onDatabaseChanged(const void *pSender, const SampleDatabase::
     default:
         break;
     }
+}
+
+bool WAIVESampler::setOSCAddress(const std::string &host, int port)
+{
+    bool err = oscClient.setAddress(host, port);
+    sendOSC = sendOSC && !err;
+    return err;
+}
+
+void WAIVESampler::setSendOSC(bool send)
+{
+    sendOSC = send;
+
+    if (sendOSC)
+        oscClient.sendMessage("/WAIVE_Sampler/Started", {"WAIVESampler connected"});
+}
+
+bool WAIVESampler::getSendOSC() const
+{
+    return sendOSC;
 }
 
 const char *WAIVESampler::pluginUpdateToString(PluginUpdate update) const

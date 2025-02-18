@@ -4,8 +4,9 @@ START_NAMESPACE_DISTRHO
 
 using DGL_NAMESPACE::Color;
 
-SampleMap::SampleMap(Widget *widget) noexcept
+SampleMap::SampleMap(Widget *widget, DragDropManager *manager) noexcept
     : WAIVEWidget(widget),
+      DragDropWidget(manager),
       c0(Color::fromHSL(0.0f, 0.8f, 0.7f)),
       c1(Color::fromHSL(0.2f, 0.8f, 0.7f)),
       c2(Color::fromHSL(0.6f, 0.8f, 0.7f)),
@@ -157,14 +158,23 @@ bool SampleMap::onMotion(const MotionEvent &ev)
     }
     else if (dragAction == CLICKING)
     {
-        dragAction = SCROLLING;
-        dragStart = Point<double>(ev.pos);
-        centerStart = Point<double>{centerPos.getX(), centerPos.getY()};
+
+        if (highlightSample >= 0)
+        {
+            dragAction = DragAction::NONE;
+            dragDropManager->dragDropStart(this, fmt::format("{:d}", highlightSample));
+        }
+        else
+        {
+            dragAction = SCROLLING;
+            dragStart = Point<double>(ev.pos);
+            centerStart = Point<double>{centerPos.getX(), centerPos.getY()};
+        }
+
         return true;
     }
     else if (dragAction == SCROLLING)
     {
-
         const float width = getWidth();
         const float height = getHeight();
 
@@ -308,6 +318,16 @@ void SampleMap::buttonClicked(Button *btn)
     std::cout << "SampleMap::buttonClicked" << std::endl;
     if (callback != nullptr)
         callback->mapSampleImport();
+}
+
+void SampleMap::dataAccepted(DragDropWidget *destination)
+{
+    highlightSample = -1;
+}
+
+void SampleMap::dataRejected(DragDropWidget *destination)
+{
+    highlightSample = -1;
 }
 
 void SampleMap::setCallback(Callback *cb)

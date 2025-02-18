@@ -16,6 +16,19 @@ Panel::Panel(Widget *widget)
     addChildWidget(&hiddenWidgets);
 }
 
+void Panel::getTitlAbsoluteBounds(Rectangle<float> &bounds)
+{
+    fontFaceId(font);
+    fontSize(getFontSize());
+    textAlign(ALIGN_TOP | ALIGN_LEFT);
+    textBounds(
+        padding_h + (expand_h - size_w) * expanded * !expand_right + getAbsoluteX(),
+        padding_v + (expand_v - size_h) * expanded * !expand_down + getAbsoluteY(),
+        (label + "  " + title).c_str(),
+        nullptr,
+        bounds);
+}
+
 void Panel::onNanoDisplay()
 {
     const float width = getWidth();
@@ -106,6 +119,20 @@ void Panel::toggle()
         collapse();
     else
         expand();
+}
+
+bool Panel::onMouse(const MouseEvent &ev)
+{
+    WAIVEWidget::onMouse(ev);
+
+    return contains(ev.pos);
+}
+
+bool Panel::onMotion(const MotionEvent &ev)
+{
+    WAIVEWidget::onMotion(ev);
+
+    return contains(ev.pos);
 }
 
 END_NAMESPACE_DISTRHO

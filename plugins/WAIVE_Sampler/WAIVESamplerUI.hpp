@@ -37,6 +37,7 @@
 #include "SourceList.hpp"
 #include "SimpleButton.hpp"
 #include "ValueIndicator.hpp"
+#include "DragDrop.hpp"
 
 #include "Layout.hpp"
 
@@ -97,6 +98,7 @@ protected:
 
     // Interaction callbacks
     bool onMotion(const MotionEvent &ev) override;
+    bool onMouse(const MouseEvent &ev) override;
 
     // Widget Callbacks
     void buttonClicked(Button *button) override;
@@ -114,6 +116,7 @@ protected:
     void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
     void sampleSelected(SampleSlot *slot, int slotId) override;
     void sampleSlotCleared(SampleSlot *slot, int slotId) override;
+    void sampleSlotLoadSample(SampleSlot *slot, int slotId, int sampleId) override;
 
     // Source List Callbacks
     void sourceDownload(int index) override;
@@ -176,16 +179,20 @@ private:
 
     Waveform *sampleWaveformDisplay;
     // TextInput *sampleName;
-    Button *saveSampleBtn, *playSampleBtn, *newSampleBtn;
+    Button *saveSampleBtn, *playSampleBtn; //, *newSampleBtn;
 
     // 3. Sample Player Components
     VBox *sampleSlotsContainer;
     std::vector<SampleSlot *> sampleSlots;
-    Button *openMapBtn, *browseFilesBtn;
+    Button *openMapBtn, *browseFilesBtn, *oscControlsBtn, *oscEnableBtn;
+    Panel *oscControlsPanel;
+    TextInput *oscHostInput, *oscPortInput;
+    Label *oscControlsDescription;
 
     SampleBrowser *sampleBrowser;
 
     Label *toolTip;
+    DragDropManager *dragDropManager;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 };

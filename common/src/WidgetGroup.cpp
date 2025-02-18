@@ -73,6 +73,7 @@ void WidgetGroup::repositionWidgets()
 
 void WidgetGroup::setVisible(bool visible)
 {
+    WAIVEWidget::setVisible(visible);
     for (int i = 0; i < children.size(); i++)
     {
         // check if WidgetGroup

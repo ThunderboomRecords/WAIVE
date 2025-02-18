@@ -9,6 +9,33 @@ OSCClient::OSCClient(const std::string &host, int port)
     _socket.connect(_socketAddress);
 }
 
+bool OSCClient::setAddress(const std::string &host, int port)
+{
+    try
+    {
+        _socket.close();
+        _socketAddress = Poco::Net::SocketAddress(host, port);
+        _socket.connect(_socketAddress);
+    }
+    catch (Poco::Exception &e)
+    {
+        std::cerr << "Error initialising socket " << e.message() << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+std::string OSCClient::getHost() const
+{
+    return _socketAddress.host().toString();
+}
+
+int OSCClient::getPort() const
+{
+    return _socketAddress.port();
+}
+
 void OSCClient::sendMessage(const std::string &address, const std::vector<OSCArgument> &args)
 {
     try

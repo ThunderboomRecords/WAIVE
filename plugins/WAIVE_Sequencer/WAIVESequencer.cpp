@@ -7,7 +7,7 @@ WAIVESequencer::WAIVESequencer() : Plugin(kParameterCount, 0, kStateCount),
                                    ticks_per_beat(1920),
                                    loopTick(0.0),
                                    progress(0.0f),
-                                   score_genre(NUM_GROOVE_GENRES - 1),
+                                   score_genre(NUM_SCORE_GENRES - 1),
                                    groove_genre(NUM_GROOVE_GENRES - 1),
                                    hold_update(false),
                                    quantize(false)
@@ -189,7 +189,7 @@ void WAIVESequencer::initParameter(uint32_t index, Parameter &parameter)
         parameter.symbol = "score_genre";
         parameter.ranges.min = 0;
         parameter.ranges.max = NUM_SCORE_GENRES;
-        parameter.ranges.def = NUM_SCORE_GENRES - 1;
+        parameter.ranges.def = score_genre;
         parameter.hints = kParameterIsInteger | kParameterIsAutomatable;
         break;
     case kGrooveGenre:
@@ -197,7 +197,7 @@ void WAIVESequencer::initParameter(uint32_t index, Parameter &parameter)
         parameter.symbol = "groove_genre";
         parameter.ranges.min = 0;
         parameter.ranges.max = NUM_GROOVE_GENRES;
-        parameter.ranges.def = NUM_GROOVE_GENRES - 1;
+        parameter.ranges.def = groove_genre;
         parameter.hints = kParameterIsInteger | kParameterIsAutomatable;
         break;
     case kThreshold1:
@@ -290,7 +290,7 @@ float WAIVESequencer::getParameterValue(uint32_t index) const
 
 void WAIVESequencer::setParameterValue(uint32_t index, float value)
 {
-    std::cout << "WAIVESequencer::setParameterValue " << parameterIndexToString(index) << ": " << value << std::endl;
+    // std::cout << "WAIVESequencer::setParameterValue " << parameterIndexToString(index) << ": " << value << std::endl;
     switch (index)
     {
     case kThreshold:

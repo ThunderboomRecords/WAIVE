@@ -2,7 +2,7 @@
 
 START_NAMESPACE_DISTRHO
 
-Label::Label(Widget *parent, std::string text) noexcept
+Label::Label(Widget *parent, const std::string &text) noexcept
     : WAIVEWidget(parent),
       text_align(Align::ALIGN_BOTTOM),
       label(text),
@@ -29,12 +29,32 @@ void Label::resizeToFit()
 
     fontSize(getFontSize());
     fontFaceId(font);
+    textAlign(text_align);
 
     DGL::Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
     setWidth(bounds.getWidth());
     setHeight(bounds.getHeight());
+}
+
+void Label::calculateHeight()
+{
+    if (label.length() == 0)
+        return;
+
+    fontSize(getFontSize());
+    fontFaceId(font);
+    textAlign(ALIGN_TOP | ALIGN_LEFT);
+
+    const float width = getWidth();
+
+    float bounds[4];
+    textBoxBounds(0, 0, width, label.c_str(), NULL, bounds);
+
+    std::cout << "Label::calculateHeight() ( width = " << width << ", font_size = " << getFontSize() << " ) " << bounds[0] << ", " << bounds[1] << ", " << bounds[2] << ", " << bounds[3] << std::endl;
+
+    setHeight(bounds[3]);
 }
 
 void Label::setCallback(Callback *cb)
@@ -47,12 +67,22 @@ void Label::onNanoDisplay()
     if (label.length() == 0)
         return;
 
+    if (renderDebug)
+    {
+        beginPath();
+        strokeColor(accent_color);
+        rect(0, 0, getWidth(), getHeight());
+        stroke();
+        closePath();
+    }
+
     beginPath();
     fillColor(text_color);
-    textAlign(text_align);
+    textAlign(ALIGN_TOP | ALIGN_LEFT);
     fontSize(getFontSize());
     fontFaceId(font);
-    text(0, getHeight(), label.c_str(), NULL);
+    textBox(0, 0, getWidth(), label.c_str());
+    // text(0, getHeight(), label.c_str());
     closePath();
 }
 
@@ -62,7 +92,7 @@ bool Label::onMouse(const MouseEvent &ev)
         return false;
 
     callback->labelClicked(this);
-    return true;
+    return false;
 }
 
 END_NAMESPACE_DISTRHO

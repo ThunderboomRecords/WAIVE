@@ -26,6 +26,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     float col1Width = 539.f;
     float col2Width = 298.f;
 
+    dragDropManager = new DragDropManager(&getWindow());
+    std::cout << "WAIVESamplerUI::WAIVESamplerUI() dragDropManager->isDragging() " << dragDropManager->isDragging() << std::endl;
+
     // 1 ----- Source Browser Panel
     {
         sourceBrowserPanel = new Panel(this);
@@ -36,26 +39,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceBrowserPanel->title = "Source";
         sourceBrowserPanel->expandable = true;
 
-        importSource = new Button(this);
-        importSource->setLabel("Import");
-        importSource->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-        importSource->setFontSize(14.f);
-        importSource->resizeToFit();
-        importSource->onTop(sourceBrowserPanel, END, START, 14);
-        importSource->setCallback(this);
-        importSource->description = "Import source audio file.";
-        sourceBrowserPanel->addChildWidget(importSource);
-
-        previewPlaybackBtn = new Button(this);
-        previewPlaybackBtn->setLabel("Stop");
-        previewPlaybackBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-        previewPlaybackBtn->setFontSize(14.f);
-        previewPlaybackBtn->resizeToFit();
-        previewPlaybackBtn->leftOf(importSource, END, padding * 2.f);
-        previewPlaybackBtn->setCallback(this);
-        previewPlaybackBtn->description = "Stop source preview.";
-        previewPlaybackBtn->setVisible(false);
-        sourceBrowserPanel->addChildWidget(previewPlaybackBtn);
+        Rectangle<float> sourceTitleBounds;
+        sourceBrowserPanel->getTitlAbsoluteBounds(sourceTitleBounds);
 
         sourceList = new SourceList(this);
         sourceList->setSize(539.f - 24.f - 24.f, 150.f);
@@ -74,6 +59,28 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceList->setCallback(this);
         sourceList->description = "Select sound source.";
         sourceBrowserPanel->addChildWidget(sourceList);
+
+        importSource = new Button(this);
+        importSource->setLabel("Import");
+        importSource->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        importSource->setFontSize(14.f);
+        importSource->resizeToFit();
+        importSource->setRight(sourceList->getRight());
+        importSource->setCenterY(sourceTitleBounds.getY() + sourceTitleBounds.getHeight() * 0.5f);
+        importSource->setCallback(this);
+        importSource->description = "Import source audio file.";
+        sourceBrowserPanel->addChildWidget(importSource);
+
+        previewPlaybackBtn = new Button(this);
+        previewPlaybackBtn->setLabel("Stop");
+        previewPlaybackBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        previewPlaybackBtn->setFontSize(14.f);
+        previewPlaybackBtn->resizeToFit();
+        previewPlaybackBtn->leftOf(importSource, END, padding);
+        previewPlaybackBtn->setCallback(this);
+        previewPlaybackBtn->description = "Stop source preview.";
+        previewPlaybackBtn->setVisible(false);
+        sourceBrowserPanel->addChildWidget(previewPlaybackBtn);
 
         openFilterPanelBtn = new Button(this);
         openFilterPanelBtn->isToggle = true;
@@ -126,7 +133,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         databaseLoading = new Spinner(this);
         databaseLoading->setSize(sourceSearch->getHeight(), sourceSearch->getHeight(), true);
-        databaseLoading->rightOf(searchBox, CENTER, padding);
+        databaseLoading->setLeft(sourceTitleBounds.getX() + sourceTitleBounds.getWidth() + padding);
+        databaseLoading->setCenterY(sourceTitleBounds.getY() + sourceTitleBounds.getHeight() * 0.5f);
         sourceBrowserPanel->addChildWidget(databaseLoading);
 
         databaseProgress = new Label(this, "");
@@ -305,6 +313,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         saveSampleBtn = new Button(this);
         saveSampleBtn->setLabel("Add To Player");
         saveSampleBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        saveSampleBtn->setFontSize(14.f);
         saveSampleBtn->resizeToFit();
         saveSampleBtn->setCallback(this);
         saveSampleBtn->setEnabled(false);
@@ -312,6 +321,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         playSampleBtn = new Button(this);
         playSampleBtn->setLabel(" ▶");
+        playSampleBtn->setFontSize(14.f);
         playSampleBtn->background_color = WaiveColors::light2;
         playSampleBtn->text_color = WaiveColors::dark;
         playSampleBtn->resizeToFit();
@@ -329,7 +339,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleBtns.positionWidgets();
 
         // TODO: add this button somewhere?
-        newSampleBtn = new Button(this);
+        // newSampleBtn = new Button(this);
     }
 
     // 3 ----- Sample Player Panel
@@ -345,10 +355,14 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         samplePlayerPanel->expand_h = width - padding - padding;
         samplePlayerPanel->expand_v = samplePlayerPanel->getHeight();
 
+        Rectangle<float> samplePlayerTitleBounds;
+        samplePlayerPanel->getTitlAbsoluteBounds(samplePlayerTitleBounds);
+
         openMapBtn = new Button(this);
         openMapBtn->setLabel("Sample Map");
         openMapBtn->isToggle = true;
         openMapBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        openMapBtn->setFontSize(14.f);
         openMapBtn->resizeToFit();
         openMapBtn->setCallback(this);
         openMapBtn->description = "Show/Hide Sample Map.";
@@ -357,6 +371,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         browseFilesBtn = new Button(this);
         browseFilesBtn->setLabel("View Folder");
         browseFilesBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        browseFilesBtn->setFontSize(14.f);
         browseFilesBtn->resizeToFit();
         browseFilesBtn->setCallback(this);
         browseFilesBtn->description = "Open samples folder in your system's file explorer.";
@@ -381,8 +396,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         for (int i = 0; i < NUM_SLOTS; i++)
         {
-            SampleSlot *slot = new SampleSlot(this);
+            SampleSlot *slot = new SampleSlot(this, dragDropManager);
             slot->setSamplePlayer(&plugin->samplePlayers[i]);
+            slot->accent_color = WaiveColors::light2;
             slot->setCallback(this);
             slot->slotId = i;
             slot->setSize(sampleSlotsContainer->getWidth(), sampleSlotsContainer->getHeight() / NUM_SLOTS - 4, true);
@@ -399,6 +415,18 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleSlotsContainer->positionWidgets();
         for (int i = 0; i < sampleSlots.size(); i++)
             sampleSlots[i]->repositionWidgets();
+
+        oscControlsBtn = new Button(this);
+        oscControlsBtn->setLabel("OSC");
+        oscControlsBtn->isToggle = true;
+        oscControlsBtn->description = "Edit OSC options";
+        oscControlsBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        oscControlsBtn->setFontSize(14.f);
+        oscControlsBtn->resizeToFit();
+        oscControlsBtn->setRight(sampleSlotsContainer->getRight());
+        oscControlsBtn->setCenterY(samplePlayerTitleBounds.getY() + samplePlayerTitleBounds.getHeight() * 0.5f);
+        oscControlsBtn->setCallback(this);
+        samplePlayerPanel->addChildWidget(oscControlsBtn);
     }
 
     // 4 ----- Filter Map
@@ -439,19 +467,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     // 5 ----- Sample Map
     {
-        // sampleBrowserRoot = new Popup(
-        //     this,
-        //     sourceBrowserPanel->getAbsoluteX(),
-        //     sourceBrowserPanel->getAbsoluteY(),
-        //     sourceBrowserPanel->getWidth(),
-        //     Layout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END),
-        //     true);
-        // sampleBrowserRoot->title = "Browse samples";
-        // sampleBrowserRoot->setFont("VG5000", VG5000, VG5000_len);
-        // sampleBrowserRoot->close();
-        // sampleBrowserRoot->setCallback(this);
-
-        sampleBrowser = new SampleBrowser(samplePlayerPanel, &plugin->sd);
+        sampleBrowser = new SampleBrowser(samplePlayerPanel, &plugin->sd, dragDropManager);
         sampleBrowser->setSize(sourceList->getWidth(), tagBrowser->getBottom() - sourceList->getTop());
         sampleBrowser->setAbsolutePos(sourceList->getLeft(), sourceList->getTop());
         sampleBrowser->repositionWidgets();
@@ -459,6 +475,68 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         samplePlayerPanel->hiddenWidgets.addChildWidget(sampleBrowser);
         samplePlayerPanel->hiddenWidgets.hide();
     }
+
+    // 6 ----- OSC Options
+
+    {
+        oscControlsPanel = new Panel(this);
+        oscControlsPanel->setSize(sampleSlotsContainer->getWidth(), sampleSlotsContainer->getHeight(), true);
+        oscControlsPanel->setAbsolutePos(sampleSlotsContainer->getAbsoluteX(), sampleSlotsContainer->getAbsoluteY());
+        oscControlsPanel->setFont("VG5000", VG5000, VG5000_len);
+        oscControlsPanel->title = "OSC Options";
+
+        oscControlsDescription = new Label(this, "Send an OSC message every time a sample is triggered.\n\nMessage format:\n/WAIVE_Sampler/Sample  [name, tags, midi]");
+        oscControlsDescription->setWidth(oscControlsPanel->getWidth() - 2 * padding);
+        oscControlsDescription->setFontSize(14.f);
+        oscControlsDescription->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        oscControlsDescription->calculateHeight();
+        oscControlsDescription->onTop(oscControlsPanel, START, START, padding);
+        oscControlsPanel->addChildWidget(oscControlsDescription);
+
+        float hostW = oscControlsDescription->getWidth() * 0.6f;
+        float portW = oscControlsDescription->getWidth() - hostW - padding;
+        oscHostInput = new TextInput(this);
+        oscHostInput->setFontSize(16.0f);
+        oscHostInput->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
+        oscHostInput->foreground_color = WaiveColors::light1;
+        oscHostInput->accent_color = WaiveColors::text;
+        oscHostInput->setText(plugin->oscHost.c_str());
+        oscHostInput->setSize(hostW, oscHostInput->getFontSize() + 6, true);
+        oscHostInput->setCallback(this);
+        oscHostInput->description = "Set OSC host address.";
+        oscHostInput->below(oscControlsDescription, START, padding);
+        oscControlsPanel->addChildWidget(oscHostInput);
+
+        oscPortInput = new TextInput(this);
+        oscPortInput->textType = TextInput::TextType::INTEGER;
+        oscPortInput->setFontSize(16.0f);
+        oscPortInput->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
+        oscPortInput->foreground_color = WaiveColors::light1;
+        oscPortInput->accent_color = WaiveColors::text;
+        oscPortInput->setText(fmt::format("{:d}", plugin->oscPort).c_str());
+        oscPortInput->setSize(portW, oscPortInput->getFontSize() + 6, true);
+        oscPortInput->setCallback(this);
+        oscPortInput->description = "Set OSC port number.";
+        oscPortInput->rightOf(oscHostInput, START, padding);
+        oscControlsPanel->addChildWidget(oscPortInput);
+
+        oscEnableBtn = new Button(this);
+        oscEnableBtn->setLabel("Enable");
+        oscEnableBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        oscEnableBtn->setFontSize(14.f);
+        oscEnableBtn->resizeToFit();
+        oscEnableBtn->description = "Enable sending OSC messages";
+        oscEnableBtn->isToggle = true;
+        oscEnableBtn->setToggled(plugin->getSendOSC());
+        oscEnableBtn->below(oscPortInput, CENTER, padding);
+        oscEnableBtn->setCenterX(oscControlsPanel->getCenterX());
+        oscEnableBtn->setCallback(this);
+        oscControlsPanel->addChildWidget(oscEnableBtn);
+
+        oscControlsPanel->setVisible(false);
+    }
+
+    // ----------
 
     toolTip = new Label(this);
     toolTip->setFontSize(18.f);
@@ -593,32 +671,23 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
 {
     std::cout << "WAIVESamplerUI::stateChanged: " << key << " -> " << value << std::endl;
 
+    if (std::strcmp(key, "osc-address") == 0)
+    {
+    }
+
     repaint();
 }
 
-void WAIVESamplerUI::knobDragStarted(Knob *knob)
-{
-    // valueIndicator->setAbsoluteX(knob->getAbsoluteX());
-    // valueIndicator->setWidth(knob->getWidth());
-    // valueIndicator->setAbsoluteY(knob->getAbsoluteY() + knob->getHeight());
-    // valueIndicator->setFormatString(knob->getFormat());
-    // valueIndicator->setValue(knob->getValue());
-    // valueIndicator->toFront();
-    // valueIndicator->show();
-}
+void WAIVESamplerUI::knobDragStarted(Knob *knob) {}
 
 void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 {
-    // valueIndicator->hide();
-    // repaint();
-
     plugin->triggerPreview();
 }
 
 void WAIVESamplerUI::knobValueChanged(Knob *knob, float value)
 {
     setParameterValue(knob->getId(), value);
-    // valueIndicator->setValue(knob->getValue());
 }
 
 std::string getDescription(std::string text, DGL::SubWidget *widget, const DGL::Widget::MotionEvent &ev)
@@ -644,7 +713,22 @@ bool WAIVESamplerUI::onMotion(const MotionEvent &ev)
         text = getDescription(text, widget, ev);
     toolTip->setLabel(text);
 
+    if (dragDropManager->isDragging())
+        getWindow().setCursor(kMouseCursorHand);
+
     return UI::onMotion(ev);
+}
+
+bool WAIVESamplerUI::onMouse(const MouseEvent &ev)
+{
+    bool result = UI::onMouse(ev);
+
+    if (!ev.press)
+    {
+        dragDropManager->clearEvent();
+    }
+
+    return result;
 }
 
 void WAIVESamplerUI::buttonClicked(Button *button)
@@ -657,8 +741,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->triggerPreview();
     else if (button == previewPlaybackBtn)
         plugin->stopSourcePreview();
-    else if (button == newSampleBtn)
-        plugin->newSample();
+    // else if (button == newSampleBtn)
+    //     plugin->newSample();
     else if (button == makeKick)
     {
         makeKick->setToggled(true);
@@ -817,6 +901,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
             samplePlayerPanel->expand();
         else
             samplePlayerPanel->collapse();
+        oscControlsBtn->setToggled(oscControlsBtn->getToggled(), true);
     }
     else if (button == openFilterPanelBtn)
     {
@@ -825,6 +910,13 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         else
             sourceBrowserPanel->collapse();
     }
+    else if (button == oscControlsBtn)
+    {
+        oscControlsPanel->toFront();
+        oscControlsPanel->setVisible(oscControlsBtn->getToggled());
+    }
+    else if (button == oscEnableBtn)
+        plugin->setSendOSC(oscEnableBtn->getToggled());
     else if (button == randomSourceBtn)
         sourceList->selectRandom();
 
@@ -932,6 +1024,32 @@ void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
             plugin->sd.filterSources();
         }
     }
+    else if (textInput == oscHostInput)
+    {
+        if (text.length() == 0)
+        {
+            textInput->undo();
+            return;
+        }
+
+        if (!plugin->setOSCAddress(text, plugin->oscPort))
+            textInput->undo();
+
+        return;
+    }
+    else if (textInput == oscPortInput)
+    {
+        if (text.length() == 0)
+        {
+            textInput->undo();
+            return;
+        }
+
+        if (!plugin->setOSCAddress(plugin->oscHost, std::stoi(text)))
+            textInput->undo();
+
+        return;
+    }
 }
 
 void WAIVESamplerUI::textInputChanged(TextInput *textInput, std::string text)
@@ -990,6 +1108,11 @@ void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
     plugin->clear();
     sourceList->selected = -1;
 };
+
+void WAIVESamplerUI::sampleSlotLoadSample(SampleSlot *slot, int slotId, int sampleId)
+{
+    plugin->loadSlot(slotId, sampleId);
+}
 
 void WAIVESamplerUI::sourceDownload(int index)
 {
@@ -1400,7 +1523,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
         errorMessage = true;
-        databaseProgress->setLabel("Error downloading.");
+        databaseProgress->setLabel("Error downloading data.");
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
         // previewPlaybackBtn->setVisible(true);
