@@ -12,7 +12,6 @@
 #include "NanoVG.hpp"
 #include "Window.hpp"
 
-#include "WAIVEUtils.hpp"
 #include "WidgetGroup.hpp"
 #include "SampleBrowser.hpp"
 #include "SampleBrowserRoot.hpp"
@@ -54,6 +53,8 @@
 #include "Poco/BasicEvent.h"
 #include "Poco/Delegate.h"
 #include "Poco/Random.h"
+
+#include "WAIVEUtils.hpp"
 
 START_NAMESPACE_DISTRHO
 

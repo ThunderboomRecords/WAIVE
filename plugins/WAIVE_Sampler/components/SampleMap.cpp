@@ -284,7 +284,7 @@ void SampleMap::onNanoDisplay()
     {
         // Draw sample name
         std::string name = allSamples->at(hI)->name;
-        Rectangle<float> bounds;
+        DGL::Rectangle<float> bounds;
         fontSize(getFontSize());
         fontFaceId(font);
         textBounds(0, 0, name.c_str(), nullptr, bounds);

@@ -170,7 +170,9 @@
         "__string": "cpp",
         "print": "cpp",
         "coroutine": "cpp",
-        "expected": "cpp"
+        "expected": "cpp",
+        "score_decoder.onnx.h": "c",
+        "xstring": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/clang++",
     "C_Cpp.errorSquiggles": "enabledIfIncludesResolve",

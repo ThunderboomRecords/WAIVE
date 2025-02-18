@@ -33,7 +33,7 @@ void SourceList::computeColumnWidths()
 
     fontFaceId(font);
     fontSize(getFontSize() * 0.8f);
-    Rectangle<float> bounds;
+    DGL::Rectangle<float> bounds;
     textBounds(0, 0, "LICENSE", NULL, bounds);
 
     columnLabel = 36 * scale_factor;

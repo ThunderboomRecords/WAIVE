@@ -30,6 +30,10 @@
 #include "Poco/Data/SQLite/Utility.h"
 #include "Poco/Data/SQLite/Connector.h"
 
+#include "Poco/Logger.h"
+#include "Poco/SimpleFileChannel.h"
+#include "Poco/AutoPtr.h"
+
 #include <sndfile.hh>
 #include "kdtree.h"
 #include <nlohmann/json.hpp>
@@ -282,6 +286,8 @@ private:
     kdt::KDTree<SamplePoint> kdtree;
 
     HTTPClient *httpClient;
+
+    Poco::Logger *logger;
 };
 
 std::string makeTagString(const std::vector<Tag> &tags);

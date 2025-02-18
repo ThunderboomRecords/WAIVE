@@ -19,6 +19,13 @@
         "sqlite3"
       ]
     },
-    "tinyfiledialogs"
+    "tinyfiledialogs",
+    "openssl"
+  ],
+  "overrides": [
+    {
+      "name": "fmt",
+      "version": "10.1.1"
+    }
   ]
 }

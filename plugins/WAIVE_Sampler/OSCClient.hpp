@@ -1,8 +1,8 @@
 #ifndef OSCCLIENT_H
 #define OSCCLIENT_H
 
-#include <Poco/Net/DatagramSocket.h>
 #include <Poco/Net/SocketAddress.h>
+#include <Poco/Net/DatagramSocket.h>
 #include <string>
 #include <vector>
 #include <variant>

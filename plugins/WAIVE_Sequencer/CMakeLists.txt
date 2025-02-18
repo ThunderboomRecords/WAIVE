@@ -43,10 +43,13 @@ dpf_add_plugin(
 )
 
 # Externals:
+set(ONNX_LIB_PATH "${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a")
+
 if(APPLE)
   find_library(FOUNDATION Foundation)
   find_library(COREFOUNDATION CoreFoundation)
 elseif(WIN32)
+  set(ONNX_LIB_PATH "${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/onnxruntime.lib")
 elseif(UNIX AND NOT APPLE)
   target_compile_definitions(WAIVE_Sampler PUBLIC LINUX)
 endif()
@@ -80,7 +83,7 @@ target_link_libraries(
     tinyfiledialogs::tinyfiledialogs
     fmt::fmt
     PRIVATE
-    ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
+    ${ONNX_LIB_PATH}
     ${CoreFoundation}
     ${Foundation}
 )

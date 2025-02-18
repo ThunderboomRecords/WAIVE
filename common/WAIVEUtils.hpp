@@ -7,6 +7,7 @@
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 #include <windows.h>
+#include <ShellAPI.h>
 #elif __APPLE__ || __linux__
 #include <unistd.h>
 #endif
@@ -29,7 +30,8 @@ static void SystemOpenURL(const std::string &url)
 static void SystemOpenDirectory(const std::string &directory)
 {
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    ShellExecuteA(NULL, "open", directory.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    std::wstring wDirectory(directory.begin(), directory.end());
+    ShellExecute(NULL, L"open", wDirectory.c_str(), NULL, NULL, SW_SHOWNORMAL);
 #elif __APPLE__ || __linux__
     pid_t pid = fork();
     if (pid == 0)

@@ -9,7 +9,7 @@
 #include "TextInput.hpp"
 #include "SimpleButton.hpp"
 
-using namespace fmt::v11;
+// using namespace fmt::v11;
 
 START_NAMESPACE_DISTRHO
 

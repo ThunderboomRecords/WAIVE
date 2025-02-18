@@ -72,10 +72,13 @@ dpf_add_plugin(
 )
 
 # Externals:
+set(ONNX_LIB_PATH "${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a")
+
 if(APPLE)
   find_library(FOUNDATION Foundation)
   find_library(COREFOUNDATION CoreFoundation)
 elseif(WIN32)
+  set(ONNX_LIB_PATH "${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/onnxruntime.lib")
 elseif(UNIX AND NOT APPLE)
   target_compile_definitions(WAIVE_Sampler PUBLIC LINUX)
 endif()
@@ -131,6 +134,9 @@ target_link_libraries(
     kissfft::kissfft-float
     nlohmann_json::nlohmann_json
     tinyfiledialogs::tinyfiledialogs
+    Poco::Net
+    Poco::NetSSL
+    Poco::Crypto
     PRIVATE
     ${CoreFoundation}
     ${Foundation}
@@ -140,11 +146,10 @@ target_link_libraries(
     Poco::Foundation
     Poco::Data
     Poco::DataSQLite
-    Poco::NetSSL
-    Poco::Net
-    Poco::Crypto
     SampleRate::samplerate
-    ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
+    # ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
+    # ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/onnxruntime.lib
+    ${ONNX_LIB_PATH}
 )
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
