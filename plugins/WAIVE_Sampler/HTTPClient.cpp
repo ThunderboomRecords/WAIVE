@@ -1,6 +1,8 @@
 #include "HTTPClient.hpp"
 #include <memory>
 
+using namespace Poco::Net;
+
 HTTPRequestTask::HTTPRequestTask(
     const std::string &name,
     const std::string &host,
@@ -31,12 +33,12 @@ void HTTPRequestTask::runTask()
         if (path.empty())
             path = "/";
 
-        std::unique_ptr<Poco::Net::HTTPClientSession> session;
+        std::unique_ptr<HTTPClientSession> session;
 
         if (uri.getScheme() == "https")
-            session = std::make_unique<Poco::Net::HTTPSClientSession>(uri.getHost(), uri.getPort());
+            session = std::make_unique<HTTPSClientSession>(uri.getHost(), uri.getPort());
         else if (uri.getScheme() == "http")
-            session = std::make_unique<Poco::Net::HTTPClientSession>(uri.getHost(), uri.getPort());
+            session = std::make_unique<HTTPClientSession>(uri.getHost(), uri.getPort());
         else
         {
             _failCallback(fmt::format("URI scheme neither 'http' nor 'https', is {:s}", uri.getScheme()));
@@ -45,20 +47,20 @@ void HTTPRequestTask::runTask()
 
         session->setTimeout(Poco::Timespan(10, 0));
 
-        Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_GET, path);
+        HTTPRequest request(HTTPRequest::HTTP_GET, path);
 
         std::cout << "HTTPRequestTask::runTask() Request for: " << uri.getScheme() << "://" << uri.getHost() << ":" << uri.getPort() << request.getURI() << std::endl;
         session->sendRequest(request);
 
-        Poco::Net::HTTPResponse response;
+        HTTPResponse response;
 
         std::istream &resStream = session->receiveResponse(response);
-        std::cout << "HTTPRequestTask::runTask() Response: " << Poco::Net::HTTPResponse::getReasonForStatus(response.getStatus()) << std::endl;
+        std::cout << "HTTPRequestTask::runTask() Response: " << HTTPResponse::getReasonForStatus(response.getStatus()) << std::endl;
 
         if (response.getStatus() != 200)
         {
             // TODO: check for other status codes?
-            _failCallback(fmt::format("Response status not 200, received {:s}", Poco::Net::HTTPResponse::getReasonForStatus(response.getStatus())));
+            _failCallback(fmt::format("Response status not 200, received {:s}", HTTPResponse::getReasonForStatus(response.getStatus())));
             return;
         }
 

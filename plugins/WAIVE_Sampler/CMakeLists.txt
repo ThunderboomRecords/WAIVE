@@ -112,7 +112,7 @@ find_package(SndFile CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(kissfft CONFIG REQUIRED)
 find_package(tinyfiledialogs CONFIG REQUIRED)
-find_package(Poco CONFIG REQUIRED Foundation Crypto NetSSL Net Data DataSQLite)
+find_package(Poco CONFIG REQUIRED Foundation NetSSLWin Data DataSQLite)
 
 target_include_directories(
   WAIVE_Sampler
@@ -134,9 +134,6 @@ target_link_libraries(
     kissfft::kissfft-float
     nlohmann_json::nlohmann_json
     tinyfiledialogs::tinyfiledialogs
-    Poco::Net
-    Poco::NetSSL
-    Poco::Crypto
     PRIVATE
     ${CoreFoundation}
     ${Foundation}
@@ -144,11 +141,10 @@ target_link_libraries(
     fmt::fmt
     Gist
     Poco::Foundation
+    Poco::NetSSLWin
     Poco::Data
     Poco::DataSQLite
     SampleRate::samplerate
-    # ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
-    # ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/onnxruntime.lib
     ${ONNX_LIB_PATH}
 )
 

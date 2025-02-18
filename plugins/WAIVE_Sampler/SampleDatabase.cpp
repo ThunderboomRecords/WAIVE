@@ -219,6 +219,7 @@ void SampleDatabase::loadSampleDatabase()
     catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Database query failed: " << e.what() << std::endl;
+        logger->critical(fmt::format("Database query failed: {:s}", e.what()));
         return;
     }
 
@@ -754,10 +755,12 @@ void SampleDatabase::checkLatestRemoteVersion()
     catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Failed to retrieve user version: " << e.what() << std::endl;
+        logger->critical(fmt::format("Failed to retrieve user version: {:s}", e.what()));
         user_version = 0;
     }
 
-    std::cout << "user_version: " << user_version << std::endl;
+    logger->information(fmt::format("Current user_version: {:d}", user_version));
+    std::cout << "Current user_version: " << user_version << std::endl;
 
     // check if "Sources" table exists
     std::string exists;
@@ -771,6 +774,7 @@ void SampleDatabase::checkLatestRemoteVersion()
     catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Failed to check if 'Sources' table exists: " << e.what() << std::endl;
+        logger->critical(fmt::format("Failed to check if 'Sources' table exists: {:s}", e.what()));
         return;
     }
 
@@ -779,6 +783,7 @@ void SampleDatabase::checkLatestRemoteVersion()
     // databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKING_UPDATE);
 
+    logger->information(fmt::format("Sending request to: {:s}/latest", WAIVE_SERVER));
     httpClient->sendRequest(
         "CheckDatabaseVersion",
         WAIVE_SERVER,
@@ -791,6 +796,7 @@ void SampleDatabase::checkLatestRemoteVersion()
 
                 int latest_version = result["version"];
                 std::cout << "latest_version: " << latest_version << ", user_version: " << user_version << std::endl;
+                logger->information(fmt::format("Latest user_version: {:d}", latest_version));
                 if(latest_version == user_version)
                 {
                     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
@@ -840,6 +846,7 @@ void SampleDatabase::downloadSourcesList()
 {
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
 
+    logger->information(fmt::format("Sending request to: {:s}/filelist", WAIVE_SERVER));
     httpClient->sendRequest(
         "DownloadSourceList",
         WAIVE_SERVER,
@@ -880,7 +887,7 @@ void SampleDatabase::downloadSourcesList()
 void SampleDatabase::downloadTagsList()
 {
     // databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOADING);
-
+    logger->information(fmt::format("Sending request to: {:s}/tags", WAIVE_SERVER));
     httpClient->sendRequest(
         "DownloadTagsList",
         WAIVE_SERVER,
@@ -1069,6 +1076,7 @@ void SampleDatabase::downloadSourceFile(int i)
 
     std::string filePath = file.path();
 
+    logger->information(fmt::format("Sending request to: {:s}{:s}", WAIVE_SERVER, endpoint.toString(Poco::Path::Style::PATH_URI)));
     httpClient->sendRequest(
         "DownloadSourceFile",
         WAIVE_SERVER,
@@ -1123,8 +1131,9 @@ void SampleDatabase::playTempSourceFile(int i)
 
     databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADING);
     Poco::Path endpoint = Poco::Path("/file").append(location);
-    std::cout << endpoint.toString(Poco::Path::Style::PATH_URI) << std::endl;
+    // std::cout << endpoint.toString(Poco::Path::Style::PATH_URI) << std::endl;
 
+    logger->information(fmt::format("Sending request to: {:s}{:s}", WAIVE_SERVER, endpoint.toString(Poco::Path::Style::PATH_URI)));
     httpClient->sendRequest(
         "PlayTempSourceFile",
         WAIVE_SERVER,

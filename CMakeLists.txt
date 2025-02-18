@@ -27,7 +27,7 @@ elseif(WIN32)
   set(POCO_MT ON)
   set(ENABLE_NETSSL_WIN ON CACHE INTERNAL "" FORCE)
   set(CMAKE_GENERATOR "Visual Studio 17 2022")
-  set(VCPKG_TARGET_TRIPLET "x64-windows-static")
+  set(VCPKG_TARGET_TRIPLET "x64-windows-static-custom")
 elseif(UNIX AND NOT APPLE)
   message(STATUS "Building on Linux")
   set(CMAKE_GENERATOR "Ninja")
@@ -38,7 +38,7 @@ endif()
 set(POCO_STATIC ON)
 
 if(POLICY CMP0077)
-    cmake_policy(SET CMP0077 NEW)
+  cmake_policy(SET CMP0077 NEW)
 endif()
 
 set(BUILD_ARCH ${CMAKE_SYSTEM_PROCESSOR})
@@ -52,7 +52,9 @@ project(
 
 configure_file(version_config.h.in ${CMAKE_BINARY_DIR}/generated/version_config.h)
 configure_file(version_template.txt ${CMAKE_BINARY_DIR}/version.txt)
-configure_file(version_template_inno.txt ${CMAKE_BINARY_DIR}/inno_build_info.txt)
+if(WIN32)
+  configure_file(version_template_inno.txt ${CMAKE_BINARY_DIR}/inno_build_info.txt)
+endif()
 
 include_directories(
     ${CMAKE_BINARY_DIR}/generated/
