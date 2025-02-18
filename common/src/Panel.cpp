@@ -16,7 +16,7 @@ Panel::Panel(Widget *widget)
     addChildWidget(&hiddenWidgets);
 }
 
-void Panel::getTitlAbsoluteBounds(Rectangle<float> &bounds)
+void Panel::getTitlAbsoluteBounds(DGL::Rectangle<float> &bounds)
 {
     fontFaceId(font);
     fontSize(getFontSize());

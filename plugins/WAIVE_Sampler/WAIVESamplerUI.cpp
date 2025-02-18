@@ -39,7 +39,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceBrowserPanel->title = "Source";
         sourceBrowserPanel->expandable = true;
 
-        Rectangle<float> sourceTitleBounds;
+        DGL::Rectangle<float> sourceTitleBounds;
         sourceBrowserPanel->getTitlAbsoluteBounds(sourceTitleBounds);
 
         sourceList = new SourceList(this);
@@ -355,7 +355,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         samplePlayerPanel->expand_h = width - padding - padding;
         samplePlayerPanel->expand_v = samplePlayerPanel->getHeight();
 
-        Rectangle<float> samplePlayerTitleBounds;
+        DGL::Rectangle<float> samplePlayerTitleBounds;
         samplePlayerPanel->getTitlAbsoluteBounds(samplePlayerTitleBounds);
 
         openMapBtn = new Button(this);
