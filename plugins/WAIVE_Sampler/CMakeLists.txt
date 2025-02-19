@@ -112,7 +112,13 @@ find_package(SndFile CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(kissfft CONFIG REQUIRED)
 find_package(tinyfiledialogs CONFIG REQUIRED)
-find_package(Poco CONFIG REQUIRED Foundation NetSSLWin Data DataSQLite)
+
+if(WIN32)
+  find_package(Poco CONFIG REQUIRED Foundation NetSSLWin Data DataSQLite)
+else()
+  find_package(Poco CONFIG REQUIRED Foundation NetSSL Data DataSQLite)
+endif()
+
 
 target_include_directories(
   WAIVE_Sampler
@@ -141,12 +147,17 @@ target_link_libraries(
     fmt::fmt
     Gist
     Poco::Foundation
-    Poco::NetSSLWin
     Poco::Data
     Poco::DataSQLite
     SampleRate::samplerate
     ${ONNX_LIB_PATH}
 )
+
+if(WIN32)
+  target_link_libraries(WAIVE_Sampler PUBLIC Poco::NetSSLWin)
+else()
+  target_link_libraries(WAIVE_Sampler PUBLIC Poco::NetSSL)
+endif()
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
