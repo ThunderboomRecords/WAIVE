@@ -78,11 +78,11 @@ echo
 echo "Submitting for notarization..."
 
 xcrun notarytool submit "${RELEASE_DIR}/${ZIP_FILE_UNSIGNED}" --apple-id "$APPLE_ID" --password "$APP_SPECIFIC_PASSWORD" --team-id "$TEAM_ID" --wait
-
 if [ $? -eq 0 ] 
 then 
   echo "Notarization succeeded." 
 else 
+  echo
   echo "Error: Failed to submit for notarization." >&2 
   exit 1
 fi

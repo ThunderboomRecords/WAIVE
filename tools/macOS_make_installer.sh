@@ -49,24 +49,28 @@ pkgbuild --root "${RELEASE_DIR}/payload" --identifier "${BUNDLE_ID}" --version "
 
 echo
 productsign --sign "$DEVELOPER_ID_INSTALLER" "${RELEASE_DIR}/${APP_NAME}_Unsigned.pkg" "${RELEASE_DIR}/${APP_NAME}.pkg"
-rm "${RELEASE_DIR}/${APP_NAME}_Unsigned.pkg"
 
 echo
-hdiutil create -volname "${APP_NAME}_Installer" -srcfolder "${RELEASE_DIR}/${APP_NAME}.pkg" -format UDZO "${IMAGE_NAME}"
+hdiutil create -volname "${APP_NAME}_Installer" -fs "HFS+" -fsargs "-c c=64,a=16,e=16" -srcfolder "${RELEASE_DIR}/${APP_NAME}.pkg" -format UDZO "${IMAGE_NAME}" || {
+  echo
+  echo "Error: Failed creating .dmg image." >&2
+  exit 1
+}
 
 echo
 codesign --sign "${DEVELOPER_ID_APPLICATION}" --timestamp "${IMAGE_NAME}"
 codesign --verify --verbose=2 "${IMAGE_NAME}"
 
+# Tidy up:
+rm "${RELEASE_DIR}/${APP_NAME}_Unsigned.pkg"
+rm -rf ${RELEASE_DIR}/payload
+
 echo
 xcrun notarytool submit "${IMAGE_NAME}" --apple-id "${APPLE_ID}" --team-id "${TEAM_ID}" --password "${APP_SPECIFIC_PASSWORD}" --wait
-xcrun stapler staple "${IMAGE_NAME}"
-
-
-if [ $? -eq 0 ] 
-then 
+xcrun stapler staple "${IMAGE_NAME}" && {
   echo "Installer made successfully!" 
-else 
+  exit 0
+} || {
   echo "Error: Failed stapling." >&2 
   exit 1
-fi
+}
