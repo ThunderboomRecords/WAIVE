@@ -30,71 +30,32 @@ Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX 
 - **WAIVE-Sequencer**: a rhythmic pattern generator
 - **WAIVE-Sampler**: a sample player, sample library and sample generator all in one
 
-Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding stability improvements and Windows release.
+Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding stability and performance improvements.
 
-## Download and Install (for users)
+## Download and Install
 
 > If you are reinstalled the plugin from an older, develpment version, you may need to delete the old database file as described in the [Troubleshooting](#waive-sampler-not-loading-sources-list) section.
 
-1. Download the installer from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform (e.g. new Apple computers should use `macOS_arm64`, whereas older Macs with Intel chips should use `macOS_x64`). You can find the download links under the **Assets** heading. *More platforms coming soon!*
-2. Open the installer and follow the steps.
+1. Download the installer from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform (e.g. new Apple computers should use `macOS_arm64`, whereas older Macs with Intel chips should use `macOS_x64`). You can find the download links under the **Assets** heading.
+2. Install:
+    - MacOS: open the `.dmg` file, open the `.pkg` and follow the instructions.
+    - Windows: run the installer `.exe` and follow the instructions.
+    - Linux: extract the zip and move the plugins to you prefered plugin folder (e.g. `/usr/lib/vst3`)
 3. In your DAW, rescan plugins if it does not do so automatically.
 
-### Ableton Live Notes
-- If you installed the plug-ins in the above directories, then make sure that "Use VST3 System Plug-in Folders" is On (same for VST2) in Settings > Plug-ins before rescanning.
+### Ableton Live usage notes
+- If you want to use the VST3 plugin, make sure that "Use VST3 System Plug-in Folders" is On in Settings > Plug-ins before rescanning.
 - To use WAIVE-Sequencer, add this plugin to an empty MIDI track. Then, on a separate MIDI track add your instrument (e.g. WAIVE-Sampler) then set MIDI From to the name of the first track and make sure to set it to use Post-FX.
 
-## Build Instructions (for developers)
-If you want to build WAIVE-Plugins from source instead of using the provided installers/binaries, follow the instructions below.
-
-### Pre-requisites
-Requires statically built onnxruntime for your platform. You can download pre-built libraries from [csukuangfj/onnxruntime-libs](https://huggingface.co/csukuangfj/onnxruntime-libs/tree/main), or build them yourself (such as with [ort-builder](https://github.com/olilarkin/ort-builder/tree/bfbd362c9660fce9600a43732e3f8b53d5fb243a)).
-Tested with 1.17.1.
-
-Requires `cmake` and `ninja`:
-- on Mac, with [homebrew](https://brew.sh/): ```$ brew install cmake ninja```
-- on Linux: use your distributions package manager
-- Windows: *coming soon*
-
-Requires `vcpkg`:
-- on Mac:
-  ```shell
-  $ git clone https://github.com/microsoft/vcpkg "$HOME/vcpkg"
-  $ export VCPKG_ROOT="$HOME/vcpkg"
-  ```
-  (you may wish to add the last line to your .bashrc or .zshrc to make it permanent)
-- on Windows/Linux: [vcpkg installation instructions](https://learn.microsoft.com/en-gb/vcpkg/get_started/get-started?pivots=shell-cmd)
-
-
-### Linux/macOS
-```shell
-$ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git
-$ cd WAIVE/
-```
-Copy the `lib/` and `include/` folders from the static built onnxruntime you downloaded in the prerequisite step into a new folder 
- `WAIVE/external/onnxruntime/`, then from project root:
- 
-```shell
-$ mkdir build
-$ cmake --preset=default -DCMAKE_BUILD_TYPE="Release"
-$ cmake --build ./build -j8 --config Release
-```
-
-The plugins are found in ```build/bin``` folder. Move your prefered format binary to your plugins folder (see [instructions](#installation) above).
-
-### Windows
-Install Visual Studio Code (2022) with C++ and CMake tools. Run the build commands in Developer Command Prompt (not Powershell).
-
-```shell
-C:\path\to\WAIVE>cmake --preset="windows" -DCMAKE_BUILD_TYPE="Release" -A x64
-C:\path\to\WAIVE>cmake --build build -j8 --config Release
-```
+## Build from source (for developers)
+If you want to build WAIVE-Plugins for your platform from source, follow the separate instructions [here](BUILD_INSTRUCTIONS.md).
 
 ## Troubleshooting
 ### WAIVE-Sampler not loading sources list
 - Make sure you are connected to the internet
 - Click "View Folder" button to open up the location the database is saved in you file browser. Delete the file WAIVE.db, close and remove the plugin from the track, and re-add it and re-open.
   - On macOS, this is located at `/Users/[your username]/Library/Application Support/WAIVE`
+  - On Windows, this is located at `C:\Users\[your username]\App Data\Local\WAIVE`
  
 ## About
 WAIVE-Plugins are built on top of several bespoke music and audio analysis models in order to create a unique and custom musical toolbox. These models will continue to be fine-tuned and updated on new data. 
@@ -106,6 +67,7 @@ We use a combination of MIDI data and raw audio to collect rhythm information to
 Rhythmic datasets include:
 - [Groove MIDI Dataset](https://magenta.tensorflow.org/datasets/groove) from Magenta
 - [Folkloras](http://etnomuzikologai.lmta.lt/), Baltic folk music archive.
+- [Nederlandse Liederenbank](https://www.liederenbank.nl/), Dutch traditional music
 - [Free Music Archive](https://freemusicarchive.org/) selected electronic dance tracks
 
 **WAIVE-Sampler** uses common techniques from machine listening to make measurements (called "features") of the audio, giving each sound a unique fingerprint and description of the audio content which can then be interpreted by other algorithms. At the same time, another method attempts to identify when percussive moments (called "onsets") occur using Complex Spectral Difference. The features are used to automatically identify appropriate moments in the Source audio that could be used for different drum hits, e.g. onsets that contain a broadband of frequency content can be shaped to make a snare sound.

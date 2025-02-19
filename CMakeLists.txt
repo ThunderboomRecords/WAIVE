@@ -50,10 +50,10 @@ project(
     WAIVE_Plugins VERSION 1.5.2
 )
 
-configure_file(version_config.h.in ${CMAKE_BINARY_DIR}/generated/version_config.h)
-configure_file(version_template.txt ${CMAKE_BINARY_DIR}/version.txt)
+configure_file(templates/version_config.h.in ${CMAKE_BINARY_DIR}/generated/version_config.h)
+configure_file(templates/version_template.txt ${CMAKE_BINARY_DIR}/version.txt)
 if(WIN32)
-  configure_file(version_template_inno.txt ${CMAKE_BINARY_DIR}/inno_build_info.txt)
+  configure_file(templates/version_template_inno.txt ${CMAKE_BINARY_DIR}/inno_build_info.txt)
 endif()
 
 include_directories(

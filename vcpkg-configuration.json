@@ -1,6 +1,6 @@
 {
   "overlay-triplets": [
-    "."
+    "./templates"
   ],
   "default-registry": {
     "kind": "git",

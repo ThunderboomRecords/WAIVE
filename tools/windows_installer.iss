@@ -12,6 +12,7 @@ WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayName=WAIVE-Plugins
+UninstallFilesDir={localappdata}\WAIVE
 
 [Files]
 Source: "..\build\bin\WAIVE_Sampler.vst3\*"; DestDir: "{commoncf}\VST3\WAIVE_Sampler.vst3"; Flags: recursesubdirs

@@ -3,6 +3,7 @@ release/
 *.zip
 *.dmg
 *.pkg
+*.exe
 
 .DS_Store
 
@@ -15,7 +16,7 @@ release/
 *.cpp.d
 *.cpp.o
 
-build*
+build/
 bin/
 
 CMakeFiles
