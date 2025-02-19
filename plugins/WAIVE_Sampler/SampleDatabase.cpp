@@ -134,6 +134,14 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     Poco::Path homedir = Poco::Path::dataHome();
     rootDir = homedir.append(Poco::Path("WAIVE"));
 
+    Poco::AutoPtr<Poco::SimpleFileChannel> pChannel(new Poco::SimpleFileChannel);
+    pChannel->setProperty("path", Poco::Path(homedir).append("waive.log").toString());
+
+    Poco::Logger::root().setChannel(pChannel);
+    logger = &Poco::Logger::get("WAIVESamper::SampleDatabase");
+
+    logger->information(fmt::format("Root directory: {:s}", rootDir.toString()));
+
     Poco::File dir(rootDir);
     if (!dir.exists())
         dir.createDirectories();
@@ -167,6 +175,7 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Error initialising Samples table: " << e.what() << std::endl;
+        logger->critical(fmt::format("Error initialising Samples table:\n {:s}", e.what()));
     }
 
     try
@@ -182,11 +191,13 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     catch (const Poco::DataException &e)
     {
         std::cerr << "Error initialising SamplesTags table: " << e.what() << std::endl;
+        logger->critical(fmt::format("Error initialising SamplesTags table:\n {:s}", e.what()));
     }
 
     databaseUpdate += Poco::delegate(this, &SampleDatabase::onDatabaseChanged);
 
     std::cout << "SampleDatabase initialised\n";
+    logger->information("SampleDatabase initialised");
 
     loadSampleDatabase();
 }
@@ -208,6 +219,7 @@ void SampleDatabase::loadSampleDatabase()
     catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Database query failed: " << e.what() << std::endl;
+        logger->critical(fmt::format("Database query failed: {:s}", e.what()));
         return;
     }
 
@@ -743,10 +755,12 @@ void SampleDatabase::checkLatestRemoteVersion()
     catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Failed to retrieve user version: " << e.what() << std::endl;
+        logger->critical(fmt::format("Failed to retrieve user version: {:s}", e.what()));
         user_version = 0;
     }
 
-    std::cout << "user_version: " << user_version << std::endl;
+    logger->information(fmt::format("Current user_version: {:d}", user_version));
+    std::cout << "Current user_version: " << user_version << std::endl;
 
     // check if "Sources" table exists
     std::string exists;
@@ -760,6 +774,7 @@ void SampleDatabase::checkLatestRemoteVersion()
     catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Failed to check if 'Sources' table exists: " << e.what() << std::endl;
+        logger->critical(fmt::format("Failed to check if 'Sources' table exists: {:s}", e.what()));
         return;
     }
 
@@ -768,6 +783,7 @@ void SampleDatabase::checkLatestRemoteVersion()
     // databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKING_UPDATE);
 
+    logger->information(fmt::format("Sending request to: {:s}/latest", WAIVE_SERVER));
     httpClient->sendRequest(
         "CheckDatabaseVersion",
         WAIVE_SERVER,
@@ -780,6 +796,7 @@ void SampleDatabase::checkLatestRemoteVersion()
 
                 int latest_version = result["version"];
                 std::cout << "latest_version: " << latest_version << ", user_version: " << user_version << std::endl;
+                logger->information(fmt::format("Latest user_version: {:d}", latest_version));
                 if(latest_version == user_version)
                 {
                     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
@@ -795,13 +812,15 @@ void SampleDatabase::checkLatestRemoteVersion()
                 std::cerr << "Unexpected error: " << e.what() << std::endl;
            		databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
             } },
-        [this]()
+        [this](const std::string &response)
         {
             std::cout << "cannot connect to remote database and verify if up-to-date." << std::endl;
             if (!sourceDatabaseInitialised)
                 std::cout << "no Source info avaliable\n";
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
+
+            logger->error(fmt::format("Cannot connect to remote database and verify if up-to-date. Response:\n{:s}", response));
         });
 }
 
@@ -827,9 +846,12 @@ void SampleDatabase::downloadSourcesList()
 {
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
 
+    logger->information(fmt::format("Sending request to: {:s}/filelist", WAIVE_SERVER));
     httpClient->sendRequest(
         "DownloadSourceList",
-        WAIVE_SERVER, "/filelist", [this](const std::string &response)
+        WAIVE_SERVER,
+        "/filelist",
+        [this](const std::string &response)
         {
             // Drop non-user entries first
             try
@@ -852,22 +874,25 @@ void SampleDatabase::downloadSourcesList()
                 response);
             sourceDatabaseInitialised = true;
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED); },
-        [this]()
+        [this](const std::string &response)
         {
             std::cout << WAIVE_SERVER << "/filelist not avaliable" << std::endl;
             // wait 1 second before reporting connection error...
             Poco::Thread::sleep(1000);
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
+            logger->error(fmt::format("/filelist not avaliable. Response:\n{:s}", response));
         });
 }
 
 void SampleDatabase::downloadTagsList()
 {
     // databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOADING);
-
+    logger->information(fmt::format("Sending request to: {:s}/tags", WAIVE_SERVER));
     httpClient->sendRequest(
         "DownloadTagsList",
-        WAIVE_SERVER, "/tags", [this](const std::string &response)
+        WAIVE_SERVER,
+        "/tags",
+        [this](const std::string &response)
         {
             try
             {
@@ -888,12 +913,12 @@ void SampleDatabase::downloadTagsList()
                 {"INTEGER PRIMARY KEY", "TEXT", "FLOAT", "FLOAT", "INTEGER"},
                 response);
             databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOADED); },
-        [this]()
+        [this](const std::string &response)
         {
-            // std::cout << "/sources not avaliable" << std::endl;
             // wait 1 second before reporting connection error...
             Poco::Thread::sleep(1);
             databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR);
+            logger->error(fmt::format("/tags not avaliable. Response:\n{:s}", response));
         });
 }
 
@@ -1051,9 +1076,12 @@ void SampleDatabase::downloadSourceFile(int i)
 
     std::string filePath = file.path();
 
+    logger->information(fmt::format("Sending request to: {:s}{:s}", WAIVE_SERVER, endpoint.toString(Poco::Path::Style::PATH_URI)));
     httpClient->sendRequest(
         "DownloadSourceFile",
-        WAIVE_SERVER, endpoint.toString(Poco::Path::Style::PATH_URI), [this, filePath, si, i](const std::string &response)
+        WAIVE_SERVER,
+        endpoint.toString(Poco::Path::Style::PATH_URI),
+        [this, filePath, si, i](const std::string &response)
         {
             // save file...
             Poco::File fp(filePath);
@@ -1075,12 +1103,13 @@ void SampleDatabase::downloadSourceFile(int i)
             si->downloaded = DownloadState::DOWNLOADED;
             this->latestDownloadedIndex = i;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED); },
-        [this, endpoint, si]()
+        [this, endpoint, si](const std::string &response)
         {
             Poco::Thread::sleep(1);
             si->downloaded = DownloadState::NOT_DOWNLOADED;
             std::cout << WAIVE_SERVER << endpoint.toString(Poco::Path::Style::PATH_URI) << " not avaliable" << std::endl;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
+            logger->error(fmt::format("{:s} not avaliable. Response:\n{:s}", endpoint.toString(Poco::Path::Style::PATH_URI), response));
         });
 }
 
@@ -1102,11 +1131,14 @@ void SampleDatabase::playTempSourceFile(int i)
 
     databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADING);
     Poco::Path endpoint = Poco::Path("/file").append(location);
-    std::cout << endpoint.toString(Poco::Path::Style::PATH_URI) << std::endl;
+    // std::cout << endpoint.toString(Poco::Path::Style::PATH_URI) << std::endl;
 
+    logger->information(fmt::format("Sending request to: {:s}{:s}", WAIVE_SERVER, endpoint.toString(Poco::Path::Style::PATH_URI)));
     httpClient->sendRequest(
         "PlayTempSourceFile",
-        WAIVE_SERVER, endpoint.toString(Poco::Path::Style::PATH_URI), [this](const std::string &response)
+        WAIVE_SERVER,
+        endpoint.toString(Poco::Path::Style::PATH_URI),
+        [this](const std::string &response)
         {
             Poco::TemporaryFile tmp = Poco::TemporaryFile();
             tmp.keepUntilExit();
@@ -1135,11 +1167,12 @@ void SampleDatabase::playTempSourceFile(int i)
             
             this->sourcePreviewPath = tmp.path();
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_PREVIEW_READY); },
-        [this, endpoint, si]()
+        [this, endpoint, si](const std::string &response)
         {
             Poco::Thread::sleep(1);
             std::cout << WAIVE_SERVER << endpoint.toString(Poco::Path::Style::PATH_URI) << " not avaliable" << std::endl;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
+            logger->error(fmt::format("{:s} not avaliable. Response:\n{:s}", endpoint.toString(Poco::Path::Style::PATH_URI), response));
         });
 }
 

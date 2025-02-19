@@ -72,10 +72,13 @@ dpf_add_plugin(
 )
 
 # Externals:
+set(ONNX_LIB_PATH "${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a")
+
 if(APPLE)
   find_library(FOUNDATION Foundation)
   find_library(COREFOUNDATION CoreFoundation)
 elseif(WIN32)
+  set(ONNX_LIB_PATH "${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/onnxruntime.lib")
 elseif(UNIX AND NOT APPLE)
   target_compile_definitions(WAIVE_Sampler PUBLIC LINUX)
 endif()
@@ -109,7 +112,13 @@ find_package(SndFile CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(kissfft CONFIG REQUIRED)
 find_package(tinyfiledialogs CONFIG REQUIRED)
-find_package(Poco CONFIG REQUIRED Foundation Crypto NetSSL Net Data DataSQLite)
+
+if(WIN32)
+  find_package(Poco CONFIG REQUIRED Foundation NetSSLWin Data DataSQLite)
+else()
+  find_package(Poco CONFIG REQUIRED Foundation NetSSL Data DataSQLite)
+endif()
+
 
 target_include_directories(
   WAIVE_Sampler
@@ -140,12 +149,15 @@ target_link_libraries(
     Poco::Foundation
     Poco::Data
     Poco::DataSQLite
-    Poco::NetSSL
-    Poco::Net
-    Poco::Crypto
     SampleRate::samplerate
-    ${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a
+    ${ONNX_LIB_PATH}
 )
+
+if(WIN32)
+  target_link_libraries(WAIVE_Sampler PUBLIC Poco::NetSSLWin)
+else()
+  target_link_libraries(WAIVE_Sampler PUBLIC Poco::NetSSL)
+endif()
 
 message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")

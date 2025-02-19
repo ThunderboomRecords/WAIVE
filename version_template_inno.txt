@@ -1,0 +1,3 @@
+#define Version "@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@"
+[Setup]
+AppVersion={#Version}

@@ -22,7 +22,7 @@ public:
 
     void setSize(uint width, uint height, bool ignore_sf = false);
     void setSize(const Size<uint> &size, bool ignore_sf = false);
-    void getTitlAbsoluteBounds(Rectangle<float> &bounds);
+    void getTitlAbsoluteBounds(DGL::Rectangle<float> &bounds);
     void expand();
     void collapse();
     void toggle();

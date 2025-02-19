@@ -31,7 +31,7 @@ void Label::resizeToFit()
     fontFaceId(font);
     textAlign(text_align);
 
-    Rectangle<float> bounds;
+    DGL::Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
     setWidth(bounds.getWidth());

@@ -51,7 +51,7 @@ void Knob::resizeToFit()
 
     fontFaceId(font);
     fontSize(getFontSize());
-    Rectangle<float> bounds;
+    DGL::Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
     if (vertical)

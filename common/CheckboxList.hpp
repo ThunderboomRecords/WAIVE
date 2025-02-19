@@ -13,7 +13,7 @@ public:
     {
         std::string data;
         bool checked;
-        Rectangle<double> rect;
+        DGL::Rectangle<double> rect;
     };
 
     class Callback

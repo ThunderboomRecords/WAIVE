@@ -103,7 +103,7 @@ void Checkbox::resize()
     float height = getFontSize() * 1.5f;
     float r = height / 2.0f - 1.0f;
 
-    Rectangle<float> bounds;
+    DGL::Rectangle<float> bounds;
     fontSize(getFontSize());
     textBounds(0, 0, label.c_str(), nullptr, bounds);
     printf("%.2f %.2f\n", bounds.getWidth(), bounds.getHeight());

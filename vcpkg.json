@@ -14,11 +14,16 @@
     {
       "name": "poco",
       "features": [
-        "crypto",
         "netssl",
         "sqlite3"
       ]
     },
     "tinyfiledialogs"
+  ],
+  "overrides": [
+    {
+      "name": "fmt",
+      "version": "10.1.1"
+    }
   ]
 }
