@@ -23,7 +23,7 @@ public:
         virtual void checkboxesUpdated(CheckboxList *checkboxGroup) = 0;
     };
 
-    CheckboxList(Widget *widget);
+    explicit CheckboxList(Widget *widget) noexcept;
 
     void setCallback(Callback *cb);
     void reposition();

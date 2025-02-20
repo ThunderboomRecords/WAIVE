@@ -15,7 +15,7 @@ class Knob3D : public Knob
 public:
     explicit Knob3D(Widget *widget) noexcept;
 
-    void setKnobColor(Color color);
+    void setKnobColor(const Color &color);
 
 protected:
     void onNanoDisplay() override;
@@ -25,7 +25,6 @@ protected:
 
     DISTRHO_LEAK_DETECTOR(Knob3D);
 };
-
 
 END_NAMESPACE_DISTRHO
 

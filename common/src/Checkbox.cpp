@@ -4,8 +4,9 @@ START_NAMESPACE_DISTRHO
 
 Checkbox::Checkbox(Widget *parent)
     : WAIVEWidget(parent),
-      checked(true) {
-      };
+      checked(true),
+      focused(false),
+      callback(nullptr) {};
 
 void Checkbox::onNanoDisplay()
 {

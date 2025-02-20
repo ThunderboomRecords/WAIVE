@@ -28,39 +28,39 @@ void VBox::addWidget(NanoSubWidget *widget)
 
 void VBox::setWidgetAlignment(uint id, Align_Items a_i)
 {
-    for (auto it = items_.begin(); it != items_.end(); it++)
+    auto it = std::find_if(items_.begin(), items_.end(),
+                           [id](const auto &item)
+                           { return item.widget->getId() == id; });
+
+    if (it != items_.end())
     {
-        if (it->widget->getId() == id)
-        {
-            it->align_self = a_i;
-            positionWidgets();
-            return;
-        }
+        it->align_self = a_i;
+        positionWidgets();
     }
 }
 void VBox::setWidgetJustify_Content(uint id, Justify_Content j_c)
 {
-    for (auto it = items_.begin(); it != items_.end(); it++)
+    auto it = std::find_if(items_.begin(), items_.end(),
+                           [id](const auto &item)
+                           { return item.widget->getId() == id; });
+
+    if (it != items_.end())
     {
-        if (it->widget->getId() == id)
-        {
-            it->justify_content = j_c;
-            positionWidgets();
-            return;
-        }
+        it->justify_content = j_c;
+        positionWidgets();
     }
 }
 
 void VBox::removeWidget(uint id)
 {
-    for (auto it = items_.begin(); it != items_.end(); it++)
+    auto it = std::find_if(items_.begin(), items_.end(),
+                           [id](const auto &item)
+                           { return item.widget->getId() == id; });
+
+    if (it != items_.end())
     {
-        if (it->widget->getId() == id)
-        {
-            items_.erase(it);
-            positionWidgets();
-            return;
-        }
+        items_.erase(it);
+        positionWidgets();
     }
 }
 
@@ -171,11 +171,12 @@ void VBox::positionWidgets()
     case Justify_Content::space_between:
     {
         float number_of_items = items_.size();
-        float combined_widget_height = 0;
-        for (auto it = items_.begin(); it != items_.end(); it++)
-        {
-            combined_widget_height += it->widget->getHeight();
-        };
+        float combined_widget_height = std::accumulate(
+            items_.begin(), items_.end(), 0.0f,
+            [](float sum, const auto &item)
+            {
+                return sum + item.widget->getHeight();
+            });
 
         int space_left = height - combined_widget_height;
         int space_between = 0;

@@ -27,12 +27,13 @@ public:
         virtual ~Callback() {};
         virtual void checkboxesUpdated(CheckboxGroup *checkboxGroup) = 0;
     };
-    CheckboxGroup(Widget *widget, float x, float y, float width, float height);
+
+    explicit CheckboxGroup(Widget *widget, float x, float y, float width, float height) noexcept;
     void setCallback(Callback *cb);
 
     void addCheckbox(Checkbox *checkbox, const std::string &data);
     void checkAll(bool check, bool sendCallback);
-    std::map<Checkbox *, CheckboxData> getCheckboxData();
+    const std::map<Checkbox *, CheckboxData> &getCheckboxData();
 
     std::string label;
 

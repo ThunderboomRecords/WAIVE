@@ -9,7 +9,7 @@ START_NAMESPACE_DISTRHO
 class Icon : public WAIVEWidget
 {
 public:
-    Icon(Widget *widget);
+    explicit Icon(Widget *widget) noexcept;
 
     void setImageData(const uchar *data, uint dataSize, int width, int height, ImageFlags imageFlags);
 

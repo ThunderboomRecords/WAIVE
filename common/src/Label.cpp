@@ -10,15 +10,9 @@ Label::Label(Widget *parent, const std::string &text) noexcept
 {
 }
 
-void Label::setLabel(const std::string text)
+void Label::setLabel(const std::string &text)
 {
     label = text;
-    repaint();
-}
-
-void Label::setFont(const char *name, const uchar *data, uint size)
-{
-    font = createFontFromMemory(name, data, size, false);
     repaint();
 }
 

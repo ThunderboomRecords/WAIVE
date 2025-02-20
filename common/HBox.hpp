@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <numeric>
 
 #include "WidgetGroup.hpp"
 
@@ -46,13 +47,14 @@ protected:
 private:
     struct Item
     {
-        Item(NanoSubWidget *w)
+        Item(NanoSubWidget *w) : align_self(Align_Items::none),
+                                 justify_content(Justify_Content::none),
+                                 x(0),
+                                 y(0),
+                                 width(0),
+                                 height(0)
         {
             widget = w;
-            width = 0;
-            height = 0;
-            align_self = Align_Items::none;
-            justify_content = Justify_Content::none;
         }
 
         uint width;

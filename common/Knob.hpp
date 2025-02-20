@@ -23,7 +23,7 @@ public:
     void setCallback(Callback *cb);
     void setValue(float val, bool sendCallback = false) noexcept;
     float getValue() const noexcept;
-    std::string getFormat() noexcept;
+    const std::string &getFormat() noexcept;
     void setRadius(float r, bool ignore_sf = false);
     void resizeToFit();
 

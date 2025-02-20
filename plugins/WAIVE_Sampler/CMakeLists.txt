@@ -41,7 +41,6 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/fonts/fonts.h
       ${CMAKE_SOURCE_DIR}/common/icons/download_icon.h
       ${CMAKE_SOURCE_DIR}/common/src/Layout.cpp
-      ${CMAKE_SOURCE_DIR}/common/src/GridLayout.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/CheckboxGroup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/CheckboxList.cpp

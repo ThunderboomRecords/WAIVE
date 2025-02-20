@@ -25,7 +25,7 @@ public:
     explicit WidgetGroup(Widget *widget, float x = 100.f, float y = 100.f, float width = 100.f, float height = 120.f, bool ignore_sf = false) noexcept;
 
     void addChildWidget(NanoSubWidget *widget);
-    void addChildWidget(NanoSubWidget *widget, WidgetPosition position);
+    void addChildWidget(NanoSubWidget *widget, const WidgetPosition &position);
     void setVisible(bool visible);
     void hide();
     void show();

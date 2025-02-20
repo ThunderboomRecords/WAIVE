@@ -11,11 +11,8 @@ Knob3D::Knob3D(Widget *parent) noexcept
 {
 }
 
-void Knob3D::setKnobColor(Color color)
+void Knob3D::setKnobColor(const Color &color)
 {
-    const float width = getWidth();
-    const float height = getHeight();
-
     knob_color = color;
 }
 

@@ -31,4 +31,7 @@ lib/
 *.onnx
 *.ort
 
+cppcheck-report.xml
+cppcheck-html/
+
 .ipynb_checkpoints/

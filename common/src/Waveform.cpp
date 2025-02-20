@@ -17,7 +17,8 @@ Waveform::Waveform(Widget *widget) noexcept
       wfFeatures(nullptr),
       featureHighlight(-1),
       feature_color(WaiveColors::accent1),
-      cursor_color(WaiveColors::accent2)
+      cursor_color(WaiveColors::accent2),
+      callback(nullptr)
 {
     level_of_detail = int(4 * scale_factor);
 }

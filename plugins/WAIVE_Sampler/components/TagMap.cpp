@@ -13,6 +13,7 @@ TagMap::TagMap(Widget *widget) noexcept
       zoomLevel(1.0f),
       centerPos({0.0, 0.0}),
       highlighted(nullptr),
+      tagList(nullptr),
       dragAction(DragAction::NONE),
       callback(nullptr)
 {
@@ -187,7 +188,7 @@ bool TagMap::onScroll(const ScrollEvent &ev)
     return true;
 };
 
-Color TagMap::get2DColor(float x, float y)
+Color TagMap::get2DColor(float x, float y) const
 {
     // expects x, y in [-1, 1]
     Color cx1 = Color(c0, c1, x * 0.5f + 0.5f);
@@ -209,7 +210,7 @@ void TagMap::onNanoDisplay()
     Color hC;
     float hX, hY;
 
-    for (auto &element : *tagList)
+    for (const auto &element : *tagList)
     {
         float embedX = element.embedX;
         float embedY = element.embedY;
@@ -280,7 +281,7 @@ void TagMap::setSelectAll(bool all)
 std::string TagMap::getSelectedTagList()
 {
     std::string res = "";
-    for (auto &element : selected)
+    for (const auto &element : selected)
     {
         if (res.length() > 0)
             res += ", ";

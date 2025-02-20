@@ -26,9 +26,9 @@ bool compareGrooveEvents(GrooveEvent g0, GrooveEvent g1);
 
 struct Trigger
 {
-    uint32_t tick;
-    uint8_t velocity;
-    int instrument;
+    uint32_t tick = 0;
+    uint8_t velocity = 100;
+    int instrument = -1;
     bool user = false;
     bool active = true;
 

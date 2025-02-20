@@ -601,7 +601,7 @@ void WAIVESampler::clear()
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
-void WAIVESampler::loadSourceFile(const std::string fp, const std::string tagString)
+void WAIVESampler::loadSourceFile(const std::string &fp, const std::string &tagString)
 {
     // std::cout << "WAIVESampler::loadSourceFile" << std::endl;
 
@@ -614,7 +614,7 @@ void WAIVESampler::loadSourceFile(const std::string fp, const std::string tagStr
 
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
 
-    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourceBuffer", tempBuffer, &tempBufferMutex, std::string(fp), sampleRate);
+    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourceBuffer", tempBuffer, &tempBufferMutex, fp, sampleRate);
     taskManager.start(task);
 }
 
@@ -814,18 +814,13 @@ void WAIVESampler::loadPreset(Preset preset)
 
 void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
 {
-    // if (!fSourceLoaded)
-    //     return;
-
     if (start >= source->size())
         start = 0;
 
-    // fSampleLoaded = false;
     if (fCurrentSample == nullptr)
         newSample();
 
     fCurrentSample->sourceStart = start;
-    // fSampleLoaded = true;
 
     renderSample();
     triggerPreview();
@@ -916,7 +911,6 @@ void WAIVESampler::renderSample()
     editorPreviewPlayer->ptr = 0;
     editorPreviewPlayer->active = true;
 
-    // fSampleLoaded = true;
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
@@ -961,7 +955,7 @@ void WAIVESampler::loadSlot(int slot, int id)
     loadSamplePlayer(slot, info);
 }
 
-void WAIVESampler::generateCurrentSampleName(const std::string base)
+void WAIVESampler::generateCurrentSampleName(const std::string &base)
 {
     if (fCurrentSample == nullptr)
         return;
@@ -985,9 +979,6 @@ void WAIVESampler::generateCurrentSampleName(const std::string base)
 
 void WAIVESampler::triggerPreview()
 {
-    // if (!fSampleLoaded)
-    //     return;
-
     if (editorPreviewPlayer->state == PlayState::STOPPED)
     {
         editorPreviewPlayer->state = PlayState::TRIGGERED;
@@ -1084,13 +1075,14 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
         std::copy(tempBuffer->begin(), tempBuffer->begin() + sourceLength, fCurrentSample->sourceInfo.buffer.begin());
 
-        if (!fCurrentSample)
-            newSample();
-
         if (sourceLength > 0)
         {
+            // if (!fCurrentSample)
+            newSample();
+
             fCurrentSample->sourceInfo.sourceLoaded = true;
             fCurrentSample->tagString = fCurrentSample->sourceInfo.tagString;
+            // fCurrentSample->sourceInfo.fp =
             selectWaveform(&fCurrentSample->sourceInfo.buffer, fCurrentSample->sourceStart);
 
             pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);

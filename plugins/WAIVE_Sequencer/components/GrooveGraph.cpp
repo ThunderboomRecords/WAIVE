@@ -4,7 +4,9 @@ START_NAMESPACE_DISTRHO
 
 GrooveGraph::GrooveGraph(Widget *parent) noexcept
     : WAIVEWidget(parent),
-      dragging(false)
+      dragging(false),
+      callback(nullptr),
+      fGroove(nullptr)
 {
 }
 

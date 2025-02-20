@@ -2,12 +2,12 @@
 
 START_NAMESPACE_DISTRHO
 
-CheckboxList::CheckboxList(Widget *widget)
+CheckboxList::CheckboxList(Widget *widget) noexcept
     : WAIVEWidget(widget),
-      columns(2),
       margin(5.0f),
       padding(5.0f),
-      label("")
+      label(""),
+      columns(2)
 {
     check_all = new Button(widget);
     check_all->setLabel("all");

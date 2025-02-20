@@ -21,7 +21,6 @@ class DragDropWidget
 {
 public:
     explicit DragDropWidget(DragDropManager *manager);
-    ~DragDropWidget() {};
 
     virtual void dataAccepted(DragDropWidget *destination) = 0;
     virtual void dataRejected(DragDropWidget *destination) = 0;

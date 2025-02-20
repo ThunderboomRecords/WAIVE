@@ -2,8 +2,7 @@
 
 START_NAMESPACE_DISTRHO
 
-CheckboxGroup::CheckboxGroup(
-    Widget *widget, float x, float y, float width, float height)
+CheckboxGroup::CheckboxGroup(Widget *widget, float x, float y, float width, float height) noexcept
     : WidgetGroup(widget, x, y, width, height)
 {
     check_all = new Button(widget);
@@ -60,7 +59,7 @@ void CheckboxGroup::addCheckbox(Checkbox *checkbox, const std::string &data)
     checkboxData[checkbox] = {data, checkbox->getChecked()};
 }
 
-std::map<Checkbox *, CheckboxGroup::CheckboxData> CheckboxGroup::getCheckboxData()
+const std::map<Checkbox *, CheckboxGroup::CheckboxData> &CheckboxGroup::getCheckboxData()
 {
     return checkboxData;
 }

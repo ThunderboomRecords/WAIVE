@@ -20,7 +20,8 @@ EnvGen::EnvGen(int sampleRate, ENV_TYPE type, ADSR_Params adsr)
     : adsr(adsr),
       sampleRate(sampleRate),
       type(type),
-      power(1.0f)
+      power(1.0f),
+      startRelease(0)
 {
     reset();
     calculateStages();
@@ -92,25 +93,25 @@ void EnvGen::calculateStages()
 
     if (type == ENV_TYPE::ADSR || type == ENV_TYPE::AD)
     {
-        startAttack = (int)(t * sampleRate / 1000.f);
+        startAttack = static_cast<int>(t * sampleRate / 1000.f);
         t += adsr.attack;
     }
 
     if (type == ENV_TYPE::ADSR || type == ENV_TYPE::AD || type == ENV_TYPE::D)
     {
-        startDecay = (int)(t * sampleRate / 1000.f);
+        startDecay = static_cast<int>(t * sampleRate / 1000.f);
         t += adsr.decay;
     }
 
     if (type == ENV_TYPE::AD || type == ENV_TYPE::D)
     {
-        endStep = (int)(t * sampleRate / 1000.f);
+        endStep = static_cast<int>(t * sampleRate / 1000.f);
         startSustain = endStep;
     }
 
     if (type == ENV_TYPE::ADSR || type == ENV_TYPE::SR)
     {
-        startSustain = (int)(t * sampleRate / 1000.f);
+        startSustain = static_cast<int>(t * sampleRate / 1000.f);
         endStep = INT_MAX; // endStep calculated on Sustain release.
     }
 }
@@ -155,7 +156,7 @@ void EnvGen::release()
     {
         stage = ADSR_Stage::RELEASE;
         startRelease = step;
-        endStep = step + (int)(adsr.release * sampleRate / 1000.f);
+        endStep = step + static_cast<int>(adsr.release * sampleRate / 1000.f);
         value = adsr.sustain; // immediately jump to sustain value to start release
     }
 }
@@ -194,21 +195,21 @@ void EnvGen::process()
     case ADSR_Stage::ATTACK:
         if (startDecay != startAttack)
         {
-            p = (float)(step - startAttack) / (startDecay - startAttack);
+            p = static_cast<float>((step - startAttack) / (startDecay - startAttack));
             value = interpolate(p, 0.0f, 1.0f, power);
             break;
         }
     case ADSR_Stage::DECAY:
         if (startSustain != startDecay)
         {
-            p = (float)(step - startDecay) / (startSustain - startDecay);
+            p = static_cast<float>((step - startDecay) / (startSustain - startDecay));
             value = interpolate(p, 1.0f, adsr.sustain, power);
             break;
         }
     case ADSR_Stage::RELEASE:
         if (endStep != startRelease)
         {
-            p = (float)(step - startRelease) / (endStep - startRelease);
+            p = static_cast<float>((step - startRelease) / (endStep - startRelease));
             value = interpolate(p, adsr.sustain, 0.0f, power);
             break;
         }
@@ -241,5 +242,5 @@ int EnvGen::getLength(float sustain_time = 0.0f) const
         break;
     }
 
-    return (int)(sampleRate * ms / 1000.0f);
+    return static_cast<int>(sampleRate * ms / 1000.0f);
 }

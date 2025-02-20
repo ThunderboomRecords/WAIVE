@@ -18,7 +18,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void tagMapUpdated(TagMap *map) {}
     };
 
@@ -46,7 +46,7 @@ private:
         SCROLLING,
     };
 
-    Color get2DColor(float x, float y);
+    Color get2DColor(float x, float y) const;
     Callback *callback;
 
     Color c0, c1, c2, c3;

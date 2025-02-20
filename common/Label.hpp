@@ -18,12 +18,10 @@ public:
     explicit Label(Widget *widget, const std::string &text = "") noexcept;
     void setCallback(Callback *cb);
 
-    void setLabel(const std::string);
-    void setFont(const char *name, const uchar *data, uint size);
+    void setLabel(const std::string &text);
     void resizeToFit();
     void calculateHeight();
 
-    FontId font;
     Align text_align;
 
 protected:

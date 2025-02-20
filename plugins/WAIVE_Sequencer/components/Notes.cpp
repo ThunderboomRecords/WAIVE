@@ -64,31 +64,17 @@ bool compareNotes(std::shared_ptr<Note> n0, std::shared_ptr<Note> n1)
 
 void writeBigEndian4(std::ofstream &out, uint32_t value)
 {
-    uint32_t copy = value;
     out.put((value >> 24) & 0xFF);
     out.put((value >> 16) & 0xFF);
     out.put((value >> 8) & 0xFF);
     out.put(value & 0xFF);
-
-    // std::cout << "[writeBigEndian4] 0x"
-    //           << std::setfill('0') << std::setw(2) << ((copy >> 24) & 0xFF)
-    //           << std::setfill('0') << std::setw(2) << ((copy >> 16) & 0xFF)
-    //           << std::setfill('0') << std::setw(2) << ((copy >> 8) & 0xFF)
-    //           << std::setfill('0') << std::setw(2) << (copy & 0xFF)
-    //           << std::endl;
 }
 
 // Helper function to write big-endian 2-byte integers
 void writeBigEndian2(std::ofstream &out, uint16_t value)
 {
-    uint16_t copy = value;
     out.put((value >> 8) & 0xFF);
     out.put(value & 0xFF);
-
-    // std::cout << "[writeBigEndian2] 0x"
-    //           << std::setfill('0') << std::setw(2) << ((copy >> 8) & 0xFF)
-    //           << std::setfill('0') << std::setw(2) << (copy & 0xFF)
-    //           << std::endl;
 }
 
 void writeVariableLength(std::ofstream &out, uint32_t value)

@@ -3,6 +3,8 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
+#include <string>
 
 #include "WAIVEWidget.hpp"
 
@@ -14,7 +16,7 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback() {};
+        virtual ~Callback() {}
         virtual void onMenuItemSelection(Menu *menu, int item, const std::string &value) = 0;
     };
 
@@ -56,4 +58,4 @@ private:
 
 END_NAMESPACE_DISTRHO
 
-#endif
+#endif // MENU_HPP_INCLUDED

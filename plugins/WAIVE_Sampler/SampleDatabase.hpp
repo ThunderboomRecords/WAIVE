@@ -66,7 +66,7 @@ public:
     void setId(int newId);
     json toJson() const;
     void print() const;
-    void setTags(std::vector<Tag> tags_);
+    void setTags(const std::vector<Tag> &tags_);
 
     std::string name;
     std::string path; // relative from DATA_DIR/WAIVE
@@ -143,7 +143,7 @@ public:
         SOURCE_PREVIEW_READY,
     };
 
-    inline std::string databaseUpdateString(DatabaseUpdate v)
+    inline static std::string databaseUpdateString(DatabaseUpdate v)
     {
         switch (v)
         {
@@ -236,7 +236,7 @@ public:
     std::string getFullSourcePath(SourceInfo source) const;
     std::string getSampleFolder() const;
     std::string getSourceFolder() const;
-    std::string getSourcePreview() const;
+    const std::string &getSourcePreview() const;
     std::string getNewSampleName(const std::string &name);
 
     std::shared_ptr<SampleInfo> findSample(int id);
@@ -244,7 +244,7 @@ public:
     std::vector<std::shared_ptr<SampleInfo>> findRadius(float x, float y, float r);
 
     // SOURCES + Remote
-    void parseTSV(const std::string table, const std::vector<std::string> &column_names, const std::vector<std::string> &column_type, const std::string &csvData);
+    void parseTSV(const std::string &table, const std::vector<std::string> &column_names, const std::vector<std::string> &column_type, const std::string &csvData);
     void checkLatestRemoteVersion();
     void updateDatabaseVersion(int new_version);
     void downloadSourcesList();

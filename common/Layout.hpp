@@ -20,8 +20,6 @@ enum Position
     BELOW
 };
 
-START_NAMESPACE_DISTRHO
-
 namespace Layout
 {
     void position(Position p, NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, float padding);
@@ -41,6 +39,5 @@ namespace Layout
     float measureHorizontal(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget *w2, Widget_Align a2);
 
 }
-END_NAMESPACE_DISTRHO
 
 #endif

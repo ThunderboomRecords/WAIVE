@@ -37,7 +37,7 @@ private:
 class HTTPClient
 {
 public:
-    HTTPClient(Poco::TaskManager *tm);
+    explicit HTTPClient(Poco::TaskManager *tm);
     ~HTTPClient();
 
     void sendRequest(const std::string &name, const std::string &host, const std::string &path, std::function<void(const std::string &)> callback, std::function<void(const std::string &)> failCallback);

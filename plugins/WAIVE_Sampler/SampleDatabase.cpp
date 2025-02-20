@@ -48,9 +48,8 @@ void SampleInfo::setId(int newId)
     id = newId;
 }
 
-void SampleInfo::setTags(std::vector<Tag> tags_)
+void SampleInfo::setTags(const std::vector<Tag> &tags_)
 {
-    std::cout << "setTags\n";
     tags = tags_;
     tagString = makeTagString(tags_);
 }
@@ -114,7 +113,7 @@ json SampleInfo::toJson() const
         {"filterType", filterType},
     };
     data["tags"] = json::array();
-    for (const Tag t : tags)
+    for (const Tag &t : tags)
         data["tags"].push_back(t.name);
     data["tagString"] = tagString;
     data["saved"] = saved;
@@ -127,7 +126,8 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
     : httpClient(_httpClient),
       sourcesLoaded(false),
       sourceDatabaseInitialised(true),
-      latestDownloadedIndex(-1)
+      latestDownloadedIndex(-1),
+      session(nullptr)
 {
     // Get and create the directory where samples and sound files will
     // be saved to
@@ -648,7 +648,7 @@ std::string SampleDatabase::getSourceFolder() const
     return sourceFolder.toString();
 }
 
-std::string SampleDatabase::getSourcePreview() const
+const std::string &SampleDatabase::getSourcePreview() const
 {
     return sourcePreviewPath;
 }
@@ -681,7 +681,7 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
         if (isNumericSuffix)
         {
             // remove numeric suffix
-            basename = basename.substr(0, pos);
+            basename.resize(pos);
         }
     }
 
@@ -732,7 +732,7 @@ std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<
     s->adsr.sustain = sample->adsr.sustain;
     s->adsr.release = sample->adsr.release;
     s->tagString = sample->tagString;
-    for (auto &t : sample->tags)
+    for (const auto &t : sample->tags)
         s->tags.push_back(t);
     s->sourceInfo.fp = sample->sourceInfo.fp;
     s->sourceStart = sample->sourceStart;
@@ -923,7 +923,7 @@ void SampleDatabase::downloadTagsList()
 }
 
 void SampleDatabase::parseTSV(
-    const std::string table,
+    const std::string &table,
     const std::vector<std::string> &column_names,
     const std::vector<std::string> &column_type,
     const std::string &csvData)
@@ -1053,7 +1053,7 @@ void SampleDatabase::parseTSV(
 
 void SampleDatabase::downloadSourceFile(int i)
 {
-    if (i < 0 || i > sourcesList.size())
+    if (i < 0 || i >= sourcesList.size())
         return;
 
     SourceInfo *si = &sourcesList[i];
@@ -1115,7 +1115,7 @@ void SampleDatabase::downloadSourceFile(int i)
 
 void SampleDatabase::playTempSourceFile(int i)
 {
-    if (i < 0 || i > sourcesList.size())
+    if (i < 0 || i >= sourcesList.size())
         return;
 
     SourceInfo *si = &sourcesList[i];
@@ -1235,7 +1235,6 @@ void SampleDatabase::makeTagSourcesTable()
 
     try
     {
-
         while (selectSource.execute())
         {
             if (selectSource.done())

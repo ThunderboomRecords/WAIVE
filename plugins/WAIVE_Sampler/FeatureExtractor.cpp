@@ -15,12 +15,10 @@ FeatureExtractor::FeatureExtractor(
     mfcc.setNumCoefficients(nMels + 1);
 }
 
-std::vector<std::vector<float>> FeatureExtractor::getMelSpectrogram(std::vector<float> *buffer, bool centered)
+std::vector<std::vector<float>> FeatureExtractor::getMelSpectrogram(const std::vector<float> *buffer, bool centered)
 {
     std::vector<std::vector<float>> melspec;
     std::vector<float> x(*buffer);
-
-    float power = 2.0f;
 
     // 1. Pad input to center window, using "reflect" mode
     if (centered)

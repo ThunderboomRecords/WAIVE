@@ -1,7 +1,5 @@
 #include "Layout.hpp"
 
-START_NAMESPACE_DISTRHO
-
 void Layout::position(Position p, NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, float padding)
 {
     switch (p)
@@ -232,5 +230,3 @@ float Layout::measureHorizontal(NanoSubWidget *w1, Widget_Align a1, NanoSubWidge
 
     return x2 - x1;
 }
-
-END_NAMESPACE_DISTRHO

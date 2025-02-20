@@ -144,12 +144,12 @@ protected:
     void stopSourcePreview();
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);
-    void loadSourceFile(const std::string, const std::string tagString = "");
+    void loadSourceFile(const std::string &fp, const std::string &tagString = "");
     void loadSlot(int slot, int id);
     void loadPreset(Preset preset);
     void selectWaveform(std::vector<float> *source, int start);
     void addCurrentSampleToLibrary();
-    void generateCurrentSampleName(const std::string base);
+    void generateCurrentSampleName(const std::string &base);
     void renderSample();
     void loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info);
     void clearSamplePlayer(SamplePlayer &sp);

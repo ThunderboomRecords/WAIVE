@@ -29,7 +29,7 @@ float Knob::getValue() const noexcept
     return value_;
 }
 
-std::string Knob::getFormat() noexcept
+const std::string &Knob::getFormat() noexcept
 {
     return format;
 }

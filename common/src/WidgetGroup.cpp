@@ -14,7 +14,7 @@ void WidgetGroup::addChildWidget(NanoSubWidget *widget)
     children.push_back(widget);
 }
 
-void WidgetGroup::addChildWidget(NanoSubWidget *widget, WidgetPosition position)
+void WidgetGroup::addChildWidget(NanoSubWidget *widget, const WidgetPosition &position)
 {
     children.push_back(widget);
     positions.push_back(position);
