@@ -8,11 +8,11 @@
 
 struct Source
 {
-    bool sourceLoaded;
+    bool sourceLoaded = false;
     std::string name;
     std::string fp;
     std::vector<float> buffer;
-    size_t length;
+    size_t length = 0;
     std::vector<WaveformFeature> sourceFeatures;
     std::vector<WaveformMeasurements> sourceMeasurements;
     std::mutex mtx;

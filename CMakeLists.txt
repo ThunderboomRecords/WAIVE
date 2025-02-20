@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 set(CXX_STANDARD 17)
 set(CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
@@ -33,6 +34,8 @@ elseif(UNIX AND NOT APPLE)
   set(CMAKE_GENERATOR "Ninja")
   set(CMAKE_SYSTEM_PROCESSOR "x64" CACHE INTERNAL "" FORCE)
   set(BUILD_OS "linux")
+  set(CMAKE_C_COMPILER "gcc")
+  set(CMAKE_CXX_COMPILER "gcc")
 endif()
 
 set(POCO_STATIC ON)
@@ -47,7 +50,8 @@ message(STATUS "Detected Architecture: ${BUILD_ARCH}")
 file(WRITE "${CMAKE_BINARY_DIR}/build_info.txt" "OS=${BUILD_OS}\nARCH=${BUILD_ARCH}\n")
 
 project(
-    WAIVE_Plugins VERSION 1.5.2
+    WAIVE_Plugins VERSION 1.5.3 
+    LANGUAGES CXX C
 )
 
 configure_file(templates/version_config.h.in ${CMAKE_BINARY_DIR}/generated/version_config.h)

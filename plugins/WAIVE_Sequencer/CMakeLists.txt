@@ -1,12 +1,10 @@
-set(CMAKE_CXX_STANDARD 17)
-
 dpf_add_plugin(
   WAIVE_Sequencer
   TARGETS 
       jack
       vst3
-    #   vst2
-    #   clap
+      vst2
+      clap
       au
   FILES_DSP
       WAIVESequencer.cpp

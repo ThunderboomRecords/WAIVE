@@ -9,6 +9,7 @@
 #include <queue>
 #include <optional>
 #include <mutex>
+#include <atomic>
 
 #include <fmt/core.h>
 #include <sndfile.hh>
@@ -197,7 +198,7 @@ private:
     bool sendOSC;
 
     std::shared_ptr<SampleInfo> fCurrentSample;
-    bool renderSampleLock;
+    std::atomic<bool> renderSampleLock;
 
     float fNormalisationRatio;
     Filter sampleFilter;

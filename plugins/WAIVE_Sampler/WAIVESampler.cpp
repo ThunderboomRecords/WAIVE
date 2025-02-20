@@ -3,8 +3,6 @@
 
 START_NAMESPACE_DISTRHO
 
-// uint8_t defaultMidiMap[] = {36, 38, 47, 50, 43, 42, 46, 51, 49};
-
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
                                sampleRate(getSampleRate()),
                                fNormalisationRatio(1.0f),
@@ -746,6 +744,8 @@ void WAIVESampler::loadSample(int id)
 
 void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
 {
+    std::cout << "WAIVESampler::loadSample" << std::endl;
+
     if (s == nullptr)
     {
         fCurrentSample = nullptr;
@@ -772,16 +772,17 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     setParameterValue(kFilterType, fCurrentSample->filterType);
     renderSampleLock = false;
 
-    if (fCurrentSample->sourceInfo.length == 0)
+    if (!fCurrentSample->sourceInfo.sourceLoaded)
+    {
         loadSourceFile(fCurrentSample->sourceInfo.fp);
+    }
     else
     {
-        fCurrentSample->sourceInfo.sourceLoaded = true;
         selectWaveform(&fCurrentSample->sourceInfo.buffer, fCurrentSample->sourceStart);
+        renderSample();
+
         pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
         pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
-
-        renderSample();
     }
 }
 

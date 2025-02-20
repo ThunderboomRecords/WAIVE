@@ -1,6 +1,3 @@
-set(CMAKE_CXX_STANDARD 17)
-# set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-
 # Check for Debug mode
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Debug build detected")
