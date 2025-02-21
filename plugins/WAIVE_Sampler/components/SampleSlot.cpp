@@ -99,7 +99,7 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
         {
             if (hovering)
             {
-                std::cout << "SampleSlot::onMouse released" << std::endl;
+                // std::cout << "SampleSlot::onMouse released" << std::endl;
 
                 if (dragAction == DragAction::CLICKING && callback != nullptr)
                     callback->sampleSelected(this, slotId);
@@ -156,7 +156,7 @@ bool SampleSlot::onMotion(const MotionEvent &ev)
             dragAction = DragAction::SCROLLING;
             if (samplePlayer != nullptr && samplePlayer->sampleInfo != nullptr)
             {
-                std::cout << "Started dragging sample info" << std::endl;
+                // std::cout << "Started dragging sample info" << std::endl;
                 dragDropManager->dragDropStart(this, fmt::format("{:d}", samplePlayer->sampleInfo->getId()));
             }
         }

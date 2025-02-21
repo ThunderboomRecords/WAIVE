@@ -318,7 +318,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleEditorPanel->addChildWidget(instructions);
 
         saveSampleBtn = new Button(this);
-        saveSampleBtn->setLabel("Add To Player");
+        saveSampleBtn->setLabel("Add to player");
         saveSampleBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         saveSampleBtn->setFontSize(14.f);
         saveSampleBtn->resizeToFit();
@@ -765,6 +765,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         if (plugin->fCurrentSample == nullptr)
             return;
+        plugin->newSample();
+
         Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
 
         // 0. Check if a source is loaded
@@ -780,6 +782,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         int i = random.next() % nCandidates;
         int startIndex = sourceInfo->sourceFeatures[i].start;
         plugin->selectWaveform(&sourceInfo->buffer, startIndex);
+        plugin->fCurrentSample->sourceStart = startIndex;
 
         // 2. Load preset parameter values
         plugin->loadPreset(Presets::KickPreset);
@@ -787,6 +790,9 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 3. Set sample name
         // sampleName->setText(plugin->sd.getNewSampleName("kick.wav").c_str(), true);
         plugin->generateCurrentSampleName("kick");
+
+        // 4. Trigger preview
+        plugin->triggerPreview();
     }
     else if (button == makeSnare)
     {
@@ -798,6 +804,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 0. Check if a source is loaded
         if (plugin->fCurrentSample == nullptr)
             return;
+
+        plugin->newSample();
         Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
 
         // 0. Check if a source is loaded
@@ -828,6 +836,9 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // std::cout << plugin->fSourceTagString << std::endl;
         // sampleName->setText(plugin->sd.getNewSampleName("snare.wav").c_str(), true);
         plugin->generateCurrentSampleName("snare");
+
+        // 4. Trigger preview
+        plugin->triggerPreview();
     }
     else if (button == makeHihat)
     {
@@ -838,6 +849,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         if (plugin->fCurrentSample == nullptr)
             return;
+        plugin->newSample();
         Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
 
         // 0. Check if a source is loaded
@@ -867,6 +879,9 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 3. Set sample name
         // sampleName->setText(plugin->sd.getNewSampleName("hihat.wav").c_str(), true);
         plugin->generateCurrentSampleName("hihat");
+
+        // 4. Trigger preview
+        plugin->triggerPreview();
     }
     else if (button == makeClap)
     {
@@ -877,6 +892,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         if (plugin->fCurrentSample == nullptr)
             return;
+        plugin->newSample();
         Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
 
         // 0. Check if a source is loaded
@@ -905,6 +921,9 @@ void WAIVESamplerUI::buttonClicked(Button *button)
 
         // 3. Set sample name
         plugin->generateCurrentSampleName("clap");
+
+        // 4. Trigger preview
+        plugin->triggerPreview();
     }
     else if (button == browseFilesBtn)
         SystemOpenDirectory(plugin->sd.getSampleFolder());
@@ -1186,7 +1205,9 @@ void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
 
 void WAIVESamplerUI::updateWidgets()
 {
-    bool sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.length > 0);
+    std::cout << "WAIVESamplerUI::updateWidgets()\n";
+    bool sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.sourceLoaded);
+    std::cout << "sourceAvaliable: " << sourceAvailable << std::endl;
     saveSampleBtn->setEnabled(sourceAvailable);
     sourceLoading->setLoading(false);
     presetButtons->setVisible(sourceAvailable);
@@ -1197,17 +1218,21 @@ void WAIVESamplerUI::updateWidgets()
     {
         sampleWaveformDisplay->setWaveformLength(plugin->fCurrentSample->sampleLength);
         sampleWaveformDisplay->waveformUpdated();
-        // if (plugin->fCurrentSample->saved)
-        //     saveSampleBtn->setLabel("Update");
-        // else
-        //     saveSampleBtn->setLabel("Save");
-        playSampleBtn->setEnabled(true);
+        if (plugin->fCurrentSample->saved)
+            saveSampleBtn->setLabel("Update");
+        else
+            saveSampleBtn->setLabel("Add to player");
+        saveSampleBtn->setEnabled(true);
+    }
+    else
+    {
+        saveSampleBtn->setLabel("Add to player");
     }
 }
 
 void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg)
 {
-    // std::cout << "WAIVESamplerUI::onPluginUpdated " << plugin->pluginUpdateToString(arg) << std::endl;
+    std::cout << "WAIVESamplerUI::onPluginUpdated " << plugin->pluginUpdateToString(arg) << std::endl;
     bool sourceAvailable;
     switch (arg)
     {
@@ -1216,6 +1241,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
     case WAIVESampler::PluginUpdate::kSourceLoaded:
     case WAIVESampler::PluginUpdate::kSourceUpdated:
         sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.sourceLoaded);
+        std::cout << "sourceAvaliable: " << sourceAvailable << std::endl;
         saveSampleBtn->setEnabled(sourceAvailable);
         sourceLoading->setLoading(false);
         presetButtons->setVisible(sourceAvailable);
@@ -1251,6 +1277,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             presetButtons->setVisible(false);
             editorKnobs->setVisible(false);
             instructions->setVisible(true);
+            saveSampleBtn->setLabel("Add to player");
         }
         else
         {
@@ -1259,7 +1286,8 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             if (plugin->fCurrentSample->saved)
                 saveSampleBtn->setLabel("Update");
             else
-                saveSampleBtn->setLabel("Save");
+                saveSampleBtn->setLabel("Add to player");
+            saveSampleBtn->setEnabled(true);
             sampleWaveformDisplay->waveformNew();
             playSampleBtn->setEnabled(true);
             presetButtons->setVisible(true);
@@ -1276,7 +1304,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             if (plugin->fCurrentSample->saved)
                 saveSampleBtn->setLabel("Update");
             else
-                saveSampleBtn->setLabel("Save");
+                saveSampleBtn->setLabel("Add to player");
             playSampleBtn->setEnabled(true);
         }
         else
@@ -1284,6 +1312,9 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             std::cout << "plugin->fCurrentSample == nullptr" << std::endl;
             sampleWaveformDisplay->setWaveformLength(0);
             sampleWaveformDisplay->waveformNew();
+            saveSampleBtn->setLabel("Add to player");
+            saveSampleBtn->setEnabled(false);
+
             playSampleBtn->setEnabled(false);
         }
         break;
@@ -1308,8 +1339,12 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             if (plugin->fCurrentSample->saved)
                 saveSampleBtn->setLabel("Update");
             else
-                saveSampleBtn->setLabel("Save");
+                saveSampleBtn->setLabel("Add to player");
             // sampleName->setText(plugin->fCurrentSample->name.c_str(), false);
+        }
+        else
+        {
+            saveSampleBtn->setLabel("Add to player");
         }
 
         break;
@@ -1325,6 +1360,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         sampleWaveformDisplay->setWaveformLength(0);
         sampleWaveformDisplay->waveformNew();
         saveSampleBtn->setEnabled(false);
+        saveSampleBtn->setLabel("Add to player");
         sourceLoading->setLoading(false);
         presetButtons->setVisible(false);
         editorKnobs->setVisible(false);

@@ -265,6 +265,7 @@ void SampleDatabase::loadSampleDatabase()
                       << row << std::endl;
             continue;
         }
+        std::cout << "SampleDatabase::loadSampleDatabase() s->tagString = " << s->tagString << std::endl;
 
         fAllSamples.push_back(s);
         SamplePoint point(data["embedding"]["x"], data["embedding"]["y"]);
@@ -329,7 +330,6 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
 
     sample->saved = true;
 
-    // int id = sample->getId();
     std::string parameters = sample->toJson().dump();
 
     try
@@ -588,9 +588,6 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
 
 std::shared_ptr<SampleInfo> SampleDatabase::findSample(int id)
 {
-    // TODO: make more efficient
-    // - caching?
-    // - hash table/unordered map?
     if (id < 0)
         return nullptr;
 
@@ -736,11 +733,21 @@ std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<
     s->tagString = sample->tagString;
     for (const auto &t : sample->tags)
         s->tags.push_back(t);
-    s->sourceInfo.fp = sample->sourceInfo.fp;
     s->sourceStart = sample->sourceStart;
     s->embedX = sample->embedX;
     s->embedY = sample->embedY;
     s->preset = sample->preset;
+
+    s->sourceInfo.fp = sample->sourceInfo.fp;
+    s->sourceInfo.buffer = sample->sourceInfo.buffer;
+    s->sourceInfo.length = sample->sourceInfo.length;
+    s->sourceInfo.name = sample->sourceInfo.name;
+    s->sourceInfo.sourceFeatures = sample->sourceInfo.sourceFeatures;
+    s->sourceInfo.sourceMeasurements = sample->sourceInfo.sourceMeasurements;
+    s->sourceInfo.sourceLoaded = sample->sourceInfo.sourceLoaded;
+    s->sourceInfo.tagString = sample->sourceInfo.tagString;
+
+    std::cout << "SampleDatabase::duplicateSampleInfo: s->tagString = " << s->tagString << ", sample->tagString = " << sample->tagString << std::endl;
 
     return s;
 }
