@@ -129,7 +129,7 @@ private:
 
     Knob *createWAIVEKnob(
         Parameters param,
-        std::string label,
+        const std::string &label,
         float min,
         float max,
         float value);

@@ -15,18 +15,13 @@ void GridLayout::positionWidgets()
     float width = getWidth();
     float colWidth = width / numColumns;
 
-    int col = 0;
-    int row = 0;
-
-    float x, y;
-
     for (int i = 0; i < children.size(); i++)
     {
-        col = i % numColumns;
-        row = i / numColumns;
+        int col = i % numColumns;
+        int row = i / numColumns;
 
-        x = padding + (colWidth + margin) * col;
-        y = padding + (rowHeight + margin) * row;
+        float x = padding + (colWidth + margin) * col;
+        float y = padding + (rowHeight + margin) * row;
 
         children[i]->setAbsolutePos(x, y);
     }

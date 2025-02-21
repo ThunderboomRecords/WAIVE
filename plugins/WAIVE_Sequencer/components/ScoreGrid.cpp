@@ -3,15 +3,17 @@
 START_NAMESPACE_DISTRHO
 
 ScoreGrid::ScoreGrid(Widget *parent) noexcept
-    : WAIVEWidget(parent),
-      selected_16th(-1),
-      selected_ins(-1)
+    : WAIVEWidget(parent)
 {
+    ui = nullptr;
+    fScore = nullptr;
+    selected_16th = -1;
+    selected_ins = -1;
 }
 
 bool ScoreGrid::onMouse(const MouseEvent &ev)
 {
-    if (!contains(ev.pos) || !ev.press || ev.button != kMouseButtonLeft)
+    if (!contains(ev.pos) || !ev.press || ev.button != kMouseButtonLeft || fScore == nullptr)
         return false;
 
     if (selected_16th != -1 && selected_ins != -1)
@@ -28,7 +30,8 @@ bool ScoreGrid::onMouse(const MouseEvent &ev)
 
         repaint();
 
-        ui->setState("score", "new");
+        if (ui != nullptr)
+            ui->setState("score", "new");
     }
 
     return true;
@@ -112,6 +115,9 @@ void ScoreGrid::onNanoDisplay()
     }
     stroke();
     closePath();
+
+    if (fScore == nullptr)
+        return;
 
     for (int i = 0; i < 16; i++)
     {

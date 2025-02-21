@@ -75,7 +75,7 @@ void SampleInfo::print() const
 
     printf("================\n");
     printf("SampleInfo: %d (waive: %d)\n", id, waive);
-    printf(" - source: %s\n - sourceStart: %ld\n - sampleLength: %ld\n", sourceInfo.fp.c_str(), sourceStart, sampleLength);
+    printf(" - source: %s\n - sourceStart: %zu\n - sampleLength: %zu\n", sourceInfo.fp.c_str(), sourceStart, sampleLength);
     printf(" - embedding: %.3f %.3f\n", embedX, embedY);
     printf(" - Parameters:\n   volume: %.3f  percussiveBoost: %.3f  pitch: %.3f\n", volume, percussiveBoost, pitch);
     printf(" - ADSR:\n    A: %.3fms  D: %.3fms  S:  %.3f (length %.1fms) R: %.3fms\n", adsr.attack, adsr.decay, adsr.sustain, sustainLength, adsr.release);
@@ -405,7 +405,7 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
     {
         sourceFile.copyTo(savePath.toString(), Poco::File::OPT_FAIL_ON_OVERWRITE);
     }
-    catch (Poco::FileExistsException &ex)
+    catch (const Poco::FileExistsException &ex)
     {
         std::cout << "File already in database folder" << std::endl;
         return false;
@@ -430,8 +430,6 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
     std::cout << "filename: " << filename << ", url: " << url.toString() << std::endl;
 
     std::string description = Poco::Path(path).getBaseName();
-    std::string archive = "User";
-    std::string tags = "";
     std::string urlString = url.toString();
 
     long long timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -451,6 +449,9 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
             std::cerr << "Database session not initialized" << std::endl;
             return false;
         }
+
+        std::string archive = "User";
+        std::string tags = "";
 
         Poco::Data::Statement insert(*session);
         insert << "INSERT INTO Sources(id, description, tags, archive, filename, url) VALUES(?, ?, ?, ?, ?, ?)",
@@ -657,8 +658,6 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
 {
     std::cout << "SampleDatabase::getNewSampleName: " << name << std::endl;
     // Finds a unique name of the form "new_sample_X.wav"
-    int suffixCounter = 0;
-    int id;
     std::string newName(name);
 
     Poco::Path file(name);
@@ -689,6 +688,9 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
 
     try
     {
+        int suffixCounter = 0;
+        int id;
+
         Poco::Data::Statement select(*session);
         select << "SELECT id FROM Samples WHERE name = ?",
             Poco::Data::Keywords::use(newName),
@@ -1284,9 +1286,6 @@ void SampleDatabase::getTagList()
     try
     {
         Poco::Data::Statement select(*session);
-        int tagId;
-        std::string tag;
-        float embedX, embedY;
         select << "SELECT id, tag, embedX, embedY FROM Tags",
             Poco::Data::Keywords::now;
 
@@ -1295,10 +1294,10 @@ void SampleDatabase::getTagList()
 
         for (std::size_t i = 0; i < rows; ++i)
         {
-            tagId = rs.value(0, i).convert<int>();
-            tag = rs.value(1, i).convert<std::string>();
-            embedX = rs.value(2, i).convert<float>();
-            embedY = rs.value(3, i).convert<float>();
+            int tagId = rs.value(0, i).convert<int>();
+            std::string tag = rs.value(1, i).convert<std::string>();
+            float embedX = rs.value(2, i).convert<float>();
+            float embedY = rs.value(3, i).convert<float>();
 
             tagList.push_back({tagId, tag, embedX, embedY});
         }
@@ -1321,7 +1320,6 @@ void SampleDatabase::getArchiveList()
     try
     {
         Poco::Data::Statement select(*session);
-        std::string archive;
         select << "SELECT DISTINCT archive from Sources",
             Poco::Data::Keywords::now;
 
@@ -1330,7 +1328,7 @@ void SampleDatabase::getArchiveList()
 
         for (std::size_t i = 0; i < rows; ++i)
         {
-            archive = rs.value(0, i).convert<std::string>();
+            std::string archive = rs.value(0, i).convert<std::string>();
             archives.push_back(archive);
         }
     }

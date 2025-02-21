@@ -807,7 +807,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 1. pick random start
         std::vector<long> starts;
 
-        for (auto &m : sourceInfo->sourceMeasurements)
+        for (const auto &m : sourceInfo->sourceMeasurements)
         {
             if (m.rms > 0.1 && m.specFlat > 0.9f)
                 starts.push_back(m.frame);
@@ -847,7 +847,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 1. pick random start
         std::vector<long> starts;
 
-        for (auto &m : sourceInfo->sourceMeasurements)
+        for (const auto &m : sourceInfo->sourceMeasurements)
         {
             if (m.rms > 0.1 && m.specFlat > 0.9f)
                 starts.push_back(m.frame);
@@ -886,7 +886,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         // 1. pick random start
         std::vector<long> starts;
 
-        for (auto &m : sourceInfo->sourceMeasurements)
+        for (const auto &m : sourceInfo->sourceMeasurements)
         {
             if (m.rms > 0.1 && m.specFlat > 0.9f)
                 starts.push_back(m.frame);
@@ -1215,8 +1215,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         break;
     case WAIVESampler::PluginUpdate::kSourceLoaded:
     case WAIVESampler::PluginUpdate::kSourceUpdated:
-        sourceAvailable = false;
-        sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.length > 0);
+        sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.sourceLoaded);
         saveSampleBtn->setEnabled(sourceAvailable);
         sourceLoading->setLoading(false);
         presetButtons->setVisible(sourceAvailable);
@@ -1406,6 +1405,9 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
 void WAIVESamplerUI::onTaskCancelled(Poco::TaskCancelledNotification *pNf)
 {
     Poco::Task *pTask = pNf->task();
+    if (!pTask)
+        return;
+    std::cout << "WAIVESamplerUI::onTaskCancelled " << pTask->name() << std::endl;
     pNf->release();
 }
 
@@ -1558,7 +1560,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
 
 Knob *WAIVESamplerUI::createWAIVEKnob(
     Parameters param,
-    std::string label,
+    const std::string &label,
     float min,
     float max,
     float value)

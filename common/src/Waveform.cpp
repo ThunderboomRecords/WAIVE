@@ -92,11 +92,10 @@ void Waveform::calculateWaveform()
         waveformMax.resize(number_of_blocks);
     }
 
-    int start, end;
     for (int i = 0; i < number_of_blocks; i++)
     {
-        start = (int)(i * samples_per_block) + visibleStart;
-        end = std::min((int)waveformLength, (int)((i + 1) * samples_per_block) + visibleStart);
+        int start = static_cast<int>(i * samples_per_block) + visibleStart;
+        int end = std::min(static_cast<int>(waveformLength), static_cast<int>((i + 1) * samples_per_block) + visibleStart);
 
         if (start >= wf->size() || end > wf->size() || start >= end)
             continue;
@@ -182,7 +181,7 @@ void Waveform::onNanoDisplay()
             WaveformFeature f = wfFeatures->at(i);
             if (f.type == FeatureType::Onset)
             {
-                float onsetStart = (float)(f.start - visibleStart) / range;
+                float onsetStart = static_cast<float>(f.start - visibleStart) / range;
 
                 if (onsetStart > 1.0f || onsetStart < 0.0f)
                     continue;
@@ -203,7 +202,7 @@ void Waveform::onNanoDisplay()
     //  draw selected region
     if (selectable)
     {
-        float cursorPosStart = (float)(waveformSelectStart - visibleStart) / range;
+        float cursorPosStart = static_cast<float>(waveformSelectStart - visibleStart) / range;
         float x1 = width * std::clamp(cursorPosStart, 0.0f, 1.0f);
         beginPath();
         fillColor(cursor_color);
@@ -226,8 +225,8 @@ void Waveform::onNanoDisplay()
         {
             beginPath();
             fillColor(cursor_color);
-            x = (float)waveformSelectStart / waveformLength * width;
-            // float w = (float)(waveformSelectEnd - waveformSelectStart) / waveformLength * width;
+            x = static_cast<float>(waveformSelectStart) / waveformLength * width;
+            // float w = static_cast<float>(waveformSelectEnd - waveformSelectStart) / waveformLength * width;
             rect(x, height - barHeight, 2.f, barHeight);
             fill();
             closePath();
@@ -236,8 +235,8 @@ void Waveform::onNanoDisplay()
         beginPath();
         strokeWidth(1.0f);
         fillColor(highlight_color);
-        x = (float)visibleStart / waveformLength * width;
-        float w = (float)(visibleEnd - visibleStart) / waveformLength * width;
+        x = static_cast<float>(visibleStart) / waveformLength * width;
+        float w = static_cast<float>(visibleEnd - visibleStart) / waveformLength * width;
         roundedRect(x, height - barHeight, w, barHeight, barHeight * 0.5f);
         fill();
         closePath();
@@ -258,8 +257,8 @@ bool Waveform::onMouse(const MouseEvent &ev)
     else if (!ev.press && dragAction != NONE)
     {
         int range = visibleEnd - visibleStart;
-        int cursorPos = (int)(range * (ev.pos.getX() / getWidth()));
-        cursorPos = std::clamp(cursorPos, 0, (int)range);
+        int cursorPos = static_cast<int>(range * (ev.pos.getX() / getWidth()));
+        cursorPos = std::clamp(cursorPos, 0, static_cast<int>(range));
         switch (dragAction)
         {
         case SELECTING:
@@ -321,7 +320,7 @@ bool Waveform::onMotion(const MotionEvent &ev)
             // started selecting
             dragAction = SELECTING;
             int range = visibleEnd - visibleStart;
-            waveformSelectStart = visibleStart + (int)(range * ev.pos.getX() / getWidth());
+            waveformSelectStart = visibleStart + static_cast<int>(range * ev.pos.getX() / getWidth());
             waveformSelectEnd = waveformSelectStart;
         }
         else
@@ -340,7 +339,7 @@ bool Waveform::onMotion(const MotionEvent &ev)
         break;
     case SCROLLING:
         dX = ev.pos.getX() - clickStart.getX();
-        dV = (int)(dX * (waveformLength / getWidth()));
+        dV = static_cast<int>(dX * (waveformLength / getWidth()));
 
         if (visibleStart + dV <= 0)
             dV = -visibleStart;
@@ -375,11 +374,11 @@ bool Waveform::onScroll(const ScrollEvent &ev)
     int range = visibleEnd - visibleStart;
     int cursorPos = visibleStart + range * p;
     int newRange = range * (1.0f + ev.delta.getY() * 0.05f);
-    newRange = std::max(newRange, (int)getWidth());
+    newRange = std::max(newRange, static_cast<int>(getWidth()));
     int newCursorPos = visibleStart + newRange * p;
 
     float dX = ev.delta.getX();
-    int dV = (int)(dX * (waveformLength / getWidth()));
+    int dV = static_cast<int>(dX * (waveformLength / getWidth()));
 
     if (visibleStart + dV <= 0)
         dV = -visibleStart;
@@ -420,7 +419,7 @@ int Waveform::getNearestFeature(float x)
     // find nearest feature and set to highlight
     for (int i = 0; i < wfFeatures->size(); i++)
     {
-        float fX = (float)(wfFeatures->at(i).start - visibleStart) / range;
+        float fX = static_cast<float>(wfFeatures->at(i).start - visibleStart) / range;
         if (fX < 0.0f || fX >= 1.0f)
             continue;
 

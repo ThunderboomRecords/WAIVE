@@ -109,8 +109,6 @@ bool Knob::onMotion(const MotionEvent &ev)
     if (!isVisible() || !dragging_ || !enabled)
         return false;
 
-    const float height = getHeight();
-
     float scale = sensitive ? 400.0f : 150.0f;
 
     float d_y = ev.pos.getY() - dragStart;

@@ -81,18 +81,13 @@ void CheckboxList::onNanoDisplay()
     text(width - 10, 10, label.c_str(), nullptr);
     closePath();
 
-    int col = 0;
-    int row = 0;
-
-    float x, y;
-
     for (int i = 0; i < data.size(); ++i)
     {
-        col = i % columns;
-        row = i / columns;
+        int col = i % columns;
+        int row = i / columns;
 
-        x = padding + (colWidth + margin) * col;
-        y = 36 + padding + (rowHeight + margin) * row;
+        float x = padding + (colWidth + margin) * col;
+        float y = 36 + padding + (rowHeight + margin) * row;
 
         drawCheckbox(&data[i], x, y, colWidth, rowHeight);
     }

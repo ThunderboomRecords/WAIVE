@@ -134,7 +134,6 @@ std::shared_ptr<Note> DrumPattern::findHoveredNote(const DGL::Point<double> &pos
     const float width = getWidth();
     const float height = getHeight();
 
-    const float gridWidth = width / 16.0f;
     const float gridHeight = height / 9.0f;
 
     float tpb = 1920.0f;

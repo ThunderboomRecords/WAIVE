@@ -115,7 +115,7 @@ WAIVESequencer::WAIVESequencer() : Plugin(kParameterCount, 0, kStateCount),
 
         std::cout << std::endl;
     }
-    catch (std::exception &e)
+    catch (const std::exception &e)
     {
         std::cerr << " error loading models\n";
         return;
@@ -586,7 +586,7 @@ void WAIVESequencer::allNotesOff(uint32_t frame)
     me.data[0] = 0x80;
     me.data[2] = 0;
 
-    for (it = triggered.begin(); it != triggered.end(); it++)
+    for (it = triggered.begin(); it != triggered.end(); ++it)
     {
         me.data[1] = *it;
         writeMidiEvent(me);
@@ -632,12 +632,9 @@ void WAIVESequencer::run(
     if (!timePos.bbt.valid || !timePos.playing)
         return;
 
-    float tick = timePos.bbt.tick;
-    float beat = timePos.bbt.beat - 1.0f;
     float tpb = timePos.bbt.ticksPerBeat;
     double ticksPerLoop = tpb * 4.0;
     double samplesPerBeat = (60.0f * sampleRate) / timePos.bbt.beatsPerMinute;
-    double samplesPerTick = samplesPerBeat / tpb;
     double ticksPerSample = tpb / samplesPerBeat;
 
     progress = loopTick / ticksPerLoop;
@@ -661,7 +658,7 @@ void WAIVESequencer::run(
         {
             if (!(*notesPointer)->active)
             {
-                notesPointer++;
+                ++notesPointer;
                 continue;
             }
 
@@ -690,7 +687,7 @@ void WAIVESequencer::run(
             }
 
             writeMidiEvent(me);
-            notesPointer++;
+            ++notesPointer;
         }
 
         loopTick += ticksPerSample;
@@ -780,7 +777,7 @@ void WAIVESequencer::encodeGroove()
 {
     std::fill(mGrooveInput.begin(), mGrooveInput.end(), 0.0f);
     std::vector<GrooveEvent>::iterator grooveEvents = fGroove.begin();
-    for (; grooveEvents != fGroove.end(); grooveEvents++)
+    for (; grooveEvents != fGroove.end(); ++grooveEvents)
     {
         float velocity = 2.0f * ((*grooveEvents).velocity - 0.5f);
         float position = (*grooveEvents).position;
@@ -886,12 +883,8 @@ void WAIVESequencer::generateFullPattern()
 {
     std::cout << "WAIVESequencer::generateFullPattern()" << std::endl;
 
-    mFullZ.clear();
-    for (const float z : mScoreZ)
-        mFullZ.push_back(z);
-
-    for (const float z : mGrooveZ)
-        mFullZ.push_back(z);
+    mFullZ.assign(mScoreZ.begin(), mScoreZ.end());
+    mFullZ.insert(mFullZ.end(), mGrooveZ.begin(), mGrooveZ.end());
 
     const char *inputNamesCstrs[] = {mFullDecoderInputNames[0].c_str()};
     const char *outputNamesCstrs[] = {mFullDecoderOutputNames[0].c_str()};
@@ -1118,7 +1111,7 @@ void WAIVESequencer::computeNotes()
     uint32_t t = 0;
     while (t < nextNoteTick && notesPointer < notesOut.end())
     {
-        notesPointer++;
+        ++notesPointer;
         t = (*notesPointer)->tick;
     }
 }

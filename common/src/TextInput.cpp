@@ -295,7 +295,7 @@ bool TextInput::isInteger(const char *candidate)
 {
     errno = 0;
     char *endptr;
-    long val = std::strtol(candidate, &endptr, 10);
+    std::strtol(candidate, &endptr, 10);
 
     if (endptr == candidate)
         return false;
@@ -308,7 +308,7 @@ bool TextInput::isInteger(const char *candidate)
 bool TextInput::isFloat(const char *candidate)
 {
     errno = 0;
-    long val = std::strtof(candidate, NULL);
+    std::strtof(candidate, NULL);
 
     return errno == 0;
 }

@@ -501,8 +501,6 @@ void WAIVESampler::run(
 {
     std::lock_guard<std::mutex> lock(samplePlayerMtx);
 
-    int bundle_length = 0;
-
     int midiIndex = 0;
     float y;
     for (uint32_t i = 0; i < numFrames; i++)
@@ -517,9 +515,10 @@ void WAIVESampler::run(
             uint8_t data1 = midiEvents[midiIndex].data[1];
             uint8_t data2 = midiEvents[midiIndex].data[2];
 
-            uint8_t channel = status & 0xF;
+            // uint8_t channel = status & 0xF;
             uint8_t type = status >> 4;
 
+            // cppcheck-suppress variableScope
             uint8_t note = data1;
             uint8_t velocity = data2;
 
@@ -880,12 +879,11 @@ void WAIVESampler::renderSample()
 
     // delta (pitch) envelope
     float deltaStart = fCurrentSample->pitch + fCurrentSample->percussiveBoost * 3.0f;
-    float delta = deltaStart;
+    float delta;
     int deltaEnvLength = static_cast<int>(std::floor(sampleRate / 20.f));
     if (d_isZero(fCurrentSample->percussiveBoost))
         deltaEnvLength = -1;
 
-    float y = 0.0f;
     size_t sourceIndex = fCurrentSample->sourceStart;
     float sourceIndexF = static_cast<float>(sourceIndex);
 
@@ -905,7 +903,7 @@ void WAIVESampler::renderSample()
         else
             delta = fCurrentSample->pitch;
 
-        y = sourceInfo->buffer[sourceIndex];
+        float y = sourceInfo->buffer[sourceIndex];
         y = sampleFilter.process(y);
 
         // std::cout << amp << ",";
@@ -1105,6 +1103,8 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         }
 
         std::lock_guard<std::mutex> lock(tempBufferMutex);
+        if (fCurrentSample == nullptr)
+            newSample();
 
         size_t sourceLength = tempBuffer->size();
         fCurrentSample->sourceInfo.buffer.resize(sourceLength);

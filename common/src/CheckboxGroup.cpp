@@ -27,7 +27,6 @@ CheckboxGroup::CheckboxGroup(Widget *widget, float x, float y, float width, floa
 void CheckboxGroup::onNanoDisplay()
 {
     const float width = getWidth();
-    const float height = getHeight();
 
     beginPath();
     fillColor(text_color);

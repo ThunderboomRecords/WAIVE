@@ -54,13 +54,13 @@ public:
 private:
     std::shared_ptr<std::vector<float>> buffer;
     std::mutex *mutex;
-    int sampleRate, flags;
+    int sampleRate;
 };
 
 class TestTask : public Poco::Task
 {
 public:
-    TestTask(std::string name) : Poco::Task(name)
+    explicit TestTask(const std::string &name) : Poco::Task(name)
     {
         std::cout << "TestTask init" << std::endl;
     };

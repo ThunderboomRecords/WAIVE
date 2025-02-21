@@ -14,13 +14,18 @@ SourceList::SourceList(Widget *widget)
       callback(nullptr),
       highlighting(-1),
       selected(-1),
-      previewPlaying(-1)
+      previewPlaying(-1),
+      source_info(nullptr),
+      source_info_mtx(nullptr),
+      scrollPos(0.f)
+
 {
     download = new WAIVEImage(this, download_icon, download_icon_len, 131, 119, IMAGE_GENERATE_MIPMAPS);
 
     scrollBarWidth = 3 * scale_factor;
     columnLabel = 36 * scale_factor;
     columnDownload = 30 * scale_factor + 2.f * (scrollBarWidth + 8);
+    columnLicense = columnDownload;
 
     background_color = WaiveColors::grey2;
 
@@ -101,14 +106,13 @@ void SourceList::onNanoDisplay()
         return;
     }
 
-    float y = 0.f;
     float x = padding;
 
     int startIndex = scrollPos / (rowHeight + margin);
 
     for (int i = startIndex; i < startIndex + maxDisplay + 2; i++)
     {
-        y = i * (rowHeight + margin) + padding - scrollPos;
+        float y = i * (rowHeight + margin) + padding - scrollPos;
 
         if (y < -rowHeight)
             continue;

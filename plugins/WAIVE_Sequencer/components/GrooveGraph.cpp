@@ -3,11 +3,11 @@
 START_NAMESPACE_DISTRHO
 
 GrooveGraph::GrooveGraph(Widget *parent) noexcept
-    : WAIVEWidget(parent),
-      dragging(false),
-      callback(nullptr),
-      fGroove(nullptr)
+    : WAIVEWidget(parent)
 {
+    dragging = false;
+    callback = nullptr;
+    fGroove = nullptr;
 }
 
 bool GrooveGraph::onMouse(const MouseEvent &ev)
@@ -49,7 +49,7 @@ bool GrooveGraph::onMotion(const MotionEvent &ev)
 
 bool GrooveGraph::onScroll(const ScrollEvent &ev)
 {
-    if (!contains(ev.pos))
+    if (!contains(ev.pos) || fGroove == nullptr)
         return false;
 
     float position = ev.pos.getX() / getWidth();
@@ -74,11 +74,14 @@ bool GrooveGraph::onScroll(const ScrollEvent &ev)
 
 int GrooveGraph::nearestElementAtPos(float position)
 {
+    if (fGroove == nullptr)
+        return -1;
+
     int index = -1;
     float bestDist = std::numeric_limits<float>::infinity();
 
     std::vector<GrooveEvent>::iterator grooveEvents = fGroove->begin();
-    for (; grooveEvents != fGroove->end(); grooveEvents++)
+    for (; grooveEvents != fGroove->end(); ++grooveEvents)
     {
         float dist = std::abs(position - (*grooveEvents).position);
         if (dist < bestDist)
@@ -121,9 +124,12 @@ void GrooveGraph::onNanoDisplay()
     stroke();
     closePath();
 
+    if (fGroove == nullptr)
+        return;
+
     std::vector<GrooveEvent>::iterator grooveEvents = fGroove->begin();
 
-    for (; grooveEvents != fGroove->end(); grooveEvents++)
+    for (; grooveEvents != fGroove->end(); ++grooveEvents)
     {
         float velocity = (*grooveEvents).velocity;
         float position = (*grooveEvents).position;
@@ -137,43 +143,6 @@ void GrooveGraph::onNanoDisplay()
         closePath();
         stroke();
     }
-
-    // // round off corners
-    // float r = 8.0f;
-    // fillColor(WaiveColors::grey1);
-    // strokeColor(255, 0, 0);
-
-    // // top left
-    // beginPath();
-    // moveTo(-1, -1);
-    // lineTo(-1, r);
-    // arcTo(-1, -1, r, -1, r);
-    // closePath();
-    // fill();
-
-    // // top right
-    // beginPath();
-    // moveTo(width + 1, -1);
-    // lineTo(width + 1, r);
-    // arcTo(width + 1, -1, width - r, -1, r);
-    // closePath();
-    // fill();
-
-    // // bottom left
-    // beginPath();
-    // moveTo(-1, height + 1);
-    // lineTo(-1, height - r);
-    // arcTo(-1, height + 1, r, height + 1, r);
-    // closePath();
-    // fill();
-
-    // // bottom right
-    // beginPath();
-    // moveTo(width + 1, height + 1);
-    // lineTo(width + 1, height - r);
-    // arcTo(width + 1, height + 1, width - r, height + 1, r);
-    // closePath();
-    // fill();
 }
 
 END_NAMESPACE_DISTRHO

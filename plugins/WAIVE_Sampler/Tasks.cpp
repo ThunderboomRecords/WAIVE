@@ -256,7 +256,6 @@ void WaveformLoaderTask::runTask()
         buffer->resize(0);
 
         throw std::runtime_error("Unable to open file " + fp);
-        return;
     }
 
     size_t sampleLength = fileHandle.frames();
@@ -267,7 +266,6 @@ void WaveformLoaderTask::runTask()
         buffer->resize(0);
 
         throw std::runtime_error("Unable to open file " + fp);
-        return;
     }
 
     int sampleChannels = fileHandle.channels();

@@ -25,7 +25,7 @@ public:
         virtual void sourceLoad(int index) = 0;
     };
 
-    SourceList(Widget *widget);
+    explicit SourceList(Widget *widget);
     void setCallback(Callback *cb);
     void selectRandom();
     void computeColumnWidths();
