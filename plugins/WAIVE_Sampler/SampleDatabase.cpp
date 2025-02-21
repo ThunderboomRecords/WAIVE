@@ -702,7 +702,7 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
                 break;
             }
             suffixCounter++;
-            newName = fmt::format(pattern, suffixCounter);
+            newName = fmt::vformat(pattern, fmt::make_format_args(suffixCounter));
         }
     }
     catch (const Poco::Data::DataException &e)

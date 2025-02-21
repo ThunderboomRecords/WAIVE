@@ -249,7 +249,8 @@ void Knob::drawLabel()
 
 void Knob::drawValue()
 {
-    std::string valueString = fmt::format(format, getValue());
+    float value = getValue();
+    std::string valueString = fmt::vformat(format, fmt::make_format_args(value));
 
     beginPath();
     fillColor(text_color);
