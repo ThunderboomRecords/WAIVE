@@ -24,13 +24,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
 
     printf(" VERSION: %d.%d.%d\n", V_MAJ, V_MIN, V_PAT);
 
-    // Register notifications
-    taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
-    taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFailedNotification>(*this, &WAIVESampler::onTaskFailed));
-    sd.databaseUpdate += Poco::delegate(this, &WAIVESampler::onDatabaseChanged);
-    sd.taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
-
     ampEnvGen.power = 0.5f;
+
+    random.seed();
 
     samplePlayerWaveforms.resize(NUM_SLOTS + 3);
     for (int i = 0; i < NUM_SLOTS + 3; i++)
@@ -91,7 +87,11 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
     oscHost = oscClient.getHost();
     oscPort = oscClient.getPort();
 
-    // sd.checkLatestRemoteVersion();
+    // Register notifications
+    taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
+    taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFailedNotification>(*this, &WAIVESampler::onTaskFailed));
+    sd.databaseUpdate += Poco::delegate(this, &WAIVESampler::onDatabaseChanged);
+    sd.taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
 }
 
 WAIVESampler::~WAIVESampler()
@@ -795,15 +795,15 @@ void WAIVESampler::loadPreset(Preset preset)
 
     renderSampleLock = true;
     setParameterValue(kSampleVolume, preset.volume);
-    setParameterValue(kSamplePitch, preset.pitch);
-    setParameterValue(kAmpAttack, preset.adsr.attack);
-    setParameterValue(kAmpDecay, preset.adsr.decay);
-    setParameterValue(kAmpSustain, preset.adsr.sustain);
-    setParameterValue(kAmpRelease, preset.adsr.release);
-    setParameterValue(kSustainLength, preset.sustainLength);
-    setParameterValue(kPercussiveBoost, preset.percussiveBoost);
-    setParameterValue(kFilterCutoff, preset.filterCutoff);
-    setParameterValue(kFilterResonance, preset.filterResonance);
+    setParameterValue(kSamplePitch, preset.pitch * (random.nextFloat() * 0.1f + 0.95f));
+    setParameterValue(kAmpAttack, preset.adsr.attack * (random.nextFloat() * 0.1f + 0.95f));
+    setParameterValue(kAmpDecay, preset.adsr.decay * (random.nextFloat() * 0.1f + 0.95f));
+    setParameterValue(kAmpSustain, preset.adsr.sustain * (random.nextFloat() * 0.1f + 0.95f));
+    setParameterValue(kAmpRelease, preset.adsr.release * (random.nextFloat() * 0.1f + 0.95f));
+    setParameterValue(kSustainLength, preset.sustainLength * (random.nextFloat() * 0.1f + 0.95f));
+    setParameterValue(kPercussiveBoost, preset.percussiveBoost * (random.nextFloat() * 0.1f + 0.95f));
+    setParameterValue(kFilterCutoff, preset.filterCutoff * (random.nextFloat() * 0.1f + 0.95f));
+    setParameterValue(kFilterResonance, preset.filterResonance * (random.nextFloat() * 0.1f + 0.95f));
     setParameterValue(kFilterType, preset.filterType);
     fCurrentSample->preset.assign(preset.presetName);
     renderSampleLock = false;

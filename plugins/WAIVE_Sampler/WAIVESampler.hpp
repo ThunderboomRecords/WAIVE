@@ -33,9 +33,10 @@
 #include <Poco/TaskManager.h>
 #include <Poco/TaskNotification.h>
 #include <Poco/Observer.h>
-#include "Poco/BasicEvent.h"
-#include "Poco/Delegate.h"
-#include "Poco/Exception.h"
+#include <Poco/BasicEvent.h>
+#include <Poco/Delegate.h>
+#include <Poco/Exception.h>
+#include <Poco/Random.h>
 
 #include "model_utils.hpp"
 #include "onnxruntime_cxx_api.h"
@@ -208,6 +209,8 @@ private:
     std::vector<float> *editorPreviewWaveform, *mapPreviewWaveform, *sourcePreviewWaveform;
     std::vector<SamplePlayer> samplePlayers;
     std::vector<std::vector<float>> samplePlayerWaveforms;
+
+    Poco::Random random;
 
     friend class WAIVESamplerUI;
     friend class SampleEditorControls;
