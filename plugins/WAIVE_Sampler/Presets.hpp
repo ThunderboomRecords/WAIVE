@@ -27,7 +27,7 @@ enum PresetName
 namespace Presets
 {
     static Preset KickPreset = {
-        1.5f,
+        1.0f,
         0.1f,
         0.12f,
         0.2f,

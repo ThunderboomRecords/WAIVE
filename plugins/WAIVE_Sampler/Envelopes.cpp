@@ -195,21 +195,21 @@ void EnvGen::process()
     case ADSR_Stage::ATTACK:
         if (startDecay != startAttack)
         {
-            p = static_cast<float>((step - startAttack) / (startDecay - startAttack));
+            p = static_cast<float>(step - startAttack) / (startDecay - startAttack);
             value = interpolate(p, 0.0f, 1.0f, power);
             break;
         }
     case ADSR_Stage::DECAY:
         if (startSustain != startDecay)
         {
-            p = static_cast<float>((step - startDecay) / (startSustain - startDecay));
+            p = static_cast<float>(step - startDecay) / (startSustain - startDecay);
             value = interpolate(p, 1.0f, adsr.sustain, power);
             break;
         }
     case ADSR_Stage::RELEASE:
         if (endStep != startRelease)
         {
-            p = static_cast<float>((step - startRelease) / (endStep - startRelease));
+            p = static_cast<float>(step - startRelease) / (endStep - startRelease);
             value = interpolate(p, adsr.sustain, 0.0f, power);
             break;
         }

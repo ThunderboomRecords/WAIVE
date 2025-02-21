@@ -181,7 +181,7 @@ void FeatureExtractorTask::runTask()
     source->sourceFeatures.clear();
     source->sourceMeasurements.clear();
 
-    float pStep = (float)gist.getAudioFrameSize() / length;
+    float pStep = static_cast<float>(gist.getAudioFrameSize()) / length;
     float p = 0.0f;
 
     long lastOnset = -5000;
@@ -377,7 +377,7 @@ void WaveformLoaderTask::runTask()
         std::copy(sample_tmp.begin(), sample_tmp.begin() + new_size, buffer->begin());
     }
 
-    // std::cout << "WaveformLoaderTask::runTask() finished" << std::endl;
+    std::cout << "WaveformLoaderTask::runTask() finished" << std::endl;
 }
 
 END_NAMESPACE_DISTRHO

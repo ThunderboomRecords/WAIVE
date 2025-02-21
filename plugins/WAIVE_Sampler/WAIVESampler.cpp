@@ -30,6 +30,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
     sd.databaseUpdate += Poco::delegate(this, &WAIVESampler::onDatabaseChanged);
     sd.taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
 
+    ampEnvGen.power = 0.5f;
+
     samplePlayerWaveforms.resize(NUM_SLOTS + 3);
     for (int i = 0; i < NUM_SLOTS + 3; i++)
     {
@@ -209,7 +211,7 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.symbol = fmt::format("Sample{:d}Midi", slot + 1).c_str();
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 127.0f;
-        parameter.ranges.def = (float)midiMap[slot % 9];
+        parameter.ranges.def = static_cast<float>(midiMap[slot % 9]);
         parameter.hints |= kParameterIsInteger;
         break;
     default:
@@ -282,7 +284,7 @@ float WAIVESampler::getParameterValue(uint32_t index) const
     case kSlot17MidiNumber:
     case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
-        val = (float)samplePlayers[slot].midi;
+        val = static_cast<float>(samplePlayers[slot].midi);
         break;
     default:
         std::cerr << "getParameter: Unknown parameter index: " << index << "  " << std::endl;
@@ -356,7 +358,7 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
     case kSlot17MidiNumber:
     case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
-        samplePlayers[slot].midi = (int)value;
+        samplePlayers[slot].midi = static_cast<int>(value);
         break;
     default:
         std::cerr << "Unknown parameter index: " << index << "  " << value << std::endl;
@@ -535,7 +537,7 @@ void WAIVESampler::run(
                     if (samplePlayers[j].active && samplePlayers[j].midi == note)
                     {
                         samplePlayers[j].state = PlayState::TRIGGERED;
-                        samplePlayers[j].velocity = (float)velocity / 128;
+                        samplePlayers[j].velocity = static_cast<float>(velocity) / 128.f;
                     }
                 }
             }
@@ -620,6 +622,7 @@ void WAIVESampler::loadSourceFile(const std::string &fp, const std::string &tagS
 
 void WAIVESampler::newSample()
 {
+    std::cout << "WAIVESampler::newSample()\n";
     if (fCurrentSample != nullptr)
     {
         // duplicating..
@@ -823,15 +826,28 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
     fCurrentSample->sourceStart = start;
 
     renderSample();
-    triggerPreview();
-    pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
 void WAIVESampler::renderSample()
 {
     // LOG_LOCATION
     if (fCurrentSample == nullptr || !fCurrentSample->sourceInfo.sourceLoaded || renderSampleLock)
+    {
+        std::cout << "renderSample() exit early, reason: ";
+        if (fCurrentSample == nullptr)
+            std::cout << "fCurrentSample == nullptr\n";
+        else if (!fCurrentSample->sourceInfo.sourceLoaded)
+            std::cout << "fCurrentSample->sourceInfo.sourceLoaded == false\n";
+        else
+            std::cout << "renderSampleLock == true\n";
         return;
+    }
+
+    if (editorPreviewPlayer->state != PlayState::STOPPED)
+    {
+        editorPreviewPlayer->state = PlayState::STOPPED;
+        editorPreviewPlayer->active = true;
+    }
 
     std::lock_guard<std::mutex> lock(samplePlayerMtx);
 
@@ -839,18 +855,20 @@ void WAIVESampler::renderSample()
     fCurrentSample->sampleLength = ampEnvGen.getLength(fCurrentSample->sustainLength);
     fCurrentSample->sampleLength = std::min(fCurrentSample->sampleLength, sourceInfo->length - fCurrentSample->sourceStart);
 
-    auto minmax = std::minmax_element(
-        &sourceInfo->buffer[fCurrentSample->sourceStart],
-        &sourceInfo->buffer[fCurrentSample->sourceStart + fCurrentSample->sampleLength]);
-    float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
-    if (std::abs(normaliseRatio) <= 0.0001f)
-        normaliseRatio = 1.0f;
-
     if (editorPreviewWaveform->size() < fCurrentSample->sampleLength)
         editorPreviewWaveform->resize(fCurrentSample->sampleLength);
 
+    // Amp env setup
     ampEnvGen.reset();
     ampEnvGen.trigger();
+
+    float releaseIndex = static_cast<float>(fCurrentSample->sourceStart) + (ampEnvGen.getAttack() + ampEnvGen.getDecay() + fCurrentSample->sustainLength) * sampleRate / 1000.f;
+    float releaseTime = ampEnvGen.getRelease() * sampleRate / 1000.f;
+    float releaseFinishIndex = releaseIndex + releaseTime;
+    releaseIndex = std::min(static_cast<float>(sourceInfo->length) - releaseTime, releaseIndex); // release ampEnv sooner if near end of source buffer
+
+    fmt::print("attack = {:.1f}, decay = {:.1f}, sustainLength = {:.1f}, release = {:.1f}\n", ampEnvGen.getAttack(), ampEnvGen.getDecay(), fCurrentSample->sustainLength, ampEnvGen.getRelease());
+    fmt::print("sourceInfo->length = {}, releaseIndex = {:.1f}, releaseFinishIndex = {:.1f}\n", sourceInfo->length, releaseIndex, releaseFinishIndex);
 
     float amp = ampEnvGen.getValue();
 
@@ -863,18 +881,19 @@ void WAIVESampler::renderSample()
     // delta (pitch) envelope
     float deltaStart = fCurrentSample->pitch + fCurrentSample->percussiveBoost * 3.0f;
     float delta = deltaStart;
-    int deltaEnvLength = std::floor(sampleRate / 20.f);
+    int deltaEnvLength = static_cast<int>(std::floor(sampleRate / 20.f));
     if (d_isZero(fCurrentSample->percussiveBoost))
         deltaEnvLength = -1;
 
     float y = 0.0f;
-    size_t index = 0;
-    float indexF = 0.0f;
+    size_t sourceIndex = fCurrentSample->sourceStart;
+    float sourceIndexF = static_cast<float>(sourceIndex);
 
+    // std::cout << "\n\n[";
     for (size_t i = 0; i < fCurrentSample->sampleLength; i++)
     {
-        index = std::round(indexF);
-        if (fCurrentSample->sourceStart + index >= sourceInfo->length)
+        sourceIndex = static_cast<size_t>(std::round(sourceIndexF));
+        if (sourceIndex >= sourceInfo->length)
         {
             fCurrentSample->sampleLength = i;
             editorPreviewPlayer->length = i;
@@ -882,18 +901,19 @@ void WAIVESampler::renderSample()
         }
 
         if (i < deltaEnvLength)
-            delta = interpolate((float)i / (float)deltaEnvLength, deltaStart, fCurrentSample->pitch, 1.0f, true);
+            delta = interpolate(static_cast<float>(i) / static_cast<float>(deltaEnvLength), deltaStart, fCurrentSample->pitch, 1.0f, true);
         else
             delta = fCurrentSample->pitch;
 
-        y = sourceInfo->buffer[fCurrentSample->sourceStart + index];
+        y = sourceInfo->buffer[sourceIndex];
         y = sampleFilter.process(y);
 
-        editorPreviewWaveform->at(i) = std::clamp(y * fCurrentSample->volume * amp / normaliseRatio, -1.0f, 1.0f);
+        // std::cout << amp << ",";
+        editorPreviewWaveform->at(i) = y * amp;
 
-        indexF += delta;
+        sourceIndexF += delta;
 
-        if (1000.f * indexF / sampleRate >= ampEnvGen.getAttack() + ampEnvGen.getDecay() + fCurrentSample->sustainLength && ampEnvGen.getStage() != ADSR_Stage::RELEASE)
+        if (sourceIndexF >= releaseIndex && ampEnvGen.getStage() != ADSR_Stage::RELEASE)
             ampEnvGen.release();
         ampEnvGen.process();
 
@@ -906,12 +926,27 @@ void WAIVESampler::renderSample()
 
         amp = ampEnvGen.getValue();
     }
+    // std::cout << "]\n\n";
+
+    // Normalise waveform
+    auto minmax = std::minmax_element(
+        editorPreviewWaveform->begin(),
+        editorPreviewWaveform->begin() + fCurrentSample->sampleLength);
+    float normaliseRatio = std::max(-(*minmax.first), *minmax.second);
+
+    if (std::abs(normaliseRatio) <= 0.0001f)
+        normaliseRatio = 1.0f;
+
+    for (size_t i = 0; i < fCurrentSample->sampleLength; i++)
+        editorPreviewWaveform->at(i) = fCurrentSample->volume * editorPreviewWaveform->at(i) / normaliseRatio;
 
     editorPreviewPlayer->length = fCurrentSample->sampleLength;
     editorPreviewPlayer->ptr = 0;
     editorPreviewPlayer->active = true;
 
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
+
+    std::cout << "renderSample() finished\n";
 }
 
 void WAIVESampler::loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info)
@@ -1018,7 +1053,7 @@ void WAIVESampler::getFeatures(std::vector<float> *wf, std::vector<float> *featu
     std::vector<std::vector<float>> melspec = fe.getMelSpectrogram(wf);
 
     std::fill(feature->begin(), feature->end(), (std::log(epsilon) - X_mean) / X_std);
-    int width = std::min((int)melspec.size(), length);
+    int width = std::min(static_cast<int>(melspec.size()), length);
 
     // printf("n_mel: %d width: %d length: %d feature->size: %d \n", n_mel, width, length, feature->size());
 
@@ -1061,7 +1096,9 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     {
         if (pTask->isCancelled())
         {
+            std::cout << "task isCancelled()\n";
             fCurrentSample->sourceInfo.fp = "";
+            fCurrentSample->sourceInfo.sourceLoaded = false;
             fCurrentSample->sourceInfo.length = 0;
             pNf->release();
             return;
@@ -1077,17 +1114,16 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
         if (sourceLength > 0)
         {
-            // if (!fCurrentSample)
-            newSample();
+            std::cout << "sourceLength: " << sourceLength << std::endl;
+            if (fCurrentSample == nullptr)
+                newSample();
 
             fCurrentSample->sourceInfo.sourceLoaded = true;
             fCurrentSample->tagString = fCurrentSample->sourceInfo.tagString;
-            // fCurrentSample->sourceInfo.fp =
-            selectWaveform(&fCurrentSample->sourceInfo.buffer, fCurrentSample->sourceStart);
+            renderSample();
 
             pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
             taskManager.start(new FeatureExtractorTask(&fCurrentSample->sourceInfo, getSampleRate()));
-            renderSample();
         }
         else
         {

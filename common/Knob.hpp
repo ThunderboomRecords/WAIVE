@@ -39,10 +39,11 @@ public:
 
     std::string label;
 
-protected:
-    void onNanoDisplay() override;
     bool onMouse(const MouseEvent &) override;
     bool onMotion(const MotionEvent &) override;
+
+protected:
+    void onNanoDisplay() override;
     bool onScroll(const ScrollEvent &) override;
     void drawIndicator();
     void drawLabel();

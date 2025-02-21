@@ -193,6 +193,7 @@ private:
 
     Label *toolTip;
     DragDropManager *dragDropManager;
+    std::vector<Knob *> allKnobs;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WAIVESamplerUI);
 };

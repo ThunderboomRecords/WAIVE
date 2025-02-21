@@ -183,10 +183,12 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         presetLabel = new Label(this, "Detect");
         presetLabel->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         presetLabel->resizeToFit();
+        sampleEditorPanel->addChildWidget(presetLabel);
 
         knobsLabel = new Label(this, "Adjust");
         knobsLabel->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         knobsLabel->resizeToFit();
+        sampleEditorPanel->addChildWidget(knobsLabel);
 
         makeKick = new Button(this);
         makeKick->setLabel("Kick");
@@ -238,6 +240,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         presetButtons->positionWidgets();
 
         presetButtons->setVisible(false);
+        sampleEditorPanel->addChildWidget(presetButtons);
 
         sustainLength = createWAIVEKnob(kSustainLength, "Length", 0.0f, 5000.0f, 200.f);
         sustainLength->description = "Set sustain length of sample.";
@@ -245,6 +248,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sustainLength->vertical = false;
         sustainLength->resizeToFit();
         sustainLength->onTop(sampleEditorPanel, Widget_Align::END, Widget_Align::START, 24.f, 16.f);
+        sampleEditorPanel->addChildWidget(sustainLength);
+        allKnobs.push_back(sustainLength);
 
         pitch = createWAIVEKnob(kSamplePitch, "Pitch", 0.25f, 4.f, 1.0f);
         pitch->description = "Set sample playback speed.";
@@ -302,6 +307,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         editorKnobs->justify_content = HBox::Justify_Content::space_between;
         editorKnobs->positionWidgets();
         editorKnobs->addWidget(sustainLength);
+        sampleEditorPanel->addChildWidget(editorKnobs);
 
         editorKnobs->setVisible(false);
 
@@ -309,6 +315,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         instructions->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         instructions->resizeToFit();
         instructions->below(sampleWaveformDisplay, CENTER, Layout::measureVertical(sampleWaveformDisplay, END, sampleEditorPanel, END) / 2.f);
+        sampleEditorPanel->addChildWidget(instructions);
 
         saveSampleBtn = new Button(this);
         saveSampleBtn->setLabel("Add To Player");
@@ -318,6 +325,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         saveSampleBtn->setCallback(this);
         saveSampleBtn->setEnabled(false);
         saveSampleBtn->description = "Save sample and add to Sample Player.";
+        sampleEditorPanel->addChildWidget(saveSampleBtn);
 
         playSampleBtn = new Button(this);
         playSampleBtn->setLabel(" ▶");
@@ -327,6 +335,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         playSampleBtn->resizeToFit();
         playSampleBtn->description = "Preview sample.";
         playSampleBtn->setCallback(this);
+        sampleEditorPanel->addChildWidget(playSampleBtn);
 
         HBox sampleBtns(this);
         sampleBtns.addWidget(playSampleBtn);
@@ -709,7 +718,7 @@ bool WAIVESamplerUI::onMotion(const MotionEvent &ev)
 {
     std::list<DGL::SubWidget *> children = getChildren();
     std::string text = "";
-    for (const auto widget : children)
+    for (const auto &widget : children)
         text = getDescription(text, widget, ev);
     toolTip->setLabel(text);
 
@@ -726,6 +735,10 @@ bool WAIVESamplerUI::onMouse(const MouseEvent &ev)
     if (!ev.press)
     {
         dragDropManager->clearEvent();
+
+        // bypass other widgets consuption of mouseUp event for all knobs
+        for (const auto &knob : allKnobs)
+            knob->onMouse(ev);
     }
 
     return result;
@@ -975,7 +988,7 @@ void WAIVESamplerUI::beginOpenFileBrowser(const std::string &state, bool multipl
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
 {
-    // plugin->selectWaveform(&plugin->fSourceWaveform, (int)selectionStart);
+    // plugin->selectWaveform(&plugin->fSourceWaveform, static_cast<int>(selectionStart));
 }
 
 void WAIVESamplerUI::mapSampleHovered(int id)
@@ -1194,7 +1207,7 @@ void WAIVESamplerUI::updateWidgets()
 
 void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg)
 {
-    std::cout << "WAIVESamplerUI::onPluginUpdated " << plugin->pluginUpdateToString(arg) << std::endl;
+    // std::cout << "WAIVESamplerUI::onPluginUpdated " << plugin->pluginUpdateToString(arg) << std::endl;
     bool sourceAvailable;
     switch (arg)
     {
@@ -1363,27 +1376,27 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
 
     if (taskName == "FeatureExtractorTask")
     {
-        progress->setLabel(fmt::format("Analysing...[{:d}%]", (int)(pTask->progress() * 100.f)));
+        progress->setLabel(fmt::format("Analysing...[{:d}%]", static_cast<int>(pTask->progress() * 100.f)));
         progress->resizeToFit();
         progress->setVisible(true);
         // sourceWaveformDisplay->repaint();
     }
     else if (taskName == "WaveformLoaderTask")
     {
-        progress->setLabel(fmt::format("Importing...[{:d}%]", (int)(pTask->progress() * 100.f)));
+        progress->setLabel(fmt::format("Importing...[{:d}%]", static_cast<int>(pTask->progress() * 100.f)));
         progress->resizeToFit();
         progress->setVisible(true);
         // sourceWaveformDisplay->repaint();
     }
     else if (taskName == "ParseSourceList")
     {
-        databaseProgress->setLabel(fmt::format("Importing sources [{:d}%]", (int)(pTask->progress() * 100.f)));
+        databaseProgress->setLabel(fmt::format("Importing sources [{:d}%]", static_cast<int>(pTask->progress() * 100.f)));
         databaseProgress->resizeToFit();
         databaseProgress->setVisible(true);
     }
     else if (taskName == "ParseTagsList")
     {
-        databaseProgress->setLabel(fmt::format("Importing tags [{:d}%]", (int)(pTask->progress() * 100.f)));
+        databaseProgress->setLabel(fmt::format("Importing tags [{:d}%]", static_cast<int>(pTask->progress() * 100.f)));
         databaseProgress->resizeToFit();
         databaseProgress->setVisible(true);
     }
@@ -1406,7 +1419,6 @@ void WAIVESamplerUI::onTaskFailed(Poco::TaskFailedNotification *pNf)
 
 void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 {
-    // std::cout << "WAIVESamplerUI::onTaskFinished ";
     Poco::Task *pTask = pNf->task();
     if (!pTask)
     {
@@ -1415,7 +1427,7 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     }
 
     const std::string &taskName = pTask->name();
-    std::cout << taskName << std::endl;
+    std::cout << "WAIVESamplerUI::onTaskFinished " << taskName << std::endl;
 
     if (taskName == "ImporterTask")
         sampleBrowser->loading->setLoading(false);
