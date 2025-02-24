@@ -39,10 +39,12 @@ echo "Building release package in ${RELEASE_DIR}"
 
 mkdir -p ${RELEASE_DIR}/payload/Library/Audio/Plug-Ins/Components
 mkdir -p ${RELEASE_DIR}/payload/Library/Audio/Plug-Ins/VST
-mkdir -p ${RELEASE_DIR}/payload/Library/Audio/Plug-Ins/VST3 
+mkdir -p ${RELEASE_DIR}/payload/Library/Audio/Plug-Ins/VST3
+mkdir -p ${RELEASE_DIR}/payload/Library/Audio/Plug-Ins/CLAP
 cp -r "${FOLDER_OF_SIGNED}"/*.component ${RELEASE_DIR}/payload/Library/Audio/Plug-Ins/Components/ 
 cp -r "${FOLDER_OF_SIGNED}"/*.vst ${RELEASE_DIR}/payload/Library/Audio/Plug-Ins/VST/ 
 cp -r "${FOLDER_OF_SIGNED}"/*.vst3 ${RELEASE_DIR}/payload/Library/Audio/Plug-Ins/VST3/
+cp -r "${FOLDER_OF_SIGNED}"/*.clap ${RELEASE_DIR}/payload/Library/Audio/Plug-Ins/CLAP/
 
 echo
 pkgbuild --root "${RELEASE_DIR}/payload" --identifier "${BUNDLE_ID}" --version "${APP_VERSION}" --install-location / "${RELEASE_DIR}/${APP_NAME}_Unsigned.pkg"
