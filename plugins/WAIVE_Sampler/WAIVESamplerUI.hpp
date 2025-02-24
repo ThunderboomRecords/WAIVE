@@ -111,8 +111,8 @@ protected:
     void mapSampleLoadSlot(int index, int slot) override;
     void mapSampleImport() override;
     void mapSampleDelete(int id) override;
-    void textEntered(TextInput *textInput, std::string text) override;
-    void textInputChanged(TextInput *textInput, std::string text) override;
+    void textEntered(TextInput *textInput, const std::string &text) override;
+    void textInputChanged(TextInput *textInput, const std::string &text) override;
     void dropdownSelection(DropDown *widget, int item) override;
     void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
     void sampleSelected(SampleSlot *slot, int slotId) override;

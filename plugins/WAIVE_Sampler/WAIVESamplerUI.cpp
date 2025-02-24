@@ -104,6 +104,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         sourceSearch = new TextInput(this);
         sourceSearch->placeholder = "Search...";
+        sourceSearch->align = ALIGN_LEFT;
         sourceSearch->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
         sourceSearch->setFontSize(14.f);
         sourceSearch->foreground_color = WaiveColors::grey2;
@@ -1031,7 +1032,7 @@ void WAIVESamplerUI::mapSampleDelete(int id)
     plugin->deleteSample(id);
 }
 
-void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
+void WAIVESamplerUI::textEntered(TextInput *textInput, const std::string &text)
 {
     // if (textInput == sampleName)
     // {
@@ -1046,18 +1047,18 @@ void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
     // }
     if (textInput == sourceSearch)
     {
-        std::string search = "";
-        search.reserve(text.size());
+        std::string searchString = "";
+        searchString.reserve(text.size());
 
         for (int i = 0; i < text.size(); i++)
         {
             if (text[i] != '"')
-                search += text[i];
+                searchString += text[i];
         }
 
-        if (text.compare(plugin->sd.filterConditions.searchString) != 0)
+        if (searchString.compare(plugin->sd.filterConditions.searchString) != 0)
         {
-            plugin->sd.filterConditions.searchString.assign(search);
+            plugin->sd.filterConditions.searchString.assign(searchString);
             plugin->sd.filterSources();
         }
     }
@@ -1089,22 +1090,24 @@ void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
     }
 }
 
-void WAIVESamplerUI::textInputChanged(TextInput *textInput, std::string text)
+void WAIVESamplerUI::textInputChanged(TextInput *textInput, const std::string &text)
 {
+
     if (textInput == sourceSearch)
     {
-        std::string search = "";
-        search.reserve(text.size());
+        std::cout << "WAIVESamplerUI::textInputChanged: " << text << std::endl;
+        std::string searchString = "";
+        searchString.reserve(text.size());
 
         for (int i = 0; i < text.size(); i++)
         {
             if (text[i] != '"')
-                search += text[i];
+                searchString += text[i];
         }
 
-        if (text.compare(plugin->sd.filterConditions.searchString) != 0)
+        if (searchString.compare(plugin->sd.filterConditions.searchString) != 0)
         {
-            plugin->sd.filterConditions.searchString.assign(search);
+            plugin->sd.filterConditions.searchString.assign(searchString);
             plugin->sd.filterSources();
         }
     }

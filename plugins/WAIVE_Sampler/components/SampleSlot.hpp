@@ -48,8 +48,8 @@ protected:
 
     void onMenuItemSelection(Menu *menu, int item, const std::string &value) override;
     void buttonClicked(Button *button) override;
-    void textEntered(TextInput *textInput, std::string text) override;
-    void textInputChanged(TextInput *textInput, std::string text) override;
+    void textEntered(TextInput *textInput, const std::string &text) override;
+    void textInputChanged(TextInput *textInput, const std::string &text) override;
 
     void dataAccepted(DragDropWidget *destination) override;
     void dataRejected(DragDropWidget *destination) override;

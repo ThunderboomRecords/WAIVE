@@ -262,7 +262,7 @@ void SampleSlot::buttonClicked(Button *button)
 //         samplePlayer->midi = item;
 // }
 
-void SampleSlot::textEntered(TextInput *textInput, std::string text)
+void SampleSlot::textEntered(TextInput *textInput, const std::string &text)
 {
     if (text.length() == 0)
     {
@@ -300,7 +300,7 @@ void SampleSlot::textEntered(TextInput *textInput, std::string text)
     // plugin->setMidiNote(textInput->getId(), (uint8_t)val);
 }
 
-void SampleSlot::textInputChanged(TextInput *textInput, std::string text) {}
+void SampleSlot::textInputChanged(TextInput *textInput, const std::string &text) {}
 
 void SampleSlot::setMidiNumber(int midi, bool sendCallback)
 {

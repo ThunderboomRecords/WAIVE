@@ -482,7 +482,7 @@ void WAIVESequencerUI::dropdownSelection(DropDown *widget, int item)
         setParameterValue(kGrooveGenre, item);
 }
 
-void WAIVESequencerUI::textEntered(TextInput *textInput, std::string text)
+void WAIVESequencerUI::textEntered(TextInput *textInput, const std::string &text)
 {
     if (text.length() == 0)
     {
@@ -518,7 +518,7 @@ void WAIVESequencerUI::textEntered(TextInput *textInput, std::string text)
     setParameterValue(kMidi1 + textInput->getId(), static_cast<float>(val - 1));
 }
 
-void WAIVESequencerUI::textInputChanged(TextInput *textInput, std::string text)
+void WAIVESequencerUI::textInputChanged(TextInput *textInput, const std::string &text)
 {
 }
 

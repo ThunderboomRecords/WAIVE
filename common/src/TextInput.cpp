@@ -49,6 +49,15 @@ void TextInput::onNanoDisplay()
     fill();
     closePath();
 
+    if (renderDebug)
+    {
+        beginPath();
+        strokeColor(accent_color);
+        rect(0, 0, width, height);
+        stroke();
+        closePath();
+    }
+
     beginPath();
     if (hasKeyFocus)
         strokeColor(accent_color);
@@ -88,7 +97,7 @@ void TextInput::onNanoDisplay()
         if (align == Align::ALIGN_CENTER)
             textBounds(width / 2, height / 2, textValue.c_str(), nullptr, bounds);
         else if (align == Align::ALIGN_LEFT)
-            textBounds(8, height / 2, textValue.c_str(), nullptr, bounds);
+            textBounds(2, height / 2, textValue.c_str(), nullptr, bounds);
         else
             textBounds(width - 2, height / 2, textValue.c_str(), nullptr, bounds);
 
@@ -104,6 +113,15 @@ void TextInput::onNanoDisplay()
             bounds.setX(2);
         else
             bounds.setX(width - 2);
+    }
+
+    if (renderDebug)
+    {
+        beginPath();
+        strokeColor(Color(255, 0, 255));
+        rect(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+        stroke();
+        closePath();
     }
 
     if (!hasKeyFocus)
@@ -159,7 +177,7 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
     }
 
     // Validate text here...
-    bool valid = false;
+    bool valid = true;
 
     switch (textType)
     {
@@ -179,11 +197,11 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
     if (!valid)
         return true;
 
-    if (callback != nullptr)
-        callback->textInputChanged(this, textValue);
-
     textValue.assign(candidate);
     position = newPosition;
+
+    if (callback != nullptr)
+        callback->textInputChanged(this, textValue);
 
     repaint();
     return true;
@@ -221,12 +239,18 @@ bool TextInput::onKeyboard(const KeyboardEvent &ev)
         {
             textValue.erase(textValue.begin() + position - 1, textValue.begin() + position);
             position = position - 1;
+
+            if (callback != nullptr)
+                callback->textInputChanged(this, textValue);
         }
         break;
     case kKeyDelete:
         if (position < textValue.size())
+        {
             textValue.erase(textValue.begin() + position, textValue.begin() + position + 1);
-
+            if (callback != nullptr)
+                callback->textInputChanged(this, textValue);
+        }
         break;
     case kKeyEnter:
         if (callback != nullptr && textValue.compare(lastTextValue) != 0)

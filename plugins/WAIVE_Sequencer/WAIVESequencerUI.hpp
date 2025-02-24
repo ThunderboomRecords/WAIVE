@@ -56,8 +56,8 @@ protected:
     void knobDragFinished(Knob *knob, float value) override;
     void knobValueChanged(Knob *knob, float value) override;
     void dropdownSelection(DropDown *widget, int item) override;
-    void textEntered(TextInput *textInput, std::string text) override;
-    void textInputChanged(TextInput *textInput, std::string text) override;
+    void textEntered(TextInput *textInput, const std::string &text) override;
+    void textInputChanged(TextInput *textInput, const std::string &text) override;
     void onDrumPatternClicked(DrumPattern *widget, int instrument, int sixteenth) override;
     void onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Note> note, float deltaY) override;
     void onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<Note> note, uint32_t tick) override;
