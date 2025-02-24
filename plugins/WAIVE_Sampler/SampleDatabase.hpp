@@ -40,6 +40,8 @@
 #include <fmt/core.h>
 #include "HTTPClient.hpp"
 
+#include "SampleInfo.hpp"
+
 #ifdef LOCAL_SERVER
 #define WAIVE_SERVER "http://localhost:3000"
 #else
@@ -48,52 +50,6 @@
 
 using json = nlohmann::json;
 
-// typedef Tag std::string;
-struct Tag
-{
-    int id;
-    std::string name;
-    float embedX;
-    float embedY;
-};
-
-class SampleInfo
-{
-public:
-    SampleInfo(int id, std::string name, std::string path, bool waive);
-
-    int getId() const;
-    void setId(int newId);
-    json toJson() const;
-    void print() const;
-    void setTags(const std::vector<Tag> &tags_);
-
-    std::string name;
-    std::string path; // relative from DATA_DIR/WAIVE
-    float embedX;
-    float embedY;
-    bool waive;
-    std::vector<Tag> tags;
-    Source sourceInfo;
-    std::string tagString;
-    float volume;
-    float pitch;
-    float percussiveBoost;
-    float filterCutoff;
-    float filterResonance;
-    Filter::FilterType filterType;
-    ADSR_Params adsr;
-    float sustainLength;
-    size_t sourceStart;
-    size_t sampleLength;
-    std::string preset;
-
-    bool saved;
-
-private:
-    int id;
-};
-
 enum DownloadState
 {
     NOT_DOWNLOADED,
@@ -101,8 +57,12 @@ enum DownloadState
     DOWNLOADING,
 };
 
-struct SourceInfo
+class SourceInfo
 {
+public:
+    explicit SourceInfo(const SourceInfo &sourceInfo);
+    SourceInfo() = default;
+
     int id = -1;
     std::string archive = "";
     std::string description = "";
@@ -221,6 +181,9 @@ public:
     explicit SampleDatabase(HTTPClient *httpClient);
     ~SampleDatabase();
 
+    SampleDatabase(const SampleDatabase &) = delete;
+    SampleDatabase &operator=(const SampleDatabase &) = delete;
+
     Poco::BasicEvent<const DatabaseUpdate> databaseUpdate;
 
     // SAMPLES
@@ -233,7 +196,7 @@ public:
     std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
     std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
     std::string getFullSamplePath(std::shared_ptr<SampleInfo> sample) const;
-    std::string getFullSourcePath(SourceInfo source) const;
+    std::string getFullSourcePath(const SourceInfo &source) const;
     std::string getSampleFolder() const;
     std::string getSourceFolder() const;
     const std::string &getSourcePreview() const;

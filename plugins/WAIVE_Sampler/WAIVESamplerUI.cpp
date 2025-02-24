@@ -1153,12 +1153,7 @@ void WAIVESamplerUI::sourceDownload(int index)
 
 void WAIVESamplerUI::sourceLoad(int index)
 {
-    if (index < 0)
-        return;
-
-    std::string fp = plugin->sd.getFullSourcePath(plugin->sd.sourcesList.at(index));
-    std::string tagString = makeTagString(plugin->sd.sourcesList.at(index).tags);
-    plugin->loadSourceFile(fp, tagString);
+    plugin->loadSource(index);
 }
 
 void WAIVESamplerUI::sourcePreview(int index, bool start)

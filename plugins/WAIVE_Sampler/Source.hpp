@@ -8,6 +8,16 @@
 
 struct Source
 {
+    explicit Source(const Source &other)
+        : name(other.name),
+          fp(other.fp),
+          buffer(other.buffer),
+          length(other.length),
+          sourceFeatures(other.sourceFeatures),
+          sourceMeasurements(other.sourceMeasurements),
+          tagString(other.tagString),
+          sourceLoaded(other.sourceLoaded) {};
+    Source() = default;
     bool sourceLoaded = false;
     std::string name;
     std::string fp;

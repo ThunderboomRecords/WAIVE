@@ -1,125 +1,14 @@
 #include "SampleDatabase.hpp"
 
-bool saveJson(json data, std::string fp)
+SourceInfo::SourceInfo(const SourceInfo &sourceInfo) : id(sourceInfo.id),
+                                                       archive(sourceInfo.archive),
+                                                       description(sourceInfo.description),
+                                                       filename(sourceInfo.filename),
+                                                       tags(sourceInfo.tags),
+                                                       downloaded(sourceInfo.downloaded),
+                                                       license(sourceInfo.license),
+                                                       url(sourceInfo.url)
 {
-    std::ofstream ofs(fp, std::ofstream::trunc);
-
-    if (!ofs.is_open())
-    {
-        std::cerr << "Failed to open " << fp << std::endl;
-        return false;
-    }
-
-    ofs << data;
-    ofs.close();
-    return true;
-}
-
-SampleInfo::SampleInfo(
-    int id,
-    std::string name,
-    std::string path,
-    bool waive) : id(id),
-                  embedX(0.0f),
-                  embedY(0.0f),
-                  volume(1.0f),
-                  pitch(1.0f),
-                  percussiveBoost(1.0f),
-                  sustainLength(10.0f),
-                  sourceStart(0),
-                  sampleLength(0),
-                  saved(false),
-                  name(name),
-                  path(path),
-                  waive(waive),
-                  filterCutoff(0.99),
-                  filterResonance(0.0),
-                  filterType(Filter::FILTER_LOWPASS)
-{
-}
-
-int SampleInfo::getId() const
-{
-    return id;
-}
-
-void SampleInfo::setId(int newId)
-{
-    id = newId;
-}
-
-void SampleInfo::setTags(const std::vector<Tag> &tags_)
-{
-    tags = tags_;
-    tagString = makeTagString(tags_);
-}
-
-void SampleInfo::print() const
-{
-    std::string f_type;
-    switch (filterType)
-    {
-    case Filter::FILTER_LOWPASS:
-        f_type.assign("lowpass");
-        break;
-    case Filter::FILTER_HIGHPASS:
-        f_type.assign("highpass");
-        break;
-    case Filter::FILTER_BANDPASS:
-        f_type.assign("bandpass");
-        break;
-    default:
-        f_type.assign("<unknown>");
-        break;
-    }
-
-    printf("================\n");
-    printf("SampleInfo: %d (waive: %d)\n", id, waive);
-    printf(" - source: %s\n - sourceStart: %zu\n - sampleLength: %zu\n", sourceInfo.fp.c_str(), sourceStart, sampleLength);
-    printf(" - embedding: %.3f %.3f\n", embedX, embedY);
-    printf(" - Parameters:\n   volume: %.3f  percussiveBoost: %.3f  pitch: %.3f\n", volume, percussiveBoost, pitch);
-    printf(" - ADSR:\n    A: %.3fms  D: %.3fms  S:  %.3f (length %.1fms) R: %.3fms\n", adsr.attack, adsr.decay, adsr.sustain, sustainLength, adsr.release);
-    printf(" - Filter:\n    filterType: %s  cuffoff: %.3f  resonance: %.3f\n", f_type.c_str(), filterCutoff, filterResonance);
-    printf(" - Preset: %s\n", preset.c_str());
-    printf("================\n");
-}
-
-json SampleInfo::toJson() const
-{
-    json data;
-    data["id"] = id;
-    data["name"] = name;
-    data["path"] = path;
-    data["waive"] = waive;
-    data["source"] = sourceInfo.fp;
-    data["sourceStart"] = sourceStart;
-    data["sampleLength"] = sampleLength;
-    data["embedding"] = {{"x", embedX}, {"y", embedY}};
-    data["ampEnv"] = {
-        {"attack", adsr.attack},
-        {"decay", adsr.decay},
-        {"sustain", adsr.sustain},
-        {"release", adsr.release},
-        {"sustainLength", sustainLength},
-    };
-    data["parameters"] = {
-        {"volume", volume},
-        {"pitch", pitch},
-        {"percussiveBoost", percussiveBoost},
-    };
-    data["filter"] = {
-        {"filterCutoff", filterCutoff},
-        {"filterResonance", filterResonance},
-        {"filterType", filterType},
-    };
-    data["tags"] = json::array();
-    for (const Tag &t : tags)
-        data["tags"].push_back(t.name);
-    data["tagString"] = tagString;
-    data["saved"] = saved;
-    data["preset"] = preset;
-
-    return data;
 }
 
 SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
@@ -211,6 +100,7 @@ SampleDatabase::~SampleDatabase()
 
 void SampleDatabase::loadSampleDatabase()
 {
+    std::cout << "\nSampleDatabase::loadSampleDatabase()\n";
     Poco::Data::Statement select(*session);
     try
     {
@@ -265,9 +155,9 @@ void SampleDatabase::loadSampleDatabase()
                       << row << std::endl;
             continue;
         }
-        std::cout << "SampleDatabase::loadSampleDatabase() s->tagString = " << s->tagString << std::endl;
 
         fAllSamples.push_back(s);
+
         SamplePoint point(data["embedding"]["x"], data["embedding"]["y"]);
         point.info = s;
         points.push_back(point);
@@ -291,6 +181,7 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
         s->tagString.assign(data["tagString"]);
         s->sampleLength = data["sampleLength"];
         s->sourceInfo.fp = data["source"];
+        s->sourceInfo.tagString = data["tagString"];
         s->sourceStart = data["sourceStart"];
         s->volume = data["parameters"]["volume"];
         s->pitch = data["parameters"]["pitch"];
@@ -591,12 +482,11 @@ std::shared_ptr<SampleInfo> SampleDatabase::findSample(int id)
     if (id < 0)
         return nullptr;
 
-    for (int i = 0; i < fAllSamples.size(); i++)
-    {
-        if (fAllSamples[i]->getId() == id)
-            return fAllSamples.at(i);
-    }
-    return nullptr;
+    auto it = std::find_if(fAllSamples.begin(), fAllSamples.end(),
+                           [id](const auto &sample)
+                           { return sample && sample->getId() == id; });
+
+    return (it != fAllSamples.end()) ? *it : nullptr;
 }
 
 std::vector<std::shared_ptr<SampleInfo>> SampleDatabase::findKNearest(float x, float y, int k)
@@ -631,7 +521,7 @@ std::string SampleDatabase::getFullSamplePath(std::shared_ptr<SampleInfo> sample
     return Poco::Path(sampleFolder).append(sample->path).append(sample->name).toString();
 }
 
-std::string SampleDatabase::getFullSourcePath(SourceInfo source) const
+std::string SampleDatabase::getFullSourcePath(const SourceInfo &source) const
 {
     return Poco::Path(sourceFolder).append(source.url).toString();
 }
@@ -716,38 +606,20 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
 
 std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<SampleInfo> sample)
 {
+    if (!sample)
+    {
+        std::cerr << "Error: nullptr passed to duplicateSampleInfo\n";
+        return nullptr;
+    }
+
     std::string duplicateName = getNewSampleName(sample->name);
+    auto s = std::make_shared<SampleInfo>(*sample); // Use copy constructor
 
-    std::shared_ptr<SampleInfo> s(new SampleInfo(-1, duplicateName, sample->path, sample->waive));
-    s->pitch = sample->pitch;
-    s->percussiveBoost = sample->percussiveBoost;
-    s->volume = sample->volume;
-    s->filterCutoff = sample->filterCutoff;
-    s->filterResonance = sample->filterResonance;
-    s->filterType = sample->filterType;
-    s->sustainLength = sample->sustainLength;
-    s->adsr.attack = sample->adsr.attack;
-    s->adsr.decay = sample->adsr.decay;
-    s->adsr.sustain = sample->adsr.sustain;
-    s->adsr.release = sample->adsr.release;
-    s->tagString = sample->tagString;
-    for (const auto &t : sample->tags)
-        s->tags.push_back(t);
-    s->sourceStart = sample->sourceStart;
-    s->embedX = sample->embedX;
-    s->embedY = sample->embedY;
-    s->preset = sample->preset;
+    s->setId(-1); // Reset ID for the duplicated sample
+    s->name = duplicateName;
 
-    s->sourceInfo.fp = sample->sourceInfo.fp;
-    s->sourceInfo.buffer = sample->sourceInfo.buffer;
-    s->sourceInfo.length = sample->sourceInfo.length;
-    s->sourceInfo.name = sample->sourceInfo.name;
-    s->sourceInfo.sourceFeatures = sample->sourceInfo.sourceFeatures;
-    s->sourceInfo.sourceMeasurements = sample->sourceInfo.sourceMeasurements;
-    s->sourceInfo.sourceLoaded = sample->sourceInfo.sourceLoaded;
-    s->sourceInfo.tagString = sample->sourceInfo.tagString;
-
-    std::cout << "SampleDatabase::duplicateSampleInfo: s->tagString = " << s->tagString << ", sample->tagString = " << sample->tagString << std::endl;
+    std::cout << "SampleDatabase::duplicateSampleInfo: s->tagString = "
+              << s->tagString << ", sample->tagString = " << sample->tagString << std::endl;
 
     return s;
 }
@@ -1569,23 +1441,4 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
     default:
         break;
     }
-}
-
-std::string makeTagString(const std::vector<Tag> &tags)
-{
-    if (tags.empty())
-        return "";
-
-    std::ostringstream tagStream;
-    for (const auto &tag : tags)
-    {
-        if (&tag != &tags[0])
-            tagStream << "|";
-        tagStream << tag.name;
-    }
-
-    std::string tagString = tagStream.str();
-    std::cout << tagString << std::endl;
-
-    return tagString;
 }

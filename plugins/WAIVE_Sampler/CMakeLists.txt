@@ -25,6 +25,7 @@ dpf_add_plugin(
       Envelopes.cpp
       Filters.cpp
       OSCClient.cpp
+      SampleInfo.cpp
       HTTPClient.cpp
       ${CMAKE_SOURCE_DIR}/common/WAIVEUtils.hpp
       ${CMAKE_SOURCE_DIR}/common/src/model_utils.cpp

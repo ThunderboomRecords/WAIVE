@@ -145,6 +145,7 @@ protected:
     void stopSourcePreview();
     void loadSample(int id);
     void loadSample(std::shared_ptr<SampleInfo> s);
+    void loadSource(int index);
     void loadSourceFile(const std::string &fp, const std::string &tagString = "");
     void loadSlot(int slot, int id);
     void loadPreset(Preset preset);

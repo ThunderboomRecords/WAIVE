@@ -602,6 +602,17 @@ void WAIVESampler::clear()
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
+void WAIVESampler::loadSource(int index)
+{
+    if (index < 0)
+        return;
+
+    std::string fp = sd.getFullSourcePath(sd.sourcesList.at(index));
+    std::string tagString = makeTagString(sd.sourcesList.at(index).tags);
+
+    loadSourceFile(fp, tagString);
+}
+
 void WAIVESampler::loadSourceFile(const std::string &fp, const std::string &tagString)
 {
     // std::cout << "WAIVESampler::loadSourceFile" << std::endl;
@@ -655,8 +666,6 @@ void WAIVESampler::newSample()
         fCurrentSample->adsr = ADSR_Params(ampEnvGen.getADSR());
         fCurrentSample->saved = false;
     }
-
-    std::cout << "fCurrentSample->tagString = " << fCurrentSample->tagString << "\n";
 
     pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
     pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
@@ -744,7 +753,9 @@ void WAIVESampler::stopSourcePreview()
 
 void WAIVESampler::loadSample(int id)
 {
-    loadSample(sd.findSample(id));
+    std::shared_ptr<SampleInfo> s = sd.findSample(id);
+    std::cout << "WAIVESampler::loadSample s->tagString = " << s->tagString << "\n";
+    loadSample(s);
 }
 
 void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
@@ -763,10 +774,6 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
 
     fCurrentSample = s;
 
-    // fCurrentSample = sd.duplicateSampleInfo(s);
-    // fCurrentSample->saved = false;
-    // fCurrentSample->waive = true;
-
     renderSampleLock = true;
     setParameterValue(kSampleVolume, fCurrentSample->volume);
     setParameterValue(kSamplePitch, fCurrentSample->pitch);
@@ -783,18 +790,15 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
 
     if (!fCurrentSample->sourceInfo.sourceLoaded)
     {
-        loadSourceFile(fCurrentSample->sourceInfo.fp);
+        loadSourceFile(fCurrentSample->sourceInfo.fp, fCurrentSample->sourceInfo.tagString);
     }
     else
     {
-        // selectWaveform(&fCurrentSample->sourceInfo.buffer, fCurrentSample->sourceStart);
         renderSample();
 
         pluginUpdate.notify(this, PluginUpdate::kSampleLoaded);
         pluginUpdate.notify(this, PluginUpdate::kParametersChanged);
     }
-
-    std::cout << "fCurrentSample->tagString = " << fCurrentSample->tagString << "\n";
 }
 
 void WAIVESampler::loadPreset(Preset preset)
@@ -840,14 +844,7 @@ void WAIVESampler::renderSample()
 {
     // LOG_LOCATION
     if (fCurrentSample == nullptr || !fCurrentSample->sourceInfo.sourceLoaded || renderSampleLock)
-    {
-        if (fCurrentSample == nullptr)
-            std::cout << "renderSample() exit early, reason: fCurrentSample == nullptr\n";
-        else if (!fCurrentSample->sourceInfo.sourceLoaded)
-            std::cout << "renderSample() exit early, reason: fCurrentSample->sourceInfo.sourceLoaded == false\n";
-
         return;
-    }
 
     if (editorPreviewPlayer->state != PlayState::STOPPED)
     {
@@ -873,8 +870,8 @@ void WAIVESampler::renderSample()
     float releaseFinishIndex = releaseIndex + releaseTime;
     releaseIndex = std::min(static_cast<float>(sourceInfo->length) - releaseTime, releaseIndex); // release ampEnv sooner if near end of source buffer
 
-    fmt::print("attack = {:.1f}, decay = {:.1f}, sustainLength = {:.1f}, release = {:.1f}\n", ampEnvGen.getAttack(), ampEnvGen.getDecay(), fCurrentSample->sustainLength, ampEnvGen.getRelease());
-    fmt::print("sourceInfo->length = {}, releaseIndex = {:.1f}, releaseFinishIndex = {:.1f}\n", sourceInfo->length, releaseIndex, releaseFinishIndex);
+    // fmt::print("attack = {:.1f}, decay = {:.1f}, sustainLength = {:.1f}, release = {:.1f}\n", ampEnvGen.getAttack(), ampEnvGen.getDecay(), fCurrentSample->sustainLength, ampEnvGen.getRelease());
+    // fmt::print("sourceInfo->length = {}, releaseIndex = {:.1f}, releaseFinishIndex = {:.1f}\n", sourceInfo->length, releaseIndex, releaseFinishIndex);
 
     float amp = ampEnvGen.getValue();
 
@@ -951,7 +948,7 @@ void WAIVESampler::renderSample()
 
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 
-    std::cout << "renderSample() finished\n";
+    // std::cout << "renderSample() finished\n";
 }
 
 void WAIVESampler::loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info)
@@ -1113,6 +1110,9 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         if (fCurrentSample == nullptr)
             newSample();
 
+        if (fCurrentSample == nullptr)
+            return;
+
         size_t sourceLength = tempBuffer->size();
         fCurrentSample->sourceInfo.buffer.resize(sourceLength);
         fCurrentSample->sourceInfo.length = sourceLength;
@@ -1126,7 +1126,6 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
                 newSample();
 
             fCurrentSample->sourceInfo.sourceLoaded = true;
-            // fCurrentSample->tagString = fCurrentSample->sourceInfo.tagString;
             renderSample();
 
             pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
