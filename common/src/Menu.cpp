@@ -6,7 +6,8 @@ Menu::Menu(Widget *parent) noexcept
       scroll_index(0),
       display_number(4),
       has_focus(false),
-      alignment(Align::ALIGN_LEFT)
+      alignment(Align::ALIGN_LEFT),
+      callback(nullptr)
 {
     hide();
 }

@@ -2,7 +2,7 @@
 
 START_NAMESPACE_DISTRHO
 
-Icon::Icon(Widget *widget) noexcept : WAIVEWidget(widget), hoverable(false), imageData(nullptr) {}
+Icon::Icon(Widget *widget) noexcept : WAIVEWidget(widget), hoverable(false), hovered(false), imageData(nullptr) {}
 
 void Icon::setImageData(const uchar *data, uint dataSize, int width, int height, ImageFlags imageFlags)
 {

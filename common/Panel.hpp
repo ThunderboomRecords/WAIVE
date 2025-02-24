@@ -8,7 +8,7 @@ START_NAMESPACE_DISTRHO
 class Panel : public WidgetGroup
 {
 public:
-    Panel(Widget *widget);
+    explicit Panel(Widget *widget);
 
     std::string title;
     std::string label;

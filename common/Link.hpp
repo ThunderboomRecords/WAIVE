@@ -11,9 +11,7 @@ START_NAMESPACE_DISTRHO
 class Link : public WAIVEWidget
 {
 public:
-    Link(Widget *widget) noexcept;
-
-    // void openURL();
+    explicit Link(Widget *widget) noexcept;
 
     std::string url;
 

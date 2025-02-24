@@ -8,6 +8,7 @@ Waveform::Waveform(Widget *widget) noexcept
       dragAction(NONE),
       waveformSelectStart(0),
       waveformSelectEnd(0),
+      waveformLength(0),
       selectable(false),
       zoomable(true),
       visibleStart(0),

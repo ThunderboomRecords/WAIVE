@@ -286,7 +286,10 @@ WAIVESequencerUI::WAIVESequencerUI() : UI(UI_W, UI_H),
         setSize(width, height);
 }
 
-WAIVESequencerUI::~WAIVESequencerUI() {}
+WAIVESequencerUI::~WAIVESequencerUI()
+{
+    std::cout << "Closing WAIVESequencerUI" << std::endl;
+}
 
 void WAIVESequencerUI::parameterChanged(uint32_t index, float value)
 {

@@ -9,6 +9,7 @@ Knob::Knob(Widget *parent) noexcept
       dragging_(false),
       dragStart(0.0f),
       value_(0.0f),
+      tmp_p(0.0f),
       min(0.0f),
       max(1.0f),
       sensitive(false),

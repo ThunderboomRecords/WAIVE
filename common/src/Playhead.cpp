@@ -3,7 +3,8 @@
 START_NAMESPACE_DISTRHO
 
 Playhead::Playhead(Widget *parent) noexcept
-    : WAIVEWidget(parent)
+    : WAIVEWidget(parent),
+      progress(nullptr)
 {
 }
 
@@ -11,6 +12,9 @@ void Playhead::onNanoDisplay()
 {
     const float width = getWidth();
     const float height = getHeight();
+
+    if (progress == nullptr)
+        return;
 
     float x = (*progress) * width;
 
