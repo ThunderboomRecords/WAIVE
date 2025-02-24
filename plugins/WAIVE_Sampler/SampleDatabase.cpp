@@ -93,6 +93,9 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
 
 SampleDatabase::~SampleDatabase()
 {
+    if (session->isTransaction())
+        session->commit();
+
     taskManager.cancelAll();
     taskManager.joinAll();
     session->close();
@@ -239,7 +242,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
         return false;
     }
 
-    std::cout << "insert done" << std::endl;
+    std::cout << " - insert done" << std::endl;
 
     unsigned long lastId;
     try
@@ -255,7 +258,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
         return false;
     }
 
-    std::cout << "lastId " << lastId << std::endl;
+    std::cout << " - lastId " << lastId << std::endl;
 
     sample->setId(lastId);
 
@@ -340,6 +343,9 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
             std::cerr << "Database session not initialized" << std::endl;
             return false;
         }
+
+        if (session->isTransaction())
+            session->commit();
 
         std::string archive = "User";
         std::string tags = "";
@@ -462,6 +468,9 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
     sample->name.assign(newName.getFileName());
     sample->saved = true;
     int id = sample->getId();
+
+    if (session->isTransaction())
+        session->commit();
 
     Poco::Data::Statement update(*session);
     update << "UPDATE Samples SET name = ? WHERE id = ?",
@@ -768,15 +777,22 @@ void SampleDatabase::downloadSourcesList()
             // Drop non-user entries first
             try
             {
-                *session << "DELETE FROM Sources WHERE archive != \"User\"", Poco::Data::Keywords::now;
+                std::string exists;
+                *session << "SELECT name FROM sqlite_master WHERE type='table' AND name='Sources'",
+                    Poco::Data::Keywords::into(exists),
+                    Poco::Data::Keywords::range(0, 1),
+                    Poco::Data::Keywords::now;
+
+                if (!exists.empty())
+                    *session << "DELETE FROM Sources WHERE archive != \"User\"", Poco::Data::Keywords::now;
             }
             catch (const Poco::DataException &e)
             {
-                std::cerr << e.what() << std::endl;
+                std::cerr << "Error in SampleDatabase::downloadSourcesList() (Poco::DataException):\n" << e.what() << ": " << e.message() << std::endl;
             }
             catch (const std::exception &e)
             {
-                std::cerr << e.what() << std::endl;
+                std::cerr << "Error in SampleDatabase::downloadSourcesList():\n" << e.what() << std::endl;
             }
 
             parseTSV(
@@ -808,15 +824,22 @@ void SampleDatabase::downloadTagsList()
         {
             try
             {
-                *session << "DELETE FROM Tags", Poco::Data::Keywords::now;
+                std::string exists;
+                *session << "SELECT name FROM sqlite_master WHERE type='table' AND name='Tags'",
+                    Poco::Data::Keywords::into(exists),
+                    Poco::Data::Keywords::range(0, 1),
+                    Poco::Data::Keywords::now;
+
+                if (!exists.empty())
+                    *session << "DELETE FROM Tags", Poco::Data::Keywords::now;
             }
             catch (const Poco::DataException &e)
             {
-                std::cerr << e.what() << '\n';
+                std::cerr << "Error in SampleDatabase::downloadTagsList() (Poco::DataException):\n" << e.what() << ": " << e.message() << std::endl;
             }
             catch (const std::exception &e)
             {
-                std::cerr << e.what() << std::endl;
+                std::cerr << "Error in SampleDatabase::downloadTagsList()\n" << e.what() << std::endl;
             }
 
             parseTSV(
@@ -840,7 +863,10 @@ void SampleDatabase::parseTSV(
     const std::vector<std::string> &column_type,
     const std::string &csvData)
 {
-    std::cout << "SampleDatabase::parseTSV" << std::endl;
+    std::cout << "\nSampleDatabase::parseTSV for table " << table << std::endl;
+
+    if (session->isTransaction())
+        session->commit();
 
     // 1. Create database
     printf("- 1 Create database %s\n", table.c_str());
@@ -861,7 +887,7 @@ void SampleDatabase::parseTSV(
     }
     catch (const Poco::DataException &e)
     {
-        std::cerr << e.what() << '\n';
+        std::cerr << e.what() << ": " << e.message() << '\n';
     }
 
     // 2. Tokenise CSV data
@@ -901,65 +927,70 @@ void SampleDatabase::parseTSV(
     // 4. Iterate line by line
     printf("- 4. Iterate line by line\n");
 
-    double progress = 0.0;
     double pStep = 1.0 / tokenizer.count();
-
-    int batch_size = 1000;
 
     session->begin();
 
-    size_t i;
     std::cout << "  tokenizer.count(): " << tokenizer.count() << std::endl;
     std::cout << "  " << insertQuery.str() << std::endl;
-    for (i = 1; i < tokenizer.count(); ++i)
+    try
     {
-        std::string line = tokenizer[i];
-        Poco::StringTokenizer lineTokenizer(line, "\t");
+        size_t i;
+        double progress = 0.0;
+        int batch_size = 1000;
 
-        if (lineTokenizer.count() == column_names.size())
+        for (i = 1; i < tokenizer.count(); ++i)
         {
-            try
+            std::string line = tokenizer[i];
+            Poco::StringTokenizer lineTokenizer(line, "\t");
+
+            if (lineTokenizer.count() == column_names.size())
             {
-                Poco::Data::Statement insertStmt(*session);
-                insertStmt << insertQuery.str();
-                for (size_t j = 0; j < lineTokenizer.count(); ++j)
-                    insertStmt, Poco::Data::Keywords::use(lineTokenizer[j]);
-
-                insertStmt.execute();
-
-                if (i % batch_size == 0)
+                try
                 {
-                    std::cout << "Row " << i << " parsed" << std::endl;
-                    session->commit();
-                    session->begin();
+                    Poco::Data::Statement insertStmt(*session);
+                    insertStmt << insertQuery.str();
+                    for (size_t j = 0; j < lineTokenizer.count(); ++j)
+                        insertStmt, Poco::Data::Keywords::use(lineTokenizer[j]);
+
+                    insertStmt.execute();
+
+                    if (i % batch_size == 0)
+                    {
+                        std::cout << "Row " << i << " parsed" << std::endl;
+                        session->commit();
+                        session->begin();
+                    }
+                }
+                catch (const Poco::DataException &e)
+                {
+                    std::cerr << "Error in parseTSV: " << e.what() << std::endl;
                 }
             }
-            catch (const Poco::DataException &e)
+            else
             {
-                std::cerr << "Error in parseTSV: " << e.what() << std::endl;
+                std::cout << "Skipping row " << i << " (lineTokenizer.count() " << lineTokenizer.count() << " != column_names.size() " << column_names.size() << ")" << std::endl;
+                std::cout << "  " << line << std::endl;
             }
+            progress += pStep;
         }
-        else
-        {
-            std::cout << "Skipping row " << i << " (lineTokenizer.count() " << lineTokenizer.count() << " != column_names.size() " << column_names.size() << ")" << std::endl;
-            std::cout << "  " << line << std::endl;
-        }
-        progress += pStep;
-    }
 
-    if (i % batch_size != 0)
-    {
-        std::cout << "Row " << i << " parsed" << std::endl;
-        try
+        if (i % batch_size != 0)
         {
+            std::cout << "Row " << i << " parsed" << std::endl;
             session->commit();
         }
-        catch (const Poco::DataException &e)
-        {
-            std::cerr << "Error in parseTSV: " << e.what() << std::endl;
-        }
+    }
+    catch (const Poco::DataException &e)
+    {
+        std::cerr << "Error in parseTSV: " << e.what() << std::endl;
+        session->rollback();
     }
 
+    if (session->isTransaction())
+        session->commit();
+
+    std::cout << " - session->isTransaction() = " << session->isTransaction() << "\n";
     std::cout << "ParseCSV DONE\n";
 }
 
@@ -1173,6 +1204,7 @@ void SampleDatabase::makeTagSourcesTable()
     catch (const Poco::DataException &e)
     {
         std::cerr << "Error populating SourcesTags: " << e.what() << std::endl;
+        session->rollback();
         return;
     }
 
@@ -1182,6 +1214,9 @@ void SampleDatabase::makeTagSourcesTable()
         session->commit();
     }
 
+    if (session->isTransaction())
+        session->commit();
+
     std::cout << "SampleDatabase::makeTagSourcesTable() finished" << std::endl;
 }
 
@@ -1190,6 +1225,9 @@ void SampleDatabase::getTagList()
     // std::cout << "SampleDatabase::getTagList()" << std::endl;
     if (!sourceDatabaseInitialised)
         return;
+
+    if (session->isTransaction())
+        session->commit();
 
     tagList.clear();
 
@@ -1262,6 +1300,9 @@ void SampleDatabase::filterSources()
 
     if (!session)
         return;
+
+    if (session->isTransaction())
+        session->commit();
 
     std::string exists;
     try

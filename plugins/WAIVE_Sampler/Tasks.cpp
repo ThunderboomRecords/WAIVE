@@ -315,7 +315,6 @@ void WaveformLoaderTask::runTask()
         {
             std::cerr << "Could not init samplerate converter, reason: " << sf_error_number(error) << std::endl;
             throw std::runtime_error("Could not init samplerate converter, reason: " + std::string(sf_error_number(error)));
-            return;
         }
 
         setProgress(progress);
@@ -339,7 +338,6 @@ void WaveformLoaderTask::runTask()
             {
                 std::cout << "Error during sample rate conversion: " << src_strerror(error) << std::endl;
                 throw std::runtime_error("Error during sample rate conversion: " + std::string(src_strerror(error)));
-                return;
             }
 
             sample_tmp.insert(sample_tmp.end(), src_data.data_out, src_data.data_out + src_data.output_frames_gen * sampleChannels);
