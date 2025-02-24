@@ -110,6 +110,7 @@ protected:
     void mapSampleSelected(int id) override;
     void mapSampleLoadSlot(int index, int slot) override;
     void mapSampleImport() override;
+    void mapSampleDelete(int id) override;
     void textEntered(TextInput *textInput, std::string text) override;
     void textInputChanged(TextInput *textInput, std::string text) override;
     void dropdownSelection(DropDown *widget, int item) override;

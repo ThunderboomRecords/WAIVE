@@ -27,6 +27,7 @@ public:
         virtual void mapSampleSelected(int id) = 0;
         virtual void mapSampleLoadSlot(int index, int slot) = 0;
         virtual void mapSampleImport() = 0;
+        virtual void mapSampleDelete(int id) = 0;
     };
 
     explicit SampleMap(Widget *widget, DragDropManager *manager) noexcept;

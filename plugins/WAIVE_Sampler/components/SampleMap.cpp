@@ -21,8 +21,9 @@ SampleMap::SampleMap(Widget *widget, DragDropManager *manager) noexcept
       callback(nullptr)
 {
     menu = new Menu(widget);
-    for (int i = 1; i < NUM_SLOTS; i++)
-        menu->addItem(fmt::format("Add to slot {:d}", i));
+    for (int i = 0; i < NUM_SLOTS; i++)
+        menu->addItem(fmt::format("Add to slot {:d}", i + 1));
+    menu->addItem("Delete Sample");
     menu->setFont("Poppins Medium", Poppins_Medium, Poppins_Medium_len);
     menu->setFontSize(14.f);
     menu->calculateWidth();
@@ -71,15 +72,15 @@ bool SampleMap::onMouse(const MouseEvent &ev)
             dragAction = CLICKING;
         else if (ev.button == MouseButton::kMouseButtonRight)
         {
-            if (highlightSample >= 0)
-            {
-                contextMenuSample = highlightSample;
-                menu->setAbsolutePos(
-                    ev.pos.getX() + getAbsoluteX() - 2,
-                    ev.pos.getY() + getAbsoluteY() - 2);
-                menu->toFront();
-                menu->show();
-            }
+            if (highlightSample < 0)
+                return false;
+
+            contextMenuSample = highlightSample;
+            menu->setAbsolutePos(
+                ev.pos.getX() + getAbsoluteX() - 2,
+                ev.pos.getY() + getAbsoluteY() - 2);
+            menu->toFront();
+            menu->show();
         }
         return false;
     }
@@ -224,8 +225,13 @@ bool SampleMap::onScroll(const ScrollEvent &ev)
 void SampleMap::onMenuItemSelection(Menu *menu, int item, const std::string &value)
 {
     // std::cout << "put sample " << contextMenuSample << " into slot " << item << std::endl;
-    if (callback != nullptr)
+    if (callback == nullptr)
+        return;
+
+    if (item < NUM_SLOTS)
         callback->mapSampleLoadSlot(contextMenuSample, item);
+    else
+        callback->mapSampleDelete(contextMenuSample);
 }
 
 Color SampleMap::get2DColor(float x, float y)

@@ -155,6 +155,7 @@ protected:
     void renderSample();
     void loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info);
     void clearSamplePlayer(SamplePlayer &sp);
+    void deleteSample(int id);
     void triggerPreview();
     std::pair<float, float> getEmbedding(std::vector<float> *wf);
     void getFeatures(std::vector<float> *wf, std::vector<float> *feature);

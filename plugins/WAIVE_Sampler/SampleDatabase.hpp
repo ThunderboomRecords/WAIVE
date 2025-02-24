@@ -193,6 +193,7 @@ public:
     bool updateSample(std::shared_ptr<SampleInfo> sample);
     bool renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name);
     bool addSourceToLibrary(const std::string &path);
+    bool deleteSample(int id);
     std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
     std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
     std::string getFullSamplePath(std::shared_ptr<SampleInfo> sample) const;

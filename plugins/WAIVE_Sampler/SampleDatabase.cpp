@@ -604,6 +604,37 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
     return newName;
 }
 
+bool SampleDatabase::deleteSample(int id)
+{
+    // delete sample from database
+    try
+    {
+        Poco::Data::Statement deleteSampleStmt(*session);
+        deleteSampleStmt << "DELETE FROM Samples WHERE id = ?",
+            Poco::Data::Keywords::use(id),
+            Poco::Data::Keywords::now;
+        deleteSampleStmt.execute();
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Error deleting sample from database: " << e.what() << std::endl;
+        return false;
+    }
+
+    // delete sample from vector
+    auto it = std::find_if(fAllSamples.begin(), fAllSamples.end(),
+                           [id](const auto &sample)
+                           { return sample && sample->getId() == id; });
+
+    if (it != fAllSamples.end())
+    {
+        fAllSamples.erase(it);
+        return true;
+    }
+
+    return false;
+}
+
 std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<SampleInfo> sample)
 {
     if (!sample)

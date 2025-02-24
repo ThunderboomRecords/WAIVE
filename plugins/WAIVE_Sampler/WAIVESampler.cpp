@@ -981,6 +981,31 @@ void WAIVESampler::clearSamplePlayer(SamplePlayer &sp)
     pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
 }
 
+void WAIVESampler::deleteSample(int id)
+{
+    if (id < 0)
+        return;
+
+    std::cout << "WAIVESampler::deleteSample id = " << id << std::endl;
+
+    if (fCurrentSample != nullptr && fCurrentSample->getId() == id)
+        fCurrentSample = nullptr;
+
+    // remove from samplePlayers
+    for (size_t i = 0; i < samplePlayers.size(); i++)
+    {
+        if (samplePlayers[i].sampleInfo != nullptr && samplePlayers[i].sampleInfo->getId() == id)
+            clearSamplePlayer(samplePlayers[i]);
+    }
+
+    bool result = sd.deleteSample(id);
+
+    if (result)
+        std::cout << "Sample deleted\n";
+
+    pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
+}
+
 void WAIVESampler::loadSlot(int slot, int id)
 {
     if (slot >= samplePlayers.size())

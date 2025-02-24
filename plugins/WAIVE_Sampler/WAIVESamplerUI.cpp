@@ -1026,6 +1026,11 @@ void WAIVESamplerUI::mapSampleLoadSlot(int id, int slot)
     plugin->loadSlot(slot, id);
 }
 
+void WAIVESamplerUI::mapSampleDelete(int id)
+{
+    plugin->deleteSample(id);
+}
+
 void WAIVESamplerUI::textEntered(TextInput *textInput, std::string text)
 {
     // if (textInput == sampleName)
