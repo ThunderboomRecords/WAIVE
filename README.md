@@ -33,10 +33,9 @@ Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX 
 Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding stability and performance improvements.
 
 ## Download and Install
+WAIVE-Sampler and WAIVE-Sequencer are available in VST, VST3, CLAP and Audio Unit (macOS only) plugin formats. 
 
-> If you are reinstalled the plugin from an older, develpment version, you may need to delete the old database file as described in the [Troubleshooting](#waive-sampler-not-loading-sources-list) section.
-
-1. Download the installer from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform (e.g. new Apple computers should use `macOS_arm64`, whereas older Macs with Intel chips should use `macOS_x64`). You can find the download links under the **Assets** heading.
+1. Download the installer from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform. You can find the download links under the **Assets** heading. For newer Apple computers with M series processors, use `macOS_arm64`, whereas older machines with Intel chips should use `macOS_x64`. 
 2. Install:
     - MacOS: open the `.dmg` file, open the `.pkg` and follow the instructions.
     - Windows: run the installer `.exe` and follow the instructions.
