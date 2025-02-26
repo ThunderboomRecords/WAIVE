@@ -11,8 +11,8 @@ SourceInfo::SourceInfo(const SourceInfo &sourceInfo) : id(sourceInfo.id),
 {
 }
 
-SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
-    : httpClient(_httpClient),
+SampleDatabase::SampleDatabase(std::shared_ptr<HTTPClient> _httpClient)
+    : httpClient(std::move(_httpClient)),
       sourcesLoaded(false),
       sourceDatabaseInitialised(true),
       latestDownloadedIndex(-1),
@@ -49,7 +49,7 @@ SampleDatabase::SampleDatabase(HTTPClient *_httpClient)
 
     // SAMPLES Database
     Poco::Data::SQLite::Connector::registerConnector();
-    session = new Poco::Data::Session("SQLite", db.path());
+    session = std::make_unique<Poco::Data::Session>("SQLite", db.path());
 
     try
     {

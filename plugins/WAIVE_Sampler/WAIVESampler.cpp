@@ -11,8 +11,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
                                sendOSC(false),
                                oscClient("localhost", 8000),
                                taskManager("plugin manager", 1, 8, 60, 0),
-                               httpClient(&taskManager),
-                               sd(&httpClient),
+                               httpClient(std::make_shared<HTTPClient>(&taskManager)),
+                               sd(httpClient),
                                fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow),
                                importerTask(new ImporterTask(this, &import_queue))
 {
@@ -29,11 +29,11 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
     random.seed();
 
     samplePlayerWaveforms.resize(NUM_SLOTS + 3);
+    samplePlayers.reserve(NUM_SLOTS + 3);
     for (int i = 0; i < NUM_SLOTS + 3; i++)
     {
-        SamplePlayer sp;
-        sp.waveform = &samplePlayerWaveforms[i];
-        samplePlayers.push_back(sp);
+        samplePlayers.emplace_back();
+        samplePlayers.back().waveform = &samplePlayerWaveforms[i];
     }
 
     editorPreviewPlayer = &samplePlayers[NUM_SLOTS];
@@ -80,8 +80,10 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
         return;
     }
 
-    std::lock_guard<std::mutex> lock(tempBufferMutex);
-    tempBuffer = std::make_shared<std::vector<float>>();
+    {
+        std::lock_guard<std::mutex> lock(tempBufferMutex);
+        tempBuffer = std::make_shared<std::vector<float>>();
+    }
 
     // OSC Test
     oscHost = oscClient.getHost();
@@ -515,9 +517,10 @@ void WAIVESampler::run(
             uint8_t data1 = midiEvents[midiIndex].data[1];
             uint8_t data2 = midiEvents[midiIndex].data[2];
 
-            // uint8_t channel = status & 0xF;
             uint8_t type = status >> 4;
 
+            // cppcheck-suppress unreadVariable
+            uint8_t channel = status & 0xF;
             // cppcheck-suppress variableScope
             uint8_t note = data1;
             uint8_t velocity = data2;
@@ -743,10 +746,12 @@ void WAIVESampler::playSourcePreview()
 void WAIVESampler::stopSourcePreview()
 {
     std::cout << "WAIVESampler::stopSourcePreview()" << std::endl;
-    std::lock_guard<std::mutex> lock(samplePlayerMtx);
-    sourcePreviewPlayer->state = PlayState::STOPPED;
-    sourcePreviewPlayer->active = false;
-    sourcePreviewPlayer->ptr = 0;
+    {
+        std::lock_guard<std::mutex> lock(samplePlayerMtx);
+        sourcePreviewPlayer->state = PlayState::STOPPED;
+        sourcePreviewPlayer->active = false;
+        sourcePreviewPlayer->ptr = 0;
+    }
 
     pluginUpdate.notify(this, PluginUpdate::kSourcePreviewStop);
 }
@@ -867,7 +872,6 @@ void WAIVESampler::renderSample()
 
     float releaseIndex = static_cast<float>(fCurrentSample->sourceStart) + (ampEnvGen.getAttack() + ampEnvGen.getDecay() + fCurrentSample->sustainLength) * sampleRate / 1000.f;
     float releaseTime = ampEnvGen.getRelease() * sampleRate / 1000.f;
-    float releaseFinishIndex = releaseIndex + releaseTime;
     releaseIndex = std::min(static_cast<float>(sourceInfo->length) - releaseTime, releaseIndex); // release ampEnv sooner if near end of source buffer
 
     // fmt::print("attack = {:.1f}, decay = {:.1f}, sustainLength = {:.1f}, release = {:.1f}\n", ampEnvGen.getAttack(), ampEnvGen.getDecay(), fCurrentSample->sustainLength, ampEnvGen.getRelease());
@@ -970,8 +974,10 @@ void WAIVESampler::loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> inf
 void WAIVESampler::clearSamplePlayer(SamplePlayer &sp)
 {
     std::cout << "WAIVESampler::clearSamplePlayer\n";
-    std::lock_guard<std::mutex> lock(samplePlayerMtx);
-    sp.clear();
+    {
+        std::lock_guard<std::mutex> lock(samplePlayerMtx);
+        sp.clear();
+    }
     pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
 }
 
@@ -1019,6 +1025,7 @@ void WAIVESampler::generateCurrentSampleName(const std::string &base)
     std::stringstream test(fCurrentSample->tagString);
     std::string segment;
     std::vector<std::string> seglist;
+    seglist.reserve(8);
 
     while (std::getline(test, segment, '|'))
         seglist.push_back(segment);
@@ -1125,22 +1132,24 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
             return;
         }
 
-        std::lock_guard<std::mutex> lock(tempBufferMutex);
-        if (fCurrentSample == nullptr)
-            newSample();
-
-        if (fCurrentSample == nullptr)
-            return;
-
-        size_t sourceLength = tempBuffer->size();
-        fCurrentSample->sourceInfo.buffer.resize(sourceLength);
-        fCurrentSample->sourceInfo.length = sourceLength;
-
-        std::copy(tempBuffer->begin(), tempBuffer->begin() + sourceLength, fCurrentSample->sourceInfo.buffer.begin());
-
-        if (sourceLength > 0)
         {
-            std::cout << "sourceLength: " << sourceLength << std::endl;
+            std::lock_guard<std::mutex> lock(tempBufferMutex);
+            if (fCurrentSample == nullptr)
+                newSample();
+
+            if (fCurrentSample == nullptr)
+                return;
+
+            size_t sourceLength = tempBuffer->size();
+            fCurrentSample->sourceInfo.buffer.resize(sourceLength);
+            fCurrentSample->sourceInfo.length = sourceLength;
+
+            std::copy(tempBuffer->begin(), tempBuffer->begin() + sourceLength, fCurrentSample->sourceInfo.buffer.begin());
+        }
+
+        if (fCurrentSample->sourceInfo.length > 0)
+        {
+            std::cout << "sourceLength: " << fCurrentSample->sourceInfo.length << std::endl;
             if (fCurrentSample == nullptr)
                 newSample();
 
@@ -1160,25 +1169,27 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     }
     else if (taskName == "loadSourcePreview")
     {
-        std::lock_guard<std::mutex> spLock(samplePlayerMtx);
-        std::lock_guard<std::mutex> tbLock(tempBufferMutex);
-
-        size_t size = tempBuffer->size();
-        if (size == 0)
         {
-            std::cout << "loadSourcePreview: Not able to load\n";
-            pNf->release();
-            return;
-        }
-        sourcePreviewWaveform->resize(size);
-        std::copy(tempBuffer->begin(), tempBuffer->begin() + size, sourcePreviewWaveform->begin());
+            std::lock_guard<std::mutex> spLock(samplePlayerMtx);
+            std::lock_guard<std::mutex> tbLock(tempBufferMutex);
 
-        sourcePreviewPlayer->waveform = sourcePreviewWaveform;
-        sourcePreviewPlayer->startAt = 0;
-        sourcePreviewPlayer->ptr = 0;
-        sourcePreviewPlayer->length = size;
-        sourcePreviewPlayer->active = true;
-        sourcePreviewPlayer->state = PlayState::TRIGGERED;
+            size_t size = tempBuffer->size();
+            if (size == 0)
+            {
+                std::cout << "loadSourcePreview: Not able to load\n";
+                pNf->release();
+                return;
+            }
+            sourcePreviewWaveform->resize(size);
+            std::copy(tempBuffer->begin(), tempBuffer->begin() + size, sourcePreviewWaveform->begin());
+
+            sourcePreviewPlayer->waveform = sourcePreviewWaveform;
+            sourcePreviewPlayer->startAt = 0;
+            sourcePreviewPlayer->ptr = 0;
+            sourcePreviewPlayer->length = size;
+            sourcePreviewPlayer->active = true;
+            sourcePreviewPlayer->state = PlayState::TRIGGERED;
+        }
 
         pluginUpdate.notify(this, PluginUpdate::kSourcePreviewPlay);
     }
@@ -1193,24 +1204,26 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
         SamplePlayer *sp = &samplePlayers[spIndex];
 
-        std::lock_guard<std::mutex> spLock(samplePlayerMtx);
-        std::lock_guard<std::mutex> tbLock(tempBufferMutex);
-
-        size_t size = tempBuffer->size();
-
-        if (size == 0)
         {
-            sp->clear();
-            std::cerr << "WAIVESampler::loadSamplePlayer: Sample waveform length 0" << std::endl;
-        }
-        else
-        {
-            sp->length = size;
-            sp->waveform->resize(size);
-            std::copy(tempBuffer->begin(), tempBuffer->begin() + size, sp->waveform->begin());
-            sp->active = true;
+            std::lock_guard<std::mutex> spLock(samplePlayerMtx);
+            std::lock_guard<std::mutex> tbLock(tempBufferMutex);
 
-            sp->loaded();
+            size_t size = tempBuffer->size();
+
+            if (size == 0)
+            {
+                sp->clear();
+                std::cerr << "WAIVESampler::loadSamplePlayer: Sample waveform length 0" << std::endl;
+            }
+            else
+            {
+                sp->length = size;
+                sp->waveform->resize(size);
+                std::copy(tempBuffer->begin(), tempBuffer->begin() + size, sp->waveform->begin());
+                sp->active = true;
+
+                sp->loaded();
+            }
         }
 
         pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);

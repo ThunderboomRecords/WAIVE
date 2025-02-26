@@ -178,7 +178,7 @@ public:
         std::shared_ptr<SampleInfo> info;
     };
 
-    explicit SampleDatabase(HTTPClient *httpClient);
+    explicit SampleDatabase(std::shared_ptr<HTTPClient> _httpClient);
     ~SampleDatabase();
 
     SampleDatabase(const SampleDatabase &) = delete;
@@ -242,14 +242,14 @@ public:
     int latestDownloadedIndex;
 
 private:
-    Poco::Data::Session *session;
+    std::unique_ptr<Poco::Data::Session> session;
     Poco::Path rootDir, sampleFolder, sourceFolder;
     std::string sourcePreviewPath;
 
     std::vector<SamplePoint> points;
     kdt::KDTree<SamplePoint> kdtree;
 
-    HTTPClient *httpClient;
+    std::shared_ptr<HTTPClient> httpClient;
 
     Poco::Logger *logger;
 };

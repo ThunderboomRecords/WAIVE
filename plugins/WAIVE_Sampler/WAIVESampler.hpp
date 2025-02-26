@@ -179,7 +179,7 @@ private:
     ThreadsafeQueue<std::string> import_queue;
     Poco::BasicEvent<const PluginUpdate> pluginUpdate;
 
-    HTTPClient httpClient;
+    std::shared_ptr<HTTPClient> httpClient;
 
     float sampleRate;
     FeatureExtractor fe;
