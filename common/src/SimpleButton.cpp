@@ -57,14 +57,25 @@ void Button::onNanoDisplay()
         closePath();
     }
 
+    Color textColor = text_color;
+    Color backgroundColor = background_color;
+    Color accentColor = accent_color;
+    if (!fEnabled)
+    {
+        Color darker = Color(0, 0, 0);
+        textColor.interpolate(darker, 0.5f);
+        backgroundColor.interpolate(darker, 0.5f);
+        accentColor.interpolate(darker, 0.5f);
+    }
+
     // Background
     if (drawBackground || isToggle)
     {
         beginPath();
         if (fToggleValue)
-            fillColor(accent_color);
+            fillColor(accentColor);
         else
-            fillColor(fHasFocus ? highlight_color : background_color);
+            fillColor(fHasFocus && fEnabled ? highlight_color : backgroundColor);
         roundedRect(0, 0, width, height, height * 0.5f);
         fill();
         closePath();
@@ -77,24 +88,14 @@ void Button::onNanoDisplay()
     if (isToggle && fToggleValue)
         fillColor(WaiveColors::dark);
     else
-        fillColor(text_color);
+        fillColor(textColor);
     textAlign(ALIGN_CENTER | ALIGN_MIDDLE);
     text(width / 2, height / 2, label.c_str(), nullptr);
     closePath();
-
-    if (!fEnabled && drawBackground)
-    {
-        beginPath();
-        fillColor(0.f, 0.f, 0.f, 0.5f);
-        roundedRect(0, 0, width, height, height * 0.5f);
-        fill();
-        closePath();
-    }
 }
 
 bool Button::onMouse(const MouseEvent &ev)
 {
-    // std::cout << "Button::onMouse " << description << std::endl;
     if (
         fEnabled &&
         ev.press &&

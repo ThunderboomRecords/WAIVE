@@ -12,6 +12,14 @@ enum PlayState
     PLAYING
 };
 
+class SamplePlayerCallback
+{
+public:
+    virtual ~SamplePlayerCallback() {}
+    virtual void sampleLoaded() = 0;
+    virtual void sampleCleared() = 0;
+};
+
 struct SamplePlayer
 {
     std::vector<float> *waveform = nullptr;
@@ -26,7 +34,11 @@ struct SamplePlayer
     PlayState state = PlayState::STOPPED;
     bool active = false;
     std::shared_ptr<SampleInfo> sampleInfo = nullptr;
+    void load(std::shared_ptr<SampleInfo> info);
+    void loaded();
     void clear();
+    void addCallback(SamplePlayerCallback *cb);
+    std::vector<SamplePlayerCallback *> callbacks;
 };
 
 #endif

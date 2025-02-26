@@ -961,10 +961,7 @@ void WAIVESampler::loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> inf
         return;
     }
 
-    sp->state = PlayState::STOPPED;
-    sp->ptr = 0;
-    sp->active = false;
-    sp->sampleInfo = info;
+    sp->load(info);
 
     WaveformLoaderTask *task = new WaveformLoaderTask(fmt::format("loadSamplePlayer:{:d}", spIndex), tempBuffer, &tempBufferMutex, sd.getFullSamplePath(info), sampleRate);
     taskManager.start(task);
@@ -974,10 +971,7 @@ void WAIVESampler::clearSamplePlayer(SamplePlayer &sp)
 {
     std::cout << "WAIVESampler::clearSamplePlayer\n";
     std::lock_guard<std::mutex> lock(samplePlayerMtx);
-    sp.state = PlayState::STOPPED;
-    sp.active = false;
-    sp.sampleInfo = nullptr;
-    sp.length = 0;
+    sp.clear();
     pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
 }
 
@@ -1206,7 +1200,7 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
         if (size == 0)
         {
-            sp->active = false;
+            sp->clear();
             std::cerr << "WAIVESampler::loadSamplePlayer: Sample waveform length 0" << std::endl;
         }
         else
@@ -1215,8 +1209,9 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
             sp->waveform->resize(size);
             std::copy(tempBuffer->begin(), tempBuffer->begin() + size, sp->waveform->begin());
             sp->active = true;
+
+            sp->loaded();
         }
-        // sp.sampleInfo->tagString.assign(info->tagString); // no idea why we must do this only for tagString...
 
         pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
     }

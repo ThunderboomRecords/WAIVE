@@ -33,6 +33,7 @@ dpf_add_plugin(
       ./models/tsne.c
   FILES_UI
       WAIVESamplerUI.cpp
+      SamplePlayer.cpp
       ./components/TagMap.cpp
       ./components/TagBrowser.cpp
       ./components/SampleSlot.cpp

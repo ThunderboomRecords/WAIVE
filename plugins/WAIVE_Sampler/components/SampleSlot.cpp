@@ -19,6 +19,7 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
     triggerBtn->drawBackground = false;
     triggerBtn->description = "Trigger sample";
     triggerBtn->toFront();
+    triggerBtn->setEnabled(false);
 
     clearBtn = new Button(parent);
     clearBtn->setCallback(this);
@@ -58,6 +59,7 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
 void SampleSlot::setSamplePlayer(SamplePlayer *sp)
 {
     samplePlayer = sp;
+    sp->addCallback(this);
 }
 
 SamplePlayer *SampleSlot::getSamplePlayer() const
@@ -256,12 +258,6 @@ void SampleSlot::buttonClicked(Button *button)
     }
 }
 
-// void SampleSlot::dropdownSelection(DropDown *widget, int item)
-// {
-//     if (samplePlayer != nullptr)
-//         samplePlayer->midi = item;
-// }
-
 void SampleSlot::textEntered(TextInput *textInput, const std::string &text)
 {
     if (text.length() == 0)
@@ -296,8 +292,6 @@ void SampleSlot::textEntered(TextInput *textInput, const std::string &text)
 
     if (samplePlayer != nullptr)
         samplePlayer->midi = val - 1;
-
-    // plugin->setMidiNote(textInput->getId(), (uint8_t)val);
 }
 
 void SampleSlot::textInputChanged(TextInput *textInput, const std::string &text) {}
@@ -305,6 +299,18 @@ void SampleSlot::textInputChanged(TextInput *textInput, const std::string &text)
 void SampleSlot::setMidiNumber(int midi, bool sendCallback)
 {
     midiSelect->setText(fmt::format("{:d}", midi).c_str(), sendCallback);
+}
+
+void SampleSlot::sampleLoaded()
+{
+    triggerBtn->setEnabled(true);
+    getWindow().addIdleCallback(this);
+}
+
+void SampleSlot::sampleCleared()
+{
+    triggerBtn->setEnabled(false);
+    getWindow().removeIdleCallback(this);
 }
 
 void SampleSlot::setCallback(Callback *cb)

@@ -10,7 +10,7 @@
 #include "SimpleButton.hpp"
 #include "DragDrop.hpp"
 
-// using namespace fmt::v11;
+#include "SamplePlayer.hpp"
 
 START_NAMESPACE_DISTRHO
 
@@ -18,6 +18,7 @@ class SampleSlot : public WidgetGroup,
                    public Menu::Callback,
                    public DragDropWidget,
                    public IdleCallback,
+                   public SamplePlayerCallback,
                    Button::Callback,
                    TextInput::Callback
 {
@@ -53,6 +54,9 @@ protected:
 
     void dataAccepted(DragDropWidget *destination) override;
     void dataRejected(DragDropWidget *destination) override;
+
+    void sampleLoaded() override;
+    void sampleCleared() override;
 
 private:
     Callback *callback;

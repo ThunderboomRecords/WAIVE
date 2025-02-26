@@ -416,7 +416,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
             slot->setFontSize(12.f);
             slot->currentSample = plugin->fCurrentSample;
 
-            addIdleCallback(slot);
+            // addIdleCallback(slot);
 
             sampleSlotsContainer->addWidget(slot);
             sampleSlots.push_back(slot);
@@ -1312,7 +1312,6 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         }
         else
         {
-            std::cout << "plugin->fCurrentSample == nullptr" << std::endl;
             sampleWaveformDisplay->setWaveformLength(0);
             sampleWaveformDisplay->waveformNew();
             saveSampleBtn->setLabel("Add to player");
