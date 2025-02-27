@@ -24,6 +24,8 @@ public:
 
     Align text_align;
 
+    bool renderBackground;
+
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &ev) override;

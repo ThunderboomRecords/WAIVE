@@ -759,7 +759,6 @@ void WAIVESampler::stopSourcePreview()
 void WAIVESampler::loadSample(int id)
 {
     std::shared_ptr<SampleInfo> s = sd.findSample(id);
-    std::cout << "WAIVESampler::loadSample s->tagString = " << s->tagString << "\n";
     loadSample(s);
 }
 

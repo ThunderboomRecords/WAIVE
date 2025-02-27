@@ -11,10 +11,12 @@ START_NAMESPACE_DISTRHO
 
 class DragDropManager;
 class DragDropWidget;
+
 struct DragDropEvent
 {
     DragDropWidget *source;
     std::string payload;
+    std::string info;
 };
 
 class DragDropWidget
@@ -35,21 +37,31 @@ private:
 class DragDropManager
 {
 public:
+    class Callback
+    {
+    public:
+        virtual ~Callback() {}
+        virtual void onDragDropStart(DragDropWidget *widget, DragDropEvent &ev) = 0;
+        virtual void onDragDropEnd(DragDropWidget *widget, DragDropEvent ev, bool accepted) = 0;
+    };
+
     explicit DragDropManager(DGL::Window *window);
     void addWidget(DragDropWidget *widget);
+    void addCallback(Callback *callback);
 
-    void dragDropStart(DragDropWidget *widget, const std::string &data);
-    void dragDropEnd(DragDropEvent &ev);
+    void dragDropStart(DragDropWidget *widget, const std::string &data, const std::string &info = "");
+    void dragDropEnd(DragDropWidget *widget, bool accepted);
     bool isDragging();
     void clearEvent();
     DragDropEvent getEvent();
 
 private:
-    // std::vector<std::shared_ptr<DragDropWidget>> widgets;
     bool hasEvent;
     std::shared_ptr<DragDropEvent> event;
 
     DGL::Window *window;
+
+    std::vector<Callback *> callbacks;
 };
 
 END_NAMESPACE_DISTRHO

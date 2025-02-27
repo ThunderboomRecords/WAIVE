@@ -6,6 +6,7 @@ Label::Label(Widget *parent, const std::string &text) noexcept
     : WAIVEWidget(parent),
       text_align(Align::ALIGN_BOTTOM),
       label(text),
+      renderBackground(false),
       callback(nullptr)
 {
 }
@@ -67,6 +68,15 @@ void Label::onNanoDisplay()
         strokeColor(accent_color);
         rect(0, 0, getWidth(), getHeight());
         stroke();
+        closePath();
+    }
+
+    if (renderBackground)
+    {
+        beginPath();
+        fillColor(background_color);
+        rect(0, 0, getWidth(), getHeight());
+        fill();
         closePath();
     }
 

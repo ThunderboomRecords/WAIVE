@@ -117,10 +117,12 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
                         int id = std::stoi(dragDropManager->getEvent().payload);
                         callback->sampleSlotLoadSample(this, slotId, id);
                         source->dataAccepted(this);
+                        dragDropManager->dragDropEnd(this, true);
                     }
                     else
                     {
                         source->dataRejected(this);
+                        dragDropManager->dragDropEnd(this, false);
                     }
 
                     dragDropManager->clearEvent();
@@ -159,7 +161,7 @@ bool SampleSlot::onMotion(const MotionEvent &ev)
             if (samplePlayer != nullptr && samplePlayer->sampleInfo != nullptr)
             {
                 // std::cout << "Started dragging sample info" << std::endl;
-                dragDropManager->dragDropStart(this, fmt::format("{:d}", samplePlayer->sampleInfo->getId()));
+                dragDropManager->dragDropStart(this, fmt::format("{:d}", samplePlayer->sampleInfo->getId()), samplePlayer->sampleInfo->name);
             }
         }
     }

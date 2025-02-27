@@ -35,7 +35,7 @@ public:
 
     std::vector<std::shared_ptr<SampleInfo>> *allSamples;
     std::shared_ptr<SampleInfo> *selectedSample;
-    int highlightSample, contextMenuSample;
+    int highlightSampleId, highlightSampleIndex, contextMenuSampleId;
     bool preview;
 
     Menu *menu;
@@ -52,7 +52,7 @@ protected:
     void dataRejected(DragDropWidget *destination) override;
 
 private:
-    Color get2DColor(float x, float y);
+    Color get2DColor(float x, float y) const;
     Callback *callback;
 
     Color c0, c1, c2, c3;

@@ -27,7 +27,14 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     float col2Width = 298.f;
 
     dragDropManager = new DragDropManager(&getWindow());
-    std::cout << "WAIVESamplerUI::WAIVESamplerUI() dragDropManager->isDragging() " << dragDropManager->isDragging() << std::endl;
+    dragDropManager->addCallback(this);
+
+    dragInfo = new Label(this);
+    dragInfo->setFont("Poppins-Light", Poppins_Light, Poppins_Light_len);
+    dragInfo->setFontSize(14.f);
+    dragInfo->background_color = WaiveColors::light1;
+    dragInfo->renderBackground = true;
+    dragInfo->hide();
 
     // 1 ----- Source Browser Panel
     {
@@ -724,7 +731,14 @@ bool WAIVESamplerUI::onMotion(const MotionEvent &ev)
     toolTip->setLabel(text);
 
     if (dragDropManager->isDragging())
+    {
+        if (dragInfo->isVisible())
+        {
+            dragInfo->toFront();
+            dragInfo->setAbsolutePos(ev.pos.getX() + 12.f, ev.pos.getY());
+        }
         getWindow().setCursor(kMouseCursorHand);
+    }
 
     return UI::onMotion(ev);
 }
@@ -735,7 +749,8 @@ bool WAIVESamplerUI::onMouse(const MouseEvent &ev)
 
     if (!ev.press)
     {
-        dragDropManager->clearEvent();
+        // dragDropManager->clearEvent();
+        dragDropManager->dragDropEnd(nullptr, false);
 
         // bypass other widgets consuption of mouseUp event for all knobs
         for (const auto &knob : allKnobs)
@@ -1018,6 +1033,7 @@ void WAIVESamplerUI::mapSampleHovered(int id)
 
 void WAIVESamplerUI::mapSampleSelected(int id)
 {
+    std::cout << "WAIVESamplerUI::mapSampleSelected: " << id << std::endl;
     plugin->loadSample(id);
     sourceList->selected = -1; // TODO: select correct source!
 }
@@ -1152,6 +1168,21 @@ void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
 void WAIVESamplerUI::sampleSlotLoadSample(SampleSlot *slot, int slotId, int sampleId)
 {
     plugin->loadSlot(slotId, sampleId);
+}
+
+void WAIVESamplerUI::onDragDropStart(DragDropWidget *widget, DragDropEvent &ev)
+{
+    if (ev.info.length() == 0)
+        return;
+
+    dragInfo->setLabel(ev.info);
+    dragInfo->resizeToFit();
+    dragInfo->show();
+}
+
+void WAIVESamplerUI::onDragDropEnd(DragDropWidget *widget, DragDropEvent ev, bool accepted)
+{
+    dragInfo->hide();
 }
 
 void WAIVESamplerUI::sourceDownload(int index)

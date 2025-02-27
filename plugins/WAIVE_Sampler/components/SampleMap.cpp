@@ -14,8 +14,9 @@ SampleMap::SampleMap(Widget *widget, DragDropManager *manager) noexcept
       zoomLevel(1.0f),
       centerPos({0.0, 0.0}),
       dragAction(DragAction::NONE),
-      highlightSample(-1),
-      contextMenuSample(-1),
+      highlightSampleId(-1),
+      highlightSampleIndex(-1),
+      contextMenuSampleId(-1),
       selectedSample(nullptr),
       preview(true),
       callback(nullptr)
@@ -72,10 +73,10 @@ bool SampleMap::onMouse(const MouseEvent &ev)
             dragAction = CLICKING;
         else if (ev.button == MouseButton::kMouseButtonRight)
         {
-            if (highlightSample < 0)
+            if (highlightSampleId < 0)
                 return false;
 
-            contextMenuSample = highlightSample;
+            contextMenuSampleId = highlightSampleId;
             menu->setAbsolutePos(
                 ev.pos.getX() + getAbsoluteX() - 2,
                 ev.pos.getY() + getAbsoluteY() - 2);
@@ -90,7 +91,7 @@ bool SampleMap::onMouse(const MouseEvent &ev)
         {
         case CLICKING:
             if (callback != nullptr)
-                callback->mapSampleSelected(highlightSample);
+                callback->mapSampleSelected(highlightSampleId);
             break;
         case SCROLLING:
             break;
@@ -117,7 +118,8 @@ bool SampleMap::onMotion(const MotionEvent &ev)
     {
         if (!contains(ev.pos))
         {
-            highlightSample = -1;
+            highlightSampleId = -1;
+            highlightSampleIndex = -1;
 
             return false;
         }
@@ -125,7 +127,8 @@ bool SampleMap::onMotion(const MotionEvent &ev)
         // find nearest in Map space, to be be consistent with
         // distance from mouse
 
-        int nearest = -1;
+        int nearestId = -1;
+        int nearestIndex = -1;
         float d = INFINITY;
 
         for (int i = 0; i < allSamples->size(); i++)
@@ -140,17 +143,19 @@ bool SampleMap::onMotion(const MotionEvent &ev)
             float dS = dX * dX + dY * dY;
             if (dS < 100.0f && dS < d)
             {
-                nearest = allSamples->at(i)->getId();
+                nearestId = allSamples->at(i)->getId();
+                nearestIndex = i;
                 d = dS;
             }
         }
 
-        if (highlightSample != nearest)
+        if (highlightSampleId != nearestId)
         {
-            highlightSample = nearest;
+            highlightSampleId = nearestId;
+            highlightSampleIndex = nearestIndex;
 
             if (callback != nullptr && preview)
-                callback->mapSampleHovered(highlightSample);
+                callback->mapSampleHovered(highlightSampleId);
 
             repaint();
         }
@@ -160,10 +165,10 @@ bool SampleMap::onMotion(const MotionEvent &ev)
     else if (dragAction == CLICKING)
     {
 
-        if (highlightSample >= 0)
+        if (highlightSampleId >= 0)
         {
             dragAction = DragAction::NONE;
-            dragDropManager->dragDropStart(this, fmt::format("{:d}", highlightSample));
+            dragDropManager->dragDropStart(this, fmt::format("{:d}", highlightSampleId), allSamples->at(highlightSampleIndex)->name);
         }
         else
         {
@@ -224,17 +229,17 @@ bool SampleMap::onScroll(const ScrollEvent &ev)
 
 void SampleMap::onMenuItemSelection(Menu *menu, int item, const std::string &value)
 {
-    // std::cout << "put sample " << contextMenuSample << " into slot " << item << std::endl;
+    // std::cout << "put sample " << contextMenuSampleId << " into slot " << item << std::endl;
     if (callback == nullptr)
         return;
 
     if (item < NUM_SLOTS)
-        callback->mapSampleLoadSlot(contextMenuSample, item);
+        callback->mapSampleLoadSlot(contextMenuSampleId, item);
     else
-        callback->mapSampleDelete(contextMenuSample);
+        callback->mapSampleDelete(contextMenuSampleId);
 }
 
-Color SampleMap::get2DColor(float x, float y)
+Color SampleMap::get2DColor(float x, float y) const
 {
     // expects x, y in [-1, 1]
     Color cx1 = Color(c0, c1, x * 0.5f + 0.5f);
@@ -255,7 +260,6 @@ void SampleMap::onNanoDisplay()
 
     float hX, hY;
     Color hC;
-    int hI = -1;
 
     for (int i = 0; i < allSamples->size(); i++)
     {
@@ -270,13 +274,12 @@ void SampleMap::onNanoDisplay()
         int sampleId = allSamples->at(i)->getId();
 
         float r = 4.0f * scale_factor;
-        if (highlightSample > -1 && highlightSample == sampleId)
+        if (highlightSampleId > -1 && highlightSampleId == sampleId)
         {
             r *= 2.0f;
             hC = get2DColor(embedX, embedY);
             hX = pMap.getX();
             hY = pMap.getY();
-            hI = i;
         }
 
         beginPath();
@@ -296,10 +299,10 @@ void SampleMap::onNanoDisplay()
         }
     }
 
-    if (hI > -1)
+    if (highlightSampleIndex > -1)
     {
         // Draw sample name
-        std::string name = allSamples->at(hI)->name;
+        std::string name = allSamples->at(highlightSampleIndex)->name;
         DGL::Rectangle<float> bounds;
         fontSize(getFontSize());
         fontFaceId(font);
@@ -328,12 +331,14 @@ void SampleMap::buttonClicked(Button *btn)
 
 void SampleMap::dataAccepted(DragDropWidget *destination)
 {
-    highlightSample = -1;
+    highlightSampleId = -1;
+    highlightSampleIndex = -1;
 }
 
 void SampleMap::dataRejected(DragDropWidget *destination)
 {
-    highlightSample = -1;
+    highlightSampleId = -1;
+    highlightSampleIndex = -1;
 }
 
 void SampleMap::setCallback(Callback *cb)

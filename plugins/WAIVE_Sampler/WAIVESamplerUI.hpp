@@ -73,7 +73,8 @@ class WAIVESamplerUI : public UI,
                        public Menu::Callback,
                        public DropDown::Callback,
                        public SampleSlot::Callback,
-                       public SourceList::Callback
+                       public SourceList::Callback,
+                       public DragDropManager::Callback
 {
 public:
     WAIVESamplerUI();
@@ -124,6 +125,10 @@ protected:
     void sourcePreview(int index, bool start) override;
     void sourceLoad(int index) override;
 
+    // DragDrop Callbacks
+    void onDragDropStart(DragDropWidget *widget, DragDropEvent &ev) override;
+    void onDragDropEnd(DragDropWidget *widget, DragDropEvent ev, bool accepted) override;
+
 private:
     void beginOpenFileBrowser(const std::string &state, bool multiple);
     void updatePresetButtons();
@@ -153,7 +158,7 @@ private:
     bool errorMessage;
     int loadingTaskCount;
 
-    Panel *sourceBrowserPanel, *sampleEditorPanel, *samplePanel, *samplePlayerPanel;
+    Panel *sourceBrowserPanel, *sampleEditorPanel, *samplePlayerPanel;
 
     // 1. Source Browser Components
     SourceList *sourceList;
@@ -179,8 +184,7 @@ private:
     Label *instructions, *progress;
 
     Waveform *sampleWaveformDisplay;
-    // TextInput *sampleName;
-    Button *saveSampleBtn, *playSampleBtn; //, *newSampleBtn;
+    Button *saveSampleBtn, *playSampleBtn;
 
     // 3. Sample Player Components
     VBox *sampleSlotsContainer;
@@ -192,7 +196,7 @@ private:
 
     SampleBrowser *sampleBrowser;
 
-    Label *toolTip;
+    Label *toolTip, *dragInfo;
     DragDropManager *dragDropManager;
     std::vector<Knob *> allKnobs;
 
