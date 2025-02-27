@@ -43,8 +43,9 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
 
     contextMenu = new Menu(parent);
     contextMenu->addItem("Clear");
+    contextMenu->addItem("Copy file path");
     contextMenu->setCallback(this);
-    contextMenu->setDisplayNumber(1);
+    contextMenu->setDisplayNumber(2);
     contextMenu->setSize(100, 30);
     contextMenu->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
     contextMenu->calculateHeight();
@@ -185,6 +186,12 @@ void SampleSlot::onMenuItemSelection(Menu *menu, int item, const std::string &va
             if (callback != nullptr)
                 callback->sampleSlotCleared(this, slotId);
             clearBtn->hide();
+        }
+        else if (item == 1)
+        {
+            std::string filename = samplePlayer->sampleInfo->fullPath;
+            std::cout << "Copying to clipboard: " << filename << std::endl;
+            SystemCopyToClipboard(filename);
         }
     }
 }

@@ -53,6 +53,7 @@ public:
     size_t sourceStart;
     size_t sampleLength;
     std::string preset;
+    std::string fullPath;
 
     bool saved;
 

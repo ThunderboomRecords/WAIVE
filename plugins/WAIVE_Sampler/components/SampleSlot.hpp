@@ -12,6 +12,8 @@
 
 #include "SamplePlayer.hpp"
 
+#include "WAIVEUtils.hpp"
+
 START_NAMESPACE_DISTRHO
 
 class SampleSlot : public WidgetGroup,

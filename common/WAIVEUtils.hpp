@@ -46,4 +46,24 @@ static void SystemOpenDirectory(const std::string &directory)
 #endif
 }
 
+static void SystemCopyToClipboard(const std::string &text)
+{
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    const size_t len = text.length() + 1;
+    HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
+    memcpy(GlobalLock(hMem), text.c_str(), len);
+    GlobalUnlock(hMem);
+    OpenClipboard(0);
+    EmptyClipboard();
+    SetClipboardData(CF_TEXT, hMem);
+    CloseClipboard();
+#elif __APPLE__
+    std::string command = "echo " + text + " | pbcopy";
+    system(command.c_str());
+#elif __linux__
+    std::string command = "echo " + text + " | xclip -selection clipboard";
+    system(command.c_str());
+#endif
+}
+
 #endif

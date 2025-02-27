@@ -54,7 +54,8 @@ SampleInfo::SampleInfo(const SampleInfo &other) : id(other.id),
                                                   preset(other.preset),
                                                   tags(other.tags),
                                                   tagString(other.tagString),
-                                                  sourceInfo(other.sourceInfo)
+                                                  sourceInfo(other.sourceInfo),
+                                                  fullPath(other.fullPath)
 {
 }
 

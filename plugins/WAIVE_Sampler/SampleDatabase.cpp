@@ -204,6 +204,8 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
         s->saved = data["saved"];
         s->preset = data["preset"];
 
+        s->fullPath = getFullSamplePath(s);
+
         return s;
     }
     catch (const json::exception &e)
@@ -261,6 +263,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     std::cout << " - lastId " << lastId << std::endl;
 
     sample->setId(lastId);
+    sample->fullPath = getFullSamplePath(sample);
 
     // TODO: update Sample<->Tags database
     for (Tag t : sample->tags)
