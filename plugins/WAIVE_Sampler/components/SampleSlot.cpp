@@ -313,13 +313,15 @@ void SampleSlot::setMidiNumber(int midi, bool sendCallback)
 void SampleSlot::sampleLoaded()
 {
     triggerBtn->setEnabled(true);
-    getWindow().addIdleCallback(this);
+    // getWindow().addIdleCallback(this);
+    getTopLevelWidget()->addIdleCallback(this);
 }
 
 void SampleSlot::sampleCleared()
 {
     triggerBtn->setEnabled(false);
-    getWindow().removeIdleCallback(this);
+    // getWindow().removeIdleCallback(this);
+    getTopLevelWidget()->addIdleCallback(this);
 }
 
 void SampleSlot::setCallback(Callback *cb)

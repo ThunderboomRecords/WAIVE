@@ -423,7 +423,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
             slot->setFontSize(12.f);
             slot->currentSample = plugin->fCurrentSample;
 
-            // addIdleCallback(slot);
+            addIdleCallback(slot);
 
             sampleSlotsContainer->addWidget(slot);
             sampleSlots.push_back(slot);
@@ -736,6 +736,7 @@ bool WAIVESamplerUI::onMotion(const MotionEvent &ev)
         {
             dragInfo->toFront();
             dragInfo->setAbsolutePos(ev.pos.getX() + 12.f, ev.pos.getY());
+            repaint();
         }
         getWindow().setCursor(kMouseCursorHand);
 
@@ -762,6 +763,8 @@ bool WAIVESamplerUI::onMouse(const MouseEvent &ev)
         // bypass other widgets consuption of mouseUp event for all knobs
         for (const auto &knob : allKnobs)
             knob->onMouse(ev);
+
+        repaint();
     }
 
     return result;
