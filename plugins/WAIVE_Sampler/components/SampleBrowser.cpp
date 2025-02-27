@@ -49,14 +49,14 @@ SampleBrowser::SampleBrowser(WAIVEWidget *widget, SampleDatabase *sd_, DragDropM
 
 void SampleBrowser::onNanoDisplay()
 {
-    // const float width = getWidth();
-    // const float height = getHeight();
+    const float width = getWidth();
+    const float height = getHeight();
 
-    // beginPath();
-    // fillColor(WaiveColors::grey1);
-    // rect(0, 0, width, height);
-    // fill();
-    // closePath();
+    beginPath();
+    strokeColor(accent_color);
+    rect(0, 0, width, height);
+    stroke();
+    closePath();
 }
 
 void SampleBrowser::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
@@ -81,7 +81,7 @@ void SampleBrowser::buttonClicked(Button *btn)
         sampleMap->preview = previewToggle->getToggled();
 };
 
-void SampleBrowser::repositionWidgets()
+void SampleBrowser::resizeWidgets()
 {
     sampleMap->setSize(getWidth(), getHeight(), true);
     sampleMap->onTop(this);

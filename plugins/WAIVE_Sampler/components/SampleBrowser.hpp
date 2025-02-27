@@ -20,7 +20,7 @@ public:
 
     void setCallback(SampleMap::Callback *cb);
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
-    void repositionWidgets();
+    void resizeWidgets();
 
     Spinner *loading;
 

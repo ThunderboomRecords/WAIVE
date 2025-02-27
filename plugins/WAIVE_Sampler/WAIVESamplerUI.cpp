@@ -485,9 +485,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     // 5 ----- Sample Map
     {
         sampleBrowser = new SampleBrowser(samplePlayerPanel, &plugin->sd, dragDropManager);
-        sampleBrowser->setSize(sourceList->getWidth(), tagBrowser->getBottom() - sourceList->getTop());
+        sampleBrowser->setSize(sourceList->getWidth(), tagBrowser->getBottom() - sourceList->getTop(), true);
         sampleBrowser->setAbsolutePos(sourceList->getLeft(), sourceList->getTop());
-        sampleBrowser->repositionWidgets();
+        sampleBrowser->resizeWidgets();
         sampleBrowser->setCallback(this);
         samplePlayerPanel->hiddenWidgets.addChildWidget(sampleBrowser);
         samplePlayerPanel->hiddenWidgets.hide();
