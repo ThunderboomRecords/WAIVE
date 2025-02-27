@@ -80,7 +80,7 @@ WAIVESequencerUI::WAIVESequencerUI() : UI(UI_W, UI_H),
     drumPattern->noteMtx = &plugin->noteMtx;
     drumPattern->below(scoreLabel, Widget_Align::START, padding * 2.f);
     drumPattern->setCallback(this);
-    drumPattern->description = "Click grid to add new hit. Drag hit to adjust timing. Scroll to adjust velocity. Click hit to delete/disable.";
+    drumPattern->description = "Click to add new hit. Drag hit to adjust timing. Scroll to set velocity. Click hit to delete/disable. Drag pattern to DAW.";
 
     drumPlayhead = new Playhead(this);
     drumPlayhead->setAbsolutePos(drumPattern->getAbsolutePos());
@@ -432,7 +432,7 @@ void WAIVESequencerUI::buttonClicked(Button *button)
     {
         // create suitable file name
         std::string saveName = score_genres[plugin->score_genre];
-        if (plugin->score_genre != plugin->groove_genre)
+        if (std::strcmp(score_genres[plugin->score_genre], groove_genres[plugin->groove_genre]) != 0)
         {
             saveName += "_";
             saveName += groove_genres[plugin->groove_genre];
@@ -440,7 +440,7 @@ void WAIVESequencerUI::buttonClicked(Button *button)
         saveName += ".mid";
 
         char const *filename = nullptr;
-        char const *filterPatterns[1] = {"*.mp3"};
+        char const *filterPatterns[1] = {"*.mid"};
         filename = tinyfd_saveFileDialog(
             "Export MIDI file...",
             saveName.c_str(),
@@ -450,6 +450,13 @@ void WAIVESequencerUI::buttonClicked(Button *button)
 
         if (filename)
             setState("export", filename);
+    }
+}
+
+void WAIVESequencerUI::buttonDragged(Button *button)
+{
+    if (button == exportBtn)
+    {
     }
 }
 
@@ -542,6 +549,30 @@ void WAIVESequencerUI::onDrumPatternNoteMoved(DrumPattern *widget, std::shared_p
 {
     note->trigger->tick = newTick;
     plugin->computeNotes();
+}
+
+void WAIVESequencerUI::onDrumPatternDragStarted(DrumPattern *widget)
+{
+    std::string saveName = score_genres[plugin->score_genre];
+    if (std::strcmp(score_genres[plugin->score_genre], groove_genres[plugin->groove_genre]) != 0)
+    {
+        saveName += "_";
+        saveName += groove_genres[plugin->groove_genre];
+    }
+    saveName += ".mid";
+
+    Poco::Path filepath = Poco::Path(Poco::Path::temp());
+    filepath.setFileName(saveName);
+
+    std::string filename = filepath.toString();
+
+    setState("export", filename.c_str());
+
+    std::cout << "Dragging " << filename << std::endl;
+    DragSource::startDraggingFile(filename, (void *)getWindow().getNativeWindowHandle());
+    std::cout << "finished" << std::endl;
+
+    Poco::TemporaryFile::registerForDeletion(filename);
 }
 
 void WAIVESequencerUI::onNoteUpdated(DrumPattern *widget, std::shared_ptr<Note> note)

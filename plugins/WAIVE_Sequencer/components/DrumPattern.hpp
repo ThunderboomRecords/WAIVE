@@ -17,6 +17,7 @@ public:
         virtual void onDrumPatternClicked(DrumPattern *widget, int instrument, int sixteenth) = 0;
         virtual void onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Note> note, float deltaY) = 0;
         virtual void onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<Note> note, uint32_t tick) = 0;
+        virtual void onDrumPatternDragStarted(DrumPattern *widget) = 0;
         virtual void onNoteUpdated(DrumPattern *widget, std::shared_ptr<Note> note) = 0;
     };
     explicit DrumPattern(Widget *widget) noexcept;

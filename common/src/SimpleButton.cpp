@@ -10,7 +10,8 @@ Button::Button(Widget *parent)
       fEnabled(true),
       drawBackground(true),
       isToggle(false),
-      fToggleValue(false)
+      fToggleValue(false),
+      fDragAction(DragAction::NONE)
 {
     background_color = WaiveColors::grey2;
     accent_color = WaiveColors::light2;
@@ -102,12 +103,22 @@ bool Button::onMouse(const MouseEvent &ev)
         ev.button == kMouseButtonLeft &&
         contains(ev.pos))
     {
+        fDragStartPos = ev.pos;
+        fDragAction = DragAction::CLICKING;
+    }
+    else if (
+        fEnabled &&
+        !ev.press &&
+        fDragAction == DragAction::CLICKING &&
+        contains(ev.pos))
+    {
         if (isToggle)
             fToggleValue = !fToggleValue;
 
         if (callback != nullptr)
             callback->buttonClicked(this);
 
+        fDragAction = DragAction::NONE;
         repaint();
         return true;
     }
@@ -125,7 +136,13 @@ bool Button::onMotion(const MotionEvent &ev)
             getWindow().setCursor(kMouseCursorHand);
             repaint();
         }
-        return false;
+
+        if (fDragAction == DragAction::CLICKING)
+        {
+            fDragAction = DragAction::DRAGGING;
+            if (callback != nullptr)
+                callback->buttonDragged(this);
+        }
     }
     else
     {

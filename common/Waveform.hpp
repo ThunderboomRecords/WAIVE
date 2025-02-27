@@ -19,8 +19,9 @@ public:
     class Callback
     {
     public:
-        virtual ~Callback(){};
+        virtual ~Callback() {};
         virtual void waveformSelection(Waveform *waveform, uint selectionStart) = 0;
+        // virtual void waveformDragStarted(Waveform *waveform) = 0;
     };
 
     explicit Waveform(Widget *widget) noexcept;

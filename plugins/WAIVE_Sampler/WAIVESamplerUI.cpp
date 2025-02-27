@@ -738,6 +738,13 @@ bool WAIVESamplerUI::onMotion(const MotionEvent &ev)
             dragInfo->setAbsolutePos(ev.pos.getX() + 12.f, ev.pos.getY());
         }
         getWindow().setCursor(kMouseCursorHand);
+
+        if (ev.pos.getX() < 0 || ev.pos.getX() > getWidth() || ev.pos.getY() < 0 || ev.pos.getY() > getHeight())
+        {
+            dragDropManager->startFileDrag();
+            dragDropManager->dragDropEnd(nullptr, false);
+            dragDropManager->filepath = "";
+        }
     }
 
     return UI::onMotion(ev);

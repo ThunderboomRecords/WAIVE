@@ -16,6 +16,7 @@ public:
     public:
         virtual ~Callback() {};
         virtual void buttonClicked(Button *button) = 0;
+        virtual void buttonDragged(Button *button) {};
     };
     explicit Button(Widget *parent);
 
@@ -36,6 +37,13 @@ protected:
     bool onMotion(const MotionEvent &ev) override;
 
 private:
+    enum DragAction
+    {
+        NONE,
+        CLICKING,
+        DRAGGING
+    };
+
     Callback *callback;
 
     std::string label;
@@ -43,6 +51,9 @@ private:
     bool fHasFocus;
     bool fEnabled;
     bool fToggleValue;
+
+    DragAction fDragAction;
+    DGL::Point<double> fDragStartPos;
 
     DISTRHO_LEAK_DETECTOR(Button)
 };

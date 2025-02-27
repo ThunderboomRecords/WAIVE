@@ -21,10 +21,15 @@
 
 #include "tinyfiledialogs.h"
 
+#include "Poco/Path.h"
+#include "Poco/File.h"
+#include "Poco/TemporaryFile.h"
+
 #include "fonts.h"
 #include "dropdown_icon.h"
 #include "WAIVEColors.hpp"
 #include "latent_distributions.h"
+#include "DragSource.h"
 
 #include "WAIVESequencer.hpp"
 
@@ -51,6 +56,7 @@ protected:
     bool onMotion(const MotionEvent &ev) override;
     void onNanoDisplay() override;
     void buttonClicked(Button *button) override;
+    void buttonDragged(Button *button) override;
     void grooveClicked(GrooveGraph *graph) override;
     void knobDragStarted(Knob *knob) override;
     void knobDragFinished(Knob *knob, float value) override;
@@ -61,6 +67,7 @@ protected:
     void onDrumPatternClicked(DrumPattern *widget, int instrument, int sixteenth) override;
     void onDrumPatternScrolled(DrumPattern *widget, std::shared_ptr<Note> note, float deltaY) override;
     void onDrumPatternNoteMoved(DrumPattern *widget, std::shared_ptr<Note> note, uint32_t tick) override;
+    void onDrumPatternDragStarted(DrumPattern *widget) override;
     void onNoteUpdated(DrumPattern *widget, std::shared_ptr<Note> note) override;
     void uiScaleFactorChanged(const double scaleFactor) override;
 

@@ -169,6 +169,7 @@ bool SampleMap::onMotion(const MotionEvent &ev)
         {
             dragAction = DragAction::NONE;
             dragDropManager->dragDropStart(this, fmt::format("{:d}", highlightSampleId), allSamples->at(highlightSampleIndex)->name);
+            dragDropManager->filepath = allSamples->at(highlightSampleIndex)->fullPath;
         }
         else
         {

@@ -82,6 +82,8 @@ bool DrumPattern::onMotion(const MotionEvent &ev)
 
         if (selectedNote != nullptr)
             newTick = selectedNote->tick;
+        else if (callback != nullptr)
+            callback->onDrumPatternDragStarted(this);
 
         return true;
     }

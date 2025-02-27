@@ -17,9 +17,9 @@ void DragDropWidget::dragStarted(DragDropEvent &ev)
     dragDropManager->dragDropStart(ev.source, ev.payload);
 }
 
-DragDropManager::DragDropManager(DGL::Window *window_)
+DragDropManager::DragDropManager(DGL::Window *window)
     : event(nullptr),
-      window(window_),
+      window(window),
       hasEvent(false)
 {
 }
@@ -69,6 +69,14 @@ void DragDropManager::dragDropEnd(DragDropWidget *widget, bool accepted)
         cb->onDragDropEnd(widget, getEvent(), true);
 
     clearEvent();
+}
+
+void DragDropManager::startFileDrag()
+{
+    if (filepath.empty())
+        return;
+
+    DragSource::startDraggingFile(filepath, (void *)window->getNativeWindowHandle());
 }
 
 void DragDropManager::clearEvent()

@@ -11,6 +11,8 @@
 #include "SimpleButton.hpp"
 #include "SampleDatabase.hpp"
 
+#include "DragSource.h"
+
 START_NAMESPACE_DISTRHO
 
 class SampleMap : public WAIVEWidget,

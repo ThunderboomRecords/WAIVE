@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "WAIVEWidget.hpp"
+#include "DragSource.h"
 
 START_NAMESPACE_DISTRHO
 
@@ -51,9 +52,12 @@ public:
 
     void dragDropStart(DragDropWidget *widget, const std::string &data, const std::string &info = "");
     void dragDropEnd(DragDropWidget *widget, bool accepted);
+    void startFileDrag();
     bool isDragging();
     void clearEvent();
     DragDropEvent getEvent();
+
+    std::string filepath;
 
 private:
     bool hasEvent;

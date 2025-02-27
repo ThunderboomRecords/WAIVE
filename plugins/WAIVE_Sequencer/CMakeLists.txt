@@ -1,3 +1,10 @@
+if(APPLE)
+  set(DRAG_SOURCES ${CMAKE_SOURCE_DIR}/common/src/DragSource_MacOS.mm)
+elseif(WIN32)
+  set(DRAG_SOURCES ${CMAKE_SOURCE_DIR}/common/src/DragSource_Windows.cpp)
+elseif(UNIX AND NOT APPLE)
+endif()
+
 dpf_add_plugin(
   WAIVE_Sequencer
   TARGETS 
@@ -38,30 +45,28 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/WidgetGroup.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
+      ${DRAG_SOURCES}
 )
 
 # Externals:
 set(ONNX_LIB_PATH "${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a")
 
 if(APPLE)
-  find_library(FOUNDATION Foundation)
-  find_library(COREFOUNDATION CoreFoundation)
+  target_link_libraries(WAIVE_Sequencer PUBLIC "-framework Cocoa")
 elseif(WIN32)
   set(ONNX_LIB_PATH "${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/onnxruntime.lib")
+  target_link_libraries(WAIVE_Sequencer ole32 shell32)
 elseif(UNIX AND NOT APPLE)
-  target_compile_definitions(WAIVE_Sampler PUBLIC LINUX)
+  target_compile_definitions(WAIVE_Sequencer PUBLIC LINUX)
 endif()
 
 include_directories(
     ${CMAKE_BINARY_DIR}/generated/
 )
 
-link_directories(
-  /usr/lib
-)
-
 find_package(fmt CONFIG REQUIRED)
 find_package(tinyfiledialogs CONFIG REQUIRED)
+find_package(Poco REQUIRED COMPONENTS Foundation)
 
 target_include_directories(
   WAIVE_Sequencer
@@ -81,8 +86,9 @@ target_link_libraries(
     tinyfiledialogs::tinyfiledialogs
     fmt::fmt
     PRIVATE
+    Poco::Foundation
     ${ONNX_LIB_PATH}
-    ${CoreFoundation}
-    ${Foundation}
+    # ${CoreFoundation}
+    # ${Foundation}
 )
 

@@ -161,8 +161,8 @@ bool SampleSlot::onMotion(const MotionEvent &ev)
             dragAction = DragAction::SCROLLING;
             if (samplePlayer != nullptr && samplePlayer->sampleInfo != nullptr)
             {
-                // std::cout << "Started dragging sample info" << std::endl;
                 dragDropManager->dragDropStart(this, fmt::format("{:d}", samplePlayer->sampleInfo->getId()), samplePlayer->sampleInfo->name);
+                dragDropManager->filepath = samplePlayer->sampleInfo->fullPath;
             }
         }
     }

@@ -9,6 +9,13 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     endif()
 endif()
 
+if(APPLE)
+  set(DRAG_SOURCES ${CMAKE_SOURCE_DIR}/common/src/DragSource_MacOS.mm)
+elseif(WIN32)
+  set(DRAG_SOURCES ${CMAKE_SOURCE_DIR}/common/src/DragSource_Windows.cpp)
+elseif(UNIX AND NOT APPLE)
+endif()
+
 dpf_add_plugin(
   WAIVE_Sampler
   TARGETS 
@@ -67,16 +74,17 @@ dpf_add_plugin(
       ${CMAKE_SOURCE_DIR}/common/src/WAIVEWidget.cpp
       ${CMAKE_SOURCE_DIR}/common/src/SimpleButton.cpp
       ${CMAKE_SOURCE_DIR}/common/src/RadioButtons.cpp
+      ${DRAG_SOURCES}
 )
 
 # Externals:
 set(ONNX_LIB_PATH "${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/libonnxruntime.a")
 
 if(APPLE)
-  find_library(FOUNDATION Foundation)
-  find_library(COREFOUNDATION CoreFoundation)
+  target_link_libraries(WAIVE_Sampler PUBLIC "-framework Cocoa")
 elseif(WIN32)
   set(ONNX_LIB_PATH "${PROJECT_SOURCE_DIR}/external/onnxruntime/lib/onnxruntime.lib")
+  target_link_libraries(WAIVE_Sampler ole32 shell32)
 elseif(UNIX AND NOT APPLE)
   target_compile_definitions(WAIVE_Sampler PUBLIC LINUX)
 endif()
@@ -139,8 +147,6 @@ target_link_libraries(
     nlohmann_json::nlohmann_json
     tinyfiledialogs::tinyfiledialogs
     PRIVATE
-    ${CoreFoundation}
-    ${Foundation}
     SndFile::sndfile
     fmt::fmt
     Gist
