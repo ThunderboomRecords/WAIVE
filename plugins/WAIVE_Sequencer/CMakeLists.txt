@@ -9,7 +9,7 @@ endif()
 dpf_add_plugin(
   WAIVE_Sequencer
   TARGETS 
-      jack
+      # jack
       vst3
       vst2
       clap

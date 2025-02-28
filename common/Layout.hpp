@@ -20,7 +20,7 @@ enum Position
     BELOW
 };
 
-namespace Layout
+namespace WAIVELayout
 {
     void position(Position p, NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, float padding);
 

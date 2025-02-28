@@ -9,8 +9,8 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
       lastPlaying(PlayState::STOPPED),
       callback(nullptr),
       step(0.f),
-      currentSample(nullptr),
-      acceptingDrop(false)
+      acceptingDrop(false),
+      currentSampleId(-1)
 {
     triggerBtn = new Button(parent);
     triggerBtn->setCallback(this);
@@ -52,18 +52,32 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
     contextMenu->toFront();
     contextMenu->hide();
 
+    std::cout << "SampleSlot::SampleSlot " << getParentWidget() << std::endl;
+
     addChildWidget(triggerBtn, {triggerBtn, this, Position::ON_TOP, Widget_Align::START, Widget_Align::CENTER, 5});
     addChildWidget(midiSelect, {midiSelect, this, Position::ON_TOP, Widget_Align::END, Widget_Align::CENTER, 5});
     addChildWidget(clearBtn, {clearBtn, midiSelect, Position::LEFT_OF, Widget_Align::CENTER, Widget_Align::CENTER, 5});
 }
 
-void SampleSlot::setSamplePlayer(SamplePlayer *sp)
+SampleSlot::~SampleSlot()
 {
-    samplePlayer = sp;
-    sp->addCallback(this);
+    if (samplePlayer != nullptr)
+        samplePlayer->removeCallback(std::shared_ptr<SamplePlayerCallback>(this, [](SamplePlayerCallback *) {}));
 }
 
-SamplePlayer *SampleSlot::getSamplePlayer() const
+void SampleSlot::setSamplePlayer(std::shared_ptr<SamplePlayer> sp)
+{
+    if (sp == nullptr)
+        return;
+
+    if (samplePlayer != nullptr)
+        samplePlayer->removeCallback(std::shared_ptr<SamplePlayerCallback>(this, [](SamplePlayerCallback *) {}));
+
+    samplePlayer = sp;
+    samplePlayer->addCallback(std::shared_ptr<SamplePlayerCallback>(this, [](SamplePlayerCallback *) {}));
+}
+
+std::shared_ptr<SamplePlayer> SampleSlot::getSamplePlayer() const
 {
     return samplePlayer;
 }
@@ -223,7 +237,7 @@ void SampleSlot::onNanoDisplay()
     // sample info
     if (samplePlayer != nullptr && samplePlayer->active && samplePlayer->sampleInfo != nullptr)
     {
-        if (currentSample != nullptr && currentSample == samplePlayer->sampleInfo)
+        if (currentSampleId == samplePlayer->sampleInfo->getId())
         {
             beginPath();
             roundedRect(0, 0, width, height, 3 * scale_factor);
@@ -313,15 +327,13 @@ void SampleSlot::setMidiNumber(int midi, bool sendCallback)
 void SampleSlot::sampleLoaded()
 {
     triggerBtn->setEnabled(true);
-    // getWindow().addIdleCallback(this);
-    getTopLevelWidget()->addIdleCallback(this);
+    // getTopLevelWidget()->addIdleCallback(this);
 }
 
 void SampleSlot::sampleCleared()
 {
     triggerBtn->setEnabled(false);
-    // getWindow().removeIdleCallback(this);
-    getTopLevelWidget()->addIdleCallback(this);
+    // getTopLevelWidget()->addIdleCallback(this);
 }
 
 void SampleSlot::setCallback(Callback *cb)

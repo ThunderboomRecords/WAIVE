@@ -26,8 +26,8 @@ public:
 
     explicit Waveform(Widget *widget) noexcept;
     void setCallback(Callback *cb);
-    void setWaveform(std::vector<float> *wf);
-    void setWaveformFeatures(std::vector<WaveformFeature> *wfFeatures);
+    void setWaveform(std::shared_ptr<std::vector<float>> wf);
+    void setWaveformFeatures(std::shared_ptr<std::vector<WaveformFeature>> wfFeatures);
     void setWaveformLength(int length);
     void setSelection(int start, bool sendCallback);
     void waveformNew();
@@ -65,8 +65,8 @@ private:
     Point<double> clickStart;
     int visibleStart, visibleEnd;
 
-    std::vector<float> *wf;
-    std::vector<WaveformFeature> *wfFeatures;
+    std::shared_ptr<std::vector<float>> wf;
+    std::shared_ptr<std::vector<WaveformFeature>> wfFeatures;
     int featureHighlight;
 
     DISTRHO_LEAK_DETECTOR(Waveform);

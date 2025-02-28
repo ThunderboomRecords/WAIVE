@@ -61,7 +61,7 @@ void WidgetGroup::repositionWidgets()
 {
     for (int i = 0; i < positions.size(); i++)
     {
-        Layout::position(
+        WAIVELayout::position(
             positions[i].p,
             positions[i].widget,
             positions[i].target,

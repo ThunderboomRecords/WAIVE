@@ -37,6 +37,9 @@
 #include <Poco/Delegate.h>
 #include <Poco/Exception.h>
 #include <Poco/Random.h>
+#include "Poco/Logger.h"
+#include "Poco/SimpleFileChannel.h"
+#include "Poco/AutoPtr.h"
 
 #include "model_utils.hpp"
 #include "onnxruntime_cxx_api.h"
@@ -154,7 +157,7 @@ protected:
     void generateCurrentSampleName(const std::string &base);
     void renderSample();
     void loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info);
-    void clearSamplePlayer(SamplePlayer &sp);
+    void clearSamplePlayer(std::shared_ptr<SamplePlayer> sp);
     void deleteSample(int id);
     void triggerPreview();
     std::pair<float, float> getEmbedding(std::vector<float> *wf);
@@ -207,12 +210,13 @@ private:
     Filter sampleFilter;
 
     std::mutex samplePlayerMtx;
-    SamplePlayer *editorPreviewPlayer, *mapPreviewPlayer, *sourcePreviewPlayer;
-    std::vector<float> *editorPreviewWaveform, *mapPreviewWaveform, *sourcePreviewWaveform;
-    std::vector<SamplePlayer> samplePlayers;
-    std::vector<std::vector<float>> samplePlayerWaveforms;
+    std::shared_ptr<SamplePlayer> editorPreviewPlayer, mapPreviewPlayer, sourcePreviewPlayer;
+    std::shared_ptr<std::vector<float>> editorPreviewWaveform, mapPreviewWaveform, sourcePreviewWaveform;
+    std::vector<std::shared_ptr<SamplePlayer>> samplePlayers;
+    std::vector<std::shared_ptr<std::vector<float>>> samplePlayerWaveforms;
 
     Poco::Random random;
+    Poco::Logger *logger;
 
     friend class WAIVESamplerUI;
     friend class SampleEditorControls;

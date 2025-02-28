@@ -24,15 +24,15 @@ Waveform::Waveform(Widget *widget) noexcept
     level_of_detail = int(4 * scale_factor);
 }
 
-void Waveform::setWaveform(std::vector<float> *wf_)
+void Waveform::setWaveform(std::shared_ptr<std::vector<float>> wf)
 {
     waveformCached = false;
-    wf = wf_;
+    this->wf = wf;
 }
 
-void Waveform::setWaveformFeatures(std::vector<WaveformFeature> *wfFeatures_)
+void Waveform::setWaveformFeatures(std::shared_ptr<std::vector<WaveformFeature>> wfFeatures)
 {
-    wfFeatures = wfFeatures_;
+    this->wfFeatures = wfFeatures;
 }
 
 void Waveform::setSelection(int start, bool sendCallback = false)

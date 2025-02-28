@@ -22,32 +22,51 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
         return;
     }
 
+    Poco::Path homedir = Poco::Path::dataHome();
+
+    Poco::AutoPtr<Poco::SimpleFileChannel> pChannel(new Poco::SimpleFileChannel);
+    pChannel->setProperty("path", Poco::Path(homedir).append("waive.log").toString());
+
+    Poco::Logger::root().setChannel(pChannel);
+    logger = &Poco::Logger::get("WAIVESampler::WAIVESampler");
+
     printf(" VERSION: %d.%d.%d\n", V_MAJ, V_MIN, V_PAT);
+    logger->information(fmt::format("WAIVE Sampler v{:d}.{:d}.{:d} starting...", V_MAJ, V_MIN, V_PAT));
 
     ampEnvGen.power = 0.5f;
 
     random.seed();
 
-    samplePlayerWaveforms.resize(NUM_SLOTS + 3);
-    samplePlayers.reserve(NUM_SLOTS + 3);
-    for (int i = 0; i < NUM_SLOTS + 3; i++)
+    logger->information("init samplePlayers...");
     {
-        samplePlayers.emplace_back();
-        samplePlayers.back().waveform = &samplePlayerWaveforms[i];
+        std::lock_guard<std::mutex> lock(samplePlayerMtx);
+
+        samplePlayerWaveforms.resize(NUM_SLOTS + 3);
+        samplePlayers.reserve(NUM_SLOTS + 3);
+
+        for (int i = 0; i < NUM_SLOTS + 3; i++)
+        {
+            samplePlayers[i] = std::make_shared<SamplePlayer>();
+            samplePlayerWaveforms[i] = std::make_shared<std::vector<float>>();
+            samplePlayers[i]->waveform = samplePlayerWaveforms[i];
+        }
+
+        for (int i = 0; i < NUM_SLOTS; i++)
+            samplePlayers[i]->midi = midiMap[i % 9];
+
+        editorPreviewPlayer = samplePlayers[NUM_SLOTS];
+        editorPreviewWaveform = samplePlayerWaveforms[NUM_SLOTS];
+        mapPreviewPlayer = samplePlayers[NUM_SLOTS + 1];
+        mapPreviewWaveform = samplePlayerWaveforms[NUM_SLOTS + 1];
+        sourcePreviewPlayer = samplePlayers[NUM_SLOTS + 2];
+        sourcePreviewWaveform = samplePlayerWaveforms[NUM_SLOTS + 2];
     }
 
-    editorPreviewPlayer = &samplePlayers[NUM_SLOTS];
-    editorPreviewWaveform = &samplePlayerWaveforms[NUM_SLOTS];
-    mapPreviewPlayer = &samplePlayers[NUM_SLOTS + 1];
-    mapPreviewWaveform = &samplePlayerWaveforms[NUM_SLOTS + 1];
-    sourcePreviewPlayer = &samplePlayers[NUM_SLOTS + 2];
-    sourcePreviewWaveform = &samplePlayerWaveforms[NUM_SLOTS + 2];
-
-    for (int i = 0; i < NUM_SLOTS; i++)
-        samplePlayers[i].midi = midiMap[i % 9];
+    logger->information("Done init samplePlayers");
 
     // Load models
     // std::cout << "Loading TSNE model...\n";
+    logger->information("Loading TSNE model...");
     try
     {
         auto info = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
@@ -77,8 +96,10 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
     catch (const std::exception &e)
     {
         std::cerr << "Error loading model: " << e.what() << '\n';
+        logger->critical("Error loading model: {}", e.what());
         return;
     }
+    logger->information("Done loading TSNE model");
 
     {
         std::lock_guard<std::mutex> lock(tempBufferMutex);
@@ -88,12 +109,16 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
     // OSC Test
     oscHost = oscClient.getHost();
     oscPort = oscClient.getPort();
+    logger->information("OSC Address: " + oscHost + ":" + std::to_string(oscPort));
 
     // Register notifications
+    logger->information("Registering notifications...");
     taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
     taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFailedNotification>(*this, &WAIVESampler::onTaskFailed));
     sd.databaseUpdate += Poco::delegate(this, &WAIVESampler::onDatabaseChanged);
     sd.taskManager.addObserver(Poco::Observer<WAIVESampler, Poco::TaskFinishedNotification>(*this, &WAIVESampler::onTaskFinished));
+
+    logger->information("Done initializing WAIVESampler");
 }
 
 WAIVESampler::~WAIVESampler()
@@ -286,7 +311,7 @@ float WAIVESampler::getParameterValue(uint32_t index) const
     case kSlot17MidiNumber:
     case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
-        val = static_cast<float>(samplePlayers[slot].midi);
+        val = static_cast<float>(std::floor(samplePlayers[slot]->midi));
         break;
     default:
         std::cerr << "getParameter: Unknown parameter index: " << index << "  " << std::endl;
@@ -360,7 +385,7 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
     case kSlot17MidiNumber:
     case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
-        samplePlayers[slot].midi = static_cast<int>(value);
+        samplePlayers[slot]->midi = static_cast<int>(value);
         break;
     default:
         std::cerr << "Unknown parameter index: " << index << "  " << value << std::endl;
@@ -459,10 +484,10 @@ String WAIVESampler::getState(const char *key) const
         std::ostringstream oss;
         for (size_t i = 0; i < NUM_SLOTS; i++)
         {
-            if (samplePlayers[i].sampleInfo == nullptr)
+            if (samplePlayers[i]->sampleInfo == nullptr)
                 continue;
 
-            oss << i << ":" << samplePlayers[i].sampleInfo->getId() << "\n";
+            oss << i << ":" << samplePlayers[i]->sampleInfo->getId() << "\n";
         }
 
         retString = String(oss.str().c_str());
@@ -536,10 +561,10 @@ void WAIVESampler::run(
                 /* NoteOn */
                 for (int j = 0; j < samplePlayers.size(); j++)
                 {
-                    if (samplePlayers[j].active && samplePlayers[j].midi == note)
+                    if (samplePlayers[j]->active && samplePlayers[j]->midi == note)
                     {
-                        samplePlayers[j].state = PlayState::TRIGGERED;
-                        samplePlayers[j].velocity = static_cast<float>(velocity) / 128.f;
+                        samplePlayers[j]->state = PlayState::TRIGGERED;
+                        samplePlayers[j]->velocity = static_cast<float>(velocity) / 128.f;
                     }
                 }
             }
@@ -552,7 +577,9 @@ void WAIVESampler::run(
 
         for (int j = 0; j < samplePlayers.size(); j++)
         {
-            SamplePlayer *sp = &samplePlayers[j];
+            std::shared_ptr<SamplePlayer> sp = samplePlayers[j];
+            std::lock_guard<std::mutex> lock(sp->waveformMtx);
+
             if (sp->state == PlayState::STOPPED)
                 continue;
 
@@ -681,13 +708,16 @@ void WAIVESampler::addCurrentSampleToLibrary()
     if (fCurrentSample == nullptr)
         return;
 
-    auto embedding = getEmbedding(editorPreviewWaveform);
-    fCurrentSample->embedX = embedding.first;
-    fCurrentSample->embedY = embedding.second;
+    {
+        std::lock_guard<std::mutex> lock(samplePlayerMtx);
+        auto embedding = getEmbedding(editorPreviewWaveform.get());
+        fCurrentSample->embedX = embedding.first;
+        fCurrentSample->embedY = embedding.second;
 
-    fCurrentSample->adsr = ADSR_Params(ampEnvGen.getADSR());
+        fCurrentSample->adsr = ADSR_Params(ampEnvGen.getADSR());
 
-    saveWaveform(sd.getFullSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength, sampleRate);
+        saveWaveform(sd.getFullSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength, sampleRate);
+    }
 
     if (fCurrentSample->saved)
         sd.updateSample(fCurrentSample);
@@ -697,7 +727,7 @@ void WAIVESampler::addCurrentSampleToLibrary()
         // add it to next avaliable sample player
         for (size_t i = 0; i < samplePlayers.size(); i++)
         {
-            if (!samplePlayers[i].active)
+            if (!samplePlayers[i]->active)
             {
                 loadSamplePlayer(i, fCurrentSample);
                 break;
@@ -857,6 +887,7 @@ void WAIVESampler::renderSample()
     }
 
     std::lock_guard<std::mutex> lock(samplePlayerMtx);
+    std::lock_guard<std::mutex> isLock(fCurrentSample->sourceInfo.mtx);
 
     Source *sourceInfo = &fCurrentSample->sourceInfo;
     fCurrentSample->sampleLength = ampEnvGen.getLength(fCurrentSample->sustainLength);
@@ -956,7 +987,7 @@ void WAIVESampler::renderSample()
 
 void WAIVESampler::loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info)
 {
-    SamplePlayer *sp = &samplePlayers[spIndex];
+    std::shared_ptr<SamplePlayer> sp = samplePlayers[spIndex];
 
     if (info == nullptr)
     {
@@ -970,12 +1001,13 @@ void WAIVESampler::loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> inf
     taskManager.start(task);
 }
 
-void WAIVESampler::clearSamplePlayer(SamplePlayer &sp)
+void WAIVESampler::clearSamplePlayer(std::shared_ptr<SamplePlayer> sp)
 {
     std::cout << "WAIVESampler::clearSamplePlayer\n";
     {
         std::lock_guard<std::mutex> lock(samplePlayerMtx);
-        sp.clear();
+        std::lock_guard<std::mutex> spLock(sp->waveformMtx);
+        sp->clear();
     }
     pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
 }
@@ -993,7 +1025,7 @@ void WAIVESampler::deleteSample(int id)
     // remove from samplePlayers
     for (size_t i = 0; i < samplePlayers.size(); i++)
     {
-        if (samplePlayers[i].sampleInfo != nullptr && samplePlayers[i].sampleInfo->getId() == id)
+        if (samplePlayers[i]->sampleInfo != nullptr && samplePlayers[i]->sampleInfo->getId() == id)
             clearSamplePlayer(samplePlayers[i]);
     }
 
@@ -1132,7 +1164,10 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         }
 
         {
-            std::lock_guard<std::mutex> lock(tempBufferMutex);
+            std::lock_guard<std::mutex> tblock(tempBufferMutex);
+            std::lock_guard<std::mutex> spLock(samplePlayerMtx);
+            std::lock_guard<std::mutex> siLock(fCurrentSample->sourceInfo.mtx);
+
             if (fCurrentSample == nullptr)
                 newSample();
 
@@ -1194,18 +1229,20 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     }
     else if (taskName.find("loadSamplePlayer") != std::string::npos)
     {
-        int spIndex = 0; // = std::stoi(taskName.);
+        int spIndex = 0;
         size_t colonPos = taskName.find(':');
         if (colonPos != std::string::npos)
             spIndex = std::stoi(taskName.substr(colonPos + 1));
         else
             throw std::runtime_error("loadSamplePlayer task name in wrong format: " + taskName);
 
-        SamplePlayer *sp = &samplePlayers[spIndex];
+        // TODO: make samplePlayers shared pointers...
+        std::shared_ptr<SamplePlayer> sp = samplePlayers[spIndex];
 
         {
             std::lock_guard<std::mutex> spLock(samplePlayerMtx);
             std::lock_guard<std::mutex> tbLock(tempBufferMutex);
+            std::lock_guard<std::mutex> siLock(sp->waveformMtx);
 
             size_t size = tempBuffer->size();
 

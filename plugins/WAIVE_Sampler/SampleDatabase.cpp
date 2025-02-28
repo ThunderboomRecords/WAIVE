@@ -27,7 +27,7 @@ SampleDatabase::SampleDatabase(std::shared_ptr<HTTPClient> _httpClient)
     pChannel->setProperty("path", Poco::Path(homedir).append("waive.log").toString());
 
     Poco::Logger::root().setChannel(pChannel);
-    logger = &Poco::Logger::get("WAIVESamper::SampleDatabase");
+    logger = &Poco::Logger::get("WAIVESampler::SampleDatabase");
 
     logger->information(fmt::format("Root directory: {:s}", rootDir.toString()));
 

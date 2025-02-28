@@ -9,7 +9,7 @@
 
 struct Source
 {
-    explicit Source(const Source &other)
+    Source(const Source &other)
         : name(other.name),
           fp(other.fp),
           buffer(other.buffer),
@@ -19,6 +19,8 @@ struct Source
           tagString(other.tagString),
           sourceLoaded(other.sourceLoaded) {};
     Source() = default;
+    Source(Source &&) = default;
+    Source &operator=(Source &&) = default;
     bool sourceLoaded = false;
     std::string name;
     std::string fp;

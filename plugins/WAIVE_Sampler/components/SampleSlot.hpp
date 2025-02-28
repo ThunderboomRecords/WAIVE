@@ -34,15 +34,15 @@ public:
         virtual void sampleSlotLoadSample(SampleSlot *slot, int slotId, int sampleId) = 0;
     };
     explicit SampleSlot(Widget *widget, DragDropManager *manager) noexcept;
+    ~SampleSlot() override;
 
     void setCallback(Callback *cb);
     void idleCallback() override;
 
-    void setSamplePlayer(SamplePlayer *sp);
+    void setSamplePlayer(std::shared_ptr<SamplePlayer> sp);
     void setMidiNumber(int midi, bool sendCallback);
-    SamplePlayer *getSamplePlayer() const;
-    int slotId;
-    std::shared_ptr<SampleInfo> currentSample;
+    std::shared_ptr<SamplePlayer> getSamplePlayer() const;
+    int slotId, currentSampleId;
 
 protected:
     void onNanoDisplay() override;
@@ -63,7 +63,7 @@ protected:
 private:
     Callback *callback;
 
-    SamplePlayer *samplePlayer;
+    std::shared_ptr<SamplePlayer> samplePlayer;
     PlayState lastPlaying;
 
     Menu *contextMenu;

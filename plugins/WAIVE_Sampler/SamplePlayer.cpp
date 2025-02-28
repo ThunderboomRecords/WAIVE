@@ -1,8 +1,41 @@
 #include "SamplePlayer.hpp"
 
-void SamplePlayer::addCallback(SamplePlayerCallback *cb)
+SamplePlayer::SamplePlayer() : length(0),
+                               ptr(0),
+                               midi(-1),
+                               gain(1.0f),
+                               velocity(0.8f),
+                               pitch(60.f),
+                               pan(0.0f),
+                               state(PlayState::STOPPED),
+                               active(false),
+                               sampleInfo(nullptr)
+{
+}
+
+SamplePlayer::SamplePlayer(const SamplePlayer &other)
+{
+    waveform = other.waveform;
+    length = other.length;
+    ptr = other.ptr;
+    midi = other.midi;
+    gain = other.gain;
+    velocity = other.velocity;
+    pitch = other.pitch;
+    pan = other.pan;
+    state = other.state;
+    active = other.active;
+    sampleInfo = other.sampleInfo;
+}
+
+void SamplePlayer::addCallback(std::shared_ptr<SamplePlayerCallback> cb)
 {
     callbacks.push_back(cb);
+}
+
+void SamplePlayer::removeCallback(std::shared_ptr<SamplePlayerCallback> cb)
+{
+    callbacks.erase(std::remove(callbacks.begin(), callbacks.end(), cb), callbacks.end());
 }
 
 void SamplePlayer::load(std::shared_ptr<SampleInfo> info)

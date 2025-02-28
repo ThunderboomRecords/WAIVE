@@ -2,6 +2,7 @@
 #define SAMPLE_PLAYER_HPP
 
 #include <vector>
+#include <mutex>
 
 #include "SampleDatabase.hpp"
 
@@ -22,7 +23,8 @@ public:
 
 struct SamplePlayer
 {
-    std::vector<float> *waveform = nullptr;
+    std::shared_ptr<std::vector<float>> waveform = nullptr;
+    std::mutex waveformMtx;
     long length = 0;
     long ptr = 0;
     long startAt = 0;
@@ -37,8 +39,11 @@ struct SamplePlayer
     void load(std::shared_ptr<SampleInfo> info);
     void loaded();
     void clear();
-    void addCallback(SamplePlayerCallback *cb);
-    std::vector<SamplePlayerCallback *> callbacks;
+    void addCallback(std::shared_ptr<SamplePlayerCallback> cb);
+    void removeCallback(std::shared_ptr<SamplePlayerCallback> cb);
+    std::vector<std::shared_ptr<SamplePlayerCallback>> callbacks;
+    SamplePlayer();
+    SamplePlayer(const SamplePlayer &);
 };
 
 #endif

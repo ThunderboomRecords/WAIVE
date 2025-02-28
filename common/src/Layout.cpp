@@ -1,30 +1,30 @@
 #include "Layout.hpp"
 
-void Layout::position(Position p, NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, float padding)
+void WAIVELayout::position(Position p, NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, float padding)
 {
     switch (p)
     {
     case Position::ON_TOP:
-        Layout::onTop(w1, w2, h_align, v_align, padding, padding);
+        WAIVELayout::onTop(w1, w2, h_align, v_align, padding, padding);
         break;
     case Position::ABOVE:
-        Layout::above(w1, w2, h_align, padding);
+        WAIVELayout::above(w1, w2, h_align, padding);
         break;
     case Position::BELOW:
-        Layout::below(w1, w2, h_align, padding);
+        WAIVELayout::below(w1, w2, h_align, padding);
         break;
     case Position::LEFT_OF:
-        Layout::leftOf(w1, w2, v_align, padding);
+        WAIVELayout::leftOf(w1, w2, v_align, padding);
         break;
     case Position::RIGHT_OF:
-        Layout::rightOf(w1, w2, v_align, padding);
+        WAIVELayout::rightOf(w1, w2, v_align, padding);
         break;
     default:
         break;
     }
 }
 
-void Layout::rightOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding)
+void WAIVELayout::rightOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding)
 {
     float targetY;
     Rectangle r1 = w1->getAbsoluteArea();
@@ -48,7 +48,7 @@ void Layout::rightOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, f
     w1->setAbsoluteY(targetY);
 }
 
-void Layout::leftOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding)
+void WAIVELayout::leftOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding)
 {
     float targetY;
     Rectangle r1 = w1->getAbsoluteArea();
@@ -72,7 +72,7 @@ void Layout::leftOf(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, fl
     w1->setAbsoluteY(targetY);
 }
 
-void Layout::below(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding)
+void WAIVELayout::below(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding)
 {
     float targetX;
     Rectangle r1 = w1->getAbsoluteArea();
@@ -96,7 +96,7 @@ void Layout::below(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, flo
     w1->setAbsoluteY(r2.getY() + r2.getHeight() + padding);
 }
 
-void Layout::above(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding)
+void WAIVELayout::above(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, float padding)
 {
     float targetX;
     Rectangle r1 = w1->getAbsoluteArea();
@@ -120,7 +120,7 @@ void Layout::above(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align align, flo
     w1->setAbsoluteY(r2.getY() - r1.getHeight() - padding);
 }
 
-void Layout::onTop(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, float h_padding, float v_padding)
+void WAIVELayout::onTop(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, Widget_Align v_align, float h_padding, float v_padding)
 {
     float targetX, targetY;
     Rectangle r1 = w1->getAbsoluteArea();
@@ -157,7 +157,7 @@ void Layout::onTop(NanoSubWidget *w1, NanoSubWidget *w2, Widget_Align h_align, W
     w1->setAbsolutePos(targetX, targetY);
 }
 
-float Layout::measureVertical(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget *w2, Widget_Align a2)
+float WAIVELayout::measureVertical(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget *w2, Widget_Align a2)
 {
     float y1, y2;
 
@@ -194,7 +194,7 @@ float Layout::measureVertical(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget 
     return y2 - y1;
 }
 
-float Layout::measureHorizontal(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget *w2, Widget_Align a2)
+float WAIVELayout::measureHorizontal(NanoSubWidget *w1, Widget_Align a1, NanoSubWidget *w2, Widget_Align a2)
 {
     float x1, x2;
 
