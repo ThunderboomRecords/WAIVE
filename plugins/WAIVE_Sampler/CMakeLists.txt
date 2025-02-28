@@ -20,7 +20,7 @@ endif()
 dpf_add_plugin(
   WAIVE_Sampler
   TARGETS 
-      # jack
+      jack
       vst3
       vst2
       clap

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <memory>
 
 #include "WAIVEWidget.hpp"
 #include "WaveformFeatures.hpp"

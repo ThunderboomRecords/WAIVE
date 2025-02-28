@@ -41,8 +41,8 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
     {
         std::lock_guard<std::mutex> lock(samplePlayerMtx);
 
+        samplePlayers.resize(NUM_SLOTS + 3);
         samplePlayerWaveforms.resize(NUM_SLOTS + 3);
-        samplePlayers.reserve(NUM_SLOTS + 3);
 
         for (int i = 0; i < NUM_SLOTS + 3; i++)
         {
