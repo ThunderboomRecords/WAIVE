@@ -44,6 +44,9 @@ public:
     std::shared_ptr<SamplePlayer> getSamplePlayer() const;
     int slotId, currentSampleId;
 
+    void sampleLoaded() override;
+    void sampleCleared() override;
+
 protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &) override;
@@ -57,9 +60,6 @@ protected:
     void dataAccepted(DragDropWidget *destination) override;
     void dataRejected(DragDropWidget *destination) override;
 
-    void sampleLoaded() override;
-    void sampleCleared() override;
-
 private:
     Callback *callback;
 
@@ -71,6 +71,7 @@ private:
     TextInput *midiSelect;
 
     float step;
+    DGL::Point<double> dragStart;
     DragAction dragAction;
     bool acceptingDrop;
 

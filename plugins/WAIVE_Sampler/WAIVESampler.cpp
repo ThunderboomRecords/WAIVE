@@ -997,17 +997,20 @@ void WAIVESampler::loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> inf
 
     sp->load(info);
 
-    WaveformLoaderTask *task = new WaveformLoaderTask(fmt::format("loadSamplePlayer:{:d}", spIndex), tempBuffer, &tempBufferMutex, sd.getFullSamplePath(info), sampleRate);
+    WaveformLoaderTask *task = new WaveformLoaderTask(fmt::format("loadSamplePlayer:{:d}", spIndex), sp->waveform, &sp->waveformMtx, sd.getFullSamplePath(info), sampleRate);
     taskManager.start(task);
 }
 
-void WAIVESampler::clearSamplePlayer(std::shared_ptr<SamplePlayer> sp)
+void WAIVESampler::clearSamplePlayer(int spIndex)
 {
     std::cout << "WAIVESampler::clearSamplePlayer\n";
     {
+        std::shared_ptr<SamplePlayer> sp = samplePlayers[spIndex];
+
         std::lock_guard<std::mutex> lock(samplePlayerMtx);
         std::lock_guard<std::mutex> spLock(sp->waveformMtx);
         sp->clear();
+        slotUnloaded(spIndex);
     }
     pluginUpdate.notify(this, PluginUpdate::kSlotLoaded);
 }
@@ -1026,7 +1029,7 @@ void WAIVESampler::deleteSample(int id)
     for (size_t i = 0; i < samplePlayers.size(); i++)
     {
         if (samplePlayers[i]->sampleInfo != nullptr && samplePlayers[i]->sampleInfo->getId() == id)
-            clearSamplePlayer(samplePlayers[i]);
+            clearSamplePlayer(i);
     }
 
     bool result = sd.deleteSample(id);
@@ -1236,29 +1239,32 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         else
             throw std::runtime_error("loadSamplePlayer task name in wrong format: " + taskName);
 
-        // TODO: make samplePlayers shared pointers...
         std::shared_ptr<SamplePlayer> sp = samplePlayers[spIndex];
 
         {
-            std::lock_guard<std::mutex> spLock(samplePlayerMtx);
-            std::lock_guard<std::mutex> tbLock(tempBufferMutex);
+            // std::lock_guard<std::mutex> spLock(samplePlayerMtx);
+            // std::lock_guard<std::mutex> tbLock(tempBufferMutex);
             std::lock_guard<std::mutex> siLock(sp->waveformMtx);
 
-            size_t size = tempBuffer->size();
+            // size_t size = tempBuffer->size();
+
+            size_t size = sp->waveform->size();
 
             if (size == 0)
             {
                 sp->clear();
+                slotUnloaded(spIndex);
                 std::cerr << "WAIVESampler::loadSamplePlayer: Sample waveform length 0" << std::endl;
             }
             else
             {
                 sp->length = size;
-                sp->waveform->resize(size);
-                std::copy(tempBuffer->begin(), tempBuffer->begin() + size, sp->waveform->begin());
+                // sp->waveform->resize(size);
+                // std::copy(tempBuffer->begin(), tempBuffer->begin() + size, sp->waveform->begin());
                 sp->active = true;
 
                 sp->loaded();
+                slotLoaded(spIndex);
             }
         }
 

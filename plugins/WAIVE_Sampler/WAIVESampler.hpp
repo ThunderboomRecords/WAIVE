@@ -157,7 +157,7 @@ protected:
     void generateCurrentSampleName(const std::string &base);
     void renderSample();
     void loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> info);
-    void clearSamplePlayer(std::shared_ptr<SamplePlayer> sp);
+    void clearSamplePlayer(int spIndex);
     void deleteSample(int id);
     void triggerPreview();
     std::pair<float, float> getEmbedding(std::vector<float> *wf);
@@ -181,6 +181,8 @@ private:
     std::mutex tempBufferMutex;
     ThreadsafeQueue<std::string> import_queue;
     Poco::BasicEvent<const PluginUpdate> pluginUpdate;
+    Poco::BasicEvent<int> slotLoaded;
+    Poco::BasicEvent<int> slotUnloaded;
 
     std::shared_ptr<HTTPClient> httpClient;
 

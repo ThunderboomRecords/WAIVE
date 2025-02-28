@@ -28,12 +28,12 @@ SamplePlayer::SamplePlayer(const SamplePlayer &other)
     sampleInfo = other.sampleInfo;
 }
 
-void SamplePlayer::addCallback(std::shared_ptr<SamplePlayerCallback> cb)
+void SamplePlayer::addCallback(SamplePlayerCallback *cb)
 {
     callbacks.push_back(cb);
 }
 
-void SamplePlayer::removeCallback(std::shared_ptr<SamplePlayerCallback> cb)
+void SamplePlayer::removeCallback(SamplePlayerCallback *cb)
 {
     callbacks.erase(std::remove(callbacks.begin(), callbacks.end(), cb), callbacks.end());
 }

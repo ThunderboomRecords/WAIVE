@@ -584,6 +584,9 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
         plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
+
+        plugin->slotLoaded += Poco::delegate(this, &WAIVESamplerUI::onSlotLoaded);
+        plugin->slotUnloaded += Poco::delegate(this, &WAIVESamplerUI::onSlotUnloaded);
     }
 
     updateWidgets();
@@ -610,6 +613,8 @@ WAIVESamplerUI::~WAIVESamplerUI()
 
     plugin->sd.databaseUpdate -= Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
     plugin->pluginUpdate -= Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
+    plugin->slotLoaded -= Poco::delegate(this, &WAIVESamplerUI::onSlotLoaded);
+    plugin->slotUnloaded -= Poco::delegate(this, &WAIVESamplerUI::onSlotUnloaded);
 
     if (open_dialog.joinable())
         open_dialog.join();
@@ -1058,17 +1063,6 @@ void WAIVESamplerUI::mapSampleDelete(int id)
 
 void WAIVESamplerUI::textEntered(TextInput *textInput, const std::string &text)
 {
-    // if (textInput == sampleName)
-    // {
-    //     if (text.length() == 0)
-    //     {
-    //         textInput->undo();
-    //         return;
-    //     }
-
-    //     if (plugin->fCurrentSample != nullptr)
-    //         plugin->sd.renameSample(plugin->fCurrentSample, text);
-    // }
     if (textInput == sourceSearch)
     {
         std::string searchString = "";
@@ -1168,7 +1162,7 @@ void WAIVESamplerUI::sampleSelected(SampleSlot *slot, int slotId)
 
 void WAIVESamplerUI::sampleSlotCleared(SampleSlot *slot, int slotId)
 {
-    plugin->clearSamplePlayer(sampleSlots[slotId]->getSamplePlayer());
+    plugin->clearSamplePlayer(slotId);
     plugin->clear();
     sourceList->selected = -1;
 };
@@ -1315,6 +1309,11 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
             editorKnobs->setVisible(false);
             instructions->setVisible(true);
             saveSampleBtn->setLabel("Add to player");
+            for (int i = 0; i < sampleSlots.size(); i++)
+            {
+                sampleSlots[i]->currentSampleId = -1;
+                sampleSlots[i]->repaint();
+            }
         }
         else
         {
@@ -1391,11 +1390,22 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
 
         break;
     case WAIVESampler::PluginUpdate::kSlotLoaded:
-        // for (int i = 0; i < sampleSlots.size(); i++)
-        // {
-        //     sampleSlots[i]->currentSample = plugin->fCurrentSample;
-        //     sampleSlots[i]->repaint();
-        // }
+        if (plugin->fCurrentSample == nullptr)
+        {
+            for (int i = 0; i < sampleSlots.size(); i++)
+            {
+                sampleSlots[i]->currentSampleId = -1;
+                sampleSlots[i]->repaint();
+            }
+        }
+        else
+        {
+            for (int i = 0; i < sampleSlots.size(); i++)
+            {
+                sampleSlots[i]->currentSampleId = plugin->fCurrentSample->getId();
+                sampleSlots[i]->repaint();
+            }
+        }
         break;
     case WAIVESampler::PluginUpdate::kSampleCleared:
         sampleWaveformDisplay->setWaveform(nullptr);
@@ -1407,12 +1417,36 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         presetButtons->setVisible(false);
         editorKnobs->setVisible(false);
         instructions->setVisible(true);
+        for (int i = 0; i < sampleSlots.size(); i++)
+        {
+            sampleSlots[i]->currentSampleId = -1;
+            sampleSlots[i]->repaint();
+        }
+        break;
     default:
         std::cout << "Unknown update: " << arg << std::endl;
         break;
     }
 
     repaint();
+}
+
+void WAIVESamplerUI::onSlotLoaded(const void *pSender, int &arg)
+{
+    std::cout << "WAIVESamplerUI::onSlotLoaded " << arg << std::endl;
+    if (arg < 0 || arg >= sampleSlots.size())
+        return;
+
+    sampleSlots[arg]->sampleLoaded();
+}
+
+void WAIVESamplerUI::onSlotUnloaded(const void *pSender, int &arg)
+{
+    std::cout << "WAIVESamplerUI::onSlotLoaded " << arg << std::endl;
+    if (arg < 0 || arg >= sampleSlots.size())
+        return;
+
+    sampleSlots[arg]->sampleCleared();
 }
 
 void WAIVESamplerUI::onTaskStarted(Poco::TaskStartedNotification *pNf)

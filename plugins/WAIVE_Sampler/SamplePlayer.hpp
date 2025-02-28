@@ -39,9 +39,9 @@ struct SamplePlayer
     void load(std::shared_ptr<SampleInfo> info);
     void loaded();
     void clear();
-    void addCallback(std::shared_ptr<SamplePlayerCallback> cb);
-    void removeCallback(std::shared_ptr<SamplePlayerCallback> cb);
-    std::vector<std::shared_ptr<SamplePlayerCallback>> callbacks;
+    void addCallback(SamplePlayerCallback *cb);
+    void removeCallback(SamplePlayerCallback *cb);
+    std::vector<SamplePlayerCallback *> callbacks;
     SamplePlayer();
     SamplePlayer(const SamplePlayer &);
 };

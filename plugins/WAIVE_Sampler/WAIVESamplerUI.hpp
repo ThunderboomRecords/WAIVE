@@ -89,6 +89,8 @@ public:
     void onTaskProgress(Poco::TaskProgressNotification *pNf);
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
     void onPluginUpdated(const void *pSender, const WAIVESampler::PluginUpdate &arg);
+    void onSlotLoaded(const void *pSender, int &slotId);
+    void onSlotUnloaded(const void *pSender, int &slotId);
 
 protected:
     // Plugin callbacks

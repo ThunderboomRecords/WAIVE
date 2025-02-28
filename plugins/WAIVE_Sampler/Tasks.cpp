@@ -249,6 +249,8 @@ void WaveformLoaderTask::runTask()
     std::cout << "WaveformLoaderTask::runTask()" << std::endl;
     std::cout << " fp: " << fp << std::endl;
 
+    std::lock_guard<std::mutex> lock(*mutex);
+
     SndfileHandle fileHandle(fp, SFM_READ);
     if (fileHandle.error())
     {
@@ -352,12 +354,8 @@ void WaveformLoaderTask::runTask()
     if (isCancelled())
         return;
 
-    std::lock_guard<std::mutex> lock(*mutex);
     buffer->resize(new_size);
 
-    // std::cout << "WaveformLoaderTask new_size: " << new_size << std::endl;
-
-    //  TODO: mix to Mono before sample rate conversion??
     if (sampleChannels > 1)
     {
         for (size_t i = 0; i < new_size; ++i)

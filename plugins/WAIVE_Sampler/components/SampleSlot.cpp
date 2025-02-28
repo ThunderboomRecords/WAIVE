@@ -62,7 +62,7 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
 SampleSlot::~SampleSlot()
 {
     if (samplePlayer != nullptr)
-        samplePlayer->removeCallback(std::shared_ptr<SamplePlayerCallback>(this, [](SamplePlayerCallback *) {}));
+        samplePlayer->removeCallback(this);
 }
 
 void SampleSlot::setSamplePlayer(std::shared_ptr<SamplePlayer> sp)
@@ -71,10 +71,9 @@ void SampleSlot::setSamplePlayer(std::shared_ptr<SamplePlayer> sp)
         return;
 
     if (samplePlayer != nullptr)
-        samplePlayer->removeCallback(std::shared_ptr<SamplePlayerCallback>(this, [](SamplePlayerCallback *) {}));
+        samplePlayer->removeCallback(this);
 
     samplePlayer = sp;
-    samplePlayer->addCallback(std::shared_ptr<SamplePlayerCallback>(this, [](SamplePlayerCallback *) {}));
 }
 
 std::shared_ptr<SamplePlayer> SampleSlot::getSamplePlayer() const
@@ -110,7 +109,10 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
         if (ev.press)
         {
             if (hovering)
+            {
                 dragAction = DragAction::CLICKING;
+                dragStart = ev.pos;
+            }
         }
         else
         {
@@ -172,11 +174,14 @@ bool SampleSlot::onMotion(const MotionEvent &ev)
 
         if (dragAction == DragAction::CLICKING)
         {
-            dragAction = DragAction::SCROLLING;
-            if (samplePlayer != nullptr && samplePlayer->sampleInfo != nullptr)
+            if (std::abs(ev.pos.getX() - dragStart.getX()) > 5 || std::abs(ev.pos.getY() - dragStart.getY()) > 5)
             {
-                dragDropManager->dragDropStart(this, fmt::format("{:d}", samplePlayer->sampleInfo->getId()), samplePlayer->sampleInfo->name);
-                dragDropManager->filepath = samplePlayer->sampleInfo->fullPath;
+                dragAction = DragAction::SCROLLING;
+                if (samplePlayer != nullptr && samplePlayer->sampleInfo != nullptr)
+                {
+                    dragDropManager->dragDropStart(this, fmt::format("{:d}", samplePlayer->sampleInfo->getId()), samplePlayer->sampleInfo->name);
+                    dragDropManager->filepath = samplePlayer->sampleInfo->fullPath;
+                }
             }
         }
     }
