@@ -101,8 +101,9 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
     }
     logger->information("Done loading TSNE model");
 
+    tempBufferMutex = std::make_shared<std::mutex>();
     {
-        std::lock_guard<std::mutex> lock(tempBufferMutex);
+        std::lock_guard<std::mutex> lock(*tempBufferMutex);
         tempBuffer = std::make_shared<std::vector<float>>();
     }
 
@@ -578,7 +579,7 @@ void WAIVESampler::run(
         for (int j = 0; j < samplePlayers.size(); j++)
         {
             std::shared_ptr<SamplePlayer> sp = samplePlayers[j];
-            std::lock_guard<std::mutex> lock(sp->waveformMtx);
+            std::lock_guard<std::mutex> lock(*sp->waveformMtx);
 
             if (sp->state == PlayState::STOPPED)
                 continue;
@@ -657,7 +658,7 @@ void WAIVESampler::loadSourceFile(const std::string &fp, const std::string &tagS
 
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
 
-    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourceBuffer", tempBuffer, &tempBufferMutex, fp, sampleRate);
+    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourceBuffer", tempBuffer, tempBufferMutex, fp, sampleRate);
     taskManager.start(task);
 }
 
@@ -749,7 +750,7 @@ void WAIVESampler::loadSamplePreview(int id)
 
 void WAIVESampler::loadSourcePreview(const std::string &fp)
 {
-    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourcePreview", tempBuffer, &tempBufferMutex, fp, sampleRate);
+    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourcePreview", tempBuffer, tempBufferMutex, fp, sampleRate);
     taskManager.start(task);
 }
 
@@ -997,7 +998,7 @@ void WAIVESampler::loadSamplePlayer(int spIndex, std::shared_ptr<SampleInfo> inf
 
     sp->load(info);
 
-    WaveformLoaderTask *task = new WaveformLoaderTask(fmt::format("loadSamplePlayer:{:d}", spIndex), sp->waveform, &sp->waveformMtx, sd.getFullSamplePath(info), sampleRate);
+    WaveformLoaderTask *task = new WaveformLoaderTask(fmt::format("loadSamplePlayer:{:d}", spIndex), sp->waveform, sp->waveformMtx, sd.getFullSamplePath(info), sampleRate);
     taskManager.start(task);
 }
 
@@ -1008,7 +1009,7 @@ void WAIVESampler::clearSamplePlayer(int spIndex)
         std::shared_ptr<SamplePlayer> sp = samplePlayers[spIndex];
 
         std::lock_guard<std::mutex> lock(samplePlayerMtx);
-        std::lock_guard<std::mutex> spLock(sp->waveformMtx);
+        std::lock_guard<std::mutex> spLock(*sp->waveformMtx);
         sp->clear();
         slotUnloaded(spIndex);
     }
@@ -1167,15 +1168,16 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         }
 
         {
-            std::lock_guard<std::mutex> tblock(tempBufferMutex);
+            std::lock_guard<std::mutex> tblock(*tempBufferMutex);
             std::lock_guard<std::mutex> spLock(samplePlayerMtx);
-            std::lock_guard<std::mutex> siLock(fCurrentSample->sourceInfo.mtx);
 
             if (fCurrentSample == nullptr)
                 newSample();
 
             if (fCurrentSample == nullptr)
                 return;
+
+            std::lock_guard<std::mutex> siLock(fCurrentSample->sourceInfo.mtx);
 
             size_t sourceLength = tempBuffer->size();
             fCurrentSample->sourceInfo.buffer.resize(sourceLength);
@@ -1208,7 +1210,7 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
     {
         {
             std::lock_guard<std::mutex> spLock(samplePlayerMtx);
-            std::lock_guard<std::mutex> tbLock(tempBufferMutex);
+            std::lock_guard<std::mutex> tbLock(*tempBufferMutex);
 
             size_t size = tempBuffer->size();
             if (size == 0)
@@ -1242,11 +1244,7 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         std::shared_ptr<SamplePlayer> sp = samplePlayers[spIndex];
 
         {
-            // std::lock_guard<std::mutex> spLock(samplePlayerMtx);
-            // std::lock_guard<std::mutex> tbLock(tempBufferMutex);
-            std::lock_guard<std::mutex> siLock(sp->waveformMtx);
-
-            // size_t size = tempBuffer->size();
+            std::lock_guard<std::mutex> siLock(*sp->waveformMtx);
 
             size_t size = sp->waveform->size();
 
@@ -1259,8 +1257,6 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
             else
             {
                 sp->length = size;
-                // sp->waveform->resize(size);
-                // std::copy(tempBuffer->begin(), tempBuffer->begin() + size, sp->waveform->begin());
                 sp->active = true;
 
                 sp->loaded();

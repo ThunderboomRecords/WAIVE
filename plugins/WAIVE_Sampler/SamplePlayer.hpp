@@ -24,7 +24,7 @@ public:
 struct SamplePlayer
 {
     std::shared_ptr<std::vector<float>> waveform = nullptr;
-    std::mutex waveformMtx;
+    std::shared_ptr<std::mutex> waveformMtx;
     long length = 0;
     long ptr = 0;
     long startAt = 0;

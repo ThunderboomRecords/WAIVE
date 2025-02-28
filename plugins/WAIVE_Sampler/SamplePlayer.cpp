@@ -9,13 +9,15 @@ SamplePlayer::SamplePlayer() : length(0),
                                pan(0.0f),
                                state(PlayState::STOPPED),
                                active(false),
-                               sampleInfo(nullptr)
+                               sampleInfo(nullptr),
+                               waveformMtx(std::make_shared<std::mutex>())
 {
 }
 
 SamplePlayer::SamplePlayer(const SamplePlayer &other)
 {
     waveform = other.waveform;
+    waveformMtx = std::make_shared<std::mutex>();
     length = other.length;
     ptr = other.ptr;
     midi = other.midi;
@@ -60,7 +62,7 @@ void SamplePlayer::loaded()
 
 void SamplePlayer::clear()
 {
-    this->waveform = nullptr;
+    this->waveform->clear();
     this->length = 0;
     this->ptr = 0;
     this->midi = -1;

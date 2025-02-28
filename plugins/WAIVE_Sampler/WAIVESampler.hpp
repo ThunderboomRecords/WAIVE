@@ -178,7 +178,7 @@ private:
     Poco::TaskManager taskManager;
     ImporterTask *importerTask;
     std::shared_ptr<std::vector<float>> tempBuffer;
-    std::mutex tempBufferMutex;
+    std::shared_ptr<std::mutex> tempBufferMutex;
     ThreadsafeQueue<std::string> import_queue;
     Poco::BasicEvent<const PluginUpdate> pluginUpdate;
     Poco::BasicEvent<int> slotLoaded;

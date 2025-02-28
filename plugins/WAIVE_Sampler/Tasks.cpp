@@ -232,15 +232,15 @@ void FeatureExtractorTask::runTask()
 
 WaveformLoaderTask::WaveformLoaderTask(
     const std::string &name,
-    std::shared_ptr<std::vector<float>> _buffer,
-    std::mutex *_mutex,
-    const std::string &_fp,
-    int _sampleRate)
+    std::shared_ptr<std::vector<float>> buffer,
+    std::shared_ptr<std::mutex> mutex,
+    const std::string &fp,
+    int sampleRate)
     : Poco::Task(name),
-      buffer(_buffer),
-      mutex(_mutex),
-      fp(_fp),
-      sampleRate(_sampleRate) {};
+      buffer(buffer),
+      mutex(mutex),
+      fp(fp),
+      sampleRate(sampleRate) {};
 
 WaveformLoaderTask::~WaveformLoaderTask() {}
 
@@ -353,6 +353,12 @@ void WaveformLoaderTask::runTask()
 
     if (isCancelled())
         return;
+
+    if (buffer == nullptr)
+    {
+        std::cerr << "WaveformLoaderTask::runTask() buffer is nullptr!" << std::endl;
+        return;
+    }
 
     buffer->resize(new_size);
 
