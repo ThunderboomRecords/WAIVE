@@ -120,7 +120,7 @@ bool Button::onMouse(const MouseEvent &ev)
 
         fDragAction = DragAction::NONE;
         repaint();
-        return true;
+        return false;
     }
 
     return false;
