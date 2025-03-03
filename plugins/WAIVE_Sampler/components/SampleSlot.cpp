@@ -56,7 +56,7 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
     panKnob->gauge_width = 1.0f * scale_factor;
     panKnob->accent_color = WaiveColors::text;
     panKnob->foreground_color = WaiveColors::light1;
-    panKnob->setRadius(12.f);
+    panKnob->setRadius(midiSelect->getHeight() / 2.f, true);
     panKnob->resizeToFit();
     panKnob->description = "Set playback pan.";
     panKnob->setVisible(false);
@@ -70,7 +70,7 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
     gainKnob->gauge_width = 1.0f * scale_factor;
     gainKnob->accent_color = WaiveColors::text;
     gainKnob->foreground_color = WaiveColors::light1;
-    gainKnob->setRadius(12.f);
+    gainKnob->setRadius(midiSelect->getHeight() / 2.f, true);
     gainKnob->resizeToFit();
     gainKnob->description = "Set playback gain.";
     gainKnob->setVisible(false);
@@ -281,44 +281,6 @@ void SampleSlot::onNanoDisplay()
         stroke();
         closePath();
     }
-
-    // sample info
-    // if (samplePlayer != nullptr && samplePlayer->active && samplePlayer->sampleInfo != nullptr)
-    // {
-    //     if (currentSampleId == samplePlayer->sampleInfo->getId())
-    //     {
-    //         beginPath();
-    //         roundedRect(0, 0, width, height, 3 * scale_factor);
-    //         fillColor(foreground_color);
-    //         fill();
-    //         closePath();
-    //     }
-
-    //     // Draw playing highlight
-    //     beginPath();
-    //     roundedRect(1, 1, width - 2, height - 2, 3 * scale_factor);
-    //     strokeColor(.5f, .5f, .5f, step);
-    //     strokeWidth(2.f);
-    //     stroke();
-    //     closePath();
-
-    //     std::string info = samplePlayer->sampleInfo->name;
-    //     float x = triggerBtn->getWidth() + 10;
-
-    //     if (showMix)
-    //         scissor(0, 0, gainKnob->getLeft() - this->getLeft() - 5, height);
-    //     else if (clearBtn->isVisible())
-    //         scissor(0, 0, clearBtn->getLeft() - this->getLeft() - 5, height);
-
-    //     beginPath();
-    //     fontSize(getFontSize());
-    //     fontFaceId(font);
-    //     fillColor(text_color);
-    //     textAlign(Align::ALIGN_MIDDLE);
-    //     text(x, height / 2, info.c_str(), nullptr);
-    //     closePath();
-    //     resetScissor();
-    // }
 }
 
 void SampleSlot::buttonClicked(Button *button)
@@ -414,6 +376,11 @@ void SampleSlot::showMixControls(bool show)
     showMix = show;
     gainKnob->setVisible(show);
     panKnob->setVisible(show);
+
+    if (show)
+        sampleName->setWidth(WAIVELayout::measureHorizontal(sampleName, START, gainKnob, START));
+    else
+        sampleName->setWidth(WAIVELayout::measureHorizontal(sampleName, START, midiSelect, START));
 }
 
 void SampleSlot::sampleLoaded()

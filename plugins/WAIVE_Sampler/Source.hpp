@@ -19,8 +19,8 @@ struct Source
           tagString(other.tagString),
           sourceLoaded(other.sourceLoaded) {};
     Source() = default;
-    Source(Source &&) = default;
-    Source &operator=(Source &&) = default;
+    Source(Source &&) = delete;
+    Source &operator=(Source &&) = delete;
     bool sourceLoaded = false;
     std::string name;
     std::string fp;

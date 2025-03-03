@@ -64,9 +64,6 @@ Point<double> SampleMap::mapToEmbedding(Point<double> p)
 
 bool SampleMap::onMouse(const MouseEvent &ev)
 {
-    if (!isVisible())
-        return false;
-
     if (ev.press && contains(ev.pos))
     {
         if (ev.button == MouseButton::kMouseButtonLeft)
@@ -83,7 +80,6 @@ bool SampleMap::onMouse(const MouseEvent &ev)
             menu->toFront();
             menu->show();
         }
-        return false;
     }
     else if (!ev.press && ev.button == MouseButton::kMouseButtonLeft && dragAction != NONE)
     {
@@ -100,10 +96,6 @@ bool SampleMap::onMouse(const MouseEvent &ev)
         }
 
         dragAction = NONE;
-    }
-    else
-    {
-        return false;
     }
 
     return false;

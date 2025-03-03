@@ -151,7 +151,7 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
     if (!hasKeyFocus || !isVisible())
         return false;
 
-    std::cout << "TextInput::onCharacterInput: ev.keycode = " << ev.keycode << std::endl;
+    // std::cout << "TextInput::onCharacterInput: ev.keycode = " << ev.keycode << std::endl;
     std::string candidate;
     candidate.assign(textValue);
     int newPosition = position;

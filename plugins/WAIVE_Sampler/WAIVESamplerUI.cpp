@@ -422,8 +422,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
             slot->setCallback(this);
             slot->slotId = i;
             slot->setSize(sampleSlotsContainer->getWidth(), sampleSlotsContainer->getHeight() / NUM_SLOTS - 4, true);
-            slot->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-            slot->setFontSize(12.f);
 
             addIdleCallback(slot);
 

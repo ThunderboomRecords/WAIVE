@@ -50,9 +50,6 @@ Point<double> TagMap::mapToEmbedding(Point<double> p)
 
 bool TagMap::onMouse(const MouseEvent &ev)
 {
-    if (!isVisible())
-        return false;
-
     if (ev.press && contains(ev.pos))
     {
         if (ev.button == MouseButton::kMouseButtonLeft)
@@ -66,7 +63,7 @@ bool TagMap::onMouse(const MouseEvent &ev)
         {
         case CLICKING:
             if (highlighted == nullptr)
-                return false;
+                break;
 
             if (selected.count(highlighted->id))
                 selected.erase(highlighted->id);

@@ -105,6 +105,7 @@ bool Button::onMouse(const MouseEvent &ev)
     {
         fDragStartPos = ev.pos;
         fDragAction = DragAction::CLICKING;
+        return true;
     }
     else if (
         fEnabled &&
