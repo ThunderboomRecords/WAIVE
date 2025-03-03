@@ -326,7 +326,7 @@ void WAIVESequencerUI::parameterChanged(uint32_t index, float value)
     case kMidi7:
     case kMidi8:
     case kMidi9:
-        midiNotesEdit[8 - (index - kMidi1)]->setText(fmt::format("{:d}", static_cast<uint8_t>(value)).c_str(), false);
+        midiNotesEdit[8 - (index - kMidi1)]->setText(fmt::format("{:d}", static_cast<uint8_t>(value + 1)).c_str(), false);
         break;
     default:
         break;

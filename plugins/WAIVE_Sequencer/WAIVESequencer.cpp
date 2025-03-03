@@ -361,7 +361,7 @@ void WAIVESequencer::setParameterValue(uint32_t index, float value)
     case kMidi7:
     case kMidi8:
     case kMidi9:
-        setMidiNote(index - kMidi1, static_cast<uint8_t>(value) + 1);
+        setMidiNote(index - kMidi1, static_cast<uint8_t>(std::floor(value)) + 1);
         break;
     default:
         break;
