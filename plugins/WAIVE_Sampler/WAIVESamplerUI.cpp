@@ -165,14 +165,17 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     {
         sampleEditorPanel = new Panel(this);
         sampleEditorPanel->setSize(col1Width, 356.f);
-        sampleEditorPanel->below(sourceBrowserPanel, START, 5.f);
+        sampleEditorPanel->below(sourceBrowserPanel, START, 5.f * fScaleFactor);
         sampleEditorPanel->setFont("VG5000", VG5000, VG5000_len);
         sampleEditorPanel->label = "2";
         sampleEditorPanel->title = "Sample";
 
+        DGL::Rectangle<float> sampleTitleBounds;
+        sampleEditorPanel->getTitlAbsoluteBounds(sampleTitleBounds);
+
         sampleWaveformDisplay = new Waveform(this);
-        sampleWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 2.f * 24.f, 100.f * fScaleFactor, true);
-        sampleWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, (103.f - 50.f));
+        sampleWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 2.f * 24.f * fScaleFactor, 100.f * fScaleFactor, true);
+        sampleWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, sampleTitleBounds.getHeight() + 2 * padding * fScaleFactor);
         sampleWaveformDisplay->background_color = sampleEditorPanel->background_color;
         sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
         sampleEditorPanel->addChildWidget(sampleWaveformDisplay);
@@ -255,7 +258,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sustainLength->format = "{:.0f}ms";
         sustainLength->vertical = false;
         sustainLength->resizeToFit();
-        sustainLength->onTop(sampleEditorPanel, Widget_Align::END, Widget_Align::START, 24.f, 16.f);
+        sustainLength->onTop(sampleEditorPanel, Widget_Align::END, Widget_Align::START, 24.f * fScaleFactor, 16.f);
         sampleEditorPanel->addChildWidget(sustainLength);
         allKnobs.push_back(sustainLength);
 
@@ -352,7 +355,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleBtns.padding = 2.f * padding;
         sampleBtns.resizeToFit();
         sampleBtns.setWidth(sampleEditorPanel->getWidth() - 4.f * padding);
-        sampleBtns.onTop(sampleEditorPanel, Widget_Align::CENTER, Widget_Align::END, padding, 24.f);
+        sampleBtns.onTop(sampleEditorPanel, Widget_Align::CENTER, Widget_Align::END, padding, 24.f * fScaleFactor);
         sampleBtns.positionWidgets();
 
         // TODO: add this button somewhere?
@@ -407,7 +410,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleSlotsContainer = new VBox(this);
         sampleSlotsContainer->justify_content = VBox::Justify_Content::space_evenly;
         sampleSlotsContainer->setWidth(samplePlayerPanel->getWidth() - 4.f * padding);
-        sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, 52.f);
+        sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, samplePlayerTitleBounds.getHeight() + 2 * padding * fScaleFactor);
         sampleSlotsContainer->setHeight(WAIVELayout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - 10.f);
         samplePlayerPanel->addChildWidget(sampleSlotsContainer);
 
@@ -1230,7 +1233,7 @@ void WAIVESamplerUI::onNanoDisplay()
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_RIGHT);
     fontFaceId(fontMain);
     fontSize(12.f * fScaleFactor);
-    text(width - 10.f, middle, fmt::format("v{:d}.{:d}.{:d}", V_MAJ, V_MIN, V_PAT).c_str(), nullptr);
+    text(width - 10.f * fScaleFactor, middle, fmt::format("v{:d}.{:d}.{:d}", V_MAJ, V_MIN, V_PAT).c_str(), nullptr);
     closePath();
 }
 

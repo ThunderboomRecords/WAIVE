@@ -4,11 +4,13 @@ START_NAMESPACE_DISTRHO
 
 Panel::Panel(Widget *widget)
     : WidgetGroup(widget),
-      padding_h(24.f),
-      padding_v(16.f),
-      radius(6.f),
+      padding_h(24.f * scale_factor),
+      padding_v(16.f * scale_factor),
+      radius(6.f * scale_factor),
       expandable(false),
       expanded(false),
+      expand_h(0.f),
+      expand_v(0.f),
       hiddenWidgets(this),
       expand_down(true),
       expand_right(true)
