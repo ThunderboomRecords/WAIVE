@@ -47,7 +47,7 @@ void Label::calculateHeight()
     float bounds[4];
     textBoxBounds(0, 0, width, label.c_str(), NULL, bounds);
 
-    std::cout << "Label::calculateHeight() ( width = " << width << ", font_size = " << getFontSize() << " ) " << bounds[0] << ", " << bounds[1] << ", " << bounds[2] << ", " << bounds[3] << std::endl;
+    // std::cout << "Label::calculateHeight() ( width = " << width << ", font_size = " << getFontSize() << " ) " << bounds[0] << ", " << bounds[1] << ", " << bounds[2] << ", " << bounds[3] << std::endl;
 
     setHeight(bounds[3]);
 }

@@ -242,6 +242,56 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.ranges.def = static_cast<float>(midiMap[slot % 9]);
         parameter.hints |= kParameterIsInteger;
         break;
+    case kSlot1Gain:
+    case kSlot2Gain:
+    case kSlot3Gain:
+    case kSlot4Gain:
+    case kSlot5Gain:
+    case kSlot6Gain:
+    case kSlot7Gain:
+    case kSlot8Gain:
+    case kSlot9Gain:
+    case kSlot10Gain:
+    case kSlot11Gain:
+    case kSlot12Gain:
+    case kSlot13Gain:
+    case kSlot14Gain:
+    case kSlot15Gain:
+    case kSlot16Gain:
+    case kSlot17Gain:
+    case kSlot18Gain:
+        slot = index - kSlot1Gain;
+        parameter.name = fmt::format("Sample {:d} gain", slot + 1).c_str();
+        parameter.symbol = fmt::format("Sample{:d}Gain", slot + 1).c_str();
+        parameter.ranges.min = 0.0f;
+        parameter.ranges.max = 2.f;
+        parameter.ranges.def = 1.f;
+        break;
+    case kSlot1Pan:
+    case kSlot2Pan:
+    case kSlot3Pan:
+    case kSlot4Pan:
+    case kSlot5Pan:
+    case kSlot6Pan:
+    case kSlot7Pan:
+    case kSlot8Pan:
+    case kSlot9Pan:
+    case kSlot10Pan:
+    case kSlot11Pan:
+    case kSlot12Pan:
+    case kSlot13Pan:
+    case kSlot14Pan:
+    case kSlot15Pan:
+    case kSlot16Pan:
+    case kSlot17Pan:
+    case kSlot18Pan:
+        slot = index - kSlot1Pan;
+        parameter.name = fmt::format("Sample {:d} pan", slot + 1).c_str();
+        parameter.symbol = fmt::format("Sample{:d}Pan", slot + 1).c_str();
+        parameter.ranges.min = -1.f;
+        parameter.ranges.max = 1.f;
+        parameter.ranges.def = 0.f;
+        break;
     default:
         break;
     }
@@ -313,6 +363,48 @@ float WAIVESampler::getParameterValue(uint32_t index) const
     case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
         val = static_cast<float>(std::floor(samplePlayers[slot]->midi));
+        break;
+    case kSlot1Gain:
+    case kSlot2Gain:
+    case kSlot3Gain:
+    case kSlot4Gain:
+    case kSlot5Gain:
+    case kSlot6Gain:
+    case kSlot7Gain:
+    case kSlot8Gain:
+    case kSlot9Gain:
+    case kSlot10Gain:
+    case kSlot11Gain:
+    case kSlot12Gain:
+    case kSlot13Gain:
+    case kSlot14Gain:
+    case kSlot15Gain:
+    case kSlot16Gain:
+    case kSlot17Gain:
+    case kSlot18Gain:
+        slot = index - kSlot1Gain;
+        val = samplePlayers[slot]->gain;
+        break;
+    case kSlot1Pan:
+    case kSlot2Pan:
+    case kSlot3Pan:
+    case kSlot4Pan:
+    case kSlot5Pan:
+    case kSlot6Pan:
+    case kSlot7Pan:
+    case kSlot8Pan:
+    case kSlot9Pan:
+    case kSlot10Pan:
+    case kSlot11Pan:
+    case kSlot12Pan:
+    case kSlot13Pan:
+    case kSlot14Pan:
+    case kSlot15Pan:
+    case kSlot16Pan:
+    case kSlot17Pan:
+    case kSlot18Pan:
+        slot = index - kSlot1Pan;
+        val = samplePlayers[slot]->pan;
         break;
     default:
         std::cerr << "getParameter: Unknown parameter index: " << index << "  " << std::endl;
@@ -386,7 +478,49 @@ void WAIVESampler::setParameterValue(uint32_t index, float value)
     case kSlot17MidiNumber:
     case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
-        samplePlayers[slot]->midi = static_cast<int>(value);
+        samplePlayers[slot]->midi = static_cast<int>(std::floor(value));
+        break;
+    case kSlot1Gain:
+    case kSlot2Gain:
+    case kSlot3Gain:
+    case kSlot4Gain:
+    case kSlot5Gain:
+    case kSlot6Gain:
+    case kSlot7Gain:
+    case kSlot8Gain:
+    case kSlot9Gain:
+    case kSlot10Gain:
+    case kSlot11Gain:
+    case kSlot12Gain:
+    case kSlot13Gain:
+    case kSlot14Gain:
+    case kSlot15Gain:
+    case kSlot16Gain:
+    case kSlot17Gain:
+    case kSlot18Gain:
+        slot = index - kSlot1Gain;
+        samplePlayers[slot]->gain = value;
+        break;
+    case kSlot1Pan:
+    case kSlot2Pan:
+    case kSlot3Pan:
+    case kSlot4Pan:
+    case kSlot5Pan:
+    case kSlot6Pan:
+    case kSlot7Pan:
+    case kSlot8Pan:
+    case kSlot9Pan:
+    case kSlot10Pan:
+    case kSlot11Pan:
+    case kSlot12Pan:
+    case kSlot13Pan:
+    case kSlot14Pan:
+    case kSlot15Pan:
+    case kSlot16Pan:
+    case kSlot17Pan:
+    case kSlot18Pan:
+        slot = index - kSlot1Pan;
+        samplePlayers[slot]->pan = value;
         break;
     default:
         std::cerr << "Unknown parameter index: " << index << "  " << value << std::endl;
@@ -530,7 +664,7 @@ void WAIVESampler::run(
     std::lock_guard<std::mutex> lock(samplePlayerMtx);
 
     int midiIndex = 0;
-    float y;
+    float yL, yR;
     for (uint32_t i = 0; i < numFrames; i++)
     {
         // Parse Midi Messages
@@ -574,12 +708,13 @@ void WAIVESampler::run(
         }
 
         // Mix sample players outputs
-        y = 0.0f;
+        yL = 0.0f;
+        yR = 0.0f;
 
         for (int j = 0; j < samplePlayers.size(); j++)
         {
             std::shared_ptr<SamplePlayer> sp = samplePlayers[j];
-            std::lock_guard<std::mutex> lock(*sp->waveformMtx);
+            std::lock_guard<std::mutex> wfLock(*sp->waveformMtx);
 
             if (sp->state == PlayState::STOPPED)
                 continue;
@@ -604,7 +739,10 @@ void WAIVESampler::run(
                 }
             }
 
-            y += sp->waveform->at(sp->ptr) * sp->gain * sp->velocity;
+            float y = sp->waveform->at(sp->ptr) * sp->gain * sp->velocity;
+            float angle = (sp->pan + 1.0f) * (M_PI / 4.0f);
+            yL += y * std::cos(angle);
+            yR += y * std::sin(angle);
 
             sp->ptr++;
             if (sp->ptr >= sp->length)
@@ -618,8 +756,8 @@ void WAIVESampler::run(
             }
         }
 
-        outputs[0][i] = y;
-        outputs[1][i] = y;
+        outputs[0][i] = yL;
+        outputs[1][i] = yR;
     }
 }
 

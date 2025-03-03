@@ -10,6 +10,7 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
       callback(nullptr),
       step(0.f),
       acceptingDrop(false),
+      showMix(false),
       currentSampleId(-1)
 {
     triggerBtn = new Button(parent);
@@ -20,6 +21,11 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
     triggerBtn->description = "Trigger sample";
     triggerBtn->toFront();
     triggerBtn->setEnabled(false);
+
+    sampleName = new Label(parent, "test");
+    sampleName->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
+    sampleName->setFontSize(12.0f);
+    sampleName->text_align = Align::ALIGN_MIDDLE;
 
     clearBtn = new Button(parent);
     clearBtn->setCallback(this);
@@ -41,6 +47,34 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
     midiSelect->setCallback(this);
     midiSelect->description = "Set MIDI note.";
 
+    panKnob = new Knob(parent);
+    panKnob->setCallback(this);
+    panKnob->min = -1.f;
+    panKnob->max = 1.f;
+    panKnob->setValue(0.f);
+    panKnob->showValue = false;
+    panKnob->gauge_width = 1.0f * scale_factor;
+    panKnob->accent_color = WaiveColors::text;
+    panKnob->foreground_color = WaiveColors::light1;
+    panKnob->setRadius(12.f);
+    panKnob->resizeToFit();
+    panKnob->description = "Set playback pan.";
+    panKnob->setVisible(false);
+
+    gainKnob = new Knob(parent);
+    gainKnob->setCallback(this);
+    gainKnob->min = 0.f;
+    gainKnob->max = 2.f;
+    gainKnob->showValue = false;
+    gainKnob->setValue(1.f);
+    gainKnob->gauge_width = 1.0f * scale_factor;
+    gainKnob->accent_color = WaiveColors::text;
+    gainKnob->foreground_color = WaiveColors::light1;
+    gainKnob->setRadius(12.f);
+    gainKnob->resizeToFit();
+    gainKnob->description = "Set playback gain.";
+    gainKnob->setVisible(false);
+
     contextMenu = new Menu(parent);
     contextMenu->addItem("Clear");
     contextMenu->addItem("Copy file path");
@@ -52,11 +86,12 @@ SampleSlot::SampleSlot(Widget *parent, DragDropManager *manager) noexcept
     contextMenu->toFront();
     contextMenu->hide();
 
-    std::cout << "SampleSlot::SampleSlot " << getParentWidget() << std::endl;
-
     addChildWidget(triggerBtn, {triggerBtn, this, Position::ON_TOP, Widget_Align::START, Widget_Align::CENTER, 5});
+    addChildWidget(sampleName, {sampleName, triggerBtn, Position::RIGHT_OF, Widget_Align::CENTER, Widget_Align::START, 5});
     addChildWidget(midiSelect, {midiSelect, this, Position::ON_TOP, Widget_Align::END, Widget_Align::CENTER, 5});
     addChildWidget(clearBtn, {clearBtn, midiSelect, Position::LEFT_OF, Widget_Align::CENTER, Widget_Align::CENTER, 5});
+    addChildWidget(panKnob, {panKnob, midiSelect, Position::LEFT_OF, Widget_Align::CENTER, Widget_Align::CENTER, 5});
+    addChildWidget(gainKnob, {gainKnob, panKnob, Position::LEFT_OF, Widget_Align::CENTER, Widget_Align::CENTER, 5});
 }
 
 SampleSlot::~SampleSlot()
@@ -92,7 +127,11 @@ void SampleSlot::dataRejected(DragDropWidget *destination) {}
 
 bool SampleSlot::onMouse(const MouseEvent &ev)
 {
-    bool hovering = contains(ev.pos);
+    double rightEdge = (showMix ? gainKnob->getLeft() : midiSelect->getLeft()) - getAbsoluteX();
+    bool hovering = ev.pos.getX() >= sampleName->getLeft() - getAbsoluteX() &&
+                    ev.pos.getX() <= rightEdge &&
+                    ev.pos.getY() >= 0 &&
+                    ev.pos.getY() <= getHeight();
 
     if (ev.button == kMouseButtonRight && hovering)
     {
@@ -125,7 +164,7 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
 
                 if (dragDropManager->isDragging())
                 {
-                    std::cout << "Accept drag event " << dragDropManager->getEvent().payload << std::endl;
+                    // std::cout << "Accept drag event " << dragDropManager->getEvent().payload << std::endl;
 
                     DragDropWidget *source = dragDropManager->getEvent().source;
 
@@ -159,7 +198,11 @@ bool SampleSlot::onMouse(const MouseEvent &ev)
 
 bool SampleSlot::onMotion(const MotionEvent &ev)
 {
-    bool hovering = contains(ev.pos);
+    double rightEdge = (showMix ? gainKnob->getLeft() : midiSelect->getLeft()) - getAbsoluteX();
+    bool hovering = ev.pos.getX() >= sampleName->getLeft() - getAbsoluteX() &&
+                    ev.pos.getX() <= rightEdge &&
+                    ev.pos.getY() >= 0 &&
+                    ev.pos.getY() <= getHeight();
 
     if (hovering)
     {
@@ -167,7 +210,7 @@ bool SampleSlot::onMotion(const MotionEvent &ev)
         {
             acceptingDrop = true;
         }
-        else if (samplePlayer->sampleInfo != nullptr && !clearBtn->isVisible())
+        else if (samplePlayer->sampleInfo != nullptr && !clearBtn->isVisible() && !showMix)
             clearBtn->setVisible(true);
         else
             acceptingDrop = false;
@@ -240,35 +283,42 @@ void SampleSlot::onNanoDisplay()
     }
 
     // sample info
-    if (samplePlayer != nullptr && samplePlayer->active && samplePlayer->sampleInfo != nullptr)
-    {
-        if (currentSampleId == samplePlayer->sampleInfo->getId())
-        {
-            beginPath();
-            roundedRect(0, 0, width, height, 3 * scale_factor);
-            fillColor(foreground_color);
-            fill();
-            closePath();
-        }
+    // if (samplePlayer != nullptr && samplePlayer->active && samplePlayer->sampleInfo != nullptr)
+    // {
+    //     if (currentSampleId == samplePlayer->sampleInfo->getId())
+    //     {
+    //         beginPath();
+    //         roundedRect(0, 0, width, height, 3 * scale_factor);
+    //         fillColor(foreground_color);
+    //         fill();
+    //         closePath();
+    //     }
 
-        // Draw playing highlight
-        beginPath();
-        roundedRect(1, 1, width - 2, height - 2, 3 * scale_factor);
-        strokeColor(.5f, .5f, .5f, step);
-        strokeWidth(2.f);
-        stroke();
-        closePath();
+    //     // Draw playing highlight
+    //     beginPath();
+    //     roundedRect(1, 1, width - 2, height - 2, 3 * scale_factor);
+    //     strokeColor(.5f, .5f, .5f, step);
+    //     strokeWidth(2.f);
+    //     stroke();
+    //     closePath();
 
-        std::string info = samplePlayer->sampleInfo->name;
-        float x = triggerBtn->getWidth() + 10;
-        beginPath();
-        fontSize(getFontSize());
-        fontFaceId(font);
-        fillColor(text_color);
-        textAlign(Align::ALIGN_MIDDLE);
-        text(x, height / 2, info.c_str(), nullptr);
-        closePath();
-    }
+    //     std::string info = samplePlayer->sampleInfo->name;
+    //     float x = triggerBtn->getWidth() + 10;
+
+    //     if (showMix)
+    //         scissor(0, 0, gainKnob->getLeft() - this->getLeft() - 5, height);
+    //     else if (clearBtn->isVisible())
+    //         scissor(0, 0, clearBtn->getLeft() - this->getLeft() - 5, height);
+
+    //     beginPath();
+    //     fontSize(getFontSize());
+    //     fontFaceId(font);
+    //     fillColor(text_color);
+    //     textAlign(Align::ALIGN_MIDDLE);
+    //     text(x, height / 2, info.c_str(), nullptr);
+    //     closePath();
+    //     resetScissor();
+    // }
 }
 
 void SampleSlot::buttonClicked(Button *button)
@@ -318,26 +368,71 @@ void SampleSlot::textEntered(TextInput *textInput, const std::string &text)
     if (clamped)
         textInput->setText(fmt::format("{:d}", val).c_str(), false);
 
-    if (samplePlayer != nullptr)
-        samplePlayer->midi = val - 1;
+    // if (samplePlayer != nullptr)
+    //     samplePlayer->midi = val - 1;
+    if (callback != nullptr)
+        callback->sampleSlotMidiChanged(this, slotId, val - 1);
 }
 
 void SampleSlot::textInputChanged(TextInput *textInput, const std::string &text) {}
+
+void SampleSlot::knobDragStarted(Knob *knob) {}
+
+void SampleSlot::knobDragFinished(Knob *knob, float value) {}
+
+void SampleSlot::knobValueChanged(Knob *knob, float value)
+{
+    if (knob == gainKnob)
+    {
+        if (callback != nullptr)
+            callback->sampleSlotGainChanged(this, slotId, value);
+    }
+    else if (knob == panKnob)
+    {
+        if (callback != nullptr)
+            callback->sampleSlotPanChanged(this, slotId, value);
+    }
+}
 
 void SampleSlot::setMidiNumber(int midi, bool sendCallback)
 {
     midiSelect->setText(fmt::format("{:d}", midi).c_str(), sendCallback);
 }
 
+void SampleSlot::setGain(float gain, bool sendCallback)
+{
+    gainKnob->setValue(gain, sendCallback);
+}
+
+void SampleSlot::setPan(float pan, bool sendCallback)
+{
+    panKnob->setValue(pan, sendCallback);
+}
+
+void SampleSlot::showMixControls(bool show)
+{
+    showMix = show;
+    gainKnob->setVisible(show);
+    panKnob->setVisible(show);
+}
+
 void SampleSlot::sampleLoaded()
 {
     triggerBtn->setEnabled(true);
+    sampleName->setLabel(samplePlayer->sampleInfo->name.c_str());
+    sampleName->resizeToFit();
+    sampleName->setVisible(true);
+    sampleName->setCenterY(triggerBtn->getCenterY());
+
     // getTopLevelWidget()->addIdleCallback(this);
 }
 
 void SampleSlot::sampleCleared()
 {
     triggerBtn->setEnabled(false);
+    sampleName->setLabel("");
+    sampleName->resizeToFit();
+    sampleName->setVisible(false);
     // getTopLevelWidget()->addIdleCallback(this);
 }
 

@@ -121,6 +121,9 @@ protected:
     void sampleSelected(SampleSlot *slot, int slotId) override;
     void sampleSlotCleared(SampleSlot *slot, int slotId) override;
     void sampleSlotLoadSample(SampleSlot *slot, int slotId, int sampleId) override;
+    void sampleSlotMidiChanged(SampleSlot *slot, int slotId, int midi) override;
+    void sampleSlotGainChanged(SampleSlot *slot, int slotId, float gain) override;
+    void sampleSlotPanChanged(SampleSlot *slot, int slotId, float pan) override;
 
     // Source List Callbacks
     void sourceDownload(int index) override;
@@ -191,7 +194,7 @@ private:
     // 3. Sample Player Components
     VBox *sampleSlotsContainer;
     std::vector<SampleSlot *> sampleSlots;
-    Button *openMapBtn, *browseFilesBtn, *oscControlsBtn, *oscEnableBtn;
+    Button *openMapBtn, *browseFilesBtn, *mixControlsBtn, *oscControlsBtn, *oscEnableBtn;
     Panel *oscControlsPanel;
     TextInput *oscHostInput, *oscPortInput;
     Label *oscControlsDescription;

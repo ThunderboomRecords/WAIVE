@@ -36,7 +36,7 @@ void DragDropManager::addCallback(Callback *callback)
 
 void DragDropManager::dragDropStart(DragDropWidget *widget, const std::string &data, const std::string &info)
 {
-    std::cout << "DragDropManager::dragDropStart " << data << ", " << info << std::endl;
+    // std::cout << "DragDropManager::dragDropStart " << data << ", " << info << std::endl;
     DragDropEvent ev({widget, data, info});
     event = std::make_shared<DragDropEvent>(ev);
     hasEvent = true;
@@ -61,7 +61,7 @@ DragDropEvent DragDropManager::getEvent()
 
 void DragDropManager::dragDropEnd(DragDropWidget *widget, bool accepted)
 {
-    std::cout << "DragDropManager::dragDropEnd " << accepted << std::endl;
+    // std::cout << "DragDropManager::dragDropEnd " << accepted << std::endl;
     if (!hasEvent)
         return;
 

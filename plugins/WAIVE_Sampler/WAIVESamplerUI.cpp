@@ -172,10 +172,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         DGL::Rectangle<float> sampleTitleBounds;
         sampleEditorPanel->getTitlAbsoluteBounds(sampleTitleBounds);
+        std::cout << "sampleTitleBounds: " << sampleTitleBounds.getX() << ", " << sampleTitleBounds.getY() << ", " << sampleTitleBounds.getWidth() << ", " << sampleTitleBounds.getHeight() << std::endl;
 
         sampleWaveformDisplay = new Waveform(this);
         sampleWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 2.f * 24.f * fScaleFactor, 100.f * fScaleFactor, true);
-        sampleWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, sampleTitleBounds.getHeight() + 2 * padding * fScaleFactor);
+        sampleWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, sampleTitleBounds.getY() - sampleEditorPanel->getTop() + sampleTitleBounds.getHeight() + 2 * padding * fScaleFactor);
         sampleWaveformDisplay->background_color = sampleEditorPanel->background_color;
         sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
         sampleEditorPanel->addChildWidget(sampleWaveformDisplay);
@@ -258,7 +259,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sustainLength->format = "{:.0f}ms";
         sustainLength->vertical = false;
         sustainLength->resizeToFit();
-        sustainLength->onTop(sampleEditorPanel, Widget_Align::END, Widget_Align::START, 24.f * fScaleFactor, 16.f);
+        sustainLength->setCenterY(sampleTitleBounds.getY() + sampleTitleBounds.getHeight() * 0.5f);
+        sustainLength->setRight(sampleWaveformDisplay->getRight());
         sampleEditorPanel->addChildWidget(sustainLength);
         allKnobs.push_back(sustainLength);
 
@@ -357,9 +359,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleBtns.setWidth(sampleEditorPanel->getWidth() - 4.f * padding);
         sampleBtns.onTop(sampleEditorPanel, Widget_Align::CENTER, Widget_Align::END, padding, 24.f * fScaleFactor);
         sampleBtns.positionWidgets();
-
-        // TODO: add this button somewhere?
-        // newSampleBtn = new Button(this);
     }
 
     // 3 ----- Sample Player Panel
@@ -411,6 +410,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleSlotsContainer->justify_content = VBox::Justify_Content::space_evenly;
         sampleSlotsContainer->setWidth(samplePlayerPanel->getWidth() - 4.f * padding);
         sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, samplePlayerTitleBounds.getHeight() + 2 * padding * fScaleFactor);
+        sampleSlotsContainer->setTop(sourceList->getTop());
         sampleSlotsContainer->setHeight(WAIVELayout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - 10.f);
         samplePlayerPanel->addChildWidget(sampleSlotsContainer);
 
@@ -438,7 +438,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         oscControlsBtn = new Button(this);
         oscControlsBtn->setLabel("OSC");
         oscControlsBtn->isToggle = true;
-        oscControlsBtn->description = "Edit OSC options";
+        oscControlsBtn->description = "Edit OSC options.";
         oscControlsBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         oscControlsBtn->setFontSize(14.f);
         oscControlsBtn->resizeToFit();
@@ -446,6 +446,17 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         oscControlsBtn->setCenterY(samplePlayerTitleBounds.getY() + samplePlayerTitleBounds.getHeight() * 0.5f);
         oscControlsBtn->setCallback(this);
         samplePlayerPanel->addChildWidget(oscControlsBtn);
+
+        mixControlsBtn = new Button(this);
+        mixControlsBtn->setLabel("Mixer");
+        mixControlsBtn->isToggle = true;
+        mixControlsBtn->description = "Show mixer controls.";
+        mixControlsBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        mixControlsBtn->setFontSize(14.f);
+        mixControlsBtn->resizeToFit();
+        mixControlsBtn->leftOf(oscControlsBtn, START, padding);
+        mixControlsBtn->setCallback(this);
+        samplePlayerPanel->addChildWidget(mixControlsBtn);
     }
 
     // 4 ----- Filter Map
@@ -683,6 +694,48 @@ void WAIVESamplerUI::parameterChanged(uint32_t index, float value)
     case kSlot18MidiNumber:
         slot = index - kSlot1MidiNumber;
         sampleSlots[slot]->setMidiNumber(value + 1, false);
+        break;
+    case kSlot1Gain:
+    case kSlot2Gain:
+    case kSlot3Gain:
+    case kSlot4Gain:
+    case kSlot5Gain:
+    case kSlot6Gain:
+    case kSlot7Gain:
+    case kSlot8Gain:
+    case kSlot9Gain:
+    case kSlot10Gain:
+    case kSlot11Gain:
+    case kSlot12Gain:
+    case kSlot13Gain:
+    case kSlot14Gain:
+    case kSlot15Gain:
+    case kSlot16Gain:
+    case kSlot17Gain:
+    case kSlot18Gain:
+        slot = index - kSlot1Gain;
+        sampleSlots[slot]->setGain(value, false);
+        break;
+    case kSlot1Pan:
+    case kSlot2Pan:
+    case kSlot3Pan:
+    case kSlot4Pan:
+    case kSlot5Pan:
+    case kSlot6Pan:
+    case kSlot7Pan:
+    case kSlot8Pan:
+    case kSlot9Pan:
+    case kSlot10Pan:
+    case kSlot11Pan:
+    case kSlot12Pan:
+    case kSlot13Pan:
+    case kSlot14Pan:
+    case kSlot15Pan:
+    case kSlot16Pan:
+    case kSlot17Pan:
+    case kSlot18Pan:
+        slot = index - kSlot1Pan;
+        sampleSlots[slot]->setPan(value, false);
         break;
     default:
         break;
@@ -981,6 +1034,13 @@ void WAIVESamplerUI::buttonClicked(Button *button)
     }
     else if (button == oscEnableBtn)
         plugin->setSendOSC(oscEnableBtn->getToggled());
+    else if (button == mixControlsBtn)
+    {
+        for (auto &slot : sampleSlots)
+            slot->showMixControls(mixControlsBtn->getToggled());
+    }
+    else if (button == randomSourceBtn)
+        sourceList->selectRandom();
     else if (button == randomSourceBtn)
         sourceList->selectRandom();
 
@@ -1174,6 +1234,21 @@ void WAIVESamplerUI::sampleSlotLoadSample(SampleSlot *slot, int slotId, int samp
 {
     plugin->loadSlot(slotId, sampleId);
 }
+
+void WAIVESamplerUI::sampleSlotMidiChanged(SampleSlot *slot, int slotId, int midi)
+{
+    setParameterValue(kSlot1MidiNumber + slotId, midi);
+};
+
+void WAIVESamplerUI::sampleSlotGainChanged(SampleSlot *slot, int slotId, float gain)
+{
+    setParameterValue(kSlot1Gain + slotId, gain);
+};
+
+void WAIVESamplerUI::sampleSlotPanChanged(SampleSlot *slot, int slotId, float pan)
+{
+    setParameterValue(kSlot1Pan + slotId, pan);
+};
 
 void WAIVESamplerUI::onDragDropStart(DragDropWidget *widget, DragDropEvent &ev)
 {
