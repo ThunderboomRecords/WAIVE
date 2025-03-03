@@ -315,7 +315,7 @@ void WAIVESequencerUI::parameterChanged(uint32_t index, float value)
     case kThreshold7:
     case kThreshold8:
     case kThreshold9:
-        complexities[index - kThreshold1]->setValue(value);
+        complexities[8 - (index - kThreshold1)]->setValue(value);
         break;
     case kMidi1:
     case kMidi2:
