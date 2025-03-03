@@ -9,7 +9,7 @@ HTTPRequestTask::HTTPRequestTask(
     const std::string &path,
     std::function<void(const std::string &)> callback,
     std::function<void(const std::string &)> failCallback)
-    : Poco::Task(name), _host(host), _port(0), _path(path), _callback(callback), _failCallback(failCallback) {}
+    : Poco::Task(name), host(host), port(0), path(path), callback(callback), failCallback(failCallback) {}
 
 HTTPRequestTask::HTTPRequestTask(
     const std::string &name,
@@ -18,20 +18,20 @@ HTTPRequestTask::HTTPRequestTask(
     const std::string &path,
     std::function<void(const std::string &)> callback,
     std::function<void(const std::string &)> failCallback)
-    : Poco::Task(name), _host(host), _port(port), _path(path), _callback(callback), _failCallback(failCallback) {}
+    : Poco::Task(name), host(host), port(port), path(path), callback(callback), failCallback(failCallback) {}
 
 void HTTPRequestTask::runTask()
 {
     try
     {
-        if (_path.front() != '/')
-            _path = '/' + _path;
+        if (path.front() != '/')
+            path = '/' + path;
 
-        Poco::URI uri(_host + _path);
+        Poco::URI uri(host + path);
 
-        std::string path(uri.getPathAndQuery());
-        if (path.empty())
-            path = "/";
+        std::string fullpath(uri.getPathAndQuery());
+        if (fullpath.empty())
+            fullpath = "/";
 
         std::unique_ptr<HTTPClientSession> session;
 
@@ -41,13 +41,13 @@ void HTTPRequestTask::runTask()
             session = std::make_unique<HTTPClientSession>(uri.getHost(), uri.getPort());
         else
         {
-            _failCallback(fmt::format("URI scheme neither 'http' nor 'https', is {:s}", uri.getScheme()));
+            failCallback(fmt::format("URI scheme neither 'http' nor 'https', is {:s}", uri.getScheme()));
             return;
         }
 
         session->setTimeout(Poco::Timespan(10, 0));
 
-        HTTPRequest request(HTTPRequest::HTTP_GET, path);
+        HTTPRequest request(HTTPRequest::HTTP_GET, fullpath);
 
         std::cout << "HTTPRequestTask::runTask() Request for: " << uri.getScheme() << "://" << uri.getHost() << ":" << uri.getPort() << request.getURI() << std::endl;
         session->sendRequest(request);
@@ -60,7 +60,7 @@ void HTTPRequestTask::runTask()
         if (response.getStatus() != 200)
         {
             // TODO: check for other status codes?
-            _failCallback(fmt::format("Response status not 200, received {:s}", HTTPResponse::getReasonForStatus(response.getStatus())));
+            failCallback(fmt::format("Response status not 200, received {:s}", HTTPResponse::getReasonForStatus(response.getStatus())));
             return;
         }
 
@@ -69,28 +69,28 @@ void HTTPRequestTask::runTask()
 
         std::cout << "HTTPRequestTask::runTask() Response length: " << responseString.str().length() << std::endl;
 
-        _callback(responseString.str());
+        callback(responseString.str());
     }
     catch (const Poco::Exception &ex)
     {
         std::cerr << "HTTP Request failed: " << ex.displayText() << std::endl;
-        _failCallback(fmt::format("HTTP Request failed: {:s}", ex.displayText()));
+        failCallback(fmt::format("HTTP Request failed: {:s}", ex.displayText()));
     }
 }
 
-HTTPClient::HTTPClient(Poco::TaskManager *tm) : _taskManager(tm) {}
+HTTPClient::HTTPClient(Poco::TaskManager *tm) : taskManager(tm) {}
 HTTPClient::~HTTPClient() {}
 
 void HTTPClient::sendRequest(const std::string &name, const std::string &host, const std::string &path, std::function<void(const std::string &)> callback, std::function<void(const std::string &)> failCallback)
 {
     HTTPRequestTask *task = new HTTPRequestTask(name, host, path, callback, failCallback);
-    _taskManager->start(task);
+    taskManager->start(task);
 }
 
 void HTTPClient::sendRequest(const std::string &name, const std::string &host, int port, const std::string &path, std::function<void(const std::string &)> callback, std::function<void(const std::string &)> failCallback)
 {
     HTTPRequestTask *task = new HTTPRequestTask(name, host, port, path, callback, failCallback);
-    _taskManager->start(task);
+    taskManager->start(task);
 }
 
 void HTTPClient::onTaskFinished(Poco::TaskFinishedNotification *pNf) {}

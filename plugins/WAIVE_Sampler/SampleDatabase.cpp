@@ -732,7 +732,7 @@ void SampleDatabase::checkLatestRemoteVersion()
             } catch(json::parse_error &e)  {
                 std::cerr << "JSON parsing error: " << e.what() << std::endl;
             	databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
-            } catch(const std::exception &e){
+            } catch (const std::exception &e){
                 std::cerr << "Unexpected error: " << e.what() << std::endl;
            		databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
             } },
@@ -761,6 +761,8 @@ void SampleDatabase::updateDatabaseVersion(int new_version)
     catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Error updating PRAGMA user_version: " << e.what() << std::endl;
+        logger->critical("Error updating PRAGMA user_version %s", e.what());
+        return;
     }
 
     downloadSourcesList();
@@ -770,7 +772,7 @@ void SampleDatabase::downloadSourcesList()
 {
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
 
-    logger->information(fmt::format("Sending request to: {:s}/filelist", WAIVE_SERVER));
+    logger->information("Sending request to: %s/filelist", WAIVE_SERVER);
     httpClient->sendRequest(
         "DownloadSourceList",
         WAIVE_SERVER,
@@ -792,10 +794,13 @@ void SampleDatabase::downloadSourcesList()
             catch (const Poco::DataException &e)
             {
                 std::cerr << "Error in SampleDatabase::downloadSourcesList() (Poco::DataException):\n" << e.what() << ": " << e.message() << std::endl;
+                logger->critical("Error in SampleDatabase::downloadSourcesList() (Poco::DataException):\n%s: %s", e.what(), e.message());
             }
             catch (const std::exception &e)
             {
                 std::cerr << "Error in SampleDatabase::downloadSourcesList():\n" << e.what() << std::endl;
+                logger->critical("Error in SampleDatabase::downloadSourcesList():\n%s", e.what());
+
             }
 
             parseTSV(
@@ -811,14 +816,14 @@ void SampleDatabase::downloadSourcesList()
             // wait 1 second before reporting connection error...
             Poco::Thread::sleep(1000);
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
-            logger->error(fmt::format("/filelist not avaliable. Response:\n{:s}", response));
+            logger->error("/filelist not avaliable. Response:\n%s", response);
         });
 }
 
 void SampleDatabase::downloadTagsList()
 {
     // databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOADING);
-    logger->information(fmt::format("Sending request to: {:s}/tags", WAIVE_SERVER));
+    logger->information("Sending request to: %s/tags", WAIVE_SERVER);
     httpClient->sendRequest(
         "DownloadTagsList",
         WAIVE_SERVER,

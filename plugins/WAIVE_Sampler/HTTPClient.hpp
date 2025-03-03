@@ -27,11 +27,11 @@ public:
     void runTask() override;
 
 private:
-    std::string _host;
-    std::string _path;
-    int _port;
-    std::function<void(const std::string &)> _callback;
-    std::function<void(const std::string &)> _failCallback;
+    std::string host;
+    std::string path;
+    int port;
+    std::function<void(const std::string &)> callback;
+    std::function<void(const std::string &)> failCallback;
 };
 
 class HTTPClient
@@ -45,7 +45,7 @@ public:
     void onTaskFinished(Poco::TaskFinishedNotification *pNf);
 
 private:
-    Poco::TaskManager *_taskManager;
+    Poco::TaskManager *taskManager;
 };
 
 #endif
