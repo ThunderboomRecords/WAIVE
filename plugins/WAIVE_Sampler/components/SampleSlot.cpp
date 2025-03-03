@@ -281,6 +281,26 @@ void SampleSlot::onNanoDisplay()
         stroke();
         closePath();
     }
+
+    if (samplePlayer != nullptr && samplePlayer->active && samplePlayer->sampleInfo != nullptr)
+    {
+        if (currentSampleId >= 0 && currentSampleId == samplePlayer->sampleInfo->getId())
+        {
+            beginPath();
+            roundedRect(0, 0, width, height, 3 * scale_factor);
+            fillColor(foreground_color);
+            fill();
+            closePath();
+        }
+
+        // Draw playing highlight
+        beginPath();
+        roundedRect(1, 1, width - 2, height - 2, 3 * scale_factor);
+        strokeColor(.5f, .5f, .5f, step);
+        strokeWidth(2.f);
+        stroke();
+        closePath();
+    }
 }
 
 void SampleSlot::buttonClicked(Button *button)
@@ -391,7 +411,7 @@ void SampleSlot::sampleLoaded()
     sampleName->setVisible(true);
     sampleName->setCenterY(triggerBtn->getCenterY());
 
-    // getTopLevelWidget()->addIdleCallback(this);
+    getTopLevelWidget()->addIdleCallback(this);
 }
 
 void SampleSlot::sampleCleared()
@@ -400,7 +420,7 @@ void SampleSlot::sampleCleared()
     sampleName->setLabel("");
     sampleName->resizeToFit();
     sampleName->setVisible(false);
-    // getTopLevelWidget()->addIdleCallback(this);
+    getTopLevelWidget()->removeIdleCallback(this);
 }
 
 void SampleSlot::setCallback(Callback *cb)
