@@ -40,6 +40,7 @@ Requires `vcpkg`:
 $ cmake --preset="default" -DCMAKE_BUILD_TYPE="Release"
 $ cmake --build ./build -j8 --config Release
 ```
+(If cross-building for older Intel x86_64 macOS, add the flag `-DTARGET_MAC_X86=1` to the first command.)
 
 ## Windows
 Run the build commands in Developer Command Prompt (not Powershell!).
@@ -66,7 +67,7 @@ export BUNDLE_ID="com.example.plugin"
 The run:
 ```bash
 $ cd tools
-$ ./macOS_sign_and_notarize.sh ../build/bin/ WAIVE_Plugins ../release
+$ ./macOS_sign_and_notarize.sh ../build/bin/ WAIVE-Plugins ../release
 $ ./macOS_make_installer.sh
 ```
 The installer `.dmg` is found in the `release/vX.Y.Z/macOS_ARCH/` folder.
@@ -75,3 +76,10 @@ The installer `.dmg` is found in the `release/vX.Y.Z/macOS_ARCH/` folder.
 Download and install [INNO Setup](https://jrsoftware.org/isinfo.php). 
 Launch it, open `tools\windows_installer.iss` and click `Compile`.
 The `.exe` installer can be found in `release\vX.Y.Z\win64\`.
+
+### Linux
+Create an archive with all the compiled binaries:
+```bash
+$ cd tools
+$ ./linux_package_plugins.sh ../build/bin WAIVE-Plugins
+```
