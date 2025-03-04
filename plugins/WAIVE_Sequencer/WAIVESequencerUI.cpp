@@ -95,10 +95,13 @@ WAIVESequencerUI::WAIVESequencerUI() : UI(UI_W, UI_H),
     drumNames.reserve(9);
     for (int i = 8; i >= 0; i--)
     {
-        auto l = std::make_shared<Label>(this, midiNoteLabels[i]);
+        auto l = std::make_shared<Label>(this);
 
         l->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
+        l->setFontSize(16.f);
+        l->setLabel(midiNoteLabels[i]);
         l->text_color = WaiveColors::text;
+        l->text_align = DGL::NanoVG::Align::ALIGN_RIGHT;
         l->resizeToFit();
 
         drumNames.push_back(std::move(l));
@@ -363,7 +366,9 @@ bool WAIVESequencerUI::onMotion(const MotionEvent &ev)
     std::string text = "";
     for (const auto widget : children)
         text = getDescription(text, widget, ev);
-    toolTip->setLabel(text);
+
+    if (toolTip->getLabel() != text)
+        toolTip->setLabel(text);
 
     return UI::onMotion(ev);
 }

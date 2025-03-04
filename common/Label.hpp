@@ -19,6 +19,7 @@ public:
     void setCallback(Callback *cb);
 
     void setLabel(const std::string &text);
+    std::string getLabel() const;
     void resizeToFit();
     void calculateHeight();
 

@@ -14,7 +14,13 @@ Label::Label(Widget *parent, const std::string &text) noexcept
 void Label::setLabel(const std::string &text)
 {
     label = text;
+    std::cout << "Label::setLabel " << label << std::endl;
     repaint();
+}
+
+std::string Label::getLabel() const
+{
+    return label;
 }
 
 void Label::resizeToFit()
@@ -24,12 +30,12 @@ void Label::resizeToFit()
 
     fontSize(getFontSize());
     fontFaceId(font);
-    textAlign(text_align);
+    textAlign(ALIGN_TOP | ALIGN_LEFT);
 
     DGL::Rectangle<float> bounds;
     textBounds(0, 0, label.c_str(), NULL, bounds);
 
-    setWidth(bounds.getWidth());
+    setWidth(bounds.getWidth() + 1);
     setHeight(bounds.getHeight());
 }
 

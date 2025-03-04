@@ -423,8 +423,6 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
             slot->slotId = i;
             slot->setSize(sampleSlotsContainer->getWidth(), sampleSlotsContainer->getHeight() / NUM_SLOTS - 4, true);
 
-            // addIdleCallback(slot);
-
             sampleSlotsContainer->addWidget(slot);
             sampleSlots.push_back(slot);
         }
@@ -786,7 +784,9 @@ bool WAIVESamplerUI::onMotion(const MotionEvent &ev)
     std::string text = "";
     for (const auto &widget : children)
         text = getDescription(text, widget, ev);
-    toolTip->setLabel(text);
+
+    if (toolTip->getLabel() != text)
+        toolTip->setLabel(text);
 
     if (dragDropManager->isDragging())
     {
