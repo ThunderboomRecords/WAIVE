@@ -423,7 +423,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
             slot->slotId = i;
             slot->setSize(sampleSlotsContainer->getWidth(), sampleSlotsContainer->getHeight() / NUM_SLOTS - 4, true);
 
-            addIdleCallback(slot);
+            // addIdleCallback(slot);
 
             sampleSlotsContainer->addWidget(slot);
             sampleSlots.push_back(slot);

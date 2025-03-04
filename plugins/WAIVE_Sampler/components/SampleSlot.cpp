@@ -109,6 +109,9 @@ void SampleSlot::setSamplePlayer(std::shared_ptr<SamplePlayer> sp)
         samplePlayer->removeCallback(this);
 
     samplePlayer = sp;
+
+    if (samplePlayer->sampleInfo != nullptr)
+        sampleLoaded();
 }
 
 std::shared_ptr<SamplePlayer> SampleSlot::getSamplePlayer() const
@@ -405,6 +408,12 @@ void SampleSlot::showMixControls(bool show)
 
 void SampleSlot::sampleLoaded()
 {
+    if (samplePlayer == nullptr || samplePlayer->sampleInfo == nullptr)
+    {
+        sampleCleared();
+        return;
+    }
+
     triggerBtn->setEnabled(true);
     sampleName->setLabel(samplePlayer->sampleInfo->name.c_str());
     sampleName->resizeToFit();
