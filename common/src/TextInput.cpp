@@ -165,11 +165,13 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
         candidate.insert(candidate.begin() + newPosition, ev.string[0]);
         newPosition += 1;
         break;
+#ifdef DISTRHO_OS_LINUX
     case kKeyBackspace:
     case 22:
-        // case kKeyTab:
-        // case kKeyDelete:
+    case kKeyTab:
+    case kKeyDelete:
         break;
+#endif
     default:
         // other characters
         candidate.insert(candidate.begin() + newPosition, ev.string[0]);
