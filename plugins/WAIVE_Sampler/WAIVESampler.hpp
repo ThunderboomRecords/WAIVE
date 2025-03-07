@@ -151,6 +151,7 @@ protected:
     void loadSource(int index);
     void loadSourceFile(const std::string &fp, const std::string &tagString = "");
     void loadSlot(int slot, int id);
+    bool detectPreset(const Preset &preset);
     void loadPreset(Preset preset);
     void selectWaveform(std::vector<float> *source, int start);
     void addCurrentSampleToLibrary();

@@ -202,12 +202,21 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         knobsLabel->resizeToFit();
         sampleEditorPanel->addChildWidget(knobsLabel);
 
+        makeAny = new Button(this);
+        makeAny->setLabel("Any");
+        makeAny->isToggle = true;
+        makeAny->setFontSize(16.f);
+        makeAny->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
+        makeAny->setSize(80.f, 32.f);
+        makeAny->description = "Find any percussive sound.";
+        makeAny->setCallback(this);
+
         makeKick = new Button(this);
         makeKick->setLabel("Kick");
         makeKick->isToggle = true;
         makeKick->setFontSize(16.f);
         makeKick->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-        makeKick->setSize(100.f, 32.f);
+        makeKick->setSize(80.f, 32.f);
         makeKick->description = "Find a Kick sound.";
         makeKick->setCallback(this);
 
@@ -216,7 +225,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         makeSnare->isToggle = true;
         makeSnare->setFontSize(16.f);
         makeSnare->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-        makeSnare->setSize(100.f, 32.f);
+        makeSnare->setSize(80.f, 32.f);
         makeSnare->description = "Find a Snare sound.";
         makeSnare->setCallback(this);
 
@@ -225,7 +234,7 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         makeHihat->isToggle = true;
         makeHihat->setFontSize(16.f);
         makeHihat->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-        makeHihat->setSize(100.f, 32.f);
+        makeHihat->setSize(80.f, 32.f);
         makeHihat->description = "Find a Hi-Hat sound.";
         makeHihat->setCallback(this);
 
@@ -234,20 +243,21 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         makeClap->isToggle = true;
         makeClap->setFontSize(16.f);
         makeClap->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
-        makeClap->setSize(100.f, 32.f);
+        makeClap->setSize(80.f, 32.f);
         makeClap->description = "Find a Clap sound.";
         makeClap->setCallback(this);
 
         presetButtons = new HBox(this);
         presetButtons->addWidget(presetLabel);
         presetButtons->setWidgetJustify_Content(0, HBox::Justify_Content::left);
+        presetButtons->addWidget(makeAny);
         presetButtons->addWidget(makeKick);
         presetButtons->addWidget(makeSnare);
         presetButtons->addWidget(makeHihat);
         presetButtons->addWidget(makeClap);
         presetButtons->below(sampleWaveformDisplay, START, 2.f * padding);
         presetButtons->setWidth(sampleWaveformDisplay->getWidth());
-        presetButtons->setHeight(makeKick->getHeight());
+        presetButtons->setHeight(makeAny->getHeight());
         presetButtons->justify_content = HBox::Justify_Content::space_evenly;
         presetButtons->positionWidgets();
 
@@ -834,175 +844,80 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         plugin->triggerPreview();
     else if (button == previewPlaybackBtn)
         plugin->stopSourcePreview();
-    // else if (button == newSampleBtn)
-    //     plugin->newSample();
+    else if (button == makeAny)
+    {
+        bool success = plugin->detectPreset(Presets::Any);
+        if (!success)
+        {
+            makeAny->setToggled(false);
+            return;
+        }
+
+        makeAny->setToggled(true);
+        makeKick->setToggled(false);
+        makeSnare->setToggled(false);
+        makeClap->setToggled(false);
+        makeHihat->setToggled(false);
+    }
     else if (button == makeKick)
     {
+        bool success = plugin->detectPreset(Presets::Kick);
+        if (!success)
+        {
+            makeKick->setToggled(false);
+            return;
+        }
+
+        makeAny->setToggled(false);
         makeKick->setToggled(true);
         makeSnare->setToggled(false);
         makeClap->setToggled(false);
         makeHihat->setToggled(false);
-
-        if (plugin->fCurrentSample == nullptr)
-            return;
-        plugin->newSample();
-        Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
-
-        // 0. Check if a source is loaded
-        if (!sourceInfo->sourceLoaded)
-            return;
-
-        // 1. Select random candidate area of source
-        int nCandidates = sourceInfo->sourceFeatures.size();
-        if (nCandidates == 0)
-            return; // or pick a random spot?
-
-        sampleWaveformDisplay->text_color = WaiveColors::accent2;
-        int i = random.next() % nCandidates;
-        int startIndex = sourceInfo->sourceFeatures[i].start;
-        plugin->selectWaveform(&sourceInfo->buffer, startIndex);
-        plugin->fCurrentSample->sourceStart = startIndex;
-
-        // 2. Load preset parameter values
-        plugin->loadPreset(Presets::KickPreset);
-
-        // 3. Set sample name
-        // sampleName->setText(plugin->sd.getNewSampleName("kick.wav").c_str(), true);
-        plugin->generateCurrentSampleName("kick");
-
-        // 4. Trigger preview
-        plugin->triggerPreview();
     }
     else if (button == makeSnare)
     {
+        bool success = plugin->detectPreset(Presets::Snare);
+        if (!success)
+        {
+            makeSnare->setToggled(false);
+            return;
+        }
+
+        makeAny->setToggled(false);
         makeKick->setToggled(false);
         makeSnare->setToggled(true);
         makeClap->setToggled(false);
         makeHihat->setToggled(false);
-
-        // 0. Check if a source is loaded
-        if (plugin->fCurrentSample == nullptr)
-            return;
-
-        plugin->newSample();
-        Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
-
-        // 0. Check if a source is loaded
-        if (!sourceInfo->sourceLoaded)
-            return;
-
-        // 1. pick random start
-        std::vector<long> starts;
-
-        for (const auto &m : sourceInfo->sourceMeasurements)
-        {
-            if (m.rms > 0.1 && m.specFlat > 0.9f)
-                starts.push_back(m.frame);
-        }
-
-        if (starts.size() == 0)
-            return;
-
-        sampleWaveformDisplay->text_color = WaiveColors::accent1;
-
-        int i = random.next() % starts.size();
-        plugin->selectWaveform(&sourceInfo->buffer, starts[i]);
-
-        // 2. Load preset parameter values
-        plugin->loadPreset(Presets::SnarePreset);
-
-        // 3. Set sample name
-        // std::cout << plugin->fSourceTagString << std::endl;
-        // sampleName->setText(plugin->sd.getNewSampleName("snare.wav").c_str(), true);
-        plugin->generateCurrentSampleName("snare");
-
-        // 4. Trigger preview
-        plugin->triggerPreview();
     }
     else if (button == makeHihat)
     {
+        bool success = plugin->detectPreset(Presets::HiHat);
+        if (!success)
+        {
+            makeHihat->setToggled(false);
+            return;
+        }
+
+        makeAny->setToggled(false);
         makeKick->setToggled(false);
         makeSnare->setToggled(false);
         makeClap->setToggled(false);
         makeHihat->setToggled(true);
-
-        if (plugin->fCurrentSample == nullptr)
-            return;
-        plugin->newSample();
-        Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
-
-        // 0. Check if a source is loaded
-        if (!sourceInfo->sourceLoaded)
-            return;
-
-        // 1. pick random start
-        std::vector<long> starts;
-
-        for (const auto &m : sourceInfo->sourceMeasurements)
-        {
-            if (m.rms > 0.1 && m.specFlat > 0.9f)
-                starts.push_back(m.frame);
-        }
-
-        if (starts.size() == 0)
-            return;
-
-        sampleWaveformDisplay->text_color = WaiveColors::accent3;
-
-        int i = random.next() % starts.size();
-        plugin->selectWaveform(&sourceInfo->buffer, starts[i]);
-
-        // 2. Load preset parameter values
-        plugin->loadPreset(Presets::HiHat);
-
-        // 3. Set sample name
-        // sampleName->setText(plugin->sd.getNewSampleName("hihat.wav").c_str(), true);
-        plugin->generateCurrentSampleName("hihat");
-
-        // 4. Trigger preview
-        plugin->triggerPreview();
     }
     else if (button == makeClap)
     {
+        bool success = plugin->detectPreset(Presets::Clap);
+        if (!success)
+        {
+            makeClap->setToggled(false);
+            return;
+        }
+
+        makeAny->setToggled(false);
         makeKick->setToggled(false);
         makeSnare->setToggled(false);
         makeClap->setToggled(true);
         makeHihat->setToggled(false);
-
-        if (plugin->fCurrentSample == nullptr)
-            return;
-        plugin->newSample();
-        Source *sourceInfo = &plugin->fCurrentSample->sourceInfo;
-
-        // 0. Check if a source is loaded
-        if (!sourceInfo->sourceLoaded)
-            return;
-
-        // 1. pick random start
-        std::vector<long> starts;
-
-        for (const auto &m : sourceInfo->sourceMeasurements)
-        {
-            if (m.rms > 0.1 && m.specFlat > 0.9f)
-                starts.push_back(m.frame);
-        }
-
-        if (starts.size() == 0)
-            return;
-
-        sampleWaveformDisplay->text_color = WaiveColors::accent4;
-
-        int i = random.next() % starts.size();
-        plugin->selectWaveform(&sourceInfo->buffer, starts[i]);
-
-        // 2. Load preset parameter values
-        plugin->loadPreset(Presets::Clap);
-
-        // 3. Set sample name
-        plugin->generateCurrentSampleName("clap");
-
-        // 4. Trigger preview
-        plugin->triggerPreview();
     }
     else if (button == browseFilesBtn)
         SystemOpenDirectory(plugin->sd.getSampleFolder());
@@ -1630,6 +1545,8 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         progress->setVisible(false);
         sourceLoading->repaint();
         progress->repaint();
+
+        buttonClicked(makeAny);
     }
     else if (taskName == "ParseSourceList")
     {
@@ -1773,6 +1690,7 @@ Knob *WAIVESamplerUI::createWAIVEKnob(
 
 void WAIVESamplerUI::updatePresetButtons()
 {
+    makeAny->setToggled(false);
     makeKick->setToggled(false);
     makeSnare->setToggled(false);
     makeClap->setToggled(false);
@@ -1784,22 +1702,27 @@ void WAIVESamplerUI::updatePresetButtons()
         return;
     }
 
-    if (plugin->fCurrentSample->preset == "Kick")
+    if (plugin->fCurrentSample->preset == "hit")
+    {
+        makeAny->setToggled(true);
+        sampleWaveformDisplay->text_color = WaiveColors::text;
+    }
+    else if (plugin->fCurrentSample->preset == "kick")
     {
         makeKick->setToggled(true);
         sampleWaveformDisplay->text_color = WaiveColors::accent2;
     }
-    else if (plugin->fCurrentSample->preset == "Snare")
+    else if (plugin->fCurrentSample->preset == "snare")
     {
         makeSnare->setToggled(true);
         sampleWaveformDisplay->text_color = WaiveColors::accent1;
     }
-    else if (plugin->fCurrentSample->preset == "Clap")
+    else if (plugin->fCurrentSample->preset == "clap")
     {
         makeClap->setToggled(true);
         sampleWaveformDisplay->text_color = WaiveColors::accent4;
     }
-    else if (plugin->fCurrentSample->preset == "HiHat")
+    else if (plugin->fCurrentSample->preset == "hihat")
     {
         makeHihat->setToggled(true);
         sampleWaveformDisplay->text_color = WaiveColors::accent3;

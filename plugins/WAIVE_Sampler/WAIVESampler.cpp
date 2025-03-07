@@ -979,6 +979,105 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     }
 }
 
+bool WAIVESampler::detectPreset(const Preset &preset)
+{
+    std::cout << "WAIVESampler::detectPreset " << preset.presetName << std::endl;
+    if (fCurrentSample == nullptr)
+        newSample();
+
+    Source *sourceInfo = &fCurrentSample->sourceInfo;
+
+    // 0. Check if a source is loaded
+    if (!sourceInfo->sourceLoaded)
+    {
+        std::cout << "No source loaded" << std::endl;
+        return false;
+    }
+
+    // Check if there are any measurements
+    if (sourceInfo->sourceMeasurements.size() == 0)
+    {
+        std::cout << "No measurements" << std::endl;
+        return false;
+    }
+
+    // 1. Select random candidate area of source
+    std::vector<int> starts;
+
+    if (preset.presetName == "hit")
+    {
+        float maxRMS = 0.0;
+        long maxStart = 0;
+        for (size_t i = 0; i < sourceInfo->sourceMeasurements.size(); i++)
+        {
+            if (sourceInfo->sourceMeasurements[i].rms > maxRMS)
+            {
+                maxRMS = sourceInfo->sourceMeasurements[i].rms;
+                maxStart = sourceInfo->sourceMeasurements[i].frame;
+            }
+        }
+        starts.push_back(maxStart);
+
+        for (int i = 0; i < 10; i++)
+        {
+            int randomIndex = random.next() % sourceInfo->sourceMeasurements.size();
+            if (sourceInfo->sourceMeasurements[randomIndex].rms > maxRMS * 0.5)
+                starts.push_back(sourceInfo->sourceMeasurements[randomIndex].frame);
+        }
+    }
+    else if (preset.presetName == "kick")
+    {
+        for (const auto &f : sourceInfo->sourceFeatures)
+            starts.push_back(f.start);
+    }
+    else if (preset.presetName == "snare")
+    {
+        for (const auto &m : sourceInfo->sourceMeasurements)
+        {
+            if (m.rms > 0.1 && m.specFlat > 0.9f)
+                starts.push_back(m.frame);
+        }
+    }
+    else if (preset.presetName == "hihat")
+    {
+        for (const auto &m : sourceInfo->sourceMeasurements)
+        {
+            if (m.rms > 0.1 && m.specFlat > 0.9f)
+                starts.push_back(m.frame);
+        }
+    }
+    else if (preset.presetName == "clap")
+    {
+        for (const auto &m : sourceInfo->sourceMeasurements)
+        {
+            if (m.rms > 0.1 && m.specFlat > 0.9f)
+                starts.push_back(m.frame);
+        }
+    }
+
+    if (starts.size() == 0)
+    {
+        std::cout << "No suitable starts found" << std::endl;
+        return false;
+    }
+
+    int startIndex = starts[random.next() % (starts.size())];
+
+    selectWaveform(&sourceInfo->buffer, startIndex);
+
+    // 2. Load preset parameter values
+    loadPreset(preset);
+
+    // 3. Set sample name
+    generateCurrentSampleName(preset.presetName);
+
+    // 4. Trigger preview
+    triggerPreview();
+
+    std::cout << "Preset found\n";
+    return true;
+}
+
 void WAIVESampler::loadPreset(Preset preset)
 {
     if (fCurrentSample == nullptr)

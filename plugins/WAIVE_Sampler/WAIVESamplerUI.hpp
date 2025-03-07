@@ -179,7 +179,7 @@ private:
 
     // 2. Sample Editor Components
     HBox *presetButtons, *editorKnobs;
-    Button *makeKick, *makeSnare, *makeHihat, *makeClap;
+    Button *makeAny, *makeKick, *makeSnare, *makeHihat, *makeClap;
     Label *presetLabel, *knobsLabel;
     Knob *pitch, *volume, *percussionBoost;
     Knob *ampAttack, *ampDecay, *ampSustain, *ampRelease, *sustainLength;

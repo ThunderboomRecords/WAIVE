@@ -192,6 +192,7 @@ void FeatureExtractorTask::runTask()
         gist.processAudioFrame(&source->buffer.at(frame), frameSize);
 
         m.frame = frame;
+        m.start = frame * frameSize;
         m.rms = gist.rootMeanSquare();
         m.peakEnergy = gist.peakEnergy();
         m.specCentroid = gist.spectralCentroid();

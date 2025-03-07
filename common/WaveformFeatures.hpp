@@ -17,6 +17,7 @@ struct WaveformFeature
 struct WaveformMeasurements
 {
     long frame;
+    long start;
     float rms;
     float peakEnergy;
     float zcr;
