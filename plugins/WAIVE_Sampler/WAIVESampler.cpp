@@ -771,13 +771,18 @@ void WAIVESampler::clear()
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 }
 
-void WAIVESampler::loadSource(int index)
+void WAIVESampler::loadSource(int id)
 {
-    if (index < 0)
+    if (id < 0)
         return;
 
-    std::string fp = sd.getFullSourcePath(sd.sourcesList.at(index));
-    std::string tagString = makeTagString(sd.sourcesList.at(index).tags);
+    std::shared_ptr<SourceInfo> source = sd.getSourceById(id);
+
+    if (source == nullptr)
+        return;
+
+    std::string fp = sd.getFullSourcePath(source);
+    std::string tagString = makeTagString(source->tags);
 
     loadSourceFile(fp, tagString);
 }

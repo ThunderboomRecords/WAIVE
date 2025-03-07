@@ -14,7 +14,6 @@ Label::Label(Widget *parent, const std::string &text) noexcept
 void Label::setLabel(const std::string &text)
 {
     label = text;
-    std::cout << "Label::setLabel " << label << std::endl;
     repaint();
 }
 

@@ -96,7 +96,10 @@ public:
         SOURCE_LIST_ANALYSED,
         TAG_LIST_DOWNLOADED,
         TAG_LIST_DOWNLOAD_ERROR,
-        BUILDING_TAG_LIST,
+        BUILDING_TAG_LIST_START,
+        BUILDING_TAG_LIST_END,
+        PARSING_CSV_START,
+        PARSING_CSV_END,
         FILE_DOWNLOADING,
         FILE_DOWNLOADED,
         FILE_DOWNLOAD_FAILED,
@@ -143,8 +146,14 @@ public:
             return "TAG_LIST_DOWNLOADED";
         case TAG_LIST_DOWNLOAD_ERROR:
             return "TAG_LIST_DOWNLOAD_ERROR";
-        case BUILDING_TAG_LIST:
-            return "BUILDING_TAG_LIST";
+        case BUILDING_TAG_LIST_START:
+            return "BUILDING_TAG_LIST_START";
+        case BUILDING_TAG_LIST_END:
+            return "BUILDING_TAG_LIST_END";
+        case PARSING_CSV_START:
+            return "PARSING_CSV_START";
+        case PARSING_CSV_END:
+            return "PARSING_CSV_END";
         case FILE_DOWNLOADING:
             return "FILE_DOWNLOADING";
         case FILE_DOWNLOADED:
@@ -197,7 +206,7 @@ public:
     std::shared_ptr<SampleInfo> duplicateSampleInfo(std::shared_ptr<SampleInfo> sample);
     std::string getSamplePath(std::shared_ptr<SampleInfo> sample) const;
     std::string getFullSamplePath(std::shared_ptr<SampleInfo> sample) const;
-    std::string getFullSourcePath(const SourceInfo &source) const;
+    std::string getFullSourcePath(std::shared_ptr<SourceInfo> source) const;
     std::string getSampleFolder() const;
     std::string getSourceFolder() const;
     const std::string &getSourcePreview() const;
@@ -208,6 +217,7 @@ public:
     std::vector<std::shared_ptr<SampleInfo>> findRadius(float x, float y, float r);
 
     // SOURCES + Remote
+    std::shared_ptr<SourceInfo> getSourceById(int id);
     void parseTSV(const std::string &table, const std::vector<std::string> &column_names, const std::vector<std::string> &column_type, const std::string &csvData);
     void checkLatestRemoteVersion();
     void updateDatabaseVersion(int new_version);
@@ -228,7 +238,7 @@ public:
     std::mutex sourceListMutex;
     std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
-    std::vector<SourceInfo> sourcesList;
+    std::vector<std::shared_ptr<SourceInfo>> sourcesList;
 
     bool sourceDatabaseInitialised;
     bool sourcesLoaded;
@@ -239,7 +249,7 @@ public:
     std::vector<Tag> tagList;
     std::vector<std::string> archives;
 
-    int latestDownloadedIndex;
+    unsigned long latestDownloadedId;
 
 private:
     std::unique_ptr<Poco::Data::Session> session;

@@ -29,8 +29,9 @@ public:
     void setCallback(Callback *cb);
     void selectRandom();
     void computeColumnWidths();
+    void setSource(int id, bool send_callback = false);
 
-    std::vector<SourceInfo> *source_info;
+    std::vector<std::shared_ptr<SourceInfo>> *source_info;
     std::mutex *source_info_mtx;
     int previewPlaying;
 
@@ -53,7 +54,7 @@ private:
     float scrollPos;
     float rowHeight;
     float columnLabel, columnLicense, columnDownload;
-    void drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight, bool playing);
+    void drawSourceInfo(std::shared_ptr<SourceInfo> info, float x, float y, float width, float height, bool highlight, bool playing);
 
     WAIVEImage *download;
 

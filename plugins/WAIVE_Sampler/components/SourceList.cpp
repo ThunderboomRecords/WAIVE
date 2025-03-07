@@ -32,6 +32,38 @@ SourceList::SourceList(Widget *widget)
     random.seed();
 }
 
+void SourceList::setSource(int id, bool send_callback)
+{
+    std::cout << "SourceList::setSource id " << id << std::endl;
+    if (id < 0)
+        return;
+
+    bool found = false;
+    for (size_t i = 0; i < source_info->size(); i++)
+    {
+        if (source_info->at(i)->id == id)
+        {
+            highlighting = i;
+            selected = i;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+        return;
+
+    scrollPos = static_cast<float>(highlighting - 2) * (rowHeight + margin);
+    clampScrollPos();
+
+    std::cout << "SourceList::setSource id " << id << " at " << highlighting << ", scrollPos " << scrollPos << std::endl;
+
+    if (send_callback && callback != nullptr)
+        callback->sourceLoad(id);
+
+    repaint();
+}
+
 void SourceList::computeColumnWidths()
 {
     const float width = getWidth();
@@ -85,7 +117,7 @@ void SourceList::onNanoDisplay()
     int maxDisplay = height / (rowHeight + margin);
 
     source_info_mtx->lock();
-    int n = source_info->size();
+    size_t n = source_info->size();
 
     if (n < maxDisplay)
         scrollPos = 0.f;
@@ -157,11 +189,11 @@ void SourceList::onNanoDisplay()
     source_info_mtx->unlock();
 }
 
-void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float width, float height, bool highlight, bool playing)
+void SourceList::drawSourceInfo(std::shared_ptr<SourceInfo> info, float x, float y, float width, float height, bool highlight, bool playing)
 {
     translate(x, y);
 
-    if (info.description.length() == 0)
+    if (info->description.length() == 0)
     {
         std::cout << "zero length description...\n";
         resetTransform();
@@ -182,7 +214,7 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
     fontSize(getFontSize());
     textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_LEFT);
     fontFaceId(font);
-    text(columnLabel, height / 2.0f, info.description.c_str(), nullptr);
+    text(columnLabel, height / 2.0f, info->description.c_str(), nullptr);
     closePath();
 
     // fade string
@@ -230,7 +262,7 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
         return;
     }
 
-    if (info.license.length())
+    if (info->license.length())
     {
         // license info button
         beginPath();
@@ -241,12 +273,12 @@ void SourceList::drawSourceInfo(const SourceInfo &info, float x, float y, float 
         closePath();
     }
 
-    if (info.downloaded == DownloadState::NOT_DOWNLOADED)
+    if (info->downloaded == DownloadState::NOT_DOWNLOADED)
     {
         download->align = Align::ALIGN_LEFT | Align::ALIGN_MIDDLE;
         download->drawAt(columnDownload, height / 2.f, 9 * scale_factor, 11 * scale_factor);
     }
-    else if (info.downloaded == DownloadState::DOWNLOADING)
+    else if (info->downloaded == DownloadState::DOWNLOADING)
     {
         beginPath();
         strokeColor(text_color);
@@ -342,12 +374,12 @@ bool SourceList::onMouse(const MouseEvent &ev)
             scrolling = true;
             return false;
         }
-        else if (ev.pos.getX() > columnLicense && ev.pos.getX() < columnDownload && source_info->at(highlighting).license.length())
+        else if (ev.pos.getX() > columnLicense && ev.pos.getX() < columnDownload && source_info->at(highlighting)->license.length())
         {
             try
             {
-                std::cout << "License: " << source_info->at(highlighting).license << std::endl;
-                SystemOpenURL(source_info->at(highlighting).license);
+                // std::cout << "License: " << source_info->at(highlighting)->license << std::endl;
+                SystemOpenURL(source_info->at(highlighting)->license);
                 return false;
             }
             catch (const std::out_of_range &e)
@@ -360,14 +392,14 @@ bool SourceList::onMouse(const MouseEvent &ev)
         {
             try
             {
-                if (source_info->at(highlighting).downloaded == DownloadState::DOWNLOADED)
+                if (source_info->at(highlighting)->downloaded == DownloadState::DOWNLOADED)
                 {
                     selected = highlighting;
                     if (callback != nullptr)
-                        callback->sourceLoad(highlighting);
+                        callback->sourceLoad(source_info->at(highlighting)->id);
                     return true;
                 }
-                else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
+                else if (source_info->at(highlighting)->downloaded == DownloadState::NOT_DOWNLOADED)
                 {
                     selected = highlighting;
                     if (callback != nullptr)
@@ -423,12 +455,12 @@ void SourceList::selectRandom()
 
     repaint();
 
-    if (source_info->at(highlighting).downloaded == DownloadState::DOWNLOADED)
+    if (source_info->at(highlighting)->downloaded == DownloadState::DOWNLOADED)
     {
         if (callback != nullptr)
-            callback->sourceLoad(highlighting);
+            callback->sourceLoad(source_info->at(highlighting)->id);
     }
-    else if (source_info->at(highlighting).downloaded == DownloadState::NOT_DOWNLOADED)
+    else if (source_info->at(highlighting)->downloaded == DownloadState::NOT_DOWNLOADED)
     {
         if (callback != nullptr)
             callback->sourceDownload(highlighting);

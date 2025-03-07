@@ -15,13 +15,17 @@ SampleDatabase::SampleDatabase(std::shared_ptr<HTTPClient> _httpClient)
     : httpClient(std::move(_httpClient)),
       sourcesLoaded(false),
       sourceDatabaseInitialised(true),
-      latestDownloadedIndex(-1),
+      latestDownloadedId(-1),
       session(nullptr)
 {
     // Get and create the directory where samples and sound files will
     // be saved to
     Poco::Path homedir = Poco::Path::dataHome();
     rootDir = homedir.append(Poco::Path("WAIVE"));
+
+    Poco::File dir(rootDir);
+    if (!dir.exists())
+        dir.createDirectories();
 
     Poco::AutoPtr<Poco::SimpleFileChannel> pChannel(new Poco::SimpleFileChannel);
     pChannel->setProperty("path", Poco::Path(homedir).append("waive.log").toString());
@@ -30,10 +34,6 @@ SampleDatabase::SampleDatabase(std::shared_ptr<HTTPClient> _httpClient)
     logger = &Poco::Logger::get("WAIVESampler::SampleDatabase");
 
     logger->information(fmt::format("Root directory: {:s}", rootDir.toString()));
-
-    Poco::File dir(rootDir);
-    if (!dir.exists())
-        dir.createDirectories();
 
     sourceFolder = Poco::Path(homedir).append(SOURCE_DIR);
     Poco::File sourceDir(sourceFolder);
@@ -318,13 +318,13 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
         return false;
     }
 
-    std::cout << "File copied to sources folder" << std::endl;
+    std::cout << "SampleDatabase::addSourceToLibrary: File copied to sources folder" << std::endl;
 
     // 2 Update database
     std::string filename = Poco::Path(path).getFileName();
     Poco::Path url = Poco::Path("User").append(filename);
 
-    std::cout << "filename: " << filename << ", url: " << url.toString() << std::endl;
+    std::cout << "SampleDatabase::addSourceToLibrary: filename: " << filename << ", url: " << url.toString() << std::endl;
 
     std::string description = Poco::Path(path).getBaseName();
     std::string urlString = url.toString();
@@ -339,14 +339,14 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
 
     std::cout << "Generated id: " << id << std::endl;
 
+    if (!session)
+    {
+        std::cerr << "Database session not initialized" << std::endl;
+        return false;
+    }
+
     try
     {
-        if (!session)
-        {
-            std::cerr << "Database session not initialized" << std::endl;
-            return false;
-        }
-
         if (session->isTransaction())
             session->commit();
 
@@ -370,11 +370,17 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
         return false;
     }
 
+    getArchiveList();
+    filterConditions.archiveIs = "";
+    filterConditions.searchString = "";
+    filterConditions.tagIn = "";
     filterSources();
 
-    return true;
-
     // 3 Select current Source (and notify UI) to load it
+    latestDownloadedId = id;
+    databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED);
+
+    return true;
 }
 
 bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
@@ -533,9 +539,9 @@ std::string SampleDatabase::getFullSamplePath(std::shared_ptr<SampleInfo> sample
     return Poco::Path(sampleFolder).append(sample->path).append(sample->name).toString();
 }
 
-std::string SampleDatabase::getFullSourcePath(const SourceInfo &source) const
+std::string SampleDatabase::getFullSourcePath(std::shared_ptr<SourceInfo> source) const
 {
-    return Poco::Path(sourceFolder).append(source.url).toString();
+    return Poco::Path(sourceFolder).append(source->url).toString();
 }
 
 std::string SampleDatabase::getSampleFolder() const
@@ -865,6 +871,18 @@ void SampleDatabase::downloadTagsList()
         });
 }
 
+std::shared_ptr<SourceInfo> SampleDatabase::getSourceById(int id)
+{
+    if (id < 0)
+        return nullptr;
+
+    auto it = std::find_if(sourcesList.begin(), sourcesList.end(),
+                           [id](const auto &source)
+                           { return source && source->id == id; });
+
+    return (it != sourcesList.end()) ? *it : nullptr;
+}
+
 void SampleDatabase::parseTSV(
     const std::string &table,
     const std::vector<std::string> &column_names,
@@ -872,6 +890,8 @@ void SampleDatabase::parseTSV(
     const std::string &csvData)
 {
     std::cout << "\nSampleDatabase::parseTSV for table " << table << std::endl;
+
+    databaseUpdate.notify(this, DatabaseUpdate::PARSING_CSV_START);
 
     if (session->isTransaction())
         session->commit();
@@ -1000,14 +1020,16 @@ void SampleDatabase::parseTSV(
 
     std::cout << " - session->isTransaction() = " << session->isTransaction() << "\n";
     std::cout << "ParseCSV DONE\n";
+
+    databaseUpdate.notify(this, DatabaseUpdate::PARSING_CSV_END);
 }
 
-void SampleDatabase::downloadSourceFile(int i)
+void SampleDatabase::downloadSourceFile(int index)
 {
-    if (i < 0 || i >= sourcesList.size())
+    if (index < 0 || index >= sourcesList.size())
         return;
 
-    SourceInfo *si = &sourcesList[i];
+    std::shared_ptr<SourceInfo> si = sourcesList[index];
 
     if (si->downloaded == DownloadState::DOWNLOADED)
         return;
@@ -1032,7 +1054,7 @@ void SampleDatabase::downloadSourceFile(int i)
         "DownloadSourceFile",
         WAIVE_SERVER,
         endpoint.toString(Poco::Path::Style::PATH_URI),
-        [this, filePath, si, i](const std::string &response)
+        [this, filePath, si](const std::string &response)
         {
             // save file...
             Poco::File fp(filePath);
@@ -1052,7 +1074,7 @@ void SampleDatabase::downloadSourceFile(int i)
 
             Poco::Thread::sleep(1);
             si->downloaded = DownloadState::DOWNLOADED;
-            this->latestDownloadedIndex = i;
+            this->latestDownloadedId = si->id;
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED); },
         [this, endpoint, si](const std::string &response)
         {
@@ -1064,12 +1086,12 @@ void SampleDatabase::downloadSourceFile(int i)
         });
 }
 
-void SampleDatabase::playTempSourceFile(int i)
+void SampleDatabase::playTempSourceFile(int index)
 {
-    if (i < 0 || i >= sourcesList.size())
+    if (index < 0 || index >= sourcesList.size())
         return;
 
-    SourceInfo *si = &sourcesList[i];
+    std::shared_ptr<SourceInfo> si = sourcesList[index];
     Poco::Path location = Poco::Path(si->url);
 
     if (si->downloaded == DownloadState::DOWNLOADED)
@@ -1113,7 +1135,7 @@ void SampleDatabase::playTempSourceFile(int i)
 
             }
 
-            this->latestDownloadedIndex = -1; // to avoid loading preview into SampleEditor
+            this->latestDownloadedId = -1; // to avoid loading preview into SampleEditor
             databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOADED);
             
             this->sourcePreviewPath = tmp.path();
@@ -1130,6 +1152,8 @@ void SampleDatabase::playTempSourceFile(int i)
 void SampleDatabase::makeTagSourcesTable()
 {
     // std::cout << "SampleDatabase::makeTagSourcesTable()" << std::endl;
+
+    databaseUpdate.notify(this, DatabaseUpdate::BUILDING_TAG_LIST_START);
 
     try
     {
@@ -1226,6 +1250,7 @@ void SampleDatabase::makeTagSourcesTable()
         session->commit();
 
     std::cout << "SampleDatabase::makeTagSourcesTable() finished" << std::endl;
+    databaseUpdate.notify(this, DatabaseUpdate::BUILDING_TAG_LIST_END);
 }
 
 void SampleDatabase::getTagList()
@@ -1298,6 +1323,7 @@ void SampleDatabase::getArchiveList()
     }
 
     std::cout << "number of archives: " << archives.size() << std::endl;
+    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_ANALYSED);
 }
 
 void SampleDatabase::filterSources()
@@ -1391,18 +1417,19 @@ void SampleDatabase::filterSources()
         {
             // std::cout << filename << std::endl;
 
-            SourceInfo source;
-            source.id = id;
-            source.archive = archive;
-            source.filename = filename;
-            source.description = description;
-            source.license = license;
-            source.url = url;
+            // SourceInfo source;
+            auto source = std::make_shared<SourceInfo>();
+            source->id = id;
+            source->archive = archive;
+            source->filename = filename;
+            source->description = description;
+            source->license = license;
+            source->url = url;
             Poco::File sourceFile = getFullSourcePath(source);
             if (sourceFile.exists())
-                source.downloaded = DownloadState::DOWNLOADED;
+                source->downloaded = DownloadState::DOWNLOADED;
             else
-                source.downloaded = DownloadState::NOT_DOWNLOADED;
+                source->downloaded = DownloadState::NOT_DOWNLOADED;
 
             Poco::Data::Statement selectSourcesTag(*session);
             int tagId;
@@ -1427,7 +1454,7 @@ void SampleDatabase::filterSources()
                 if (!res)
                     break;
                 selectTag.execute();
-                source.tags.push_back({tagId, std::string(tag), embedX, embedY});
+                source->tags.push_back({tagId, std::string(tag), embedX, embedY});
             }
 
             sourcesList.push_back(source);
@@ -1441,7 +1468,6 @@ void SampleDatabase::filterSources()
     }
 
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_FILTER_END);
-
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_UPDATED);
 }
 
@@ -1479,7 +1505,7 @@ void SampleDatabase::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
 void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
 {
-    std::cout << "SampleDatabase::onDatabaseChanged " << databaseUpdateString(arg) << std::endl;
+    // std::cout << "SampleDatabase::onDatabaseChanged " << databaseUpdateString(arg) << std::endl;
     switch (arg)
     {
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
@@ -1498,7 +1524,6 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
         getTagList();
         getArchiveList();
-        databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_ANALYSED);
         filterSources();
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:

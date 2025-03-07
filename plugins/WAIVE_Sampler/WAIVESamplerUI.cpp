@@ -744,10 +744,6 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
 {
     std::cout << "WAIVESamplerUI::stateChanged: " << key << " -> " << value << std::endl;
 
-    if (std::strcmp(key, "osc-address") == 0)
-    {
-    }
-
     repaint();
 }
 
@@ -1268,9 +1264,9 @@ void WAIVESamplerUI::sourceDownload(int index)
     plugin->sd.downloadSourceFile(index);
 }
 
-void WAIVESamplerUI::sourceLoad(int index)
+void WAIVESamplerUI::sourceLoad(int id)
 {
-    plugin->loadSource(index);
+    plugin->loadSource(id);
 }
 
 void WAIVESamplerUI::sourcePreview(int index, bool start)
@@ -1649,36 +1645,37 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
 
 void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg)
 {
-    // std::cout << "WAIVESamplerUI::onDatabaseChanged " << arg << std::endl;
+    std::cout << "WAIVESamplerUI::onDatabaseChanged " << plugin->sd.databaseUpdateString(arg) << std::endl;
     switch (arg)
     {
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_CHECKING_UPDATE:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_START:
-    case SampleDatabase::DatabaseUpdate::BUILDING_TAG_LIST:
+    case SampleDatabase::DatabaseUpdate::BUILDING_TAG_LIST_START:
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADING:
+    case SampleDatabase::DatabaseUpdate::PARSING_CSV_START:
         loadingTaskCount++;
-        // databaseLoading->setLoading(true);
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
     case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOAD_FAILED:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_CHECKED_UPDATE:
+    case SampleDatabase::DatabaseUpdate::PARSING_CSV_END:
+    case SampleDatabase::DatabaseUpdate::BUILDING_TAG_LIST_END:
         loadingTaskCount--;
-        // databaseLoading->setLoading(false);
         break;
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
-        sourceLoad(plugin->sd.latestDownloadedIndex);
+        sourceList->setSource(plugin->sd.latestDownloadedId, true);
         loadingTaskCount--;
-        // databaseLoading->setLoading(false);
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
-        // databaseLoading->setLoading(false);
         loadingTaskCount--;
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_ANALYSED:
+        archiveList->clear();
+        archiveList->addItem("All");
         for (size_t i = 0; i < plugin->sd.archives.size(); i++)
             archiveList->addItem(plugin->sd.archives.at(i).c_str());
 
@@ -1691,6 +1688,8 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     default:
         break;
     }
+
+    std::cout << "WAIVESamplerUI::onDatabaseChanged loadingTaskCount = " << loadingTaskCount << std::endl;
 
     if (loadingTaskCount > 0)
         databaseLoading->setLoading(true);
@@ -1705,7 +1704,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADING:
         databaseProgress->setLabel("Downloading file list...");
         break;
-    case SampleDatabase::DatabaseUpdate::BUILDING_TAG_LIST:
+    case SampleDatabase::DatabaseUpdate::BUILDING_TAG_LIST_START:
         databaseProgress->setLabel("Building database...");
         break;
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADING:
@@ -1718,6 +1717,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::FILE_DOWNLOADED:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
+    case SampleDatabase::DatabaseUpdate::BUILDING_TAG_LIST_END:
         if (!errorMessage)
             databaseProgress->setLabel("");
         break;
