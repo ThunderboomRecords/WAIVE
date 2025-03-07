@@ -876,6 +876,7 @@ std::shared_ptr<SourceInfo> SampleDatabase::getSourceById(int id)
     if (id < 0)
         return nullptr;
 
+    std::lock_guard<std::mutex> lock(sourceListMutex);
     auto it = std::find_if(sourcesList.begin(), sourcesList.end(),
                            [id](const auto &source)
                            { return source && source->id == id; });
@@ -1029,6 +1030,7 @@ void SampleDatabase::downloadSourceFile(int index)
     if (index < 0 || index >= sourcesList.size())
         return;
 
+    std::lock_guard<std::mutex> lock(sourceListMutex);
     std::shared_ptr<SourceInfo> si = sourcesList[index];
 
     if (si->downloaded == DownloadState::DOWNLOADED)
@@ -1091,6 +1093,7 @@ void SampleDatabase::playTempSourceFile(int index)
     if (index < 0 || index >= sourcesList.size())
         return;
 
+    std::lock_guard<std::mutex> lock(sourceListMutex);
     std::shared_ptr<SourceInfo> si = sourcesList[index];
     Poco::Path location = Poco::Path(si->url);
 

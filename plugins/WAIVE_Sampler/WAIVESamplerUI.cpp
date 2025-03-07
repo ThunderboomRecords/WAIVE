@@ -1588,6 +1588,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_UPDATED:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_FILTER_END:
+        sourceList->repaint();
         loadingTaskCount--;
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_ANALYSED:
@@ -1660,7 +1661,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     }
     databaseProgress->resizeToFit();
 
-    repaint();
+    getWindow().repaint();
 }
 
 Knob *WAIVESamplerUI::createWAIVEKnob(

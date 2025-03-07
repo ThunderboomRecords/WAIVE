@@ -39,14 +39,17 @@ void SourceList::setSource(int id, bool send_callback)
         return;
 
     bool found = false;
-    for (size_t i = 0; i < source_info->size(); i++)
     {
-        if (source_info->at(i)->id == id)
+        std::lock_guard<std::mutex> lock(*source_info_mtx);
+        for (size_t i = 0; i < source_info->size(); i++)
         {
-            highlighting = i;
-            selected = i;
-            found = true;
-            break;
+            if (source_info->at(i)->id == id)
+            {
+                highlighting = i;
+                selected = i;
+                found = true;
+                break;
+            }
         }
     }
 
@@ -111,12 +114,11 @@ void SourceList::onNanoDisplay()
     if (source_info == nullptr || source_info_mtx == nullptr)
         return;
 
-    // float rowWidth = width - 2.f * padding - scrollBarWidth;
     rowHeight = 2.f * getFontSize();
 
     int maxDisplay = height / (rowHeight + margin);
 
-    source_info_mtx->lock();
+    std::lock_guard<std::mutex> lock(*source_info_mtx);
     size_t n = source_info->size();
 
     if (n < maxDisplay)
@@ -132,8 +134,6 @@ void SourceList::onNanoDisplay()
         textAlign(Align::ALIGN_MIDDLE | Align::ALIGN_CENTER);
         text(width / 2.f, height / 2.f, info.c_str(), nullptr);
         closePath();
-
-        source_info_mtx->unlock();
 
         return;
     }
@@ -185,8 +185,6 @@ void SourceList::onNanoDisplay()
         fill();
         closePath();
     }
-
-    source_info_mtx->unlock();
 }
 
 void SourceList::drawSourceInfo(std::shared_ptr<SourceInfo> info, float x, float y, float width, float height, bool highlight, bool playing)
