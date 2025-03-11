@@ -151,20 +151,26 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
     if (!hasKeyFocus || !isVisible())
         return false;
 
-    // std::cout << "TextInput::onCharacterInput: ev.keycode = " << ev.keycode << std::endl;
+    // std::cout << "TextInput::onCharacterInput: ev.keycode = " << ev.keycode << ", ev.character = " << ev.character << ", ev.string = " << ev.string << " ev.flags = " << ev.flags << " ev.mod = " << ev.mod << std::endl;
     std::string candidate;
     candidate.assign(textValue);
     int newPosition = position;
+    char newChar = ev.character;
+
+#ifdef DISTRHO_OS_WINDOWS
+    if (ev.mod != 1 && newChar >= 65 && newChar <= 90)
+        newChar += 32;
+#endif
 
     switch (ev.keycode)
     {
-    // case 36:
-    //     break;
-    case kKeySpace:
-        // space
-        candidate.insert(candidate.begin() + newPosition, ev.string[0]);
-        newPosition += 1;
-        break;
+        // case 36:
+        //     break;
+        // case kKeySpace:
+        //     // space
+        //     candidate.insert(candidate.begin() + newPosition, ev.string[0]);
+        //     newPosition += 1;
+        //     break;
 #ifdef DISTRHO_OS_LINUX
     case kKeyBackspace:
     case 22:
@@ -174,7 +180,7 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
 #endif
     default:
         // other characters
-        candidate.insert(candidate.begin() + newPosition, ev.string[0]);
+        candidate.insert(candidate.begin() + newPosition, newChar);
         newPosition += 1;
         break;
     }
@@ -212,6 +218,8 @@ bool TextInput::onCharacterInput(const CharacterInputEvent &ev)
 
 bool TextInput::onKeyboard(const KeyboardEvent &ev)
 {
+    // std::cout << "TextInput::onKeyboard key: " << ev.key << ", ev.press: " << ev.press << ", hasKeyFocus: " << hasKeyFocus << std::endl;
+
     if (!hasKeyFocus || !ev.press)
         return false;
 
