@@ -33,7 +33,7 @@ Built with [DISTRHO Plugin Framework](https://github.com/DISTRHO/DPF) and [ONNX 
 Developed by [Arran Lyon](https://arranlyon.com) for [Thunderboom Records](https://www.thunderboomrecords.com). Contributions and pull-requests welcome, especially regarding stability and performance improvements.
 
 ## Download and Install
-WAIVE-Sampler and WAIVE-Sequencer are available in VST, VST3, CLAP and Audio Unit (macOS only) plugin formats. 
+WAIVE-Sampler and WAIVE-Sequencer are available in VST, VST3 (macOS + Linux only), CLAP and Audio Unit (macOS only) plugin formats. 
 
 1. Download the installer from the [**Releases**](https://github.com/ThunderboomRecords/WAIVE/releases) page for your platform. You can find the download links under the **Assets** heading. For newer Apple computers with M series processors, use `macOS_arm64`, whereas older machines with Intel chips should use `macOS_x64`. 
 2. Install:
@@ -43,7 +43,7 @@ WAIVE-Sampler and WAIVE-Sequencer are available in VST, VST3, CLAP and Audio Uni
 3. In your DAW, rescan plugins if it does not do so automatically.
 
 ### Ableton Live usage notes
-- If you want to use the VST3 plugin, make sure that "Use VST3 System Plug-in Folders" is On in Settings > Plug-ins before rescanning.
+- On Windows: Ableton may not search in the installtion location of the plugins. Go to Options > Preferences > Plugins > Plug-In Sources, make sure 'Use VST Plug-In Custom Folder' is ON, and click Browse and go to `C:\Program Files\Common Files\VST2` and click 'Select Folder', then 'Rescan'.
 - To use WAIVE-Sequencer, add this plugin to an empty MIDI track. Then, on a separate MIDI track add your instrument (e.g. WAIVE-Sampler) then set MIDI From to the name of the first track and make sure to set it to use Post-FX.
 
 ## Build from source (for developers)
