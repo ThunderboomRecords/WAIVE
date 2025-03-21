@@ -1181,6 +1181,7 @@ void WAIVESamplerUI::sourceDownload(int index)
 
 void WAIVESamplerUI::sourceLoad(int id)
 {
+    plugin->newSample();
     plugin->loadSource(id);
 }
 
@@ -1546,7 +1547,9 @@ void WAIVESamplerUI::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         sourceLoading->repaint();
         progress->repaint();
 
-        buttonClicked(makeAny);
+        // only generate Any sample if loaded sample from Source list...
+        // if (!plugin->fCurrentSample->saved)
+        //     buttonClicked(makeAny);
     }
     else if (taskName == "ParseSourceList")
     {
