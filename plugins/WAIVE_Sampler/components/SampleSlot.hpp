@@ -47,9 +47,9 @@ public:
     void idleCallback() override;
 
     void setSamplePlayer(std::shared_ptr<SamplePlayer> sp);
-    void setMidiNumber(int midi, bool sendCallback);
-    void setGain(float gain, bool sendCallback);
-    void setPan(float pan, bool sendCallback);
+    void setMidiNumber(int midi, bool sendCallback = false);
+    void setGain(float gain, bool sendCallback = false);
+    void setPan(float pan, bool sendCallback = false);
 
     void showMixControls(bool show);
 

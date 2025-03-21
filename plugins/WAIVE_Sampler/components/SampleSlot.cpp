@@ -109,6 +109,9 @@ void SampleSlot::setSamplePlayer(std::shared_ptr<SamplePlayer> sp)
         samplePlayer->removeCallback(this);
 
     samplePlayer = sp;
+    setMidiNumber(samplePlayer->midi, false);
+    setPan(samplePlayer->pan, false);
+    setGain(samplePlayer->gain, false);
 
     if (samplePlayer->sampleInfo != nullptr)
         sampleLoaded();
