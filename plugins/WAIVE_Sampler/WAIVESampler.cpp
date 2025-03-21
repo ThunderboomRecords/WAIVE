@@ -982,8 +982,8 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
 bool WAIVESampler::detectPreset(const Preset &preset)
 {
     std::cout << "WAIVESampler::detectPreset " << preset.presetName << std::endl;
-    if (fCurrentSample == nullptr)
-        newSample();
+    // if (fCurrentSample == nullptr)
+    newSample();
 
     Source *sourceInfo = &fCurrentSample->sourceInfo;
 
@@ -1447,6 +1447,11 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
             fCurrentSample->tagString = "";
             fCurrentSample->sourceInfo.length = 0;
         }
+    }
+    else if (taskName == "FeatureExtractorTask")
+    {
+        if (!fCurrentSample->saved)
+            detectPreset(Presets::Any);
     }
     else if (taskName == "loadSourcePreview")
     {

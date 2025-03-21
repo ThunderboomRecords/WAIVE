@@ -1706,27 +1706,34 @@ void WAIVESamplerUI::updatePresetButtons()
         return;
     }
 
-    if (plugin->fCurrentSample->preset == "hit")
+    std::cout << "WAIVESamplerUI::updatePresetButtons() plugin->fCurrentSample->preset = " << plugin->fCurrentSample->preset << std::endl;
+
+    std::string currentPreset = plugin->fCurrentSample->preset;
+    std::transform(currentPreset.begin(), currentPreset.end(), currentPreset.begin(),
+                   [](unsigned char c)
+                   { return std::tolower(c); });
+
+    if (currentPreset == "hit")
     {
         makeAny->setToggled(true);
         sampleWaveformDisplay->text_color = WaiveColors::text;
     }
-    else if (plugin->fCurrentSample->preset == "kick")
+    else if (currentPreset == "kick")
     {
         makeKick->setToggled(true);
         sampleWaveformDisplay->text_color = WaiveColors::accent2;
     }
-    else if (plugin->fCurrentSample->preset == "snare")
+    else if (currentPreset == "snare")
     {
         makeSnare->setToggled(true);
         sampleWaveformDisplay->text_color = WaiveColors::accent1;
     }
-    else if (plugin->fCurrentSample->preset == "clap")
+    else if (currentPreset == "clap")
     {
         makeClap->setToggled(true);
         sampleWaveformDisplay->text_color = WaiveColors::accent4;
     }
-    else if (plugin->fCurrentSample->preset == "hihat")
+    else if (currentPreset == "hihat")
     {
         makeHihat->setToggled(true);
         sampleWaveformDisplay->text_color = WaiveColors::accent3;
