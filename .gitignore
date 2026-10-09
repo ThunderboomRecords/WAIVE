@@ -16,7 +16,7 @@ release/
 *.cpp.d
 *.cpp.o
 
-build/
+build*/
 bin/
 
 CMakeFiles
