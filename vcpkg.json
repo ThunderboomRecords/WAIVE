@@ -15,7 +15,7 @@
       "name": "poco",
       "features": [
         "netssl",
-        "sqlite3"
+        "sqlite"
       ]
     },
     "tinyfiledialogs"
