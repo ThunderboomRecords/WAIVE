@@ -49,7 +49,7 @@ message(STATUS "Detected Architecture: ${BUILD_ARCH}")
 file(WRITE "${CMAKE_BINARY_DIR}/build_info.txt" "OS=${BUILD_OS}\nARCH=${BUILD_ARCH}\n")
 
 project(
-    WAIVE_Plugins VERSION 1.5.6
+    WAIVE_Plugins VERSION 1.5.7
     LANGUAGES CXX C
 )
 

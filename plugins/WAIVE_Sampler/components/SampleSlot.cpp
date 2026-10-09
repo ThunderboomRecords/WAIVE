@@ -342,24 +342,22 @@ void SampleSlot::textEntered(TextInput *textInput, const std::string &text)
         return;
 
     bool clamped = false;
-    if (val <= 0)
+    if (val < 0)
     {
-        val = 1;
+        val = 0;
         clamped = true;
     }
-    else if (val > 128)
+    else if (val > 127)
     {
-        val = 128;
+        val = 127;
         clamped = true;
     }
 
     if (clamped)
         textInput->setText(fmt::format("{:d}", val).c_str(), false);
 
-    // if (samplePlayer != nullptr)
-    //     samplePlayer->midi = val - 1;
     if (callback != nullptr)
-        callback->sampleSlotMidiChanged(this, slotId, val - 1);
+        callback->sampleSlotMidiChanged(this, slotId, val);
 }
 
 void SampleSlot::textInputChanged(TextInput *textInput, const std::string &text) {}

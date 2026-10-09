@@ -233,7 +233,7 @@ WAIVESequencerUI::WAIVESequencerUI() : UI(UI_W, UI_H),
         auto midiNote = std::make_shared<TextInput>(this);
         midiNote->align = Align::ALIGN_CENTER;
         midiNote->textType = TextInput::TextType::INTEGER;
-        midiNote->setText(fmt::format("{:d}", plugin->midiNotes[i] + 1).c_str(), false);
+        midiNote->setText(fmt::format("{:d}", plugin->midiNotes[i]).c_str(), false);
         midiNote->setFont("Poppins-Regular", Poppins_Regular, Poppins_Regular_len);
         midiNote->setFontSize(12.f);
         midiNote->setSize(35, 20);
@@ -329,7 +329,7 @@ void WAIVESequencerUI::parameterChanged(uint32_t index, float value)
     case kMidi7:
     case kMidi8:
     case kMidi9:
-        midiNotesEdit[8 - (index - kMidi1)]->setText(fmt::format("{:d}", static_cast<uint8_t>(value + 1)).c_str(), false);
+        midiNotesEdit[8 - (index - kMidi1)]->setText(fmt::format("{:d}", static_cast<uint8_t>(value)).c_str(), false);
         break;
     default:
         break;
@@ -512,22 +512,21 @@ void WAIVESequencerUI::textEntered(TextInput *textInput, const std::string &text
         return;
 
     bool clamped = false;
-    if (val <= 0)
+    if (val < 0)
     {
-        val = 1;
+        val = 0;
         clamped = true;
     }
-    else if (val > 128)
+    else if (val > 127)
     {
-        val = 128;
+        val = 127;
         clamped = true;
     }
 
     if (clamped)
         textInput->setText(fmt::format("{:d}", val).c_str(), false);
 
-    // plugin->setMidiNote(textInput->getId(), (uint8_t)(val - 1));
-    setParameterValue(kMidi1 + textInput->getId(), static_cast<float>(val - 1));
+    setParameterValue(kMidi1 + textInput->getId(), static_cast<float>(val));
 }
 
 void WAIVESequencerUI::textInputChanged(TextInput *textInput, const std::string &text)
