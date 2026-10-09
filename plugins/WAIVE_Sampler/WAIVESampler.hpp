@@ -161,6 +161,7 @@ protected:
     void clearSamplePlayer(int spIndex);
     void deleteSample(int id);
     void triggerPreview();
+    void cancelPreviewRetrigger();
     std::pair<float, float> getEmbedding(std::vector<float> *wf);
     void getFeatures(std::vector<float> *wf, std::vector<float> *feature);
     void onTaskFinished(Poco::TaskFinishedNotification *pNf);
@@ -208,6 +209,13 @@ private:
 
     std::shared_ptr<SampleInfo> fCurrentSample;
     std::atomic<bool> renderSampleLock;
+
+    // triggerPreview() only requests playback; run() starts it at the start
+    // of the next block. Parameter changes from the UI can reach the plugin
+    // after the request (CLAP/VST3 queue them for the audio thread), so a
+    // renderSample() shortly after a request plays the new render.
+    std::atomic<bool> previewRequested{false};
+    std::atomic<int64_t> previewRequestedAtMs{0};
 
     float fNormalisationRatio;
     Filter sampleFilter;

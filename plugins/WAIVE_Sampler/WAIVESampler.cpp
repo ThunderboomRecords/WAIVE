@@ -3,6 +3,15 @@
 
 START_NAMESPACE_DISTRHO
 
+// How long after a preview request a parameter change re-triggers the
+// preview, to allow for the host delivering the final value late
+static constexpr int64_t PREVIEW_RETRIGGER_WINDOW_MS = 500;
+
+static int64_t steadyClockMs()
+{
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
 WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
                                sampleRate(getSampleRate()),
                                fNormalisationRatio(1.0f),
@@ -663,6 +672,14 @@ void WAIVESampler::run(
 {
     std::lock_guard<std::mutex> lock(samplePlayerMtx);
 
+    // Start (or restart) the editor preview, after any parameter changes
+    // for this block have been applied
+    if (previewRequested.exchange(false))
+    {
+        editorPreviewPlayer->state = PlayState::TRIGGERED;
+        editorPreviewPlayer->active = true;
+    }
+
     int midiIndex = 0;
     float yL, yR;
     for (uint32_t i = 0; i < numFrames; i++)
@@ -1123,6 +1140,8 @@ void WAIVESampler::renderSample()
     if (fCurrentSample == nullptr || !fCurrentSample->sourceInfo.sourceLoaded || renderSampleLock)
         return;
 
+    bool retriggerPreview = steadyClockMs() - previewRequestedAtMs < PREVIEW_RETRIGGER_WINDOW_MS;
+
     if (editorPreviewPlayer->state != PlayState::STOPPED)
     {
         editorPreviewPlayer->state = PlayState::STOPPED;
@@ -1223,6 +1242,9 @@ void WAIVESampler::renderSample()
     editorPreviewPlayer->ptr = 0;
     editorPreviewPlayer->active = true;
 
+    if (retriggerPreview)
+        previewRequested = true;
+
     pluginUpdate.notify(this, PluginUpdate::kSampleUpdated);
 
     // std::cout << "renderSample() finished\n";
@@ -1319,11 +1341,15 @@ void WAIVESampler::generateCurrentSampleName(const std::string &base)
 
 void WAIVESampler::triggerPreview()
 {
-    if (editorPreviewPlayer->state == PlayState::STOPPED)
-    {
-        editorPreviewPlayer->state = PlayState::TRIGGERED;
-        editorPreviewPlayer->active = true;
-    }
+    previewRequestedAtMs = steadyClockMs();
+    previewRequested = true;
+}
+
+void WAIVESampler::cancelPreviewRetrigger()
+{
+    // e.g. a new knob drag starts: its parameter changes should not keep
+    // restarting the preview
+    previewRequestedAtMs = 0;
 }
 
 std::pair<float, float> WAIVESampler::getEmbedding(std::vector<float> *wf)

@@ -757,7 +757,10 @@ void WAIVESamplerUI::stateChanged(const char *key, const char *value)
     repaint();
 }
 
-void WAIVESamplerUI::knobDragStarted(Knob *knob) {}
+void WAIVESamplerUI::knobDragStarted(Knob *knob)
+{
+    plugin->cancelPreviewRetrigger();
+}
 
 void WAIVESamplerUI::knobDragFinished(Knob *knob, float value)
 {
