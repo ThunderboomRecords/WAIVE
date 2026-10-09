@@ -11,7 +11,7 @@ git clone --recursive https://github.com/ThunderboomRecords/WAIVE.git
 cd WAIVE/
 ```
 
-Requires statically built onnxruntime for your platform. You can download pre-built libraries from [csukuangfj/onnxruntime-libs](https://huggingface.co/csukuangfj/onnxruntime-libs/tree/main), or build them yourself (such as with [ort-builder](https://github.com/olilarkin/ort-builder/tree/bfbd362c9660fce9600a43732e3f8b53d5fb243a)).
+Requires statically built `onnxruntime` for your platform. You can download pre-built libraries from [csukuangfj/onnxruntime-libs](https://huggingface.co/csukuangfj/onnxruntime-libs/tree/main), or build them yourself (such as with [ort-builder](https://github.com/olilarkin/ort-builder/tree/bfbd362c9660fce9600a43732e3f8b53d5fb243a)).
 Tested with 1.17.3.
 
 - Mac: [onnxruntime-osx-universal2-static_lib-1.17.3.zip](https://huggingface.co/csukuangfj/onnxruntime-libs/blob/main/onnxruntime-osx-universal2-static_lib-1.17.3.zip)
@@ -50,16 +50,29 @@ git pull
 ./bootstrap-vcpkg.sh -disableMetrics
 ```
 
-## Linux/macOS
+## Build
+
+### macOS
+
+This creates a universal build that targets both Apple silicon and older Intel CPUs.
+
+```sh
+cmake --preset default -B build-arm64 -DCMAKE_BUILD_TYPE=Release
+cmake --preset default -B build-x86_64 -DCMAKE_BUILD_TYPE=Release -DTARGET_MAC_X86=1
+cmake --build build-arm64 -j8 && cmake --build build-x86_64 -j8
+
+cd tools/
+./macOS_make_universal.sh ../build-arm64/bin ../build-x86_64/bin ../build-universal/bin
+```
+
+### Linux
 
 ```sh
 cmake --preset="default" -DCMAKE_BUILD_TYPE="Release"
 cmake --build ./build -j8 --config Release
 ```
 
-(If cross-building for older Intel x86_64 macOS, add the flag `-DTARGET_MAC_X86=1` to the first command.)
-
-## Windows
+### Windows
 
 Run the build commands in Developer Command Prompt (not Powershell!).
 
@@ -71,11 +84,11 @@ C:\path\to\WAIVE>cmake --build build -j8 --config Release
 ## Post build
 
 The plugin builds are found in `build/bin/` folder.
-Move your prefered format binary to your plugins folder for manual installation.
+Move your preferred format binary to your plugins folder for manual installation.
 
 To create installers:
 
-### MacOS
+### macOS
 
 Create a file `notarization_secrets.env` file in `tools/` with your Apple Developer details (this file is ignored by git):
 
@@ -91,8 +104,8 @@ The run:
 
 ```bash
 cd tools
-./macOS_sign_and_notarize.sh ../build/bin/ WAIVE-Plugins ../release
-./macOS_make_installer.sh
+./macOS_sign_and_notarize.sh ../build-universal/bin/ WAIVE-Plugins
+./macOS_make_installer.sh ../build-universal/bin WAIVE-Plugins
 ```
 
 The installer `.dmg` is found in the `release/vX.Y.Z/macOS_ARCH/` folder.
