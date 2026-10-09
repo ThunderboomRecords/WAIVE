@@ -15,10 +15,19 @@ FeatureExtractor::FeatureExtractor(
     mfcc.setNumCoefficients(nMels + 1);
 }
 
-std::vector<std::vector<float>> FeatureExtractor::getMelSpectrogram(const std::vector<float> *buffer, bool centered)
+std::vector<std::vector<float>> FeatureExtractor::getMelSpectrogram(const std::vector<float> *buffer, bool centered, int maxFrames)
 {
     std::vector<std::vector<float>> melspec;
-    std::vector<float> x(*buffer);
+
+    // Frame i covers input samples [i * hopLength - pad, i * hopLength - pad + frameSize),
+    // so this many samples give the first maxFrames frames exactly
+    size_t inputLength = buffer->size();
+    if (maxFrames > 0)
+    {
+        size_t needed = static_cast<size_t>(maxFrames - 1) * hopLength + (centered ? frameSize - frameSize / 2 : frameSize);
+        inputLength = std::min(inputLength, needed);
+    }
+    std::vector<float> x(buffer->begin(), buffer->begin() + inputLength);
 
     // 1. Pad input to center window, using "reflect" mode
     if (centered)
@@ -34,9 +43,12 @@ std::vector<std::vector<float>> FeatureExtractor::getMelSpectrogram(const std::v
     }
 
     // 2. Compute
-    for (int i = 0; i < x.size() - frameSize; i += hopLength)
+    for (int i = 0; i + frameSize < x.size(); i += hopLength)
     {
-        gist.processAudioFrame(std::vector<float>(x.begin() + i, x.begin() + i + frameSize));
+        if (maxFrames > 0 && static_cast<int>(melspec.size()) >= maxFrames)
+            break;
+
+        gist.processAudioFrame(&x[i], frameSize);
         std::vector<float> magSpectrum = gist.getMagnitudeSpectrum();
         // for (int j = 0; j < magSpectrum.size(); j++)
         //     magSpectrum[j] = std::powf(magSpectrum[j], 2.0f);

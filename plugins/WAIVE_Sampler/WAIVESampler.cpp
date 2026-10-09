@@ -801,7 +801,7 @@ void WAIVESampler::loadSourceFile(const std::string &fp, const std::string &tagS
 
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
 
-    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourceBuffer", tempBuffer, tempBufferMutex, fp, sampleRate);
+    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourceBuffer", tempBuffer, tempBufferMutex, fp, sampleRate, true);
     taskManager.start(task);
 }
 
@@ -893,7 +893,7 @@ void WAIVESampler::loadSamplePreview(int id)
 
 void WAIVESampler::loadSourcePreview(const std::string &fp)
 {
-    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourcePreview", tempBuffer, tempBufferMutex, fp, sampleRate);
+    WaveformLoaderTask *task = new WaveformLoaderTask("loadSourcePreview", tempBuffer, tempBufferMutex, fp, sampleRate, true);
     taskManager.start(task);
 }
 
@@ -1355,7 +1355,7 @@ void WAIVESampler::getFeatures(std::vector<float> *wf, std::vector<float> *featu
     float X_mean = -13.617876;
     float X_std = 7.084826;
 
-    std::vector<std::vector<float>> melspec = fe.getMelSpectrogram(wf);
+    std::vector<std::vector<float>> melspec = fe.getMelSpectrogram(wf, true, length);
 
     std::fill(feature->begin(), feature->end(), (std::log(epsilon) - X_mean) / X_std);
     int width = std::min(static_cast<int>(melspec.size()), length);

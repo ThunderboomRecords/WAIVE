@@ -10,7 +10,9 @@ class FeatureExtractor
 public:
     FeatureExtractor(int sampleRate, int frameSize, int hopLength, int nMels, WindowType window);
 
-    std::vector<std::vector<float>> getMelSpectrogram(const std::vector<float> *buffer, bool centered = true);
+    // maxFrames > 0 limits the output to the first maxFrames frames, and
+    // only the audio needed for those frames is processed
+    std::vector<std::vector<float>> getMelSpectrogram(const std::vector<float> *buffer, bool centered = true, int maxFrames = 0);
 
 private:
     int sampleRate, frameSize, hopLength;

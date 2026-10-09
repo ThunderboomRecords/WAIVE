@@ -30,6 +30,7 @@ dpf_add_plugin(
       Tasks.cpp
       SampleDatabase.cpp
       FeatureExtractor.cpp
+      SourceCache.cpp
       Envelopes.cpp
       Filters.cpp
       OSCClient.cpp

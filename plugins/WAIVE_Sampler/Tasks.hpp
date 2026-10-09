@@ -46,7 +46,8 @@ public:
         std::shared_ptr<std::vector<float>> _buffer,
         std::shared_ptr<std::mutex> mutex,
         const std::string &_fp,
-        int sampleRate);
+        int sampleRate,
+        bool useCache = false);
     ~WaveformLoaderTask();
     void runTask() override;
     std::string fp, name;
@@ -55,6 +56,7 @@ private:
     std::shared_ptr<std::vector<float>> buffer;
     std::shared_ptr<std::mutex> mutex;
     int sampleRate;
+    bool useCache;
 };
 
 class TestTask : public Poco::Task
