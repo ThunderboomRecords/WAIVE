@@ -1,8 +1,6 @@
 #include "TagBrowser.hpp"
 
-TagBrowser::TagBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
-    : WidgetGroup(widget),
-      sd(sd_)
+TagBrowser::TagBrowser(WAIVEWidget *widget, SampleDatabase *sd_) : WidgetGroup(widget), sd(sd_)
 {
     float width = widget->getWidth();
     float height = widget->getHeight();
@@ -14,6 +12,7 @@ TagBrowser::TagBrowser(WAIVEWidget *widget, SampleDatabase *sd_)
     tagMap->tagList = &sd->tagList;
     tagMap->background_color = WaiveColors::grey2;
     tagMap->setCallback(this);
+    tagMap->description = "Select Tags. Scroll to zoom";
     addChildWidget(tagMap);
 
     selectNoneBtn = new Button(widget);

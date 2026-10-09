@@ -5,17 +5,9 @@ START_NAMESPACE_DISTRHO
 using DGL_NAMESPACE::Color;
 
 TagMap::TagMap(Widget *widget) noexcept
-    : WAIVEWidget(widget),
-      c0(Color::fromHSL(0.0f, 0.8f, 0.7f)),
-      c1(Color::fromHSL(0.2f, 0.8f, 0.7f)),
-      c2(Color::fromHSL(0.6f, 0.8f, 0.7f)),
-      c3(Color::fromHSL(0.8f, 0.8f, 0.7f)),
-      zoomLevel(1.0f),
-      centerPos({0.0, 0.0}),
-      highlighted(nullptr),
-      tagList(nullptr),
-      dragAction(DragAction::NONE),
-      callback(nullptr)
+    : WAIVEWidget(widget), c0(Color::fromHSL(0.0f, 0.8f, 0.7f)), c1(Color::fromHSL(0.2f, 0.8f, 0.7f)),
+      c2(Color::fromHSL(0.6f, 0.8f, 0.7f)), c3(Color::fromHSL(0.8f, 0.8f, 0.7f)), zoomLevel(0.8f),
+      centerPos({0.0, 0.0}), highlighted(nullptr), tagList(nullptr), dragAction(DragAction::NONE), callback(nullptr)
 {
 }
 
