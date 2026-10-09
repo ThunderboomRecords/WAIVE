@@ -9,6 +9,7 @@
 #include <functional>
 #include <mutex>
 #include <chrono>
+#include <atomic>
 
 #include "Source.hpp"
 #include "Filters.hpp"
@@ -218,12 +219,10 @@ public:
 
     // SOURCES + Remote
     std::shared_ptr<SourceInfo> getSourceById(int id);
-    void parseTSV(const std::string &table, const std::vector<std::string> &column_names, const std::vector<std::string> &column_type, const std::string &csvData);
     void checkLatestRemoteVersion();
-    void updateDatabaseVersion(int new_version);
-    void downloadSourcesList();
-    void downloadTagsList();
-    void makeTagSourcesTable();
+    void downloadSourcesList(int new_version);
+    void downloadTagsList(int new_version, const std::string &sourcesTSV);
+    void rebuildSourceDatabase(int new_version, const std::string &sourcesTSV, const std::string &tagsTSV);
     void downloadSourceFile(int index);
     void playTempSourceFile(int index);
     void getTagList();
@@ -252,7 +251,13 @@ public:
     unsigned long latestDownloadedId;
 
 private:
+    size_t parseTSV(Poco::Data::Session &db, const std::string &table, const std::vector<std::string> &column_names, const std::vector<std::string> &column_type, const std::string &csvData);
+    void makeTagSourcesTable(Poco::Data::Session &db);
+    void finishSourceUpdate();
+
     std::unique_ptr<Poco::Data::Session> session;
+    std::string dbFilePath;
+    std::atomic<bool> updatingSources{false};
     Poco::Path rootDir, sampleFolder, sourceFolder;
     std::string sourcePreviewPath;
 

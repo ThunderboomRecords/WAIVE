@@ -1,5 +1,35 @@
 #include "SampleDatabase.hpp"
 
+namespace
+{
+    // Columns of the tables built from the server's TSV files, in the order
+    // of the TSV columns. Shared by the startup code and the rebuild, so the
+    // tables always have the same schema.
+    const std::vector<std::string> SOURCES_COLUMNS = {"id", "description", "tags", "folder", "filename", "archive", "url", "license"};
+    const std::vector<std::string> SOURCES_TYPES = {"INTEGER PRIMARY KEY", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT"};
+    const std::vector<std::string> TAGS_COLUMNS = {"id", "tag", "embedX", "embedY", "counts"};
+    const std::vector<std::string> TAGS_TYPES = {"INTEGER PRIMARY KEY", "TEXT", "FLOAT", "FLOAT", "INTEGER"};
+    const std::string SOURCES_TAGS_DEFINITION = "(source_id INT, "
+                                                "tag_id INT, "
+                                                "FOREIGN KEY (source_id) REFERENCES Sources(id), "
+                                                "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
+                                                "PRIMARY KEY (source_id, tag_id))";
+
+    std::string createTableQuery(const std::string &table, const std::vector<std::string> &column_names, const std::vector<std::string> &column_types, bool ifNotExists)
+    {
+        std::ostringstream query;
+        query << "CREATE TABLE " << (ifNotExists ? "IF NOT EXISTS " : "") << table << " (";
+        for (size_t i = 0; i < column_names.size(); ++i)
+        {
+            query << column_names[i] << " " << column_types[i];
+            if (i < column_names.size() - 1)
+                query << ", ";
+        }
+        query << ")";
+        return query.str();
+    }
+}
+
 SourceInfo::SourceInfo(const SourceInfo &sourceInfo) : id(sourceInfo.id),
                                                        archive(sourceInfo.archive),
                                                        description(sourceInfo.description),
@@ -49,7 +79,8 @@ SampleDatabase::SampleDatabase(std::shared_ptr<HTTPClient> _httpClient)
 
     // SAMPLES Database
     Poco::Data::SQLite::Connector::registerConnector();
-    session = std::make_unique<Poco::Data::Session>("SQLite", db.path());
+    dbFilePath = db.path();
+    session = std::make_unique<Poco::Data::Session>("SQLite", dbFilePath);
 
     try
     {
@@ -77,10 +108,24 @@ SampleDatabase::SampleDatabase(std::shared_ptr<HTTPClient> _httpClient)
                     "PRIMARY KEY (sample_id, tag_id))",
             Poco::Data::Keywords::now;
     }
-    catch (const Poco::DataException &e)
+    catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Error initialising SamplesTags table: " << e.what() << std::endl;
         logger->critical(fmt::format("Error initialising SamplesTags table:\n {:s}", e.what()));
+    }
+
+    // SOURCES Database: create empty tables, so the plugin works (e.g.
+    // importing sources) before the first download from the server
+    try
+    {
+        *session << createTableQuery("Sources", SOURCES_COLUMNS, SOURCES_TYPES, true), Poco::Data::Keywords::now;
+        *session << createTableQuery("Tags", TAGS_COLUMNS, TAGS_TYPES, true), Poco::Data::Keywords::now;
+        *session << "CREATE TABLE IF NOT EXISTS SourcesTags " + SOURCES_TAGS_DEFINITION, Poco::Data::Keywords::now;
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Error initialising Sources tables: " << e.what() << std::endl;
+        logger->critical(fmt::format("Error initialising Sources tables:\n {:s}", e.what()));
     }
 
     databaseUpdate += Poco::delegate(this, &SampleDatabase::onDatabaseChanged);
@@ -238,7 +283,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
             Poco::Data::Keywords::use(parameters);
         insert.execute();
     }
-    catch (const Poco::DataException &ex)
+    catch (const Poco::Data::DataException &ex)
     {
         std::cerr << "Error inserting new sample into database: " << ex.message() << std::endl;
         return false;
@@ -254,7 +299,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
             Poco::Data::Keywords::into(lastId);
         lastSampleId.execute();
     }
-    catch (const Poco::DataException &ex)
+    catch (const Poco::Data::DataException &ex)
     {
         std::cerr << "Error getting new sampleId: " << ex.message() << std::endl;
         return false;
@@ -329,22 +374,13 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
     std::string description = Poco::Path(path).getBaseName();
     std::string urlString = url.toString();
 
-    long long timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-                              std::chrono::system_clock::now().time_since_epoch())
-                              .count();
-
-    std::ostringstream idString;
-    idString << "2" << (timestamp % 100000) << "000";
-    unsigned long id = std::stoul(idString.str());
-
-    std::cout << "Generated id: " << id << std::endl;
-
     if (!session)
     {
         std::cerr << "Database session not initialized" << std::endl;
         return false;
     }
 
+    unsigned long id;
     try
     {
         if (session->isTransaction())
@@ -353,22 +389,42 @@ bool SampleDatabase::addSourceToLibrary(const std::string &path)
         std::string archive = "User";
         std::string tags = "";
 
+        // The id is the next free one, but at least 200000000 to keep user
+        // sources out of the range used by the remote sources. Computing it
+        // in the INSERT itself means two imports can never get the same id.
         Poco::Data::Statement insert(*session);
-        insert << "INSERT INTO Sources(id, description, tags, archive, filename, url) VALUES(?, ?, ?, ?, ?, ?)",
-            Poco::Data::Keywords::use(id),
+        insert << "INSERT INTO Sources(id, description, tags, archive, filename, url) "
+                  "VALUES((SELECT max(COALESCE(MAX(id), 0) + 1, 200000000) FROM Sources), ?, ?, ?, ?, ?)",
             Poco::Data::Keywords::use(description),
             Poco::Data::Keywords::use(tags),
             Poco::Data::Keywords::use(archive),
             Poco::Data::Keywords::use(filename),
             Poco::Data::Keywords::use(urlString);
-
         insert.execute();
+
+        Poco::Data::Statement lastSourceId(*session);
+        lastSourceId << "SELECT last_insert_rowid()",
+            Poco::Data::Keywords::into(id);
+        lastSourceId.execute();
     }
-    catch (const Poco::DataException &ex)
+    catch (const Poco::Data::DataException &ex)
     {
-        std::cerr << "Error inserting new sample into database: " << ex.message() << std::endl;
+        std::cerr << "Error inserting new source into database: " << ex.displayText() << std::endl;
+
+        // Remove the copy, otherwise importing the file again fails with
+        // "File already in database folder"
+        try
+        {
+            Poco::File(Poco::Path(savePath).setFileName(filename)).remove();
+        }
+        catch (const Poco::Exception &e)
+        {
+            std::cerr << "Could not remove copied source file: " << e.displayText() << std::endl;
+        }
         return false;
     }
+
+    std::cout << "New source id: " << id << std::endl;
 
     getArchiveList();
     filterConditions.archiveIs = "";
@@ -407,7 +463,7 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
             Poco::Data::Keywords::use(id);
         n = update.execute();
     }
-    catch (const Poco::DataException &ex)
+    catch (const Poco::Data::DataException &ex)
     {
         std::cerr << "Error updating sample info" << std::endl;
         return false;
@@ -430,10 +486,17 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
 
 void SampleDatabase::newTag(std::string &tag)
 {
-    Poco::Data::Statement insertTag(*session);
-    insertTag << "INSERT OR IGNORE INTO Tags (tag) VALUES (?)",
-        Poco::Data::Keywords::use(tag);
-    insertTag.execute();
+    try
+    {
+        Poco::Data::Statement insertTag(*session);
+        insertTag << "INSERT OR IGNORE INTO Tags (tag) VALUES (?)",
+            Poco::Data::Keywords::use(tag);
+        insertTag.execute();
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Error adding tag " << tag << ": " << e.displayText() << std::endl;
+    }
 }
 
 bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::string new_name)
@@ -675,42 +738,62 @@ std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<
 
 void SampleDatabase::checkLatestRemoteVersion()
 {
+    // Only one update at a time (e.g. if the UI is reopened during an update)
+    if (updatingSources.exchange(true))
+        return;
+
     int user_version;
+    std::string exists;
+    bool complete = false;
     try
     {
         *session << "PRAGMA user_version",
             Poco::Data::Keywords::into(user_version),
             Poco::Data::Keywords::now;
-    }
-    catch (const Poco::Data::DataException &e)
-    {
-        std::cerr << "Failed to retrieve user version: " << e.what() << std::endl;
-        logger->critical(fmt::format("Failed to retrieve user version: {:s}", e.what()));
-        user_version = 0;
-    }
 
-    logger->information(fmt::format("Current user_version: {:d}", user_version));
-    std::cout << "Current user_version: " << user_version << std::endl;
-
-    // check if "Sources" table exists
-    std::string exists;
-    try
-    {
+        // check if "Sources" table exists
         *session << "SELECT name FROM sqlite_master WHERE type='table' AND name='Sources'",
             Poco::Data::Keywords::into(exists),
             Poco::Data::Keywords::range(0, 1),
             Poco::Data::Keywords::now;
+
+        // Older versions could save the new user_version and then fail part
+        // way through the update, so also check the remote data is there
+        int tables = 0;
+        *session << "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('Sources', 'Tags', 'SourcesTags')",
+            Poco::Data::Keywords::into(tables),
+            Poco::Data::Keywords::now;
+
+        if (tables == 3)
+        {
+            int remoteSources = 0, tags = 0;
+            *session << "SELECT COUNT(*) FROM Sources WHERE archive != 'User'",
+                Poco::Data::Keywords::into(remoteSources),
+                Poco::Data::Keywords::now;
+            *session << "SELECT COUNT(*) FROM Tags",
+                Poco::Data::Keywords::into(tags),
+                Poco::Data::Keywords::now;
+            complete = remoteSources > 0 && tags > 0;
+        }
     }
-    catch (const Poco::Data::DataException &e)
+    catch (const Poco::Exception &e)
     {
-        std::cerr << "Failed to check if 'Sources' table exists: " << e.what() << std::endl;
-        logger->critical(fmt::format("Failed to check if 'Sources' table exists: {:s}", e.what()));
+        std::cerr << "Failed to read database version: " << e.displayText() << std::endl;
+        logger->critical(fmt::format("Failed to read database version: {:s}", e.displayText()));
+        updatingSources = false;
         return;
     }
 
     sourceDatabaseInitialised = !exists.empty();
 
-    // databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
+    // If the source data is missing or incomplete, always download, whatever
+    // the stored version
+    if (!complete)
+        user_version = 0;
+
+    logger->information(fmt::format("Current user_version: {:d}", user_version));
+    std::cout << "Current user_version: " << user_version << std::endl;
+
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKING_UPDATE);
 
     logger->information(fmt::format("Sending request to: {:s}/latest", WAIVE_SERVER));
@@ -719,156 +802,181 @@ void SampleDatabase::checkLatestRemoteVersion()
         WAIVE_SERVER,
         "/latest",
         [this, user_version](const std::string &response)
-        { 
-            try {
-                json result = json::parse(response); 
-                databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKED_UPDATE);
+        {
+            int latest_version;
+            try
+            {
+                json result = json::parse(response);
+                latest_version = result.at("version").get<int>();
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << "Invalid response from /latest: " << e.what() << std::endl;
+                logger->error(fmt::format("Invalid response from /latest: {:s}", e.what()));
+                databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
+                finishSourceUpdate();
+                return;
+            }
 
-                int latest_version = result["version"];
-                std::cout << "latest_version: " << latest_version << ", user_version: " << user_version << std::endl;
-                logger->information(fmt::format("Latest user_version: {:d}", latest_version));
-                if(latest_version == user_version)
-                {
-                    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
-                    return;
-                }
-                
-                this->updateDatabaseVersion(latest_version);
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_CHECKED_UPDATE);
 
-            } catch(json::parse_error &e)  {
-                std::cerr << "JSON parsing error: " << e.what() << std::endl;
-            	databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
-            } catch (const std::exception &e){
-                std::cerr << "Unexpected error: " << e.what() << std::endl;
-           		databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
-            } },
+            std::cout << "latest_version: " << latest_version << ", user_version: " << user_version << std::endl;
+            logger->information(fmt::format("Latest user_version: {:d}", latest_version));
+            if (latest_version == user_version)
+            {
+                finishSourceUpdate();
+                return;
+            }
+
+            downloadSourcesList(latest_version);
+        },
         [this](const std::string &response)
         {
             std::cout << "cannot connect to remote database and verify if up-to-date." << std::endl;
             if (!sourceDatabaseInitialised)
                 std::cout << "no Source info avaliable\n";
-            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
-            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
-
             logger->error(fmt::format("Cannot connect to remote database and verify if up-to-date. Response:\n{:s}", response));
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
+            finishSourceUpdate();
         });
 }
 
-void SampleDatabase::updateDatabaseVersion(int new_version)
+void SampleDatabase::finishSourceUpdate()
 {
-    std::cout << "SampleDatabase::updateDatabaseVersion, new_version: " << new_version << std::endl;
-
-    try
-    {
-        Poco::Data::Statement pragma(*session);
-        pragma << "PRAGMA user_version = " << new_version;
-        pragma.execute();
-    }
-    catch (const Poco::Data::DataException &e)
-    {
-        std::cerr << "Error updating PRAGMA user_version: " << e.what() << std::endl;
-        logger->critical("Error updating PRAGMA user_version %s", e.what());
-        return;
-    }
-
-    downloadSourcesList();
+    updatingSources = false;
+    databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
 }
 
-void SampleDatabase::downloadSourcesList()
+void SampleDatabase::downloadSourcesList(int new_version)
 {
     databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADING);
 
-    logger->information("Sending request to: %s/filelist", WAIVE_SERVER);
+    logger->information(fmt::format("Sending request to: {:s}/filelist", WAIVE_SERVER));
     httpClient->sendRequest(
         "DownloadSourceList",
         WAIVE_SERVER,
         "/filelist",
-        [this](const std::string &response)
-        {
-            // Drop non-user entries first
-            try
-            {
-                std::string exists;
-                *session << "SELECT name FROM sqlite_master WHERE type='table' AND name='Sources'",
-                    Poco::Data::Keywords::into(exists),
-                    Poco::Data::Keywords::range(0, 1),
-                    Poco::Data::Keywords::now;
-
-                if (!exists.empty())
-                    *session << "DELETE FROM Sources WHERE archive != \"User\"", Poco::Data::Keywords::now;
-            }
-            catch (const Poco::DataException &e)
-            {
-                std::cerr << "Error in SampleDatabase::downloadSourcesList() (Poco::DataException):\n" << e.what() << ": " << e.message() << std::endl;
-                logger->critical("Error in SampleDatabase::downloadSourcesList() (Poco::DataException):\n%s: %s", e.what(), e.message());
-            }
-            catch (const std::exception &e)
-            {
-                std::cerr << "Error in SampleDatabase::downloadSourcesList():\n" << e.what() << std::endl;
-                logger->critical("Error in SampleDatabase::downloadSourcesList():\n%s", e.what());
-
-            }
-
-            parseTSV(
-                "Sources",
-                {"id", "description", "tags", "folder", "filename", "archive", "url", "license"},
-                {"INTEGER PRIMARY KEY", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT"},
-                response);
-            sourceDatabaseInitialised = true;
-            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED); },
+        [this, new_version](const std::string &response)
+        { downloadTagsList(new_version, response); },
         [this](const std::string &response)
         {
             std::cout << WAIVE_SERVER << "/filelist not avaliable" << std::endl;
-            // wait 1 second before reporting connection error...
-            Poco::Thread::sleep(1000);
+            logger->error(fmt::format("/filelist not avaliable. Response:\n{:s}", response));
             databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
-            logger->error("/filelist not avaliable. Response:\n%s", response);
+            finishSourceUpdate();
         });
 }
 
-void SampleDatabase::downloadTagsList()
+void SampleDatabase::downloadTagsList(int new_version, const std::string &sourcesTSV)
 {
-    // databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOADING);
-    logger->information("Sending request to: %s/tags", WAIVE_SERVER);
+    logger->information(fmt::format("Sending request to: {:s}/tags", WAIVE_SERVER));
     httpClient->sendRequest(
         "DownloadTagsList",
         WAIVE_SERVER,
         "/tags",
+        [this, new_version, sourcesTSV](const std::string &response)
+        {
+            databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOADED);
+            rebuildSourceDatabase(new_version, sourcesTSV, response);
+        },
         [this](const std::string &response)
         {
-            try
-            {
-                std::string exists;
-                *session << "SELECT name FROM sqlite_master WHERE type='table' AND name='Tags'",
-                    Poco::Data::Keywords::into(exists),
-                    Poco::Data::Keywords::range(0, 1),
-                    Poco::Data::Keywords::now;
-
-                if (!exists.empty())
-                    *session << "DELETE FROM Tags", Poco::Data::Keywords::now;
-            }
-            catch (const Poco::DataException &e)
-            {
-                std::cerr << "Error in SampleDatabase::downloadTagsList() (Poco::DataException):\n" << e.what() << ": " << e.message() << std::endl;
-            }
-            catch (const std::exception &e)
-            {
-                std::cerr << "Error in SampleDatabase::downloadTagsList()\n" << e.what() << std::endl;
-            }
-
-            parseTSV(
-                "Tags",
-                {"id", "tag", "embedX", "embedY", "counts"},
-                {"INTEGER PRIMARY KEY", "TEXT", "FLOAT", "FLOAT", "INTEGER"},
-                response);
-            databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOADED); },
-        [this](const std::string &response)
-        {
-            // wait 1 second before reporting connection error...
-            Poco::Thread::sleep(1);
-            databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR);
+            std::cout << WAIVE_SERVER << "/tags not avaliable" << std::endl;
             logger->error(fmt::format("/tags not avaliable. Response:\n{:s}", response));
+            databaseUpdate.notify(this, DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR);
+            finishSourceUpdate();
         });
+}
+
+void SampleDatabase::rebuildSourceDatabase(int new_version, const std::string &sourcesTSV, const std::string &tagsTSV)
+{
+    // Runs on an HTTP task thread, so use a separate connection to the
+    // database. Everything happens in one transaction: if any step fails,
+    // the existing tables and user_version are left untouched and the
+    // update is retried next time.
+    databaseUpdate.notify(this, DatabaseUpdate::PARSING_CSV_START);
+
+    bool success = false;
+    try
+    {
+        Poco::Data::Session db("SQLite", dbFilePath);
+        db.begin();
+        try
+        {
+            // Sources: build a new table, keep the user's own sources, then swap
+            // it in. Rebuilding (rather than deleting rows) also picks up any
+            // change to the table's columns.
+            std::string exists;
+            db << "SELECT name FROM sqlite_master WHERE type='table' AND name='Sources'",
+                Poco::Data::Keywords::into(exists),
+                Poco::Data::Keywords::range(0, 1),
+                Poco::Data::Keywords::now;
+
+            db << "DROP TABLE IF EXISTS Sources_new", Poco::Data::Keywords::now;
+            size_t nSources = parseTSV(
+                db,
+                "Sources_new",
+                SOURCES_COLUMNS,
+                SOURCES_TYPES,
+                sourcesTSV);
+
+            if (!exists.empty())
+            {
+                // Source ids are only used at runtime (samples refer to their
+                // source by file path), so a user source whose id is now taken
+                // by a remote source is given a new id (NULL -> next rowid)
+                db << "INSERT INTO Sources_new (id, description, tags, archive, filename, url) "
+                      "SELECT CASE WHEN id IN (SELECT id FROM Sources_new) THEN NULL ELSE id END, "
+                      "description, tags, archive, filename, url FROM Sources WHERE archive = 'User'",
+                    Poco::Data::Keywords::now;
+                db << "DROP TABLE Sources", Poco::Data::Keywords::now;
+            }
+            db << "ALTER TABLE Sources_new RENAME TO Sources", Poco::Data::Keywords::now;
+
+            // Tags are entirely remote, so replace the table
+            db << "DROP TABLE IF EXISTS Tags", Poco::Data::Keywords::now;
+            size_t nTags = parseTSV(
+                db,
+                "Tags",
+                TAGS_COLUMNS,
+                TAGS_TYPES,
+                tagsTSV);
+
+            makeTagSourcesTable(db);
+
+            db << "PRAGMA user_version = " + std::to_string(new_version), Poco::Data::Keywords::now;
+            db.commit();
+
+            logger->information(fmt::format("Source database updated to version {:d}: {:d} sources, {:d} tags", new_version, nSources, nTags));
+            std::cout << "Source database updated to version " << new_version << std::endl;
+            success = true;
+        }
+        catch (...)
+        {
+            if (db.isTransaction())
+                db.rollback();
+            throw;
+        }
+    }
+    catch (const Poco::Exception &e)
+    {
+        std::cerr << "Failed to update source database: " << e.displayText() << std::endl;
+        logger->critical(fmt::format("Failed to update source database: {:s}", e.displayText()));
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Failed to update source database: " << e.what() << std::endl;
+        logger->critical(fmt::format("Failed to update source database: {:s}", e.what()));
+    }
+
+    databaseUpdate.notify(this, DatabaseUpdate::PARSING_CSV_END);
+
+    if (success)
+        sourceDatabaseInitialised = true;
+    else
+        databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR);
+
+    finishSourceUpdate();
 }
 
 std::shared_ptr<SourceInfo> SampleDatabase::getSourceById(int id)
@@ -884,57 +992,19 @@ std::shared_ptr<SourceInfo> SampleDatabase::getSourceById(int id)
     return (it != sourcesList.end()) ? *it : nullptr;
 }
 
-void SampleDatabase::parseTSV(
+size_t SampleDatabase::parseTSV(
+    Poco::Data::Session &db,
     const std::string &table,
     const std::vector<std::string> &column_names,
     const std::vector<std::string> &column_type,
     const std::string &csvData)
 {
+    // Inserts the rows of a TSV file (with a header line) into a new table.
+    // Throws if the data looks invalid, e.g. an error page or a truncated
+    // download; the caller's transaction is responsible for rolling back.
     std::cout << "\nSampleDatabase::parseTSV for table " << table << std::endl;
 
-    databaseUpdate.notify(this, DatabaseUpdate::PARSING_CSV_START);
-
-    if (session->isTransaction())
-        session->commit();
-
-    // 1. Create database
-    printf("- 1 Create database %s\n", table.c_str());
-
-    std::ostringstream createTableQuery;
-    createTableQuery << "CREATE TABLE IF NOT EXISTS " << table << " (";
-    for (size_t i = 0; i < column_names.size(); ++i)
-    {
-        createTableQuery << column_names[i] << " " << column_type[i];
-        if (i < column_names.size() - 1)
-            createTableQuery << ", ";
-    }
-    createTableQuery << ")";
-
-    try
-    {
-        *session << createTableQuery.str(), Poco::Data::Keywords::now;
-    }
-    catch (const Poco::DataException &e)
-    {
-        std::cerr << e.what() << ": " << e.message() << '\n';
-    }
-
-    // 2. Tokenise CSV data
-    printf("- 2. Tokenise CSV data\n");
-
-    Poco::StringTokenizer tokenizer(csvData, "\n");
-
-    if (tokenizer.count() == 0)
-    {
-        std::cout << "# Aborting, tokenizer count is 0 for " << std::endl;
-        std::cout << csvData << std::endl;
-        std::cout << "# End of CSV data." << std::endl;
-        return;
-    }
-
-    // 3. Build INSERT statement
-
-    printf("- 3. Build INSERT STATEMENT\n");
+    db << createTableQuery(table, column_names, column_type, false), Poco::Data::Keywords::now;
 
     std::ostringstream insertQuery;
     insertQuery << "REPLACE INTO " << table << " (";
@@ -953,76 +1023,50 @@ void SampleDatabase::parseTSV(
     }
     insertQuery << ")";
 
-    // 4. Iterate line by line
-    printf("- 4. Iterate line by line\n");
+    std::istringstream lines(csvData);
+    std::string line;
 
-    double pStep = 1.0 / tokenizer.count();
+    // Header line
+    if (!std::getline(lines, line))
+        throw std::runtime_error(fmt::format("No data for table {:s}", table));
+    if (!line.empty() && line.back() == '\r')
+        line.pop_back();
+    if (Poco::StringTokenizer(line, "\t").count() != column_names.size())
+        throw std::runtime_error(fmt::format("Unexpected header for table {:s}: {:s}", table, line.substr(0, 200)));
 
-    session->begin();
-
-    std::cout << "  tokenizer.count(): " << tokenizer.count() << std::endl;
-    std::cout << "  " << insertQuery.str() << std::endl;
-    try
+    size_t rows = 0;
+    size_t skipped = 0;
+    while (std::getline(lines, line))
     {
-        size_t i;
-        double progress = 0.0;
-        int batch_size = 1000;
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
+        if (line.empty())
+            continue;
 
-        for (i = 1; i < tokenizer.count(); ++i)
+        Poco::StringTokenizer lineTokenizer(line, "\t");
+        if (lineTokenizer.count() != column_names.size())
         {
-            std::string line = tokenizer[i];
-            Poco::StringTokenizer lineTokenizer(line, "\t");
-
-            if (lineTokenizer.count() == column_names.size())
-            {
-                try
-                {
-                    Poco::Data::Statement insertStmt(*session);
-                    insertStmt << insertQuery.str();
-                    for (size_t j = 0; j < lineTokenizer.count(); ++j)
-                        insertStmt, Poco::Data::Keywords::use(lineTokenizer[j]);
-
-                    insertStmt.execute();
-
-                    if (i % batch_size == 0)
-                    {
-                        std::cout << "Row " << i << " parsed" << std::endl;
-                        session->commit();
-                        session->begin();
-                    }
-                }
-                catch (const Poco::DataException &e)
-                {
-                    std::cerr << "Error in parseTSV: " << e.what() << std::endl;
-                }
-            }
-            else
-            {
-                std::cout << "Skipping row " << i << " (lineTokenizer.count() " << lineTokenizer.count() << " != column_names.size() " << column_names.size() << ")" << std::endl;
-                std::cout << "  " << line << std::endl;
-            }
-            progress += pStep;
+            std::cout << "Skipping row (" << lineTokenizer.count() << " columns, expected " << column_names.size() << "): " << line << std::endl;
+            skipped++;
+            continue;
         }
 
-        if (i % batch_size != 0)
-        {
-            std::cout << "Row " << i << " parsed" << std::endl;
-            session->commit();
-        }
-    }
-    catch (const Poco::DataException &e)
-    {
-        std::cerr << "Error in parseTSV: " << e.what() << std::endl;
-        session->rollback();
+        Poco::Data::Statement insertStmt(db);
+        insertStmt << insertQuery.str();
+        for (size_t j = 0; j < lineTokenizer.count(); ++j)
+            insertStmt, Poco::Data::Keywords::use(lineTokenizer[j]);
+        insertStmt.execute();
+        rows++;
     }
 
-    if (session->isTransaction())
-        session->commit();
+    std::cout << "  " << rows << " rows inserted, " << skipped << " skipped" << std::endl;
+    if (skipped > 0)
+        logger->warning(fmt::format("parseTSV {:s}: skipped {:d} malformed rows", table, skipped));
 
-    std::cout << " - session->isTransaction() = " << session->isTransaction() << "\n";
-    std::cout << "ParseCSV DONE\n";
+    if (rows == 0)
+        throw std::runtime_error(fmt::format("No valid rows for table {:s}", table));
 
-    databaseUpdate.notify(this, DatabaseUpdate::PARSING_CSV_END);
+    return rows;
 }
 
 void SampleDatabase::downloadSourceFile(int index)
@@ -1058,21 +1102,37 @@ void SampleDatabase::downloadSourceFile(int index)
         endpoint.toString(Poco::Path::Style::PATH_URI),
         [this, filePath, si](const std::string &response)
         {
-            // save file...
-            Poco::File fp(filePath);
-            Poco::Path parent = Poco::Path(filePath).makeParent();
-
-            Poco::File(parent).createDirectories();
-            bool res = fp.createFile();
-            if(!res)
+            // save to a temporary file first, so a failed write never leaves
+            // a partial file that looks downloaded
+            Poco::File part(filePath + ".part");
+            try
             {
-                std::cerr << "Cannot create download to file: " << fp.path() << std::endl;
+                Poco::File(Poco::Path(filePath).makeParent()).createDirectories();
+
+                Poco::FileOutputStream out(part.path());
+                out << response;
+                out.close();
+                if (out.fail())
+                    throw std::runtime_error("Failed to write " + part.path());
+
+                part.renameTo(filePath);
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << "Cannot save download to file " << filePath << ": " << e.what() << std::endl;
+                logger->error(fmt::format("Cannot save download to file {:s}: {:s}", filePath, e.what()));
+                try
+                {
+                    if (part.exists())
+                        part.remove();
+                }
+                catch (const std::exception &)
+                {
+                }
+                si->downloaded = DownloadState::NOT_DOWNLOADED;
+                databaseUpdate.notify(this, DatabaseUpdate::FILE_DOWNLOAD_FAILED);
                 return;
             }
-            
-            Poco::FileOutputStream out = Poco::FileOutputStream(fp.path());
-            out << response;
-            out.close();
 
             Poco::Thread::sleep(1);
             si->downloaded = DownloadState::DOWNLOADED;
@@ -1152,107 +1212,67 @@ void SampleDatabase::playTempSourceFile(int index)
         });
 }
 
-void SampleDatabase::makeTagSourcesTable()
+void SampleDatabase::makeTagSourcesTable(Poco::Data::Session &db)
 {
-    // std::cout << "SampleDatabase::makeTagSourcesTable()" << std::endl;
-
+    // Rebuilds the Sources<->Tags table. Runs inside the caller's
+    // transaction and throws on failure.
     databaseUpdate.notify(this, DatabaseUpdate::BUILDING_TAG_LIST_START);
 
     try
     {
-        *session << "DROP TABLE IF EXISTS SourcesTags",
+        db << "DROP TABLE IF EXISTS SourcesTags", Poco::Data::Keywords::now;
+        db << "CREATE TABLE SourcesTags " + SOURCES_TAGS_DEFINITION, Poco::Data::Keywords::now;
+
+        std::vector<int> tagIds;
+        std::vector<std::string> tagNames;
+        db << "SELECT id, tag FROM Tags",
+            Poco::Data::Keywords::into(tagIds),
+            Poco::Data::Keywords::into(tagNames),
             Poco::Data::Keywords::now;
-    }
-    catch (const Poco::DataException &e)
-    {
-        std::cerr << "Error updating SourcesTags: " << e.what() << std::endl;
-        return;
-    }
 
-    try
-    {
-        *session << "CREATE TABLE IF NOT EXISTS SourcesTags ("
-                    "source_id INT, "
-                    "tag_id INT, "
-                    "FOREIGN KEY (source_id) REFERENCES Sources(id), "
-                    "FOREIGN KEY (tag_id) REFERENCES Tags(id), "
-                    "PRIMARY KEY (source_id, tag_id))",
+        std::unordered_map<std::string, int> tagLookup;
+        for (size_t i = 0; i < tagIds.size(); ++i)
+            tagLookup[tagNames[i]] = tagIds[i];
+
+        std::vector<int> sourceIds;
+        std::vector<std::string> sourceTags;
+        db << "SELECT id, tags FROM Sources",
+            Poco::Data::Keywords::into(sourceIds),
+            Poco::Data::Keywords::into(sourceTags),
             Poco::Data::Keywords::now;
-    }
-    catch (const Poco::DataException &e)
-    {
-        std::cerr << "Error creating SourcesTags: " << e.what() << std::endl;
-    }
 
-    // prepare statement for selecting all Sources
-    Poco::Data::Statement selectSource(*session);
-    std::string tags;
-    int sourceId;
-    selectSource << "SELECT id, tags FROM Sources",
-        Poco::Data::Keywords::into(sourceId),
-        Poco::Data::Keywords::into(tags),
-        Poco::Data::Keywords::range(0, 1);
-
-    // prepare statement for selecting tags
-    Poco::Data::Statement selectTag(*session);
-    std::string tag;
-    int tagId;
-    selectTag << "SELECT id FROM Tags WHERE tag = ?",
-        Poco::Data::Keywords::into(tagId),
-        Poco::Data::Keywords::use(tag);
-
-    // updating the Sources<->Tags table
-    Poco::Data::Statement insertTagSource(*session);
-    insertTagSource << "INSERT INTO SourcesTags (source_id, tag_id) VALUES (?, ?)",
-        Poco::Data::Keywords::use(sourceId),
-        Poco::Data::Keywords::use(tagId);
-
-    session->begin();
-
-    int count = 0;
-
-    try
-    {
-        while (selectSource.execute())
+        std::vector<int> linkSourceIds;
+        std::vector<int> linkTagIds;
+        for (size_t i = 0; i < sourceIds.size(); ++i)
         {
-            if (selectSource.done())
-                return;
-
-            Poco::StringTokenizer tokenizer(tags, "|", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
-            for (size_t i = 0; i < tokenizer.count(); ++i)
+            Poco::StringTokenizer tokenizer(sourceTags[i], "|", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
+            for (size_t j = 0; j < tokenizer.count(); ++j)
             {
-                tag.assign(tokenizer[i]);
-                if (selectTag.execute())
-                {
-                    insertTagSource.execute();
-                    count++;
-                    if (count % 1000 == 0)
-                    {
-                        std::cout << "committing at " << count << std::endl;
-                        session->commit();
-                        session->begin();
-                    }
-                }
+                auto it = tagLookup.find(tokenizer[j]);
+                if (it == tagLookup.end())
+                    continue;
+                linkSourceIds.push_back(sourceIds[i]);
+                linkTagIds.push_back(it->second);
             }
         }
+
+        // OR IGNORE: a source may list the same tag twice
+        if (!linkSourceIds.empty())
+        {
+            db << "INSERT OR IGNORE INTO SourcesTags (source_id, tag_id) VALUES (?, ?)",
+                Poco::Data::Keywords::use(linkSourceIds),
+                Poco::Data::Keywords::use(linkTagIds),
+                Poco::Data::Keywords::now;
+        }
+
+        std::cout << "SampleDatabase::makeTagSourcesTable() finished, " << linkSourceIds.size() << " links" << std::endl;
     }
-    catch (const Poco::DataException &e)
+    catch (...)
     {
-        std::cerr << "Error populating SourcesTags: " << e.what() << std::endl;
-        session->rollback();
-        return;
+        databaseUpdate.notify(this, DatabaseUpdate::BUILDING_TAG_LIST_END);
+        throw;
     }
 
-    if (count % 1000 != 0)
-    {
-        std::cout << "committing at " << count << std::endl;
-        session->commit();
-    }
-
-    if (session->isTransaction())
-        session->commit();
-
-    std::cout << "SampleDatabase::makeTagSourcesTable() finished" << std::endl;
     databaseUpdate.notify(this, DatabaseUpdate::BUILDING_TAG_LIST_END);
 }
 
@@ -1463,7 +1483,7 @@ void SampleDatabase::filterSources()
             sourcesList.push_back(source);
         }
     }
-    catch (const Poco::DataException &e)
+    catch (const Poco::Data::DataException &e)
     {
         databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_QUERY_ERROR);
         std::cerr << e.displayText() << std::endl;
@@ -1516,13 +1536,8 @@ void SampleDatabase::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOADED:
-        downloadTagsList();
         break;
     case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
-        break;
-    case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOADED:
-        makeTagSourcesTable();
-        databaseUpdate.notify(this, DatabaseUpdate::SOURCE_LIST_READY);
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_READY:
         getTagList();

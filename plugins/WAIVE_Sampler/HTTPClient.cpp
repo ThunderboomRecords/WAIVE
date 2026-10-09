@@ -1,5 +1,6 @@
 #include "HTTPClient.hpp"
 #include <memory>
+#include <stdexcept>
 
 using namespace Poco::Net;
 
@@ -22,6 +23,9 @@ HTTPRequestTask::HTTPRequestTask(
 
 void HTTPRequestTask::runTask()
 {
+    std::string body;
+    std::string error;
+
     try
     {
         if (path.front() != '/')
@@ -40,10 +44,7 @@ void HTTPRequestTask::runTask()
         else if (uri.getScheme() == "http")
             session = std::make_unique<HTTPClientSession>(uri.getHost(), uri.getPort());
         else
-        {
-            failCallback(fmt::format("URI scheme neither 'http' nor 'https', is {:s}", uri.getScheme()));
-            return;
-        }
+            throw std::runtime_error(fmt::format("URI scheme neither 'http' nor 'https', is {:s}", uri.getScheme()));
 
         session->setTimeout(Poco::Timespan(10, 0));
 
@@ -60,21 +61,50 @@ void HTTPRequestTask::runTask()
         if (response.getStatus() != 200)
         {
             // TODO: check for other status codes?
-            failCallback(fmt::format("Response status not 200, received {:s}", HTTPResponse::getReasonForStatus(response.getStatus())));
-            return;
+            throw std::runtime_error(fmt::format("Response status not 200, received {:s}", HTTPResponse::getReasonForStatus(response.getStatus())));
         }
 
         std::stringstream responseString;
         Poco::StreamCopier::copyStream(resStream, responseString);
 
-        std::cout << "HTTPRequestTask::runTask() Response length: " << responseString.str().length() << std::endl;
+        body = responseString.str();
+        std::cout << "HTTPRequestTask::runTask() Response length: " << body.length() << std::endl;
 
-        callback(responseString.str());
+        // A dropped connection can end the stream early without throwing,
+        // so check the body against the advertised length
+        if (response.getContentLength64() != HTTPMessage::UNKNOWN_CONTENT_LENGTH &&
+            static_cast<Poco::Int64>(body.length()) != response.getContentLength64())
+            throw std::runtime_error(fmt::format("Incomplete response, received {:d} of {:d} bytes", body.length(), response.getContentLength64()));
     }
     catch (const Poco::Exception &ex)
     {
-        std::cerr << "HTTP Request failed: " << ex.displayText() << std::endl;
-        failCallback(fmt::format("HTTP Request failed: {:s}", ex.displayText()));
+        error = fmt::format("HTTP Request failed: {:s}", ex.displayText());
+    }
+    catch (const std::exception &ex)
+    {
+        error = fmt::format("HTTP Request failed: {:s}", ex.what());
+    }
+
+    // Exactly one of the callbacks is called, outside the request's try
+    // block, so an exception thrown by a callback is not reported as a
+    // failed request (and the fail callback is never called twice)
+    try
+    {
+        if (error.empty())
+            callback(body);
+        else
+        {
+            std::cerr << error << std::endl;
+            failCallback(error);
+        }
+    }
+    catch (const Poco::Exception &ex)
+    {
+        std::cerr << "HTTP Request callback failed: " << ex.displayText() << std::endl;
+    }
+    catch (const std::exception &ex)
+    {
+        std::cerr << "HTTP Request callback failed: " << ex.what() << std::endl;
     }
 }
 
