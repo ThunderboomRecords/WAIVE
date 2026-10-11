@@ -10,40 +10,47 @@
 #include <ShellAPI.h>
 #elif __APPLE__ || __linux__
 #include <unistd.h>
+#include <sys/wait.h>
 #endif
+
+// Opens a URL or path with the system's default handler
+static void SystemOpen(const std::string &target)
+{
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+    ShellExecuteA(NULL, "open", target.c_str(), NULL, NULL, SW_SHOWNORMAL);
+#elif __APPLE__ || __linux__
+    // Double fork so the opener is reparented to init and reaped there,
+    // rather than becoming a zombie of the host process
+    pid_t pid = fork();
+    if (pid == 0)
+    {
+        if (fork() == 0)
+        {
+#if __APPLE__
+            execlp("open", "open", target.c_str(), (char *)NULL);
+#elif __linux__
+            execlp("xdg-open", "xdg-open", target.c_str(), (char *)NULL);
+#endif
+        }
+        _exit(EXIT_FAILURE);
+    }
+    else if (pid > 0)
+    {
+        waitpid(pid, NULL, 0);
+    }
+#else
+#error "Unknown compiler"
+#endif
+}
 
 static void SystemOpenURL(const std::string &url)
 {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    std::string command = "start " + url;
-#elif __APPLE__
-    std::string command = "open " + url;
-#elif __linux__
-    std::string command = "xdg-open " + url;
-#else
-#error "Unknown compiler"
-    std::string command = "echo Cannot open " + url;
-#endif
-    system(command.c_str());
+    SystemOpen(url);
 }
 
 static void SystemOpenDirectory(const std::string &directory)
 {
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    // std::wstring wDirectory(directory.begin(), directory.end());
-    ShellExecuteA(NULL, "open", directory.c_str(), NULL, NULL, SW_SHOWNORMAL);
-#elif __APPLE__ || __linux__
-    pid_t pid = fork();
-    if (pid == 0)
-    {
-#if __APPLE__
-        execlp("open", "open", directory.c_str(), (char *)NULL);
-#elif __linux__
-        execlp("xdg-open", "xdg-open", directory.c_str(), (char *)NULL);
-#endif
-        _exit(EXIT_FAILURE);
-    }
-#endif
+    SystemOpen(directory);
 }
 
 static void SystemCopyToClipboard(const std::string &text)
