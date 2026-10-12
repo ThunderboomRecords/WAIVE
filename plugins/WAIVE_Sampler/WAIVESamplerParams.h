@@ -21,6 +21,9 @@
 // Number of SampleSlots
 #define NUM_SLOTS 18
 
+// Maximum of the Sustain Length parameter, in ms
+#define MAX_SUSTAIN_LENGTH 5000.0f
+
 enum Parameters
 {
     kSampleVolume = 0,

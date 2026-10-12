@@ -120,9 +120,11 @@ void ImporterTask::runTask()
 void ImporterTask::import(const std::string &fp)
 {
     std::string folder = Poco::Path(fp).makeParent().toString();
-    std::string name = Poco::Path(fp).getFileName();
 
-    name.assign(_ws->sd.getNewSampleName(name));
+    // Always saved as WAV, whatever the format of the imported file
+    Poco::Path wavName(Poco::Path(fp).getFileName());
+    wavName.setExtension("wav");
+    std::string name = _ws->sd.getNewSampleName(wavName.getFileName());
 
     std::cout << "     folder: " << folder << std::endl;
     std::cout << "       name: " << name << std::endl;
@@ -142,14 +144,15 @@ void ImporterTask::import(const std::string &fp)
     info->adsr.decay = 0.0f;
     info->adsr.sustain = 1.0f;
     info->adsr.release = 0.0f;
-    info->sustainLength = 1000.0f;
+    // Sustain for the whole sample, so editing it doesn't shorten it
+    info->sustainLength = std::min(static_cast<float>(1000.0 * sampleLength / _ws->getSampleRate()), MAX_SUSTAIN_LENGTH);
+    info->sampleLength = sampleLength;
     info->percussiveBoost = 0.0f;
     info->filterCutoff = 0.999f;
     info->filterType = Filter::FILTER_LOWPASS;
     info->filterResonance = 0;
     info->pitch = 1.0f;
     info->volume = 1.0f;
-    info->sourceInfo->fp = fp;
     info->sourceStart = 0;
     info->saved = true;
 
@@ -162,6 +165,10 @@ void ImporterTask::import(const std::string &fp)
     std::string samplePath = _ws->sd.getFullSamplePath(info);
     if (!saveWaveform(samplePath.c_str(), sampleCopy.data(), sampleLength, _ws->getSampleRate()))
         throw Poco::Exception("Failed to save waveform");
+
+    // The library copy is the source, so the sample doesn't depend on the
+    // imported file still being there
+    info->sourceInfo->fp = samplePath;
 
     if (!_ws->sd.addToLibrary(info))
     {

@@ -200,7 +200,7 @@ void WAIVESampler::initParameter(uint32_t index, Parameter &parameter)
         parameter.name = "Sustain Length";
         parameter.symbol = "sustainLength";
         parameter.ranges.min = 0.0f;
-        parameter.ranges.max = 5000.0f;
+        parameter.ranges.max = MAX_SUSTAIN_LENGTH;
         parameter.ranges.def = 200.0f;
         break;
     case kFilterCutoff:
