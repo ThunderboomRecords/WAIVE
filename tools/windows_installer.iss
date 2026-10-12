@@ -41,6 +41,7 @@ Type: filesandordirs; Name: "{commoncf}\VST2\WAIVE_Sampler-vst2.dll"
 Type: filesandordirs; Name: "{commoncf}\VST2\WAIVE_Sequencer-vst2.dll"
 Type: filesandordirs; Name: "{commoncf}\VST3\WAIVE_Sampler.vst3"
 Type: filesandordirs; Name: "{commoncf}\VST3\WAIVE_Sequencer.vst3"
-Type: filesandordirs; Name: "{commoncf}\CLAP\WAIVE_Sequencer.clap"
+Type: filesandordirs; Name: "{commoncf}\CLAP\WAIVE_Sampler.clap"
 Type: filesandordirs; Name: "{commoncf}\CLAP\WAIVE_Sequencer.clap"
 Type: filesandordirs; Name: "{localappdata}\WAIVE"
+
