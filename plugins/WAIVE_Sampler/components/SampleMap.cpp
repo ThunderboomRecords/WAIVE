@@ -5,21 +5,10 @@ START_NAMESPACE_DISTRHO
 using DGL_NAMESPACE::Color;
 
 SampleMap::SampleMap(Widget *widget, DragDropManager *manager) noexcept
-    : WAIVEWidget(widget),
-      DragDropWidget(manager),
-      c0(Color::fromHSL(0.0f, 0.8f, 0.7f)),
-      c1(Color::fromHSL(0.2f, 0.8f, 0.7f)),
-      c2(Color::fromHSL(0.6f, 0.8f, 0.7f)),
-      c3(Color::fromHSL(0.8f, 0.8f, 0.7f)),
-      zoomLevel(1.0f),
-      centerPos({0.0, 0.0}),
-      dragAction(DragAction::NONE),
-      highlightSampleId(-1),
-      contextMenuSampleId(-1),
-      selectedSample(nullptr),
-      allSamples(nullptr),
-      allSamplesMtx(nullptr),
-      preview(true),
+    : WAIVEWidget(widget), DragDropWidget(manager), c0(Color::fromHSL(0.0f, 0.8f, 0.7f)),
+      c1(Color::fromHSL(0.2f, 0.8f, 0.7f)), c2(Color::fromHSL(0.6f, 0.8f, 0.7f)), c3(Color::fromHSL(0.8f, 0.8f, 0.7f)),
+      zoomLevel(0.75f), centerPos({0.0, 0.0}), dragAction(DragAction::NONE), highlightSampleId(-1),
+      contextMenuSampleId(-1), selectedSample(nullptr), allSamples(nullptr), allSamplesMtx(nullptr), preview(true),
       callback(nullptr)
 {
     menu = new Menu(widget);
@@ -75,9 +64,7 @@ bool SampleMap::onMouse(const MouseEvent &ev)
                 return false;
 
             contextMenuSampleId = highlightSampleId;
-            menu->setAbsolutePos(
-                ev.pos.getX() + getAbsoluteX() - 2,
-                ev.pos.getY() + getAbsoluteY() - 2);
+            menu->setAbsolutePos(ev.pos.getX() + getAbsoluteX() - 2, ev.pos.getY() + getAbsoluteY() - 2);
             menu->toFront();
             menu->show();
         }
