@@ -1714,13 +1714,14 @@ Plugin *createPlugin()
 
 bool saveWaveform(const char *fp, const float *buffer, sf_count_t size, int sampleRate)
 {
-    // TODO: make into task
     std::cout << "WAIVESampler::saveWaveform to " << fp << std::endl;
 
+    // 32-bit float keeps the rendered audio exactly, including peaks above
+    // 1.0 when the sample volume is over 1
     SndfileHandle file = SndfileHandle(
         fp,
         SFM_WRITE,
-        SF_FORMAT_WAV | SF_FORMAT_PCM_16,
+        SF_FORMAT_WAV | SF_FORMAT_FLOAT,
         1,
         sampleRate);
 
