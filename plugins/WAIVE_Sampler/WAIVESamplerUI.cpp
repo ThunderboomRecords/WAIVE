@@ -1,12 +1,9 @@
 #include "WAIVESamplerUI.hpp"
 START_NAMESPACE_DISTRHO
 
-WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
-                                   fScaleFactor(getScaleFactor()),
-                                   fScale(1.0f),
-                                   filebrowserOpen(false),
-                                   errorMessage(false),
-                                   loadingTaskCount(0)
+WAIVESamplerUI::WAIVESamplerUI()
+    : UI(UI_W, UI_H), fScaleFactor(getScaleFactor()), fScale(1.0f), filebrowserOpen(false), errorMessage(false),
+      loadingTaskCount(0)
 {
     plugin = static_cast<WAIVESampler *>(getPluginInstancePointer());
 
@@ -95,7 +92,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         openFilterPanelBtn->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         openFilterPanelBtn->setFontSize(14.f);
         openFilterPanelBtn->resizeToFit();
-        float spacing = WAIVELayout::measureVertical(sourceList, Widget_Align::END, sourceBrowserPanel, Widget_Align::END);
+        float spacing =
+            WAIVELayout::measureVertical(sourceList, Widget_Align::END, sourceBrowserPanel, Widget_Align::END);
         spacing = (spacing - openFilterPanelBtn->getHeight()) / 2.f;
         openFilterPanelBtn->below(sourceList, START, spacing);
         openFilterPanelBtn->setCallback(this);
@@ -117,7 +115,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceSearch->foreground_color = WaiveColors::grey2;
         sourceSearch->accent_color = WaiveColors::grey2;
         sourceSearch->background_color = searchBox->background_color;
-        sourceSearch->setSize(searchBox->getWidth() - padding * 4.f - sourceSearch->getFontSize(), sourceSearch->getFontSize(), true);
+        sourceSearch->setSize(searchBox->getWidth() - padding * 4.f - sourceSearch->getFontSize(),
+                              sourceSearch->getFontSize(), true);
         sourceSearch->onTop(searchBox, START, CENTER, padding * 2.f);
         sourceSearch->setCallback(this);
         sourceSearch->description = "Search archives by keywords.";
@@ -172,11 +171,15 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
         DGL::Rectangle<float> sampleTitleBounds;
         sampleEditorPanel->getTitlAbsoluteBounds(sampleTitleBounds);
-        std::cout << "sampleTitleBounds: " << sampleTitleBounds.getX() << ", " << sampleTitleBounds.getY() << ", " << sampleTitleBounds.getWidth() << ", " << sampleTitleBounds.getHeight() << std::endl;
+        std::cout << "sampleTitleBounds: " << sampleTitleBounds.getX() << ", " << sampleTitleBounds.getY() << ", "
+                  << sampleTitleBounds.getWidth() << ", " << sampleTitleBounds.getHeight() << std::endl;
 
         sampleWaveformDisplay = new Waveform(this);
-        sampleWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 2.f * 24.f * fScaleFactor, 100.f * fScaleFactor, true);
-        sampleWaveformDisplay->onTop(sampleEditorPanel, CENTER, START, sampleTitleBounds.getY() - sampleEditorPanel->getTop() + sampleTitleBounds.getHeight() + 2 * padding * fScaleFactor);
+        sampleWaveformDisplay->setSize(sampleEditorPanel->getWidth() - 2.f * 24.f * fScaleFactor, 100.f * fScaleFactor,
+                                       true);
+        sampleWaveformDisplay->onTop(sampleEditorPanel, CENTER, START,
+                                     sampleTitleBounds.getY() - sampleEditorPanel->getTop() +
+                                         sampleTitleBounds.getHeight() + 2 * padding * fScaleFactor);
         sampleWaveformDisplay->background_color = sampleEditorPanel->background_color;
         sampleWaveformDisplay->setWaveform(plugin->editorPreviewWaveform);
         sampleEditorPanel->addChildWidget(sampleWaveformDisplay);
@@ -337,7 +340,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         instructions = new Label(this, "Load a source or import your own audio to extract samples from.");
         instructions->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
         instructions->resizeToFit();
-        instructions->below(sampleWaveformDisplay, CENTER, WAIVELayout::measureVertical(sampleWaveformDisplay, END, sampleEditorPanel, END) / 2.f);
+        instructions->below(sampleWaveformDisplay, CENTER,
+                            WAIVELayout::measureVertical(sampleWaveformDisplay, END, sampleEditorPanel, END) / 2.f);
         sampleEditorPanel->addChildWidget(instructions);
 
         saveSampleBtn = new Button(this);
@@ -374,7 +378,10 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
     // 3 ----- Sample Player Panel
     {
         samplePlayerPanel = new Panel(this);
-        samplePlayerPanel->setSize(col2Width * fScaleFactor, WAIVELayout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END), true);
+        samplePlayerPanel->setSize(
+            col2Width * fScaleFactor,
+            WAIVELayout::measureVertical(sourceBrowserPanel, Widget_Align::START, sampleEditorPanel, Widget_Align::END),
+            true);
         samplePlayerPanel->setAbsolutePos(width - padding - col2Width * fScaleFactor, padding);
         samplePlayerPanel->setFont("VG5000", VG5000, VG5000_len);
         samplePlayerPanel->label = "3";
@@ -419,9 +426,11 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sampleSlotsContainer = new VBox(this);
         sampleSlotsContainer->justify_content = VBox::Justify_Content::space_evenly;
         sampleSlotsContainer->setWidth(samplePlayerPanel->getWidth() - 4.f * padding);
-        sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START, samplePlayerTitleBounds.getHeight() + 2 * padding * fScaleFactor);
+        sampleSlotsContainer->onTop(samplePlayerPanel, CENTER, START,
+                                    samplePlayerTitleBounds.getHeight() + 2 * padding * fScaleFactor);
         sampleSlotsContainer->setTop(sourceList->getTop());
-        sampleSlotsContainer->setHeight(WAIVELayout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) - 10.f);
+        sampleSlotsContainer->setHeight(WAIVELayout::measureVertical(sampleSlotsContainer, START, openMapBtn, START) -
+                                        10.f);
         samplePlayerPanel->addChildWidget(sampleSlotsContainer);
 
         for (int i = 0; i < NUM_SLOTS; i++)
@@ -490,10 +499,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         sourceBrowserPanel->hiddenWidgets.addChildWidget(archiveList);
 
         tagBrowser = new TagBrowser(sourceBrowserPanel, &plugin->sd);
-        tagBrowser->setSize(
-            sourceList->getRight() - browseTagsHeading->getLeft(),
-            sourceBrowserPanel->getBottom() - archiveList->getTop() - 24.f * fScaleFactor,
-            true);
+        tagBrowser->setSize(sourceList->getRight() - browseTagsHeading->getLeft(),
+                            sourceBrowserPanel->getBottom() - archiveList->getTop() - 24.f * fScaleFactor, true);
         tagBrowser->onTop(sourceBrowserPanel, Widget_Align::END, Widget_Align::END, 24.f * fScaleFactor);
         tagBrowser->repositionWidgets();
         sourceBrowserPanel->hiddenWidgets.addChildWidget(tagBrowser);
@@ -521,7 +528,8 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
         oscControlsPanel->setFont("VG5000", VG5000, VG5000_len);
         oscControlsPanel->title = "OSC Options";
 
-        oscControlsDescription = new Label(this, "Send an OSC message every time a sample is triggered.\n\nMessage format:\n/WAIVE_Sampler/Sample  [name, tags, midi]");
+        oscControlsDescription = new Label(this, "Send an OSC message every time a sample is triggered.\n\nMessage "
+                                                 "format:\n/WAIVE_Sampler/Sample  [name, tags, midi]");
         oscControlsDescription->setWidth(oscControlsPanel->getWidth() - 2 * padding);
         oscControlsDescription->setFontSize(14.f);
         oscControlsDescription->setFont("Poppins-Medium", Poppins_Medium, Poppins_Medium_len);
@@ -590,17 +598,27 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 
     // register notifications
     {
-        plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
-        plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
-        plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
-        plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
-        plugin->taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+        plugin->taskManager.addObserver(
+            Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+        plugin->taskManager.addObserver(
+            Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+        plugin->taskManager.addObserver(
+            Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+        plugin->taskManager.addObserver(
+            Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+        plugin->taskManager.addObserver(
+            Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
 
-        plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
-        plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
-        plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
-        plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
-        plugin->sd.taskManager.addObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+        plugin->sd.taskManager.addObserver(
+            Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+        plugin->sd.taskManager.addObserver(
+            Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+        plugin->sd.taskManager.addObserver(
+            Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+        plugin->sd.taskManager.addObserver(
+            Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+        plugin->sd.taskManager.addObserver(
+            Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
 
         plugin->sd.databaseUpdate += Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
         plugin->pluginUpdate += Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
@@ -619,17 +637,27 @@ WAIVESamplerUI::WAIVESamplerUI() : UI(UI_W, UI_H),
 WAIVESamplerUI::~WAIVESamplerUI()
 {
     // std::cout << "WAIVESamplerUI::~WAIVESamplerUI destructor" << std::endl;
-    plugin->taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
-    plugin->taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
-    plugin->taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
-    plugin->taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
-    plugin->taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+    plugin->taskManager.removeObserver(
+        Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+    plugin->taskManager.removeObserver(
+        Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+    plugin->taskManager.removeObserver(
+        Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+    plugin->taskManager.removeObserver(
+        Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+    plugin->taskManager.removeObserver(
+        Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
 
-    plugin->sd.taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
-    plugin->sd.taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
-    plugin->sd.taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
-    plugin->sd.taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
-    plugin->sd.taskManager.removeObserver(Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
+    plugin->sd.taskManager.removeObserver(
+        Poco::Observer<WAIVESamplerUI, Poco::TaskStartedNotification>(*this, &WAIVESamplerUI::onTaskStarted));
+    plugin->sd.taskManager.removeObserver(
+        Poco::Observer<WAIVESamplerUI, Poco::TaskFinishedNotification>(*this, &WAIVESamplerUI::onTaskFinished));
+    plugin->sd.taskManager.removeObserver(
+        Poco::Observer<WAIVESamplerUI, Poco::TaskProgressNotification>(*this, &WAIVESamplerUI::onTaskProgress));
+    plugin->sd.taskManager.removeObserver(
+        Poco::Observer<WAIVESamplerUI, Poco::TaskCancelledNotification>(*this, &WAIVESamplerUI::onTaskCancelled));
+    plugin->sd.taskManager.removeObserver(
+        Poco::Observer<WAIVESamplerUI, Poco::TaskFailedNotification>(*this, &WAIVESamplerUI::onTaskFailed));
 
     plugin->sd.databaseUpdate -= Poco::delegate(this, &WAIVESamplerUI::onDatabaseChanged);
     plugin->pluginUpdate -= Poco::delegate(this, &WAIVESamplerUI::onPluginUpdated);
@@ -776,7 +804,8 @@ std::string getDescription(std::string text, DGL::SubWidget *widget, const DGL::
 {
     if (auto waiveWidget = dynamic_cast<WAIVEWidget *>(widget))
     {
-        if (waiveWidget->isVisible() && waiveWidget->getAbsoluteArea().contains(ev.pos) && waiveWidget->description.length() > 0)
+        if (waiveWidget->isVisible() && waiveWidget->getAbsoluteArea().contains(ev.pos) &&
+            waiveWidget->description.length() > 0)
             text = waiveWidget->description;
     }
 
@@ -853,6 +882,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         if (!success)
         {
             makeAny->setToggled(false);
+            toolTip->setAlert("Unable to auto-find sample!");
             return;
         }
 
@@ -868,6 +898,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         if (!success)
         {
             makeKick->setToggled(false);
+            toolTip->setAlert("Unable to auto-find Kick sample!");
             return;
         }
 
@@ -883,6 +914,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         if (!success)
         {
             makeSnare->setToggled(false);
+            toolTip->setAlert("Unable to auto-find Snare sample!");
             return;
         }
 
@@ -898,6 +930,7 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         if (!success)
         {
             makeHihat->setToggled(false);
+            toolTip->setAlert("Unable to auto-find HiHat sample!");
             return;
         }
 
@@ -913,7 +946,12 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         if (!success)
         {
             makeClap->setToggled(false);
+            toolTip->setLabel("Unable to auto-find a Clap sample!");
             return;
+        }
+        else
+        {
+            toolTip->setLabel("");
         }
 
         makeAny->setToggled(false);
@@ -972,41 +1010,32 @@ void WAIVESamplerUI::beginOpenFileBrowser(const std::string &state, bool multipl
     if (open_dialog.joinable())
         open_dialog.join();
 
-    open_dialog = std::thread(
-        [this, state, multiple]()
+    open_dialog = std::thread([this, state, multiple]() {
         {
-            {
-                std::lock_guard<std::mutex> lock(fileBrowserOpenMtx);
-                filebrowserOpen.store(true, std::memory_order_release);
-            }
+            std::lock_guard<std::mutex> lock(fileBrowserOpenMtx);
+            filebrowserOpen.store(true, std::memory_order_release);
+        }
 
-            // filebrowserOpen = true;
-            char const *filename = nullptr;
-            char const *filterPatterns[2] = {"*.mp3", "*.wav"};
-            filename = tinyfd_openFileDialog(
-                "Open audio file...",
-                "./",
-                2,
-                filterPatterns,
-                "Audio files",
-                multiple);
+        // filebrowserOpen = true;
+        char const *filename = nullptr;
+        char const *filterPatterns[2] = {"*.mp3", "*.wav"};
+        filename = tinyfd_openFileDialog("Open audio file...", "./", 2, filterPatterns, "Audio files", multiple);
 
-            {
-                std::lock_guard<std::mutex> lock(fileBrowserOpenMtx);
-                filebrowserOpen.store(false, std::memory_order_release);
-            }
-            fileBrowserCV.notify_one();
+        {
+            std::lock_guard<std::mutex> lock(fileBrowserOpenMtx);
+            filebrowserOpen.store(false, std::memory_order_release);
+        }
+        fileBrowserCV.notify_one();
 
-            if (filename)
-            {
-                std::cout << filename << std::endl;
-                setState(state.c_str(), filename);
-            }
-        });
+        if (filename)
+        {
+            std::cout << filename << std::endl;
+            setState(state.c_str(), filename);
+        }
+    });
 
     std::unique_lock<std::mutex> lock(fileBrowserOpenMtx);
-    fileBrowserCV.wait(lock, [this]
-                       { return !filebrowserOpen.load(std::memory_order_acquire); });
+    fileBrowserCV.wait(lock, [this] { return !filebrowserOpen.load(std::memory_order_acquire); });
 }
 
 void WAIVESamplerUI::waveformSelection(Waveform *waveform, uint selectionStart)
@@ -1492,7 +1521,8 @@ void WAIVESamplerUI::onTaskProgress(Poco::TaskProgressNotification *pNf)
     }
     else if (taskName == "ParseSourceList")
     {
-        databaseProgress->setLabel(fmt::format("Importing sources [{:d}%]", static_cast<int>(pTask->progress() * 100.f)));
+        databaseProgress->setLabel(
+            fmt::format("Importing sources [{:d}%]", static_cast<int>(pTask->progress() * 100.f)));
         databaseProgress->resizeToFit();
         databaseProgress->setVisible(true);
     }
@@ -1649,7 +1679,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     case SampleDatabase::DatabaseUpdate::TAG_LIST_DOWNLOAD_ERROR:
     case SampleDatabase::DatabaseUpdate::SOURCE_LIST_DOWNLOAD_ERROR:
         errorMessage = true;
-        databaseProgress->setLabel("Error downloading data.");
+        databaseProgress->setAlert("Error downloading data.");
         break;
     case SampleDatabase::DatabaseUpdate::SOURCE_PREVIEW_READY:
         // previewPlaybackBtn->setVisible(true);
@@ -1670,12 +1700,7 @@ void WAIVESamplerUI::onDatabaseChanged(const void *pSender, const SampleDatabase
     getWindow().repaint();
 }
 
-Knob *WAIVESamplerUI::createWAIVEKnob(
-    Parameters param,
-    const std::string &label,
-    float min,
-    float max,
-    float value)
+Knob *WAIVESamplerUI::createWAIVEKnob(Parameters param, const std::string &label, float min, float max, float value)
 {
     Knob *knob = new Knob(this);
     knob->setId(param);
@@ -1709,12 +1734,12 @@ void WAIVESamplerUI::updatePresetButtons()
         return;
     }
 
-    std::cout << "WAIVESamplerUI::updatePresetButtons() plugin->fCurrentSample->preset = " << plugin->fCurrentSample->preset << std::endl;
+    std::cout << "WAIVESamplerUI::updatePresetButtons() plugin->fCurrentSample->preset = "
+              << plugin->fCurrentSample->preset << std::endl;
 
     std::string currentPreset = plugin->fCurrentSample->preset;
     std::transform(currentPreset.begin(), currentPreset.end(), currentPreset.begin(),
-                   [](unsigned char c)
-                   { return std::tolower(c); });
+                   [](unsigned char c) { return std::tolower(c); });
 
     if (currentPreset == "hit")
     {

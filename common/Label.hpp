@@ -7,10 +7,10 @@ START_NAMESPACE_DISTRHO
 
 class Label : public WAIVEWidget
 {
-public:
+  public:
     class Callback
     {
-    public:
+      public:
         ~Callback() {};
         virtual void labelClicked(Label *label) = 0;
     };
@@ -19,6 +19,7 @@ public:
     void setCallback(Callback *cb);
 
     void setLabel(const std::string &text);
+    void setAlert(const std::string &text);
     std::string getLabel() const;
     void resizeToFit();
     void calculateHeight();
@@ -27,13 +28,15 @@ public:
 
     bool renderBackground;
 
-protected:
+  protected:
     void onNanoDisplay() override;
     bool onMouse(const MouseEvent &ev) override;
 
-private:
+  private:
     Callback *callback;
     std::string label;
+
+    Color color;
 
     DISTRHO_LEAK_DETECTOR(Label);
 };

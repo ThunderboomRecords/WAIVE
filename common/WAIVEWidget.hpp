@@ -1,13 +1,13 @@
 #ifndef WAIVE_WIDGET_HPP_INCLUDED
 #define WAIVE_WIDGET_HPP_INCLUDED
 
-#include "Window.hpp"
-#include "Widget.hpp"
 #include "NanoVG.hpp"
+#include "Widget.hpp"
+#include "Window.hpp"
 #include "fonts.h"
 
-#include "WAIVEColors.hpp"
 #include "Layout.hpp"
+#include "WAIVEColors.hpp"
 
 #include <iostream>
 
@@ -23,7 +23,7 @@ enum DragAction
 
 class WAIVEWidget : public NanoSubWidget
 {
-public:
+  public:
     class Callback
     {
         virtual ~Callback() {};
@@ -36,7 +36,8 @@ public:
     void above(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, float padding = 10.f);
     void leftOf(NanoSubWidget *w, Widget_Align v_align = Widget_Align::CENTER, float padding = 10.f);
     void rightOf(NanoSubWidget *w, Widget_Align v_align = Widget_Align::CENTER, float padding = 10.f);
-    void onTop(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER, Widget_Align v_align = Widget_Align::CENTER, float h_padding = 10.f, float v_padding = -1.f);
+    void onTop(NanoSubWidget *w, Widget_Align h_align = Widget_Align::CENTER,
+               Widget_Align v_align = Widget_Align::CENTER, float h_padding = 10.f, float v_padding = -1.f);
 
     /*
     GOTCHA: setSize() EXCLUDES scale factor, but getSize() INCLUDES scale factor
@@ -75,10 +76,10 @@ public:
     std::string description;
     bool renderDebug;
 
-protected:
+  protected:
     float scale_factor;
 
-private:
+  private:
     float font_size;
 };
 

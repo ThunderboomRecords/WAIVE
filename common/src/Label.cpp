@@ -1,12 +1,10 @@
 #include "Label.hpp"
+#include "WAIVEColors.hpp"
 
 START_NAMESPACE_DISTRHO
 
 Label::Label(Widget *parent, const std::string &text) noexcept
-    : WAIVEWidget(parent),
-      text_align(Align::ALIGN_BOTTOM),
-      label(text),
-      renderBackground(false),
+    : WAIVEWidget(parent), text_align(Align::ALIGN_BOTTOM), label(text), color(text_color), renderBackground(false),
       callback(nullptr)
 {
 }
@@ -14,6 +12,14 @@ Label::Label(Widget *parent, const std::string &text) noexcept
 void Label::setLabel(const std::string &text)
 {
     label = text;
+    color = text_color;
+    repaint();
+}
+
+void Label::setAlert(const std::string &text)
+{
+    label = text;
+    color = WaiveColors::warn;
     repaint();
 }
 
@@ -52,7 +58,8 @@ void Label::calculateHeight()
     float bounds[4];
     textBoxBounds(0, 0, width, label.c_str(), NULL, bounds);
 
-    // std::cout << "Label::calculateHeight() ( width = " << width << ", font_size = " << getFontSize() << " ) " << bounds[0] << ", " << bounds[1] << ", " << bounds[2] << ", " << bounds[3] << std::endl;
+    // std::cout << "Label::calculateHeight() ( width = " << width << ", font_size = " << getFontSize() << " ) " <<
+    // bounds[0] << ", " << bounds[1] << ", " << bounds[2] << ", " << bounds[3] << std::endl;
 
     setHeight(bounds[3]);
 }
@@ -86,7 +93,7 @@ void Label::onNanoDisplay()
     }
 
     beginPath();
-    fillColor(text_color);
+    fillColor(color);
     textAlign(ALIGN_TOP | ALIGN_LEFT);
     fontSize(getFontSize());
     fontFaceId(font);
