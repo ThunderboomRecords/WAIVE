@@ -898,16 +898,45 @@ void WAIVESampler::addCurrentSampleToLibrary()
     fCurrentSample->embedX = embedding.first;
     fCurrentSample->embedY = embedding.second;
 
-    if (!saveWaveform(sd.getFullSamplePath(fCurrentSample).c_str(), waveform.data(), waveform.size(), sampleRate))
+    // The name was chosen when the sample was made, so check it's still
+    // free, otherwise saving would overwrite another sample's file
+    if (!fCurrentSample->saved)
+        fCurrentSample->name = sd.getNewSampleName(fCurrentSample->name);
+
+    std::string fp = sd.getFullSamplePath(fCurrentSample);
+    if (!saveWaveform(fp.c_str(), waveform.data(), waveform.size(), sampleRate))
         return;
 
     if (fCurrentSample->saved)
-        sd.updateSample(fCurrentSample);
+    {
+        if (!sd.updateSample(fCurrentSample))
+            std::cerr << "WAIVESampler::addCurrentSampleToLibrary: failed to update sample in database" << std::endl;
+
+        // Slots playing this sample still have the old audio
+        for (size_t i = 0; i < NUM_SLOTS; i++)
+        {
+            if (samplePlayers[i]->sampleInfo != nullptr && samplePlayers[i]->sampleInfo->getId() == fCurrentSample->getId())
+                loadSamplePlayer(i, fCurrentSample);
+        }
+    }
     else
     {
-        sd.addToLibrary(fCurrentSample);
-        // add it to next avaliable sample player
-        for (size_t i = 0; i < samplePlayers.size(); i++)
+        if (!sd.addToLibrary(fCurrentSample))
+        {
+            // Don't leave a file behind that isn't in the library
+            try
+            {
+                Poco::File(fp).remove();
+            }
+            catch (const Poco::Exception &e)
+            {
+                std::cerr << "Could not remove " << fp << ": " << e.displayText() << std::endl;
+            }
+            return;
+        }
+
+        // add it to next avaliable sample slot
+        for (size_t i = 0; i < NUM_SLOTS; i++)
         {
             if (!samplePlayers[i]->active)
             {

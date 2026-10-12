@@ -158,12 +158,15 @@ void ImporterTask::import(const std::string &fp)
     info->embedX = embedding.first;
     info->embedY = embedding.second;
 
-    _ws->sd.addToLibrary(info);
-
-    bool result = saveWaveform(_ws->sd.getFullSamplePath(info).c_str(), &(sampleCopy.at(0)), sampleLength, _ws->getSampleRate());
-    if (!result)
-    {
+    // Save the file first, so the library never has a sample without one
+    std::string samplePath = _ws->sd.getFullSamplePath(info);
+    if (!saveWaveform(samplePath.c_str(), sampleCopy.data(), sampleLength, _ws->getSampleRate()))
         throw Poco::Exception("Failed to save waveform");
+
+    if (!_ws->sd.addToLibrary(info))
+    {
+        Poco::File(samplePath).remove();
+        throw Poco::Exception("Failed to add sample to library");
     }
 
     std::cout << " - import done\n";

@@ -207,7 +207,7 @@ void SampleDatabase::loadSampleDatabase()
 
         fAllSamples.push_back(s);
 
-        SamplePoint point(data["embedding"]["x"], data["embedding"]["y"]);
+        SamplePoint point(s->embedX, s->embedY);
         point.info = s;
         points.push_back(point);
     }
@@ -219,37 +219,50 @@ void SampleDatabase::loadSampleDatabase()
     databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_LIST_LOADED);
 }
 
-std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
+std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(const json &data)
 {
     try
     {
-        std::shared_ptr<SampleInfo> s(new SampleInfo(data["id"], data["name"], data["path"], data["waive"]));
-        s->embedX = data["embedding"]["x"];
-        s->embedY = data["embedding"]["y"];
-        for (auto &el : data["tags"])
-            s->tags.push_back({el});
-        s->tagString.assign(data["tagString"]);
-        s->sampleLength = data["sampleLength"];
-        s->sourceInfo->fp = data["source"];
-        s->sourceInfo->tagString = data["tagString"];
-        s->sourceStart = data["sourceStart"];
-        s->volume = data["parameters"]["volume"];
-        s->pitch = data["parameters"]["pitch"];
-        s->percussiveBoost = data["parameters"]["percussiveBoost"];
-        ADSR_Params adsr = {
-            data["ampEnv"]["attack"],
-            data["ampEnv"]["decay"],
-            data["ampEnv"]["sustain"],
-            data["ampEnv"]["release"],
-        };
-        s->adsr = adsr;
-        s->sustainLength = data["ampEnv"]["sustainLength"];
-        s->filterCutoff = data["filter"]["filterCutoff"];
-        s->filterResonance = data["filter"]["filterResonance"];
-        s->filterType = data["filter"]["filterType"];
+        // id, name, path and source come from the table's columns, so they're
+        // always there. Anything else may be missing from rows saved by older
+        // versions, so falls back to the SampleInfo defaults.
+        std::shared_ptr<SampleInfo> s(new SampleInfo(data.at("id"), data.at("name"), data.at("path"), data.value("waive", false)));
 
-        s->saved = data["saved"];
-        s->preset = data["preset"];
+        const json embedding = data.value("embedding", json::object());
+        s->embedX = embedding.value("x", s->embedX);
+        s->embedY = embedding.value("y", s->embedY);
+
+        for (const auto &el : data.value("tags", json::array()))
+        {
+            if (el.is_string())
+                s->tags.push_back({-1, el.get<std::string>(), 0.0f, 0.0f});
+        }
+        s->tagString = data.value("tagString", s->tagString);
+        s->sampleLength = data.value("sampleLength", s->sampleLength);
+        s->sourceInfo->fp = data.at("source");
+        s->sourceInfo->tagString = s->tagString;
+        s->sourceStart = data.value("sourceStart", s->sourceStart);
+
+        const json parameters = data.value("parameters", json::object());
+        s->volume = parameters.value("volume", s->volume);
+        s->pitch = parameters.value("pitch", s->pitch);
+        s->percussiveBoost = parameters.value("percussiveBoost", s->percussiveBoost);
+
+        const json ampEnv = data.value("ampEnv", json::object());
+        s->adsr.attack = ampEnv.value("attack", s->adsr.attack);
+        s->adsr.decay = ampEnv.value("decay", s->adsr.decay);
+        s->adsr.sustain = ampEnv.value("sustain", s->adsr.sustain);
+        s->adsr.release = ampEnv.value("release", s->adsr.release);
+        s->sustainLength = ampEnv.value("sustainLength", s->sustainLength);
+
+        const json filter = data.value("filter", json::object());
+        s->filterCutoff = filter.value("filterCutoff", s->filterCutoff);
+        s->filterResonance = filter.value("filterResonance", s->filterResonance);
+        s->filterType = filter.value("filterType", s->filterType);
+
+        // Only saved samples are stored, whatever an older version wrote
+        s->saved = true;
+        s->preset = data.value("preset", s->preset);
 
         s->fullPath = getFullSamplePath(s);
 
@@ -272,9 +285,11 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     std::cout << "SampleDatabase::addToLibrary" << std::endl;
 
     std::lock_guard<std::recursive_mutex> lock(samplesMtx);
-    sample->saved = true;
 
-    std::string parameters = sample->toJson().dump();
+    // Stored as saved, but only marked as saved once it's in the database
+    json sampleJson = sample->toJson();
+    sampleJson["saved"] = true;
+    std::string parameters = sampleJson.dump();
 
     try
     {
@@ -310,6 +325,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
 
     std::cout << " - lastId " << lastId << std::endl;
 
+    sample->saved = true;
     sample->setId(lastId);
     sample->fullPath = getFullSamplePath(sample);
 
@@ -509,57 +525,71 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
     if (sample == nullptr)
         return false;
 
-    std::unique_lock<std::recursive_mutex> lock(samplesMtx);
-
-    // if (!sample->saved)
-    // {
-    //     // just update the SampleInfo and return
-    //     sample->name.assign()
-    //     return;
-    // }
-
-    Poco::File sampleFile(Poco::Path(rootDir).append(sample->path).append(sample->name));
-    Poco::Path newName(Poco::Path(rootDir).append(sample->path).append(new_name));
-
+    Poco::Path newName(new_name);
     if (newName.getExtension().compare("wav") != 0)
         newName.setExtension("wav");
 
-    try
-    {
-        sampleFile.renameTo(newName.toString(), Poco::File::OPT_FAIL_ON_OVERWRITE);
-    }
-    catch (Poco::FileExistsException &e)
-    {
-        std::cerr << "Failed to rename sample to " << newName.toString() << " since it already exists." << std::endl;
-        std::cerr << e.what() << std::endl;
+    std::unique_lock<std::recursive_mutex> lock(samplesMtx);
 
-        return false;
-    }
-    catch (Poco::FileNotFoundException &e)
+    // Not in the library yet, so there's no file or database row to rename
+    if (!sample->saved)
     {
-        std::cout << "Sample is not saved yet, updating SampleInfo\n";
         sample->name.assign(newName.getFileName());
-        sample->saved = false;
+        sample->fullPath = getFullSamplePath(sample);
         return true;
     }
 
-    // updated SampleInfo
+    Poco::File sampleFile(getFullSamplePath(sample));
+    Poco::Path newPath(Poco::Path(sampleFolder).append(sample->path).append(newName.getFileName()));
+
+    try
+    {
+        sampleFile.renameTo(newPath.toString(), Poco::File::OPT_FAIL_ON_OVERWRITE);
+    }
+    catch (const Poco::FileExistsException &e)
+    {
+        std::cerr << "Failed to rename sample to " << newPath.toString() << " since it already exists." << std::endl;
+        return false;
+    }
+    catch (const Poco::Exception &e)
+    {
+        std::cerr << "Failed to rename sample " << sampleFile.path() << ": " << e.displayText() << std::endl;
+        return false;
+    }
+
+    std::string oldName = sample->name;
     sample->name.assign(newName.getFileName());
-    sample->saved = true;
     int id = sample->getId();
 
-    if (session->isTransaction())
-        session->commit();
+    try
+    {
+        if (session->isTransaction())
+            session->commit();
 
-    Poco::Data::Statement update(*session);
-    update << "UPDATE Samples SET name = ? WHERE id = ?",
-        Poco::Data::Keywords::use(new_name),
-        Poco::Data::Keywords::use(id),
-        Poco::Data::Keywords::now;
+        Poco::Data::Statement update(*session);
+        update << "UPDATE Samples SET name = ? WHERE id = ?",
+            Poco::Data::Keywords::use(sample->name),
+            Poco::Data::Keywords::use(id);
+        update.execute();
+    }
+    catch (const Poco::Data::DataException &e)
+    {
+        std::cerr << "Error renaming sample in database: " << e.displayText() << std::endl;
 
-    std::cout << update.toString() << std::endl;
+        // Put the file back, so it still matches the database
+        try
+        {
+            Poco::File(newPath).renameTo(sampleFile.path());
+        }
+        catch (const Poco::Exception &e)
+        {
+            std::cerr << "Could not restore sample file name: " << e.displayText() << std::endl;
+        }
+        sample->name = oldName;
+        return false;
+    }
 
-    update.execute();
+    sample->fullPath = getFullSamplePath(sample);
     lock.unlock();
 
     databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_UPDATED);
@@ -667,30 +697,37 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
 
     std::string pattern = basename + "_{}." + file.getExtension();
 
+    // Names in the library that could clash. LIKE treats '_' and '%' in the
+    // basename as wildcards, which only finds extra names.
+    std::set<std::string> taken;
     try
     {
-        int suffixCounter = 0;
-        int id;
-
+        std::vector<std::string> names;
+        std::string like = basename + "%";
         Poco::Data::Statement select(*session);
-        select << "SELECT id FROM Samples WHERE name = ?",
-            Poco::Data::Keywords::use(newName),
-            Poco::Data::Keywords::into(id);
-
-        while (select.execute())
-        {
-            if (suffixCounter > 199)
-            {
-                std::cerr << "Max iterations finding new sample name...\n";
-                break;
-            }
-            suffixCounter++;
-            newName = fmt::vformat(pattern, fmt::make_format_args(suffixCounter));
-        }
+        select << "SELECT name FROM Samples WHERE name LIKE ?",
+            Poco::Data::Keywords::use(like),
+            Poco::Data::Keywords::into(names),
+            Poco::Data::Keywords::now;
+        taken.insert(names.begin(), names.end());
     }
     catch (const Poco::Data::DataException &e)
     {
         std::cerr << "Error in getNewSampleName: " << e.what() << std::endl;
+    }
+
+    // Also check the folder, so a file that isn't in the database (or was
+    // saved by another instance of the plugin) is never overwritten
+    auto isFree = [&](const std::string &n)
+    {
+        return taken.count(n) == 0 && !Poco::File(Poco::Path(sampleFolder).append(n)).exists();
+    };
+
+    int suffixCounter = 0;
+    while (!isFree(newName))
+    {
+        suffixCounter++;
+        newName = fmt::vformat(pattern, fmt::make_format_args(suffixCounter));
     }
 
     std::cout << "New name: " << newName << std::endl;

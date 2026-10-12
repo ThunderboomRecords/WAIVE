@@ -10,6 +10,7 @@
 #include <mutex>
 #include <chrono>
 #include <atomic>
+#include <set>
 
 #include "Source.hpp"
 #include "Filters.hpp"
@@ -235,7 +236,7 @@ public:
     void onDatabaseChanged(const void *pSender, const SampleDatabase::DatabaseUpdate &arg);
 
     std::mutex sourceListMutex;
-    std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
+    std::shared_ptr<SampleInfo> deserialiseSampleInfo(const json &data);
     // Guards fAllSamples and the Samples table, which the ImporterTask
     // changes from a background thread. Hold it while reading fAllSamples.
     std::recursive_mutex samplesMtx;
