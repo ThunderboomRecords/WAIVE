@@ -38,7 +38,9 @@ public:
     std::vector<std::shared_ptr<SampleInfo>> *allSamples;
     std::recursive_mutex *allSamplesMtx;
     std::shared_ptr<SampleInfo> *selectedSample;
-    int highlightSampleId, highlightSampleIndex, contextMenuSampleId;
+    // Samples are found by id, not by position in allSamples, as that
+    // changes when samples are added or deleted
+    int highlightSampleId, contextMenuSampleId;
     bool preview;
 
     Menu *menu;
@@ -56,6 +58,7 @@ protected:
 
 private:
     Color get2DColor(float x, float y) const;
+    std::shared_ptr<SampleInfo> findSample(int id) const;
     Callback *callback;
 
     Color c0, c1, c2, c3;

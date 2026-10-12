@@ -77,7 +77,7 @@ cmake --build ./build -j8 --config Release
 Run the build commands in Developer Command Prompt (not Powershell!).
 
 ```sh
-C:\path\to\WAIVE>cmake --preset="windows" -DCMAKE_BUILD_TYPE="Release" -A x64
+C:\path\to\WAIVE>cmake --preset="windows" -A x64
 C:\path\to\WAIVE>cmake --build build -j8 --config Release
 ```
 

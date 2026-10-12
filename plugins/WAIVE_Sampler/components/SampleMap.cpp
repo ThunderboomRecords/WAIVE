@@ -15,7 +15,6 @@ SampleMap::SampleMap(Widget *widget, DragDropManager *manager) noexcept
       centerPos({0.0, 0.0}),
       dragAction(DragAction::NONE),
       highlightSampleId(-1),
-      highlightSampleIndex(-1),
       contextMenuSampleId(-1),
       selectedSample(nullptr),
       allSamples(nullptr),
@@ -115,7 +114,6 @@ bool SampleMap::onMotion(const MotionEvent &ev)
         if (!contains(ev.pos))
         {
             highlightSampleId = -1;
-            highlightSampleIndex = -1;
 
             return false;
         }
@@ -124,7 +122,6 @@ bool SampleMap::onMotion(const MotionEvent &ev)
         // distance from mouse
 
         int nearestId = -1;
-        int nearestIndex = -1;
         float d = INFINITY;
 
         for (int i = 0; i < allSamples->size(); i++)
@@ -140,7 +137,6 @@ bool SampleMap::onMotion(const MotionEvent &ev)
             if (dS < 100.0f && dS < d)
             {
                 nearestId = allSamples->at(i)->getId();
-                nearestIndex = i;
                 d = dS;
             }
         }
@@ -148,7 +144,6 @@ bool SampleMap::onMotion(const MotionEvent &ev)
         if (highlightSampleId != nearestId)
         {
             highlightSampleId = nearestId;
-            highlightSampleIndex = nearestIndex;
 
             if (callback != nullptr && preview)
                 callback->mapSampleHovered(highlightSampleId);
@@ -161,11 +156,12 @@ bool SampleMap::onMotion(const MotionEvent &ev)
     else if (dragAction == CLICKING)
     {
 
-        if (highlightSampleId >= 0)
+        std::shared_ptr<SampleInfo> highlighted = findSample(highlightSampleId);
+        if (highlighted != nullptr)
         {
             dragAction = DragAction::NONE;
-            dragDropManager->dragDropStart(this, fmt::format("{:d}", highlightSampleId), allSamples->at(highlightSampleIndex)->name);
-            dragDropManager->filepath = allSamples->at(highlightSampleIndex)->fullPath;
+            dragDropManager->dragDropStart(this, fmt::format("{:d}", highlightSampleId), highlighted->name);
+            dragDropManager->filepath = highlighted->fullPath;
         }
         else
         {
@@ -233,7 +229,25 @@ void SampleMap::onMenuItemSelection(Menu *menu, int item, const std::string &val
     if (item < NUM_SLOTS)
         callback->mapSampleLoadSlot(contextMenuSampleId, item);
     else
+    {
+        if (highlightSampleId == contextMenuSampleId)
+            highlightSampleId = -1;
         callback->mapSampleDelete(contextMenuSampleId);
+    }
+}
+
+std::shared_ptr<SampleInfo> SampleMap::findSample(int id) const
+{
+    if (id < 0)
+        return nullptr;
+
+    std::lock_guard<std::recursive_mutex> lock(*allSamplesMtx);
+    for (const auto &sample : *allSamples)
+    {
+        if (sample != nullptr && sample->getId() == id)
+            return sample;
+    }
+    return nullptr;
 }
 
 Color SampleMap::get2DColor(float x, float y) const
@@ -259,6 +273,7 @@ void SampleMap::onNanoDisplay()
 
     float hX, hY;
     Color hC;
+    std::shared_ptr<SampleInfo> highlighted;
 
     for (int i = 0; i < allSamples->size(); i++)
     {
@@ -276,6 +291,7 @@ void SampleMap::onNanoDisplay()
         if (highlightSampleId > -1 && highlightSampleId == sampleId)
         {
             r *= 2.0f;
+            highlighted = allSamples->at(i);
             hC = get2DColor(embedX, embedY);
             hX = pMap.getX();
             hY = pMap.getY();
@@ -298,10 +314,11 @@ void SampleMap::onNanoDisplay()
         }
     }
 
-    if (highlightSampleIndex > -1)
+    // Only set if the highlighted sample still exists and is on screen
+    if (highlighted != nullptr)
     {
         // Draw sample name
-        std::string name = allSamples->at(highlightSampleIndex)->name;
+        std::string name = highlighted->name;
         DGL::Rectangle<float> bounds;
         fontSize(getFontSize());
         fontFaceId(font);
@@ -331,13 +348,11 @@ void SampleMap::buttonClicked(Button *btn)
 void SampleMap::dataAccepted(DragDropWidget *destination)
 {
     highlightSampleId = -1;
-    highlightSampleIndex = -1;
 }
 
 void SampleMap::dataRejected(DragDropWidget *destination)
 {
     highlightSampleId = -1;
-    highlightSampleIndex = -1;
 }
 
 void SampleMap::setCallback(Callback *cb)
