@@ -8,12 +8,8 @@ endif()
 
 dpf_add_plugin(
   WAIVE_Sequencer
-  TARGETS 
-      jack
-      vst3
-      vst2
-      clap
-      au
+  TARGETS
+      ${WAIVE_PLUGIN_TARGETS}
   FILES_DSP
       WAIVESequencer.cpp
       ./components/Notes.cpp

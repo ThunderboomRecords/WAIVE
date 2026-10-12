@@ -65,5 +65,12 @@ include_directories(
 
 add_subdirectory(DPF)
 
+# Plugin formats built for each plugin. The standalone JACK app isn't built
+# on Windows, where it isn't packaged in the installer.
+set(WAIVE_PLUGIN_TARGETS vst3 vst2 clap au)
+if(NOT WIN32)
+  list(PREPEND WAIVE_PLUGIN_TARGETS jack)
+endif()
+
 add_subdirectory(plugins/WAIVE_Sampler)
 add_subdirectory(plugins/WAIVE_Sequencer)

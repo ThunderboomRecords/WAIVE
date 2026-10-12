@@ -19,12 +19,8 @@ endif()
 
 dpf_add_plugin(
   WAIVE_Sampler
-  TARGETS 
-      jack
-      vst3
-      vst2
-      clap
-      au
+  TARGETS
+      ${WAIVE_PLUGIN_TARGETS}
   FILES_DSP
       WAIVESampler.cpp
       Tasks.cpp
