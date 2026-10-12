@@ -1262,7 +1262,7 @@ void WAIVESamplerUI::uiScaleFactorChanged(const double scaleFactor)
 void WAIVESamplerUI::updateWidgets()
 {
     std::cout << "WAIVESamplerUI::updateWidgets()\n";
-    bool sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.sourceLoaded);
+    bool sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo->sourceLoaded);
     std::cout << "sourceAvaliable: " << sourceAvailable << std::endl;
     saveSampleBtn->setEnabled(sourceAvailable);
     sourceLoading->setLoading(false);
@@ -1296,7 +1296,7 @@ void WAIVESamplerUI::onPluginUpdated(const void *pSender, const WAIVESampler::Pl
         break;
     case WAIVESampler::PluginUpdate::kSourceLoaded:
     case WAIVESampler::PluginUpdate::kSourceUpdated:
-        sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo.sourceLoaded);
+        sourceAvailable = (plugin->fCurrentSample != nullptr) && (plugin->fCurrentSample->sourceInfo->sourceLoaded);
         std::cout << "sourceAvaliable: " << sourceAvailable << std::endl;
         saveSampleBtn->setEnabled(sourceAvailable);
         sourceLoading->setLoading(false);

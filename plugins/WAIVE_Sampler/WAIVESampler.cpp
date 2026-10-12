@@ -23,7 +23,7 @@ WAIVESampler::WAIVESampler() : Plugin(kParameterCount, 0, kStateCount),
                                httpClient(std::make_shared<HTTPClient>(&taskManager)),
                                sd(httpClient),
                                fe(getSampleRate(), 1024, 441, 64, WindowType::HanningWindow),
-                               importerTask(new ImporterTask(this, &import_queue))
+                               importerRunning(false)
 {
     if (isDummyInstance())
     {
@@ -568,11 +568,12 @@ void WAIVESampler::setState(const char *key, const char *value)
             import_queue.push(filename);
         }
 
-        if (importerTask->state() != Poco::Task::TASK_RUNNING)
+        // The TaskManager owns the task and deletes it once finished
+        std::lock_guard<std::mutex> lock(importerMtx);
+        if (!importerRunning)
         {
-            importerTask->release();
-            importerTask = new ImporterTask(this, &import_queue);
-            taskManager.start(importerTask);
+            importerRunning = true;
+            taskManager.start(new ImporterTask(this, &import_queue));
         }
     }
     else if (strcmp(key, "sample-slots") == 0)
@@ -811,9 +812,14 @@ void WAIVESampler::loadSourceFile(const std::string &fp, const std::string &tagS
     if (fCurrentSample == nullptr)
         newSample();
 
-    fCurrentSample->sourceInfo.fp = std::string(fp);
-    fCurrentSample->sourceInfo.sourceLoaded = false;
-    fCurrentSample->sourceInfo.tagString = tagString;
+    // Use a new Source, as the current one may be shared with saved samples
+    auto source = std::make_shared<Source>();
+    source->fp = fp;
+    source->tagString = tagString;
+    {
+        std::lock_guard<std::mutex> lock(samplePlayerMtx);
+        fCurrentSample->sourceInfo = source;
+    }
     fCurrentSample->tagString = tagString;
 
     pluginUpdate.notify(this, PluginUpdate::kSourceLoading);
@@ -869,16 +875,31 @@ void WAIVESampler::addCurrentSampleToLibrary()
     if (fCurrentSample == nullptr)
         return;
 
+    // Copy the rendered sample while holding the lock, which the audio
+    // thread also takes, then do the slow work (model, disk) without it.
+    // Only the first sampleLength values are the current sample: the
+    // buffer is never shrunk, so anything after is left from older renders.
+    std::vector<float> waveform;
     {
         std::lock_guard<std::mutex> lock(samplePlayerMtx);
-        auto embedding = getEmbedding(editorPreviewWaveform.get());
-        fCurrentSample->embedX = embedding.first;
-        fCurrentSample->embedY = embedding.second;
+        size_t length = std::min(fCurrentSample->sampleLength, editorPreviewWaveform->size());
+        waveform.assign(editorPreviewWaveform->begin(), editorPreviewWaveform->begin() + length);
 
         fCurrentSample->adsr = ADSR_Params(ampEnvGen.getADSR());
-
-        saveWaveform(sd.getFullSamplePath(fCurrentSample).c_str(), &(editorPreviewWaveform->at(0)), fCurrentSample->sampleLength, sampleRate);
     }
+
+    if (waveform.empty())
+    {
+        std::cerr << "WAIVESampler::addCurrentSampleToLibrary: nothing rendered to save" << std::endl;
+        return;
+    }
+
+    auto embedding = getEmbedding(&waveform);
+    fCurrentSample->embedX = embedding.first;
+    fCurrentSample->embedY = embedding.second;
+
+    if (!saveWaveform(sd.getFullSamplePath(fCurrentSample).c_str(), waveform.data(), waveform.size(), sampleRate))
+        return;
 
     if (fCurrentSample->saved)
         sd.updateSample(fCurrentSample);
@@ -983,9 +1004,9 @@ void WAIVESampler::loadSample(std::shared_ptr<SampleInfo> s)
     setParameterValue(kFilterType, fCurrentSample->filterType);
     renderSampleLock = false;
 
-    if (!fCurrentSample->sourceInfo.sourceLoaded)
+    if (!fCurrentSample->sourceInfo->sourceLoaded)
     {
-        loadSourceFile(fCurrentSample->sourceInfo.fp, fCurrentSample->sourceInfo.tagString);
+        loadSourceFile(fCurrentSample->sourceInfo->fp, fCurrentSample->sourceInfo->tagString);
     }
     else
     {
@@ -1002,7 +1023,7 @@ bool WAIVESampler::detectPreset(const Preset &preset)
     // if (fCurrentSample == nullptr)
     newSample();
 
-    Source *sourceInfo = &fCurrentSample->sourceInfo;
+    Source *sourceInfo = fCurrentSample->sourceInfo.get();
 
     // 0. Check if a source is loaded
     if (!sourceInfo->sourceLoaded)
@@ -1137,7 +1158,7 @@ void WAIVESampler::selectWaveform(std::vector<float> *source, int start)
 void WAIVESampler::renderSample()
 {
     // LOG_LOCATION
-    if (fCurrentSample == nullptr || !fCurrentSample->sourceInfo.sourceLoaded || renderSampleLock)
+    if (fCurrentSample == nullptr || !fCurrentSample->sourceInfo->sourceLoaded || renderSampleLock)
         return;
 
     bool retriggerPreview = steadyClockMs() - previewRequestedAtMs < PREVIEW_RETRIGGER_WINDOW_MS;
@@ -1149,9 +1170,9 @@ void WAIVESampler::renderSample()
     }
 
     std::lock_guard<std::mutex> lock(samplePlayerMtx);
-    std::lock_guard<std::mutex> isLock(fCurrentSample->sourceInfo.mtx);
+    std::lock_guard<std::mutex> isLock(fCurrentSample->sourceInfo->mtx);
 
-    Source *sourceInfo = &fCurrentSample->sourceInfo;
+    Source *sourceInfo = fCurrentSample->sourceInfo.get();
     fCurrentSample->sampleLength = ampEnvGen.getLength(fCurrentSample->sustainLength);
     fCurrentSample->sampleLength = std::min(fCurrentSample->sampleLength, sourceInfo->length - fCurrentSample->sourceStart);
 
@@ -1354,6 +1375,9 @@ void WAIVESampler::cancelPreviewRetrigger()
 
 std::pair<float, float> WAIVESampler::getEmbedding(std::vector<float> *wf)
 {
+    // The feature extractor and model buffers are shared, and this is
+    // called from both the UI thread and the ImporterTask
+    std::lock_guard<std::mutex> lock(embeddingMtx);
     getFeatures(wf, &mTSNEInput);
 
     const char *inputNamesCstrs[] = {mTSNEInputNames[0].c_str()};
@@ -1428,9 +1452,20 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         if (pTask->isCancelled())
         {
             std::cout << "task isCancelled()\n";
-            fCurrentSample->sourceInfo.fp = "";
-            fCurrentSample->sourceInfo.sourceLoaded = false;
-            fCurrentSample->sourceInfo.length = 0;
+            fCurrentSample->sourceInfo->fp = "";
+            fCurrentSample->sourceInfo->sourceLoaded = false;
+            fCurrentSample->sourceInfo->length = 0;
+            pNf->release();
+            return;
+        }
+
+        // Not while holding samplePlayerMtx: newSample() sets parameters,
+        // which can render the sample (taking the lock), and notifies the UI
+        if (fCurrentSample == nullptr)
+            newSample();
+
+        if (fCurrentSample == nullptr)
+        {
             pNf->release();
             return;
         }
@@ -1438,40 +1473,33 @@ void WAIVESampler::onTaskFinished(Poco::TaskFinishedNotification *pNf)
         {
             std::lock_guard<std::mutex> tblock(*tempBufferMutex);
             std::lock_guard<std::mutex> spLock(samplePlayerMtx);
-
-            if (fCurrentSample == nullptr)
-                newSample();
-
-            if (fCurrentSample == nullptr)
-                return;
-
-            std::lock_guard<std::mutex> siLock(fCurrentSample->sourceInfo.mtx);
+            std::lock_guard<std::mutex> siLock(fCurrentSample->sourceInfo->mtx);
 
             size_t sourceLength = tempBuffer->size();
-            fCurrentSample->sourceInfo.buffer.resize(sourceLength);
-            fCurrentSample->sourceInfo.length = sourceLength;
+            fCurrentSample->sourceInfo->buffer.resize(sourceLength);
+            fCurrentSample->sourceInfo->length = sourceLength;
 
-            std::copy(tempBuffer->begin(), tempBuffer->begin() + sourceLength, fCurrentSample->sourceInfo.buffer.begin());
+            std::copy(tempBuffer->begin(), tempBuffer->begin() + sourceLength, fCurrentSample->sourceInfo->buffer.begin());
         }
 
-        if (fCurrentSample->sourceInfo.length > 0)
+        if (fCurrentSample->sourceInfo->length > 0)
         {
-            std::cout << "sourceLength: " << fCurrentSample->sourceInfo.length << std::endl;
+            std::cout << "sourceLength: " << fCurrentSample->sourceInfo->length << std::endl;
             if (fCurrentSample == nullptr)
                 newSample();
 
-            fCurrentSample->sourceInfo.sourceLoaded = true;
+            fCurrentSample->sourceInfo->sourceLoaded = true;
             renderSample();
 
             pluginUpdate.notify(this, PluginUpdate::kSourceLoaded);
-            taskManager.start(new FeatureExtractorTask(&fCurrentSample->sourceInfo, getSampleRate()));
+            taskManager.start(new FeatureExtractorTask(fCurrentSample->sourceInfo, getSampleRate()));
         }
         else
         {
             std::cerr << "Source failed to load" << std::endl;
-            fCurrentSample->sourceInfo.fp = "";
+            fCurrentSample->sourceInfo->fp = "";
             fCurrentSample->tagString = "";
-            fCurrentSample->sourceInfo.length = 0;
+            fCurrentSample->sourceInfo->length = 0;
         }
     }
     else if (taskName == "FeatureExtractorTask")

@@ -12,6 +12,7 @@ SampleBrowser::SampleBrowser(WAIVEWidget *widget, SampleDatabase *sd_, DragDropM
     sampleMap->onTop(widget, Widget_Align::START, Widget_Align::START, 2.f, widget->getFontSize() * 2.f);
     sampleMap->background_color = WaiveColors::grey2;
     sampleMap->allSamples = &sd->fAllSamples;
+    sampleMap->allSamplesMtx = &sd->samplesMtx;
     sampleMap->description = "Hover over sample to preview. Drag sample to Player on the right, or right click sample to choose Player slot.";
     addChildWidget(sampleMap);
 

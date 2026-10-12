@@ -36,6 +36,7 @@ public:
     void setCallback(Callback *cb);
 
     std::vector<std::shared_ptr<SampleInfo>> *allSamples;
+    std::recursive_mutex *allSamplesMtx;
     std::shared_ptr<SampleInfo> *selectedSample;
     int highlightSampleId, highlightSampleIndex, contextMenuSampleId;
     bool preview;

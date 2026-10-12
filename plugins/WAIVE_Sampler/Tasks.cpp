@@ -88,14 +88,32 @@ void ImporterTask::runTask()
 {
     while (true)
     {
-        std::optional<std::string> fp = _queue->pop();
-        if (fp.has_value())
+        std::optional<std::string> fp;
+        {
+            // Stop while holding the lock, so setState() starts a new task
+            // for anything queued after this point
+            std::lock_guard<std::mutex> lock(_ws->importerMtx);
+            if (!isCancelled())
+                fp = _queue->pop();
+            if (!fp.has_value())
+            {
+                _ws->importerRunning = false;
+                return;
+            }
+        }
+
+        // One bad file shouldn't stop the rest of the queue from importing
+        try
         {
             ImporterTask::import(fp.value());
-            _ws->pluginUpdate.notify(&_ws, WAIVESampler::PluginUpdate::kSampleAdded);
         }
-        else
-            break;
+        catch (const std::exception &e)
+        {
+            std::cerr << "Failed to import " << fp.value() << ": " << e.what() << std::endl;
+            continue;
+        }
+
+        _ws->pluginUpdate.notify(&_ws, WAIVESampler::PluginUpdate::kSampleAdded);
     }
 }
 
@@ -131,7 +149,7 @@ void ImporterTask::import(const std::string &fp)
     info->filterResonance = 0;
     info->pitch = 1.0f;
     info->volume = 1.0f;
-    info->sourceInfo.fp = fp;
+    info->sourceInfo->fp = fp;
     info->sourceStart = 0;
     info->saved = true;
 
@@ -151,9 +169,9 @@ void ImporterTask::import(const std::string &fp)
     std::cout << " - import done\n";
 };
 
-FeatureExtractorTask::FeatureExtractorTask(Source *s, int sr)
+FeatureExtractorTask::FeatureExtractorTask(std::shared_ptr<Source> s, int sr)
     : Poco::Task("FeatureExtractorTask"),
-      source(s),
+      source(std::move(s)),
       sampleRate(sr) {}
 
 void FeatureExtractorTask::runTask()

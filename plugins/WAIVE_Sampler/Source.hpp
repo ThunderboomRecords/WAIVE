@@ -7,20 +7,13 @@
 
 #include "WaveformFeatures.hpp"
 
+// Shared between a SampleInfo and its duplicates (see SampleInfo::sourceInfo),
+// so the audio is never copied
 struct Source
 {
-    Source(const Source &other)
-        : name(other.name),
-          fp(other.fp),
-          buffer(other.buffer),
-          length(other.length),
-          sourceFeatures(other.sourceFeatures),
-          sourceMeasurements(other.sourceMeasurements),
-          tagString(other.tagString),
-          sourceLoaded(other.sourceLoaded) {};
     Source() = default;
-    Source(Source &&) = delete;
-    Source &operator=(Source &&) = delete;
+    Source(const Source &) = delete;
+    Source &operator=(const Source &) = delete;
     bool sourceLoaded = false;
     std::string name;
     std::string fp;

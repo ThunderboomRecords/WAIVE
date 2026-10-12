@@ -78,7 +78,8 @@ SampleInfo::SampleInfo(
                   waive(waive),
                   filterCutoff(0.99),
                   filterResonance(0.0),
-                  filterType(Filter::FILTER_LOWPASS)
+                  filterType(Filter::FILTER_LOWPASS),
+                  sourceInfo(std::make_shared<Source>())
 {
 }
 
@@ -119,7 +120,7 @@ void SampleInfo::print() const
 
     printf("================\n");
     printf("SampleInfo: %d (waive: %d)\n", id, waive);
-    printf(" - source: %s\n - sourceStart: %zu\n - sampleLength: %zu\n", sourceInfo.fp.c_str(), sourceStart, sampleLength);
+    printf(" - source: %s\n - sourceStart: %zu\n - sampleLength: %zu\n", sourceInfo->fp.c_str(), sourceStart, sampleLength);
     printf(" - embedding: %.3f %.3f\n", embedX, embedY);
     printf(" - Parameters:\n   volume: %.3f  percussiveBoost: %.3f  pitch: %.3f\n", volume, percussiveBoost, pitch);
     printf(" - ADSR:\n    A: %.3fms  D: %.3fms  S:  %.3f (length %.1fms) R: %.3fms\n", adsr.attack, adsr.decay, adsr.sustain, sustainLength, adsr.release);
@@ -135,7 +136,7 @@ json SampleInfo::toJson() const
     data["name"] = name;
     data["path"] = path;
     data["waive"] = waive;
-    data["source"] = sourceInfo.fp;
+    data["source"] = sourceInfo->fp;
     data["sourceStart"] = sourceStart;
     data["sampleLength"] = sampleLength;
     data["embedding"] = {{"x", embedX}, {"y", embedY}};

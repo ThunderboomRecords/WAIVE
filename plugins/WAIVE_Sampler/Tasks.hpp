@@ -30,11 +30,11 @@ private:
 class FeatureExtractorTask : public Poco::Task
 {
 public:
-    FeatureExtractorTask(Source *source, int sampleRate);
+    FeatureExtractorTask(std::shared_ptr<Source> source, int sampleRate);
     void runTask() override;
 
 private:
-    Source *source;
+    std::shared_ptr<Source> source;
     int sampleRate;
 };
 

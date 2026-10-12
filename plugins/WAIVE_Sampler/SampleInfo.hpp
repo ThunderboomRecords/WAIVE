@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
@@ -40,7 +41,9 @@ public:
     float embedY;
     bool waive;
     std::vector<Tag> tags;
-    Source sourceInfo;
+    // Shared with duplicates of this sample. Replaced, never modified in
+    // place, when loading a different source file.
+    std::shared_ptr<Source> sourceInfo;
     std::string tagString;
     float volume;
     float pitch;

@@ -236,6 +236,9 @@ public:
 
     std::mutex sourceListMutex;
     std::shared_ptr<SampleInfo> deserialiseSampleInfo(json data);
+    // Guards fAllSamples and the Samples table, which the ImporterTask
+    // changes from a background thread. Hold it while reading fAllSamples.
+    std::recursive_mutex samplesMtx;
     std::vector<std::shared_ptr<SampleInfo>> fAllSamples;
     std::vector<std::shared_ptr<SourceInfo>> sourcesList;
 

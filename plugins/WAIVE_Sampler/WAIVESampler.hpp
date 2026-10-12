@@ -178,7 +178,11 @@ protected:
 
 private:
     Poco::TaskManager taskManager;
-    ImporterTask *importerTask;
+    // An ImporterTask is running and will import anything added to
+    // import_queue. Guarded by importerMtx, so a file is never queued just
+    // as the task decides the queue is empty and stops.
+    std::mutex importerMtx;
+    bool importerRunning;
     std::shared_ptr<std::vector<float>> tempBuffer;
     std::shared_ptr<std::mutex> tempBufferMutex;
     ThreadsafeQueue<std::string> import_queue;
@@ -200,6 +204,7 @@ private:
     std::vector<std::vector<int64_t>> mTSNEInputShape, mTSNEOutputShape;
     std::vector<float> mTSNEInput, mTSNEOutput;
     std::vector<Ort::Value> mTSNEInputTensor, mTSNEOutputTensor;
+    std::mutex embeddingMtx;
 
     SampleDatabase sd;
     OSCClient oscClient;

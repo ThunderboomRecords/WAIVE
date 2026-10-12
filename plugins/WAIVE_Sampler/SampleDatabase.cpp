@@ -149,6 +149,7 @@ SampleDatabase::~SampleDatabase()
 void SampleDatabase::loadSampleDatabase()
 {
     std::cout << "\nSampleDatabase::loadSampleDatabase()\n";
+    std::unique_lock<std::recursive_mutex> lock(samplesMtx);
     Poco::Data::Statement select(*session);
     try
     {
@@ -213,6 +214,7 @@ void SampleDatabase::loadSampleDatabase()
 
     kdtree.build(points);
     std::cout << "Number of samples found: " << fAllSamples.size() << std::endl;
+    lock.unlock();
 
     databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_LIST_LOADED);
 }
@@ -228,8 +230,8 @@ std::shared_ptr<SampleInfo> SampleDatabase::deserialiseSampleInfo(json data)
             s->tags.push_back({el});
         s->tagString.assign(data["tagString"]);
         s->sampleLength = data["sampleLength"];
-        s->sourceInfo.fp = data["source"];
-        s->sourceInfo.tagString = data["tagString"];
+        s->sourceInfo->fp = data["source"];
+        s->sourceInfo->tagString = data["tagString"];
         s->sourceStart = data["sourceStart"];
         s->volume = data["parameters"]["volume"];
         s->pitch = data["parameters"]["pitch"];
@@ -269,6 +271,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
 
     std::cout << "SampleDatabase::addToLibrary" << std::endl;
 
+    std::lock_guard<std::recursive_mutex> lock(samplesMtx);
     sample->saved = true;
 
     std::string parameters = sample->toJson().dump();
@@ -279,7 +282,7 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
         insert << "INSERT INTO Samples(name, path, source, parameters) VALUES(?, ?, ?, ?)",
             Poco::Data::Keywords::use(sample->name),
             Poco::Data::Keywords::use(sample->path),
-            Poco::Data::Keywords::use(sample->sourceInfo.fp),
+            Poco::Data::Keywords::use(sample->sourceInfo->fp),
             Poco::Data::Keywords::use(parameters);
         insert.execute();
     }
@@ -446,6 +449,7 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
 
     // std::cout << "SampleDatabase::updateSample" << std::endl;
 
+    std::lock_guard<std::recursive_mutex> lock(samplesMtx);
     int id = sample->getId();
     std::string parameters = sample->toJson().dump();
 
@@ -458,7 +462,7 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
         update << "UPDATE Samples SET name = ?, path = ?, source = ?, parameters = ? WHERE id = ?",
             Poco::Data::Keywords::use(sample->name),
             Poco::Data::Keywords::use(sample->path),
-            Poco::Data::Keywords::use(sample->sourceInfo.fp),
+            Poco::Data::Keywords::use(sample->sourceInfo->fp),
             Poco::Data::Keywords::use(parameters),
             Poco::Data::Keywords::use(id);
         n = update.execute();
@@ -486,6 +490,7 @@ bool SampleDatabase::updateSample(std::shared_ptr<SampleInfo> sample)
 
 void SampleDatabase::newTag(std::string &tag)
 {
+    std::lock_guard<std::recursive_mutex> lock(samplesMtx);
     try
     {
         Poco::Data::Statement insertTag(*session);
@@ -503,6 +508,8 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
 {
     if (sample == nullptr)
         return false;
+
+    std::unique_lock<std::recursive_mutex> lock(samplesMtx);
 
     // if (!sample->saved)
     // {
@@ -553,6 +560,8 @@ bool SampleDatabase::renameSample(std::shared_ptr<SampleInfo> sample, std::strin
     std::cout << update.toString() << std::endl;
 
     update.execute();
+    lock.unlock();
+
     databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_UPDATED);
 
     return true;
@@ -563,6 +572,7 @@ std::shared_ptr<SampleInfo> SampleDatabase::findSample(int id)
     if (id < 0)
         return nullptr;
 
+    std::lock_guard<std::recursive_mutex> lock(samplesMtx);
     auto it = std::find_if(fAllSamples.begin(), fAllSamples.end(),
                            [id](const auto &sample)
                            { return sample && sample->getId() == id; });
@@ -572,6 +582,7 @@ std::shared_ptr<SampleInfo> SampleDatabase::findSample(int id)
 
 std::vector<std::shared_ptr<SampleInfo>> SampleDatabase::findKNearest(float x, float y, int k)
 {
+    std::lock_guard<std::recursive_mutex> lock(samplesMtx);
     std::vector<int> indices = kdtree.knnSearch({x, y}, k);
     std::vector<std::shared_ptr<SampleInfo>> result;
     for (int i = 0; i < indices.size(); i++)
@@ -583,6 +594,7 @@ std::vector<std::shared_ptr<SampleInfo>> SampleDatabase::findKNearest(float x, f
 
 std::vector<std::shared_ptr<SampleInfo>> SampleDatabase::findRadius(float x, float y, float r)
 {
+    std::lock_guard<std::recursive_mutex> lock(samplesMtx);
     std::vector<int> indices = kdtree.radiusSearch({x, y}, r);
     std::vector<std::shared_ptr<SampleInfo>> result;
     for (int i = 0; i < indices.size(); i++)
@@ -625,6 +637,7 @@ const std::string &SampleDatabase::getSourcePreview() const
 std::string SampleDatabase::getNewSampleName(const std::string &name)
 {
     std::cout << "SampleDatabase::getNewSampleName: " << name << std::endl;
+    std::lock_guard<std::recursive_mutex> lock(samplesMtx);
     // Finds a unique name of the form "new_sample_X.wav"
     std::string newName(name);
 
@@ -687,6 +700,7 @@ std::string SampleDatabase::getNewSampleName(const std::string &name)
 
 bool SampleDatabase::deleteSample(int id)
 {
+    std::lock_guard<std::recursive_mutex> lock(samplesMtx);
     // delete sample from database
     try
     {

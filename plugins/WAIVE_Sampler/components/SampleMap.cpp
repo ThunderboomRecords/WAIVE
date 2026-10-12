@@ -18,6 +18,8 @@ SampleMap::SampleMap(Widget *widget, DragDropManager *manager) noexcept
       highlightSampleIndex(-1),
       contextMenuSampleId(-1),
       selectedSample(nullptr),
+      allSamples(nullptr),
+      allSamplesMtx(nullptr),
       preview(true),
       callback(nullptr)
 {
@@ -105,6 +107,8 @@ bool SampleMap::onMotion(const MotionEvent &ev)
 {
     if (!isVisible())
         return false;
+
+    std::lock_guard<std::recursive_mutex> lock(*allSamplesMtx);
 
     if (dragAction == NONE)
     {
@@ -242,6 +246,8 @@ Color SampleMap::get2DColor(float x, float y) const
 
 void SampleMap::onNanoDisplay()
 {
+    std::lock_guard<std::recursive_mutex> lock(*allSamplesMtx);
+
     const float width = getWidth();
     const float height = getHeight();
 
