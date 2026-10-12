@@ -584,13 +584,40 @@ void WAIVESampler::setState(const char *key, const char *value)
         std::string line;
         while (std::getline(iss, line))
         {
+            if (line.empty())
+                continue;
+
             std::istringstream issLine(line);
             std::string iS, idS;
             std::getline(issLine, iS, ':');
             std::getline(issLine, idS, ':');
 
-            size_t i = std::stoi(iS);
-            int id = std::stoi(idS);
+            int i, id;
+            try
+            {
+                i = std::stoi(iS);
+                id = std::stoi(idS);
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << "sample-slots: ignoring malformed line \"" << line << "\"" << std::endl;
+                continue;
+            }
+
+            if (i < 0 || i >= NUM_SLOTS)
+            {
+                std::cerr << "sample-slots: slot " << i << " is out of range" << std::endl;
+                continue;
+            }
+
+            // The sample may have been deleted since the state was saved;
+            // clear the slot so it isn't saved with the state again
+            if (sd.findSample(id) == nullptr)
+            {
+                std::cerr << "sample-slots: sample " << id << " for slot " << i << " not found" << std::endl;
+                clearSamplePlayer(i);
+                continue;
+            }
 
             loadSlot(i, id);
         }

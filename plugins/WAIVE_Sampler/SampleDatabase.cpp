@@ -337,6 +337,11 @@ bool SampleDatabase::addToLibrary(std::shared_ptr<SampleInfo> sample)
     }
 
     fAllSamples.push_back(sample);
+
+    SamplePoint point(sample->embedX, sample->embedY);
+    point.info = sample;
+    points.push_back(point);
+    kdtree.build(points);
     // databaseUpdate.notify(this, DatabaseUpdate::SAMPLE_ADDED);
 
     std::cout << "SampleDatabase::addToLibrary done" << std::endl;
@@ -758,13 +763,31 @@ bool SampleDatabase::deleteSample(int id)
                            [id](const auto &sample)
                            { return sample && sample->getId() == id; });
 
-    if (it != fAllSamples.end())
+    if (it == fAllSamples.end())
+        return false;
+
+    std::string fp = getFullSamplePath(*it);
+    fAllSamples.erase(it);
+
+    points.erase(std::remove_if(points.begin(), points.end(),
+                                [id](const SamplePoint &p)
+                                { return p.info && p.info->getId() == id; }),
+                 points.end());
+    kdtree.build(points);
+
+    // delete sample file
+    try
     {
-        fAllSamples.erase(it);
-        return true;
+        Poco::File file(fp);
+        if (file.exists())
+            file.remove();
+    }
+    catch (const Poco::Exception &e)
+    {
+        std::cerr << "Could not remove sample file " << fp << ": " << e.displayText() << std::endl;
     }
 
-    return false;
+    return true;
 }
 
 std::shared_ptr<SampleInfo> SampleDatabase::duplicateSampleInfo(std::shared_ptr<SampleInfo> sample)
