@@ -56,6 +56,8 @@ git pull
 
 This creates a universal build that targets both Apple silicon and older Intel CPUs.
 
+The oldest supported macOS version is set by `VCPKG_OSX_DEPLOYMENT_TARGET` in `templates/arm64-osx-custom.cmake` and `templates/x64-osx-custom.cmake` (keep them the same). It can't be lower than the version the onnxruntime library was built for (12.7 for 1.17.3).
+
 ```sh
 cmake --preset default -B build-arm64 -DCMAKE_BUILD_TYPE=Release
 cmake --preset default -B build-x86_64 -DCMAKE_BUILD_TYPE=Release -DTARGET_MAC_X86=1

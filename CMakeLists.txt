@@ -14,11 +14,24 @@ if(APPLE)
   if(TARGET_MAC_X86)
     set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE INTERNAL "" FORCE)
     set(CMAKE_SYSTEM_PROCESSOR "x86" CACHE INTERNAL "" FORCE)
-    set(VCPKG_TARGET_TRIPLET "x64-osx" CACHE INTERNAL "" FORCE)
+    set(VCPKG_TARGET_TRIPLET "x64-osx-custom" CACHE INTERNAL "" FORCE)
   else()
     set(CMAKE_SYSTEM_PROCESSOR "arm64" CACHE INTERNAL "" FORCE)
+    set(VCPKG_TARGET_TRIPLET "arm64-osx-custom" CACHE INTERNAL "" FORCE)
   endif()
   message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
+
+  # Without a deployment target, binaries only run on the macOS version of the
+  # build machine (or newer). It's read from the vcpkg triplet, so the plugins
+  # and their dependencies always target the same version.
+  file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/templates/${VCPKG_TARGET_TRIPLET}.cmake" _deployment_target_line
+    REGEX "^set\\(VCPKG_OSX_DEPLOYMENT_TARGET ")
+  string(REGEX MATCH "[0-9]+(\\.[0-9]+)*" _deployment_target "${_deployment_target_line}")
+  if(NOT _deployment_target)
+    message(FATAL_ERROR "VCPKG_OSX_DEPLOYMENT_TARGET not found in templates/${VCPKG_TARGET_TRIPLET}.cmake")
+  endif()
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "${_deployment_target}" CACHE STRING "Minimum macOS version" FORCE)
+  message(STATUS "CMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}")
 elseif(WIN32)
   message(STATUS "Building on Windows")
   set(CMAKE_C_COMPILER "cl")

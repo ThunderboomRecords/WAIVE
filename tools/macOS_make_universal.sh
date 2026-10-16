@@ -24,6 +24,11 @@ OUTPUT_BIN="$3"
 # Marks an output folder as made by this script, so it is safe to replace
 MARKER=".universal_build"
 
+# Minimum macOS version a single-architecture binary runs on
+min_macos() {
+  otool -l "$1" | awk '/LC_BUILD_VERSION/ { found = 1 } found && !done && $1 == "minos" { print $2; done = 1 }'
+}
+
 if [[ -z "$ARM64_BIN" || -z "$X86_64_BIN" || -z "$OUTPUT_BIN" ]]; then
   echo "Usage: $0 <arm64_bin_folder> <x86_64_bin_folder> <output_bin_folder>"
   exit 1
@@ -107,13 +112,19 @@ while IFS= read -r -d '' file; do
   if file -b "$arm64_file" | grep -q "Mach-O"; then
     arm64_archs=$(lipo -archs "$arm64_file")
     x86_64_archs=$(lipo -archs "$x86_64_file")
-    if [[ "$arm64_archs" == "arm64" && "$x86_64_archs" == "x86_64" ]]; then
-      lipo -create "$arm64_file" "$x86_64_file" -output "$OUTPUT_BIN/$file"
-      echo "Merged $file"
-      MERGED=$((MERGED + 1))
-    else
+    arm64_min=$(min_macos "$arm64_file")
+    x86_64_min=$(min_macos "$x86_64_file")
+    if [[ "$arm64_archs" != "arm64" || "$x86_64_archs" != "x86_64" ]]; then
       echo "Error: $file has architectures '$arm64_archs' in the arm64 build and '$x86_64_archs' in the x86_64 build."
       PROBLEMS=$((PROBLEMS + 1))
+    elif [[ "$arm64_min" != "$x86_64_min" ]]; then
+      # Both builds should use the deployment target from the vcpkg triplets
+      echo "Error: $file needs macOS $arm64_min in the arm64 build but macOS $x86_64_min in the x86_64 build."
+      PROBLEMS=$((PROBLEMS + 1))
+    else
+      lipo -create "$arm64_file" "$x86_64_file" -output "$OUTPUT_BIN/$file"
+      echo "Merged $file (macOS $arm64_min+)"
+      MERGED=$((MERGED + 1))
     fi
   elif ! cmp -s "$arm64_file" "$x86_64_file"; then
     # e.g. Info.plist, resources: these should be the same in both builds
