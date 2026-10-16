@@ -946,12 +946,8 @@ void WAIVESamplerUI::buttonClicked(Button *button)
         if (!success)
         {
             makeClap->setToggled(false);
-            toolTip->setLabel("Unable to auto-find a Clap sample!");
+            toolTip->setAlert("Unable to auto-find a Clap sample!");
             return;
-        }
-        else
-        {
-            toolTip->setLabel("");
         }
 
         makeAny->setToggled(false);
